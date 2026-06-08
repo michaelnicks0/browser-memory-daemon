@@ -70,6 +70,18 @@ Then:
 
 If the extension is already loaded and the files were refreshed, click **Reload** on the extension card.
 
+### Local workstation installed state
+
+The real Windows Chrome `Default` profile has been installed with the unpacked extension from that directory:
+
+```text
+Extension ID: pgebbgmpbngnjgebbacafndebdjbbida
+Extension path: C:\Users\user\AppData\Local\browser-memory-daemon\extension
+Chrome profile backup root: C:\Users\user\AppData\Local\browser-memory-daemon\backups\
+```
+
+Direct `Preferences` / `Secure Preferences` JSON transplant was tested and rejected by Chrome on launch. Chrome 149 protects extension entries with both legacy MACs and encrypted hashes; invalid/transplanted entries are removed. Use Chrome's own **Load unpacked** path, manual or UI-automated, so Chrome writes valid profile state.
+
 ## Verify service
 
 ```bash
@@ -100,6 +112,13 @@ After loading/reloading the extension in Chrome:
    ```
 
 Expected result: the page appears with URL/title/snippet metadata.
+
+Verified daily-driver smoke on Local workstation:
+
+- allowed page on `lvh.me` captured and searched successfully;
+- hidden/form/editable text was absent from search;
+- synthetic capture was removed with `forget --domain lvh.me`;
+- bank-like `bank.lvh.me` page remained absent from search.
 
 ## Privacy checks
 
