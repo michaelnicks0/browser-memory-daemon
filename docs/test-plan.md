@@ -1,0 +1,24 @@
+# Test Plan
+
+## Current requirement coverage
+
+| Requirement | Test evidence |
+|---|---|
+| REQ-001 capture | `daemon/tests/e2e/test_http_api.py` synthetic capture |
+| REQ-002 WSL storage | tests use runtime root outside repo; runtime paths ignored |
+| REQ-003 service worker bridge | extension architecture present; real Chrome e2e pending |
+| REQ-004 auth + loopback | HTTP unauthorized test; bind defaults in config |
+| REQ-005 privacy blocks | `daemon/tests/unit/test_policy.py` |
+| REQ-006 redaction | policy and ingest tests verify secrets absent |
+| REQ-007 FTS search | integration/e2e search tests |
+| REQ-008 schema | DB initialized by integration/e2e tests |
+| REQ-010/011 forget | integration/e2e forget tests |
+| REQ-030 artifact boundary | `.gitignore` and `scripts/secret-scan.sh` |
+
+## Current commands
+
+```bash
+python3 -m pytest -q
+cd extension && npm test && npm run build
+./scripts/run-e2e.sh
+```

@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+
+# Node
+node_modules/
+extension/dist/
+ui/dist/
+npm-debug.log*
+
+# Runtime data — never commit live memory artifacts
+*.sqlite
+*.sqlite3
+*.db
+*.db-wal
+*.db-shm
+*.duckdb
+blobs/
+raw/
+captures/
+snapshots/
+exports/
+quarantine/
+logs/
+*.log
+*.jsonl
+*.lancedb/
+qdrant_storage/
+chromadb/
+faiss.index
+
+# Secrets / machine-specific browser integration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+native-messaging-host*.json
+chrome-extension-id.txt
+cookies*.txt
+headers*.txt
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
