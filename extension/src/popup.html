@@ -1,9 +1,25 @@
 <!doctype html>
 <html>
-  <head><meta charset="utf-8"><title>Browser Memory</title></head>
+  <head>
+    <meta charset="utf-8">
+    <title>Browser Memory</title>
+    <style>
+      body { min-width: 280px; margin: 0; padding: 12px; font: 13px/1.4 system-ui, sans-serif; color: #e7ecf8; background: #0b1020; }
+      button { width: 100%; margin: 4px 0; padding: 8px; border: 1px solid #263554; border-radius: 8px; color: #e7ecf8; background: #17223d; font-weight: 700; }
+      button.primary { background: #1d4d72; }
+      button.danger { background: #5b1721; }
+      .meta { color: #9aa9c7; overflow-wrap: anywhere; }
+      pre { white-space: pre-wrap; overflow-wrap: anywhere; color: #9aa9c7; }
+    </style>
+  </head>
   <body>
-    <button id="pause">Toggle pause</button>
+    <strong>Browser Memory</strong>
+    <p id="domain" class="meta">Loading current tab…</p>
+    <button id="pause" class="primary">Toggle pause</button>
     <button id="health">Health</button>
+    <button id="open-dashboard">Open dashboard</button>
+    <button id="block-domain">Block current domain</button>
+    <button id="forget-domain" class="danger">Forget current domain</button>
     <pre id="status"></pre>
     <script src="shared.js"></script>
     <script src="popup.js"></script>

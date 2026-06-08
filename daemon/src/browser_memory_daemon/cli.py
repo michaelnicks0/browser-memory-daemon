@@ -29,9 +29,23 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("serve")
     sub.add_parser("health")
+    sub.add_parser("doctor")
+    recent = sub.add_parser("recent")
+    recent.add_argument("--limit", type=int, default=25)
+    timeline = sub.add_parser("timeline")
+    timeline.add_argument("--date")
+    timeline.add_argument("--after")
+    timeline.add_argument("--before")
+    timeline.add_argument("--limit", type=int, default=100)
+    document = sub.add_parser("document")
+    document.add_argument("document_id")
+    snapshot = sub.add_parser("snapshot")
+    snapshot.add_argument("snapshot_id")
     search = sub.add_parser("search")
     search.add_argument("query")
     search.add_argument("--limit", type=int, default=10)
+    policy = sub.add_parser("policy-rules")
+    policy.add_argument("--block-domain")
     forget = sub.add_parser("forget")
     forget.add_argument("--domain")
     forget.add_argument("--url")
@@ -58,6 +72,39 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "search":
         q = urllib.parse.urlencode({"q": args.query, "limit": str(args.limit)})
         print(json.dumps(_request("GET", f"{base}/search?{q}", token=cfg.api_token), indent=2))
+        return 0
+    if args.command == "recent":
+        q = urllib.parse.urlencode({"limit": str(args.limit)})
+        print(json.dumps(_request("GET", f"{base}/recent?{q}", token=cfg.api_token), indent=2))
+        return 0
+    if args.command == "timeline":
+        params = {"limit": str(args.limit)}
+        if args.date:
+            params["date"] = args.date
+        if args.after:
+            params["after"] = args.after
+        if args.before:
+            params["before"] = args.before
+        q = urllib.parse.urlencode(params)
+        print(json.dumps(_request("GET", f"{base}/timeline?{q}", token=cfg.api_token), indent=2))
+        return 0
+    if args.command == "document":
+        document_id = urllib.parse.quote(args.document_id, safe="")
+        print(json.dumps(_request("GET", f"{base}/documents/{document_id}", token=cfg.api_token), indent=2))
+        return 0
+    if args.command == "snapshot":
+        snapshot_id = urllib.parse.quote(args.snapshot_id, safe="")
+        print(json.dumps(_request("GET", f"{base}/snapshots/{snapshot_id}", token=cfg.api_token), indent=2))
+        return 0
+    if args.command == "doctor":
+        print(json.dumps(_request("GET", f"{base}/doctor", token=cfg.api_token), indent=2))
+        return 0
+    if args.command == "policy-rules":
+        if args.block_domain:
+            body = {"rule_type": "domain", "pattern": args.block_domain, "action": "block"}
+            print(json.dumps(_request("POST", f"{base}/policy/rules", token=cfg.api_token, body=body), indent=2))
+        else:
+            print(json.dumps(_request("GET", f"{base}/policy/rules", token=cfg.api_token), indent=2))
         return 0
     if args.command == "forget":
         print(json.dumps(_request("POST", f"{base}/forget", token=cfg.api_token, body={"domain": args.domain, "url": args.url}), indent=2))

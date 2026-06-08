@@ -13,6 +13,12 @@
 | REQ-007 FTS search | integration/e2e search tests |
 | REQ-008 schema | DB initialized by integration/e2e tests |
 | REQ-010/011 forget | integration/e2e forget tests |
+| REQ-012 cited results | `/search`, `/documents/{id}`, and `/snapshots/{id}` expose source metadata, snapshot IDs, and snippets/text |
+| REQ-014 extension controls | Extension popup can pause capture, open dashboard, block current domain, and forget current domain; daemon policy-rule e2e verifies block behavior |
+| REQ-015 CLI | `daemon/tests/e2e/test_cli_admin.py` covers `recent`, `document`, `snapshot`, `doctor`, and `policy-rules` |
+| REQ-016 local UI | `daemon/tests/e2e/test_admin_api.py` verifies `/ui` asset serving plus UI-backed API surfaces |
+| REQ-025 audit logging | Admin API paths write metadata-only audit events for search/recent/timeline/detail/doctor/policy/delete |
+| REQ-028 doctor | `/doctor` and CLI `doctor` e2e verify DB integrity, FTS consistency, storage counts, and runtime paths |
 | REQ-030 artifact boundary | `.gitignore` and `scripts/secret-scan.sh` |
 | REQ-031 Windows browser e2e | `scripts/run-real-chrome-e2e.sh` synthetic allowed/blocked/localhost scenarios |
 

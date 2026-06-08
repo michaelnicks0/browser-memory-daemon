@@ -1,7 +1,7 @@
 # Browser Memory Daemon
 
-> **Status:** Phase 0/1 foundation complete; real Windows Chrome-family e2e added
-> **Scope:** Windows Chrome capture with WSL-resident storage, search, policy, deletion, and future agent integration.
+> **Status:** Phase 0/1 foundation complete; Phase 2/6 local controls and UI slice added
+> **Scope:** Windows Chrome capture with WSL-resident storage, search, policy, deletion, diagnostics, local UI, and future agent integration.
 
 This repo implements the plan from:
 
@@ -16,7 +16,8 @@ Chrome extension payload
   → authenticated WSL HTTP daemon
   → deterministic privacy/redaction
   → SQLite + FTS5 + clean-text blobs under WSL runtime paths
-  → search / forget / health APIs
+  → search / recent / timeline / detail / forget / doctor APIs
+  → local web UI and extension popup controls
 ```
 
 ## Runtime data boundary
@@ -60,6 +61,10 @@ BMD_API_TOKEN=dev-token ./scripts/dev-daemon.sh
 
 # Search through the CLI
 PYTHONPATH=daemon/src BMD_API_TOKEN=dev-token python3 -m browser_memory_daemon --token dev-token search "example"
+
+# Open the local UI while the daemon is running
+# Paste the daemon token into the UI once; it is stored in browser localStorage.
+http://127.0.0.1:8765/ui
 ```
 
 ## Implemented now
@@ -69,20 +74,20 @@ PYTHONPATH=daemon/src BMD_API_TOKEN=dev-token python3 -m browser_memory_daemon -
 - Capture policy for blocked schemes, localhost/private IPs, and sensitive domains.
 - Redaction before storage and FTS indexing.
 - Ingest, exact FTS search, and forget-by-domain/URL.
-- HTTP API: `/health`, `/ready`, `/capture`, `/search`, `/forget`.
-- CLI: `serve`, `health`, `search`, `forget`, `capture-fixture`.
-- MV3 extension with service-worker-owned programmatic content-script injection, queue helpers, options, popup, and build/test scripts.
+- HTTP API: `/health`, `/ready`, `/capture`, `/search`, `/recent`, `/timeline`, `/documents/{id}`, `/snapshots/{id}`, `/policy/*`, `/doctor`, `/forget`.
+- CLI: `serve`, `health`, `search`, `recent`, `timeline`, `document`, `snapshot`, `policy-rules`, `doctor`, `forget`, `capture-fixture`.
+- Local web UI served at `/ui` with search, recent captures, timeline, document/snapshot detail, block-domain, forget-domain, and doctor panels.
+- MV3 extension with service-worker-owned programmatic content-script injection, queue helpers, options, popup operational controls, and build/test scripts.
 - Automated real Windows Chrome-family e2e harness using Chrome for Testing, isolated Windows profile, synthetic allowed/blocked pages, and WSL SQLite/FTS verification.
 - Daily-driver install helper that builds/copies the extension to Windows, creates the WSL token/env, enables the `systemd --user` daemon, and verifies WSL + Windows loopback health.
 
 ## Not implemented yet
 
-- Daily-driver WSL service + Windows extension-copy installer; branded Chrome still requires the one-time manual `Load unpacked` UI step.
-- UI.
 - Semantic/vector search.
 - MCP/Hermes tools.
 - Native messaging fallback.
-- Backups/restore.
+- Encrypted backups/restore.
 - Multi-source importers.
+- Rich policy allow/redact/quarantine rules and retention jobs.
 
 Those are later phases in the V-model plan.

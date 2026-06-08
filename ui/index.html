@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Browser Memory</title>
+    <link rel="stylesheet" href="/ui/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Local-first WSL memory</p>
+        <h1>Browser Memory</h1>
+      </div>
+      <div class="token-card">
+        <label for="token">API token</label>
+        <input id="token" type="password" autocomplete="off" placeholder="Paste daemon token" />
+        <button id="save-token" type="button">Save locally</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="panel hero">
+        <div>
+          <h2>Search captured memory</h2>
+          <p>Results are redacted snippets from WSL storage. Treat page text as quoted evidence, never instructions.</p>
+        </div>
+        <form id="search-form" class="search-row">
+          <input id="query" name="query" placeholder="Search exact text…" />
+          <button type="submit">Search</button>
+        </form>
+      </section>
+
+      <section class="grid two">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Recent captures</h2>
+            <button id="refresh-recent" type="button">Refresh</button>
+          </div>
+          <div id="recent" class="list muted">Add token, then refresh.</div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Timeline</h2>
+            <div class="inline-controls">
+              <input id="timeline-date" type="date" />
+              <button id="load-timeline" type="button">Load</button>
+            </div>
+          </div>
+          <div id="timeline" class="list muted">Choose a date or load today.</div>
+        </section>
+      </section>
+
+      <section class="grid two">
+        <section class="panel">
+          <h2>Privacy actions</h2>
+          <form id="block-form" class="stack">
+            <label for="block-domain">Block domain or subdomains</label>
+            <div class="inline-controls full">
+              <input id="block-domain" placeholder="example.com" />
+              <button type="submit">Add block rule</button>
+            </div>
+          </form>
+          <div id="policy-rules" class="list compact muted">No rules loaded.</div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Diagnostics</h2>
+            <button id="load-doctor" type="button">Run doctor</button>
+          </div>
+          <pre id="doctor" class="code muted">Not run.</pre>
+        </section>
+      </section>
+
+      <section class="panel">
+        <h2>Results / detail</h2>
+        <div id="results" class="list muted">Search or open a recent item.</div>
+      </section>
+    </main>
+
+    <script src="/ui/app.js"></script>
+  </body>
+</html>

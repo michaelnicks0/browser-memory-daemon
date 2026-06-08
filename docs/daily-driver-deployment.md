@@ -97,6 +97,25 @@ Windows loopback check from WSL:
   -Command "Invoke-RestMethod -Uri 'http://127.0.0.1:8765/health' -TimeoutSec 5 | ConvertTo-Json -Compress"
 ```
 
+## Local UI
+
+With the daemon running, open:
+
+```text
+http://127.0.0.1:8765/ui
+```
+
+Paste the daemon token from `~/.config/browser-memory-daemon/token` into the UI once. The UI stores it in browser `localStorage`; the daemon does not embed the token in HTML.
+
+Current UI controls:
+
+- search exact FTS snippets;
+- review recent captures and timeline by date;
+- open document and snapshot detail;
+- add block-domain policy rules;
+- forget a domain after explicit browser confirmation;
+- run `doctor` diagnostics for DB, FTS, storage, and paths.
+
 ## Manual smoke test
 
 After loading/reloading the extension in Chrome:

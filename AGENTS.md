@@ -7,6 +7,7 @@ Guidance for AI coding agents working in this repo.
 - `README.md` — current implementation status and commands.
 - `docs/security-model.md` — privacy and security boundary.
 - `docs/test-plan.md` — requirement-to-test discipline.
+- `docs/api.md` — current authenticated loopback API surface.
 - Source plan: `~/repos/research/browser-memory-daemon-architecture/chrome-windows-wsl-implementation-plan.md`.
 
 ## Conventions
