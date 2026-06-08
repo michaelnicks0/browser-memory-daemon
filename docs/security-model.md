@@ -12,6 +12,7 @@ The daemon is local-first and WSL-resident. It assumes captured page text may be
 - Audit logs are metadata-only in SQLite.
 - Extension uses broad HTTP/HTTPS host permission so the service worker can inject capture scripts, but both service worker and injected extractor apply URL privacy gates before queue/storage.
 - Injected content scripts extract text; service worker owns daemon communication.
+- Daily-driver install stores the daemon API token in protected WSL config files and injects it into the Windows-local extension artifact; the token is never committed, and rotation is supported via `BMD_ROTATE_TOKEN=1 ./scripts/install-daily-driver.sh`.
 
 ## Current limitations
 

@@ -52,6 +52,9 @@ npm run build
 # Run only the real browser extension e2e
 ./scripts/run-real-chrome-e2e.sh
 
+# Install/refresh the daily-driver WSL service + Windows extension copy
+./scripts/install-daily-driver.sh
+
 # Start daemon in dev/test mode
 BMD_API_TOKEN=dev-token ./scripts/dev-daemon.sh
 
@@ -70,10 +73,11 @@ PYTHONPATH=daemon/src BMD_API_TOKEN=dev-token python3 -m browser_memory_daemon -
 - CLI: `serve`, `health`, `search`, `forget`, `capture-fixture`.
 - MV3 extension with service-worker-owned programmatic content-script injection, queue helpers, options, popup, and build/test scripts.
 - Automated real Windows Chrome-family e2e harness using Chrome for Testing, isolated Windows profile, synthetic allowed/blocked pages, and WSL SQLite/FTS verification.
+- Daily-driver install helper that builds/copies the extension to Windows, creates the WSL token/env, enables the `systemd --user` daemon, and verifies WSL + Windows loopback health.
 
 ## Not implemented yet
 
-- Real daily-driver Windows Chrome install/packaging flow.
+- Daily-driver WSL service + Windows extension-copy installer; branded Chrome still requires the one-time manual `Load unpacked` UI step.
 - UI.
 - Semantic/vector search.
 - MCP/Hermes tools.
