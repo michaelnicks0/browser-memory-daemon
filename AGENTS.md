@@ -30,6 +30,7 @@ git diff --check -- .
 ## Pitfalls
 
 - Do not run against Operator's default Chrome profile for tests; use an isolated profile.
+- Chrome 148 on Local workstation may not expose CDP when launched against the default user data dir, even with `--remote-debugging-port`; use an isolated `--user-data-dir` for CDP automation or avoid CDP for default-profile workflows.
 - Do not commit `*.sqlite3`, blobs, logs, extension keys, native messaging manifests, or raw captures.
 - Do not capture form fields, incognito/private pages, webmail, chat, banking, medical, tax, insurance, account, billing, admin, `file://`, `chrome://`, localhost, or private IP pages by default.
 - Do not expose the daemon beyond loopback without explicit approval.
