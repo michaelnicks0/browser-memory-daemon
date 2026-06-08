@@ -1,4 +1,4 @@
-try { importScripts('shared.js'); } catch (_) {}
+try { importScripts('shared.js', 'extractor.js'); } catch (_) {}
 
 const DEFAULTS = {
   daemonUrl: 'http://127.0.0.1:8765',
@@ -58,6 +58,34 @@ async function enqueueCapture(payload) {
   await saveQueue(queue);
   return drainQueue();
 }
+
+const injectedTabs = new Map();
+
+async function maybeInjectCapture(tabId, tabUrl) {
+  const config = await getConfig();
+  if (config.capturePaused || !config.apiToken) return { skipped: true, reason: config.capturePaused ? 'paused' : 'missing-token' };
+  if (!tabUrl || (globalThis.shouldBlockBrowserMemoryUrl && globalThis.shouldBlockBrowserMemoryUrl(tabUrl))) {
+    return { skipped: true, reason: 'blocked-url' };
+  }
+  if (injectedTabs.get(tabId) === tabUrl) return { skipped: true, reason: 'already-injected' };
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: ['src/extractor.js', 'src/content_script.js']
+    });
+    injectedTabs.set(tabId, tabUrl);
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: String(error.message || error) };
+  }
+}
+
+chrome.tabs.onUpdated?.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status !== 'complete') return;
+  maybeInjectCapture(tabId, tab.url);
+});
+
+chrome.tabs.onRemoved?.addListener((tabId) => { injectedTabs.delete(tabId); });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (!message || message.type !== 'BMD_CAPTURE') return false;

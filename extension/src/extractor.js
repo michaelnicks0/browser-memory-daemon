@@ -1,11 +1,18 @@
+(function () {
 const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'OPTION']);
 const SENSITIVE_URL_WORDS = new Set(['account', 'accounts', 'admin', 'auth', 'bank', 'bankofamerica', 'billing', 'card', 'chase', 'chat', 'checkout', 'discord', 'gmail', 'health', 'insurance', 'legal', 'login', 'mail', 'medical', 'mychart', 'oauth', 'outlook', 'password', 'patient', 'payment', 'paypal', 'profile', 'settings', 'signin', 'slack', 'tax', 'telegram', 'token']);
 
 function attrValue(node, name) {
   if (!node) return undefined;
   if (node.attrs && Object.prototype.hasOwnProperty.call(node.attrs, name)) return node.attrs[name];
-  if (node.attributes && Object.prototype.hasOwnProperty.call(node.attributes, name)) return node.attributes[name];
-  if (typeof node.getAttribute === 'function') return node.getAttribute(name);
+  if (typeof node.getAttribute === 'function') {
+    const value = node.getAttribute(name);
+    return value === null ? undefined : value;
+  }
+  if (node.attributes && Object.prototype.hasOwnProperty.call(node.attributes, name)) {
+    const value = node.attributes[name];
+    return value && typeof value === 'object' && Object.prototype.hasOwnProperty.call(value, 'value') ? value.value : value;
+  }
   return undefined;
 }
 
@@ -116,3 +123,4 @@ globalThis.shouldBlockBrowserMemoryUrl = shouldBlockUrl;
 if (typeof module !== 'undefined') {
   module.exports = { shouldSkipElement, shouldBlockUrl, isPrivateHost, extractTextFromTree, extractTextFromDomNode, collapseWhitespace, metadataFromDocument, extractPageFromDocument };
 }
+})();

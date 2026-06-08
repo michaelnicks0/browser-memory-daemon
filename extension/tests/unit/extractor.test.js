@@ -11,7 +11,7 @@ function elem(tagName, children = [], attrs = {}) {
     nodeType: 1,
     tagName,
     childNodes: children,
-    getAttribute(name) { return attrs[name]; }
+    getAttribute(name) { return Object.prototype.hasOwnProperty.call(attrs, name) ? attrs[name] : null; }
   };
 }
 

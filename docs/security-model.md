@@ -10,7 +10,8 @@ The daemon is local-first and WSL-resident. It assumes captured page text may be
 - Deterministic policy blocks sensitive schemes/domains and private/loopback hosts.
 - Redaction runs before storage and FTS indexing.
 - Audit logs are metadata-only in SQLite.
-- Extension content script extracts text; service worker owns daemon communication.
+- Extension uses broad HTTP/HTTPS host permission so the service worker can inject capture scripts, but both service worker and injected extractor apply URL privacy gates before queue/storage.
+- Injected content scripts extract text; service worker owns daemon communication.
 
 ## Current limitations
 
