@@ -1,6 +1,6 @@
 # Browser Memory Daemon
 
-> **Status:** Phase 0/1 foundation complete; Phase 2/6 local controls and UI slice added
+> **Status:** Phase 0/1 foundation complete; Phase 2/6 local controls and UI slice added; Phase 3 dedupe/versioning slice added
 > **Scope:** Windows Chrome capture with WSL-resident storage, search, policy, deletion, diagnostics, local UI, and future agent integration.
 
 This repo implements the plan from:
@@ -74,6 +74,8 @@ http://127.0.0.1:8765/ui
 - Capture policy for blocked schemes, localhost/private IPs, and sensitive domains.
 - Redaction before storage and FTS indexing.
 - Ingest, exact FTS search, and forget-by-domain/URL.
+- URL normalization removes tracking params/fragments/default ports and sorts meaningful query params for stable document identity.
+- Repeat captures of unchanged content add visits without duplicating snapshots/chunks; changed content creates a new snapshot under the same document.
 - HTTP API: `/health`, `/ready`, `/capture`, `/search`, `/recent`, `/timeline`, `/documents/{id}`, `/snapshots/{id}`, `/policy/*`, `/doctor`, `/forget`.
 - CLI: `serve`, `health`, `search`, `recent`, `timeline`, `document`, `snapshot`, `policy-rules`, `doctor`, `forget`, `capture-fixture`.
 - Local web UI served at `/ui` with search, recent captures, timeline, document/snapshot detail, block-domain, forget-domain, and doctor panels.

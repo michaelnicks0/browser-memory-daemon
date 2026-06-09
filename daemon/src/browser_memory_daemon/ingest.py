@@ -42,7 +42,10 @@ def chunk_text(text: str, *, max_chars: int = 1800) -> list[str]:
 
 def ingest_capture(conn: sqlite3.Connection, config: RuntimeConfig, payload: CapturePayload) -> dict:
     safe_url, url_redactions, url_classes = redact_url(payload.url)
-    safe_canonical, canonical_redactions, canonical_classes = redact_url(payload.canonical_url or payload.url)
+    if payload.canonical_url and payload.canonical_url != payload.url:
+        safe_canonical, canonical_redactions, canonical_classes = redact_url(payload.canonical_url)
+    else:
+        safe_canonical, canonical_redactions, canonical_classes = safe_url, 0, []
     safe_title, title_redactions, title_classes = redact_text(payload.title)
     redacted_text, text_redactions, text_classes = redact_text(payload.text)
     redaction_count = url_redactions + canonical_redactions + title_redactions + text_redactions

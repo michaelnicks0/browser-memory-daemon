@@ -12,6 +12,7 @@
 | REQ-006 redaction | policy and ingest tests verify secrets absent |
 | REQ-007 FTS search | integration/e2e search tests |
 | REQ-008 schema | DB initialized by integration/e2e tests |
+| REQ-009 dedupe/versioning | `daemon/tests/integration/test_ingest_search_forget.py` verifies query-normalized repeat visits create one snapshot and changed content creates a new snapshot under one document |
 | REQ-010/011 forget | integration/e2e forget tests |
 | REQ-012 cited results | `/search`, `/documents/{id}`, and `/snapshots/{id}` expose source metadata, snapshot IDs, and snippets/text |
 | REQ-014 extension controls | Extension popup can pause capture, open dashboard, block current domain, and forget current domain; daemon policy-rule e2e verifies block behavior |

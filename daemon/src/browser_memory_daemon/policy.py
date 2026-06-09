@@ -154,6 +154,21 @@ def evaluate_capture(url: str, *, is_incognito: bool = False) -> PolicyDecision:
     return PolicyDecision(True)
 
 
+def _netloc_without_userinfo(parts) -> str:
+    host = parts.hostname or ""
+    if not host:
+        return parts.netloc
+    if ":" in host and not host.startswith("["):
+        host = f"[{host}]"
+    try:
+        port = parts.port
+    except ValueError:
+        port = None
+    if port:
+        return f"{host}:{port}"
+    return host
+
+
 def redact_text(text: str) -> tuple[str, int, list[str]]:
     redacted = text or ""
     count = 0
@@ -172,6 +187,11 @@ def redact_url(url: str) -> tuple[str, int, list[str]]:
     parts = urlsplit(url)
     count = 0
     classes: list[str] = []
+    safe_netloc = parts.netloc
+    if parts.username is not None or parts.password is not None:
+        safe_netloc = _netloc_without_userinfo(parts)
+        count += 1
+        classes.append("url_userinfo")
     safe_pairs = []
     for key, value in parse_qsl(parts.query, keep_blank_values=True):
         if key.lower() in SENSITIVE_QUERY_KEYS:
@@ -203,4 +223,4 @@ def redact_url(url: str) -> tuple[str, int, list[str]]:
             classes.extend(label for label in labels if label not in classes)
     safe_path = "/".join(safe_segments)
     safe_query = urlencode(safe_pairs, doseq=True)
-    return urlunsplit((parts.scheme, parts.netloc, safe_path, safe_query, fragment)), count, classes
+    return urlunsplit((parts.scheme, safe_netloc, safe_path, safe_query, fragment)), count, classes

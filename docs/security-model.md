@@ -8,7 +8,7 @@ The daemon is local-first and WSL-resident. It assumes captured page text may be
 - `/health` exposes only minimal status.
 - Daemon binds to `127.0.0.1` by default.
 - Deterministic policy blocks sensitive schemes/domains and private/loopback hosts.
-- Redaction runs before storage and FTS indexing.
+- Redaction runs before storage and FTS indexing, including URL query/fragment/path secrets and URL userinfo credentials.
 - Audit logs are metadata-only in SQLite.
 - Extension uses broad HTTP/HTTPS host permission so the service worker can inject capture scripts, but both service worker and injected extractor apply URL privacy gates before queue/storage.
 - Injected content scripts extract text; service worker owns daemon communication.
