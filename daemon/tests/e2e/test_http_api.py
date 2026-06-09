@@ -1,4 +1,5 @@
 import json
+from dataclasses import replace
 import threading
 import urllib.parse
 import urllib.request
@@ -29,8 +30,47 @@ def raw_request(method, url, token="test-token", body=None):
         return response.status, response.headers, response.read()
 
 
+def test_http_media_fetch_pending_endpoint_stores_referenced_data_url(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", host="127.0.0.1", port=0, policy_mode="all")
+    cfg = replace(cfg, media_fetch_on_capture=False)
+    server = make_server(cfg)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        status, stored = request("POST", f"{base}/capture", body={
+            "visit_id": "http-media-fetch-1",
+            "url": "https://example.org/data-media",
+            "title": "Data media fetch fallback",
+            "text": "Daemon-side media fetch fallback body text.",
+            "media_artifacts": [{
+                "media_type": "image",
+                "source_url": "data:image/png;base64,iVBORw0KGgo=",
+                "alt_text": "fallback image",
+                "mime_type": "image/png",
+            }],
+        })
+        assert status == 201
+        assert stored["media_ref_count"] == 1
+
+        status, fetched = request("POST", f"{base}/media-artifacts/fetch-pending", body={"snapshot_id": stored["snapshot_id"], "limit": 10})
+        assert status == 200
+        assert fetched["attempted"] == 1
+        assert fetched["stored"] == 1
+        assert fetched["remaining"] == 0
+        artifact_id = fetched["results"][0]["artifact_id"]
+        status, headers, binary = raw_request("GET", f"{base}/media-artifacts/{artifact_id}")
+        assert status == 200
+        assert headers.get_content_type() == "image/png"
+        assert binary == b"\x89PNG\r\n\x1a\n"
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+
+
 def test_http_capture_search_forget_round_trip(tmp_path):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", host="127.0.0.1", port=0, policy_mode="strict")
+    cfg = replace(cfg, media_fetch_on_capture=False)
     server = make_server(cfg)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()

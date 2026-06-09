@@ -29,6 +29,7 @@ Captured page text is untrusted evidence. API clients must not treat retrieved p
 | `/ready` | `GET` | Initialize/check DB readiness. | Yes |
 | `/capture` | `POST` | Store an allowed extension capture plus media references. | Yes |
 | `/media-artifacts` | `POST` | Store/upgrade a related image/video artifact row and optional blob. | Yes |
+| `/media-artifacts/fetch-pending` | `POST` | Daemon-side fetch of pending public media artifact refs. | Yes |
 | `/visit-events` | `POST` | Store tab lifecycle events and update visit dwell seconds. | Yes |
 | `/search?q=...&limit=...` | `GET` | Exact FTS search with source metadata/snippets. | Yes |
 | `/recent?limit=...` | `GET` | Recent capture metadata and first snippets. | Yes |
@@ -130,7 +131,21 @@ Media references in `/capture` are relationship metadata only. Binary storage us
 }
 ```
 
-If `content_base64` is omitted, the artifact is metadata-only. Stored binaries are available via:
+If `content_base64` is omitted, the artifact is metadata-only. Pending public artifacts can be fetched by the daemon:
+
+```http
+POST /media-artifacts/fetch-pending
+Authorization: Bearer ***
+Content-Type: application/json
+```
+
+```json
+{"domain": "x.com", "limit": 100}
+```
+
+That endpoint asks the daemon to fetch pending public `referenced` / `metadata-only` artifact URLs itself. It is useful when Chrome MV3 service-worker upload is suspended before large social/media pages finish binary upload.
+
+Stored binaries are available via:
 
 ```http
 GET /media-artifacts/<artifact_id>

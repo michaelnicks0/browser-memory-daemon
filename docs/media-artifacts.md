@@ -94,13 +94,17 @@ sequenceDiagram
   D->>DB: store text snapshot + FTS + media references
   D-->>SW: document_id + snapshot_id
   loop each media ref
-    SW->>SW: fetch media URL if supported + under cap
-    SW->>D: POST /media-artifacts
+    par Extension upload path
+      SW->>SW: fetch media URL if supported + under cap
+      SW->>D: POST /media-artifacts
+    and Daemon fallback path
+      D->>D: background/public fetch pending refs
+    end
     D->>DB: upsert media row + optional blob file
   end
 ```
 
-Important: page text storage does not wait on media binary upload. If media fetch fails, the reference row still exists as metadata.
+Important: page text storage does not wait on media binary upload. If the extension service worker is suspended or cannot fetch a public CDN asset, the daemon-side fallback can fetch pending `referenced` artifacts from WSL. If media fetch fails, the reference row still exists as metadata.
 
 ---
 
@@ -134,6 +138,27 @@ Payload shape:
 
 If `content_base64` is omitted, the row is metadata-only.
 
+### Fetch pending referenced artifacts
+
+```http
+POST /media-artifacts/fetch-pending
+Authorization: Bearer ***
+Content-Type: application/json
+```
+
+Payload shape:
+
+```json
+{
+  "domain": "x.com",
+  "snapshot_id": "snap_...",
+  "document_id": "doc_...",
+  "limit": 100
+}
+```
+
+All filters are optional. The daemon fetches pending `referenced` / `metadata-only` artifacts with public `http:`, `https:`, or `data:` source URLs, stores successful binaries under `blobs/media/`, and leaves unsupported/oversized/non-media responses as `skipped` or `failed` metadata rows.
+
 ### Retrieve media artifact
 
 ```http
@@ -152,6 +177,8 @@ Returns the stored binary with its MIME type if available. If the artifact is me
 | Media refs per capture | 50 |
 | Max binary artifact | 25 MB |
 | Max media JSON upload | 40 MB |
+| Auto daemon fetches after one capture | 12 pending artifacts |
+| Manual fetch-pending call limit | 100 artifacts |
 | Supported binary fetch schemes | `http:`, `https:`, `data:` |
 | Unsupported binary fetch schemes | `blob:`, browser-internal, opaque streaming manifests |
 
@@ -182,5 +209,6 @@ Real Chrome e2e verifies:
 - service worker fetches the image;
 - daemon stores `media_artifacts` row;
 - daemon writes media blob under `blobs/media/`;
+- daemon-side fallback stores referenced media when `/media-artifacts/fetch-pending` runs;
 - search result includes `media_artifact_count=1`;
 - strict policy still blocks sensitive/local fixture pages.

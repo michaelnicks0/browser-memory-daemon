@@ -8,7 +8,9 @@ from pathlib import Path
 import re
 import sqlite3
 from typing import Any
-from urllib.parse import urlsplit
+from urllib.error import HTTPError, URLError
+from urllib.parse import unquote_to_bytes, urlsplit
+from urllib.request import Request, urlopen
 
 from .config import RuntimeConfig
 from .normalize import normalize_url
@@ -184,6 +186,206 @@ def media_artifact_id(snapshot_id: str, ref: MediaRef) -> str:
     return stable_id("media", f"{snapshot_id}:{ref.stable_key()}")
 
 
+def media_artifact_id_from_parts(snapshot_id: str, media_type: str, role: str, source_url: str) -> str:
+    return stable_id("media", f"{snapshot_id}:{media_type}|{role}|{source_url}")
+
+
+def _safe_response_mime(value: str, *, media_type: str) -> str:
+    mime = _sanitize_mime(value, media_type=media_type)
+    if mime:
+        return mime
+    return ""
+
+
+def _data_url_to_media(data_url: str, *, media_type: str, max_bytes: int) -> tuple[bytes, str, str]:
+    header, separator, payload = data_url.partition(",")
+    if not separator:
+        return b"", "", "invalid-data-url"
+    header_lower = header.lower()
+    mime = _safe_response_mime(header_lower.removeprefix("data:").split(";", 1)[0], media_type=media_type)
+    try:
+        content = base64.b64decode(payload, validate=True) if ";base64" in header_lower else unquote_to_bytes(payload)
+    except Exception:
+        return b"", mime, "invalid-data-url-payload"
+    if len(content) > max_bytes:
+        return b"", mime, "media-too-large"
+    return content, mime, ""
+
+
+def _fetch_media_bytes(source_url: str, page_url: str, *, media_type: str, max_bytes: int, timeout_seconds: float) -> tuple[bytes, str, str]:
+    parts = urlsplit(source_url)
+    if parts.scheme == "data":
+        return _data_url_to_media(source_url, media_type=media_type, max_bytes=max_bytes)
+    if parts.scheme not in {"http", "https"}:
+        return b"", "", "unsupported-media-url-scheme"
+    request = Request(
+        source_url,
+        headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149 Safari/537.36 BrowserMemoryDaemon/0.1",
+            "Referer": page_url or f"{parts.scheme}://{parts.netloc}/",
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,video/*,*/*;q=0.8",
+        },
+    )
+    try:
+        with urlopen(request, timeout=timeout_seconds) as response:
+            response_mime = _safe_response_mime(response.headers.get("content-type", ""), media_type=media_type)
+            if response.headers.get("content-type") and not response_mime:
+                return b"", "", "non-media-content-type"
+            try:
+                content_length = int(response.headers.get("content-length") or "0")
+            except ValueError:
+                content_length = 0
+            if content_length > max_bytes:
+                return b"", response_mime, "media-too-large"
+            chunks: list[bytes] = []
+            total = 0
+            while True:
+                chunk = response.read(64 * 1024)
+                if not chunk:
+                    break
+                total += len(chunk)
+                if total > max_bytes:
+                    return b"", response_mime, "media-too-large"
+                chunks.append(chunk)
+            return b"".join(chunks), response_mime, ""
+    except HTTPError as exc:
+        return b"", "", f"fetch-status-{exc.code}"
+    except TimeoutError:
+        return b"", "", "fetch-timeout"
+    except URLError as exc:
+        reason = getattr(exc, "reason", exc)
+        return b"", "", f"fetch-error-{str(reason)[:160]}"
+    except Exception as exc:
+        return b"", "", f"fetch-error-{str(exc)[:160]}"
+
+
+def _payload_from_media_row(row: sqlite3.Row | dict[str, Any], *, capture_status: str, status_reason: str = "", content: bytes = b"", mime_type: str = "") -> dict[str, Any]:
+    value = dict(row)
+    payload: dict[str, Any] = {
+        "artifact_id": value["id"],
+        "document_id": value["document_id"],
+        "snapshot_id": value["snapshot_id"],
+        "visit_id": value.get("visit_id") or None,
+        "page_url": value.get("page_url") or "",
+        "media_type": value.get("media_type") or "",
+        "role": value.get("role") or "content",
+        "source_url": value.get("source_url") or "",
+        "alt_text": value.get("alt_text") or "",
+        "title": value.get("title") or "",
+        "mime_type": mime_type or value.get("mime_type") or "",
+        "width": value.get("width"),
+        "height": value.get("height"),
+        "duration_seconds": value.get("duration_seconds"),
+        "capture_status": capture_status,
+        "status_reason": status_reason,
+    }
+    if content:
+        payload["content_base64"] = base64.b64encode(content).decode("ascii")
+    return payload
+
+
+def fetch_and_store_media_artifact(conn: sqlite3.Connection, config: RuntimeConfig, row: sqlite3.Row | dict[str, Any]) -> dict[str, Any]:
+    value = dict(row)
+    file_path = value.get("file_path") or ""
+    if value.get("capture_status") == "stored" and file_path and Path(file_path).exists():
+        return {
+            "stored": True,
+            "artifact_id": value["id"],
+            "capture_status": "stored",
+            "byte_size": int(value.get("byte_size") or 0),
+            "skipped": True,
+            "reason": "already-stored",
+        }
+    content, response_mime, reason = _fetch_media_bytes(
+        value.get("source_url") or "",
+        value.get("page_url") or "",
+        media_type=value.get("media_type") or "",
+        max_bytes=config.max_media_artifact_bytes,
+        timeout_seconds=config.media_fetch_timeout_seconds,
+    )
+    if reason:
+        return store_media_artifact(conn, config, _payload_from_media_row(value, capture_status="skipped" if reason in {"unsupported-media-url-scheme", "media-too-large", "non-media-content-type"} else "failed", status_reason=reason, mime_type=response_mime))
+    if not content:
+        return store_media_artifact(conn, config, _payload_from_media_row(value, capture_status="failed", status_reason="empty-media-response", mime_type=response_mime))
+    return store_media_artifact(conn, config, _payload_from_media_row(value, capture_status="stored", content=content, mime_type=response_mime))
+
+
+def fetch_pending_media_artifacts(
+    conn: sqlite3.Connection,
+    config: RuntimeConfig,
+    *,
+    snapshot_id: str | None = None,
+    document_id: str | None = None,
+    domain: str | None = None,
+    limit: int | None = None,
+) -> dict[str, Any]:
+    selected_limit = max(1, min(int(limit or config.max_media_fetches_per_call), config.max_media_fetches_per_call))
+    where = ["m.capture_status IN ('referenced', 'metadata-only')", "COALESCE(m.file_path, '') = ''"]
+    params: list[Any] = []
+    if snapshot_id:
+        where.append("m.snapshot_id = ?")
+        params.append(snapshot_id)
+    if document_id:
+        where.append("m.document_id = ?")
+        params.append(document_id)
+    if domain:
+        normalized_domain = domain.lower().strip()
+        where.append("(lower(d.domain) = ? OR lower(m.page_url) LIKE ? OR lower(m.source_url) LIKE ?)")
+        params.extend([normalized_domain, f"%://{normalized_domain}/%", f"%{normalized_domain}%"])
+    params.append(selected_limit)
+    rows = conn.execute(
+        f"""
+        SELECT m.*
+        FROM media_artifacts m
+        LEFT JOIN documents d ON d.id = m.document_id
+        WHERE {' AND '.join(where)}
+        ORDER BY m.created_at DESC, m.id
+        LIMIT ?
+        """,
+        params,
+    ).fetchall()
+    results: list[dict[str, Any]] = []
+    for row in rows:
+        try:
+            result = fetch_and_store_media_artifact(conn, config, row)
+        except Exception as exc:
+            result = {"stored": False, "artifact_id": row["id"], "capture_status": "failed", "error": str(exc)}
+        results.append(result)
+    return {
+        "attempted": len(results),
+        "stored": sum(1 for item in results if item.get("stored")),
+        "failed": sum(1 for item in results if item.get("capture_status") == "failed"),
+        "skipped": sum(1 for item in results if item.get("capture_status") == "skipped"),
+        "remaining": _count_pending_media_artifacts(conn, snapshot_id=snapshot_id, document_id=document_id, domain=domain),
+        "results": results,
+    }
+
+
+def _count_pending_media_artifacts(conn: sqlite3.Connection, *, snapshot_id: str | None = None, document_id: str | None = None, domain: str | None = None) -> int:
+    where = ["m.capture_status IN ('referenced', 'metadata-only')", "COALESCE(m.file_path, '') = ''"]
+    params: list[Any] = []
+    if snapshot_id:
+        where.append("m.snapshot_id = ?")
+        params.append(snapshot_id)
+    if document_id:
+        where.append("m.document_id = ?")
+        params.append(document_id)
+    if domain:
+        normalized_domain = domain.lower().strip()
+        where.append("(lower(d.domain) = ? OR lower(m.page_url) LIKE ? OR lower(m.source_url) LIKE ?)")
+        params.extend([normalized_domain, f"%://{normalized_domain}/%", f"%{normalized_domain}%"])
+    row = conn.execute(
+        f"""
+        SELECT COUNT(*)
+        FROM media_artifacts m
+        LEFT JOIN documents d ON d.id = m.document_id
+        WHERE {' AND '.join(where)}
+        """,
+        params,
+    ).fetchone()
+    return int(row[0]) if row else 0
+
+
 def record_media_references(
     conn: sqlite3.Connection,
     config: RuntimeConfig,
@@ -321,8 +523,14 @@ def store_media_artifact(conn: sqlite3.Connection, config: RuntimeConfig, data: 
               byte_size=COALESCE(excluded.byte_size, media_artifacts.byte_size),
               content_sha256=COALESCE(NULLIF(excluded.content_sha256, ''), media_artifacts.content_sha256),
               file_path=COALESCE(NULLIF(excluded.file_path, ''), media_artifacts.file_path),
-              capture_status=excluded.capture_status,
-              status_reason=excluded.status_reason,
+              capture_status=CASE
+                WHEN media_artifacts.capture_status = 'stored' AND excluded.capture_status != 'stored' THEN media_artifacts.capture_status
+                ELSE excluded.capture_status
+              END,
+              status_reason=CASE
+                WHEN media_artifacts.capture_status = 'stored' AND excluded.capture_status != 'stored' THEN media_artifacts.status_reason
+                ELSE excluded.status_reason
+              END,
               metadata_json=excluded.metadata_json
             """,
             (

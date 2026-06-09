@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
@@ -11,7 +12,7 @@ from .db import audit, connect, init_db
 from .forget import forget
 from .ingest import ingest_capture
 from .lifecycle import record_visit_event
-from .media import media_artifact, store_media_artifact
+from .media import fetch_pending_media_artifacts, media_artifact, store_media_artifact
 from .models import CapturePayload
 from .ops import doctor, document_detail, recent_captures, snapshot_detail, timeline
 from .policy import POLICY_MODE_ALL, evaluate_capture
@@ -113,6 +114,45 @@ def _content_type(path: Path) -> str:
     if suffix == ".svg":
         return "image/svg+xml"
     return "application/octet-stream"
+
+
+def _coerce_limit(value, default: int, maximum: int) -> int:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        parsed = default
+    return max(1, min(parsed, maximum))
+
+
+def _background_fetch_pending_media(config: RuntimeConfig, *, snapshot_id: str, limit: int) -> None:
+    try:
+        init_db(config)
+        with connect(config.db_path) as conn:
+            result = fetch_pending_media_artifacts(conn, config, snapshot_id=snapshot_id, limit=limit)
+            audit(
+                conn,
+                "media.fetch_pending",
+                {
+                    "snapshot_id": snapshot_id,
+                    "attempted": result["attempted"],
+                    "stored": result["stored"],
+                    "failed": result["failed"],
+                    "skipped": result["skipped"],
+                    "remaining": result["remaining"],
+                    "background": True,
+                },
+            )
+            conn.commit()
+    except Exception:
+        return
+
+
+def _start_background_fetch_pending_media(config: RuntimeConfig, *, snapshot_id: str, media_ref_count: int) -> None:
+    if not config.media_fetch_on_capture or not snapshot_id or media_ref_count <= 0:
+        return
+    limit = min(config.max_media_fetches_per_capture, media_ref_count)
+    thread = threading.Thread(target=_background_fetch_pending_media, kwargs={"config": config, "snapshot_id": snapshot_id, "limit": limit}, daemon=True)
+    thread.start()
 
 
 def make_handler(config: RuntimeConfig):
@@ -274,6 +314,39 @@ def make_handler(config: RuntimeConfig):
             except Exception as exc:
                 _json_response(self, 400, {"error": str(exc)})
                 return
+            if parsed.path == "/media-artifacts/fetch-pending":
+                try:
+                    init_db(config)
+                    with connect(config.db_path) as conn:
+                        result = fetch_pending_media_artifacts(
+                            conn,
+                            config,
+                            snapshot_id=data.get("snapshot_id") or data.get("snapshotId"),
+                            document_id=data.get("document_id") or data.get("documentId"),
+                            domain=data.get("domain"),
+                            limit=_coerce_limit(data.get("limit"), config.max_media_fetches_per_call, config.max_media_fetches_per_call),
+                        )
+                        audit(
+                            conn,
+                            "media.fetch_pending",
+                            {
+                                "snapshot_id": data.get("snapshot_id") or data.get("snapshotId"),
+                                "document_id": data.get("document_id") or data.get("documentId"),
+                                "domain": data.get("domain"),
+                                "attempted": result["attempted"],
+                                "stored": result["stored"],
+                                "failed": result["failed"],
+                                "skipped": result["skipped"],
+                                "remaining": result["remaining"],
+                                "background": False,
+                            },
+                        )
+                        conn.commit()
+                    _json_response(self, 200, result)
+                    return
+                except Exception as exc:
+                    _json_response(self, 400, {"error": str(exc)})
+                    return
             if parsed.path == "/media-artifacts":
                 try:
                     init_db(config)
@@ -342,6 +415,11 @@ def make_handler(config: RuntimeConfig):
                     try:
                         payload = CapturePayload.from_dict(data, allow_any_url=config.policy_mode == POLICY_MODE_ALL)
                         result = ingest_capture(conn, config, payload)
+                        _start_background_fetch_pending_media(
+                            config,
+                            snapshot_id=result.get("snapshot_id", ""),
+                            media_ref_count=int(result.get("media_ref_count") or 0),
+                        )
                         _json_response(self, 201, result)
                         return
                     except Exception as exc:

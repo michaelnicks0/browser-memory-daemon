@@ -2,7 +2,7 @@ from browser_memory_daemon.config import load_config
 from browser_memory_daemon.db import connect, init_db
 from browser_memory_daemon.forget import forget
 from browser_memory_daemon.ingest import ingest_capture
-from browser_memory_daemon.media import media_artifacts_for_snapshot, store_media_artifact
+from browser_memory_daemon.media import fetch_pending_media_artifacts, media_artifacts_for_snapshot, store_media_artifact
 from browser_memory_daemon.models import CapturePayload
 from browser_memory_daemon.search import search_memory
 
@@ -170,6 +170,40 @@ def test_media_artifacts_are_related_to_snapshot_not_fts_and_deleted_by_forget(t
         assert receipt["counts"]["media_artifacts"] == 1
         assert receipt["counts"]["media_blobs"] == 1
         assert not media_path.exists()
+
+
+def test_fetch_pending_media_artifacts_stores_data_url_without_indexing_media_metadata(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    data_url = "data:image/png;base64,iVBORw0KGgo="
+    payload = CapturePayload.from_dict(
+        {
+            "url": "https://example.com/data-media-page",
+            "title": "Data Media Page",
+            "text": "Readable body for daemon-side media fetch fallback.",
+            "media_artifacts": [
+                {
+                    "media_type": "image",
+                    "role": "content",
+                    "source_url": data_url,
+                    "alt_text": "DATA_URL_MEDIA_ALT_NEEDLE",
+                    "mime_type": "image/png",
+                }
+            ],
+        },
+        allow_any_url=True,
+    )
+    with connect(cfg.db_path) as conn:
+        result = ingest_capture(conn, cfg, payload)
+        assert search_memory(conn, "DATA_URL_MEDIA_ALT_NEEDLE", limit=5) == []
+        fetched = fetch_pending_media_artifacts(conn, cfg, snapshot_id=result["snapshot_id"], limit=10)
+        assert fetched["attempted"] == 1
+        assert fetched["stored"] == 1
+        assert fetched["remaining"] == 0
+        media = media_artifacts_for_snapshot(conn, result["snapshot_id"])
+        assert media[0]["capture_status"] == "stored"
+        assert media[0]["byte_size"] == 8
+        assert media[0]["has_file"] is True
 
 
 def test_forget_domain_includes_subdomains(tmp_path):

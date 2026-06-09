@@ -24,6 +24,10 @@ class RuntimeConfig:
     max_media_payload_bytes: int = 40_000_000
     max_media_artifact_bytes: int = 25_000_000
     max_media_artifacts_per_capture: int = 50
+    max_media_fetches_per_capture: int = 12
+    max_media_fetches_per_call: int = 100
+    media_fetch_timeout_seconds: float = 12.0
+    media_fetch_on_capture: bool = True
     raw_html_enabled: bool = False
 
     @property
