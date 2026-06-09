@@ -4,7 +4,7 @@ The daemon is local-first and WSL-resident. It assumes captured page text may be
 
 ## Current controls
 
-- API token required for `/capture`, `/search`, `/ready`, `/recent`, `/timeline`, `/documents/{id}`, `/snapshots/{id}`, `/policy/*`, `/doctor`, and `/forget`.
+- API token required for `/capture`, `/visit-events`, `/search`, `/ready`, `/recent`, `/timeline`, `/documents/{id}`, `/snapshots/{id}`, `/policy/*`, `/doctor`, and `/forget`.
 - `/health` exposes only minimal status.
 - Daemon binds to `127.0.0.1` by default.
 - Deterministic policy blocks sensitive schemes/domains and private/loopback hosts.
@@ -12,6 +12,7 @@ The daemon is local-first and WSL-resident. It assumes captured page text may be
 - Audit logs are metadata-only in SQLite.
 - Extension uses broad HTTP/HTTPS host permission so the service worker can inject capture scripts, but both service worker and injected extractor apply URL privacy gates before queue/storage.
 - Injected content scripts extract text; service worker owns daemon communication.
+- Tab lifecycle events are metadata-only (`url`, timestamps, active seconds, max scroll percent, event type) and pass through the same auth and URL policy gates as captures; body text is never sent to `/visit-events`.
 - Daily-driver install stores the daemon API token in protected WSL config files and injects it into the Windows-local extension artifact; the token is never committed, and rotation is supported via `BMD_ROTATE_TOKEN=1 ./scripts/install-daily-driver.sh`.
 - Local web UI is served from the loopback daemon at `/ui`; static UI assets are public, but every memory/admin API call still requires the bearer token. The UI stores a pasted token in browser `localStorage` only.
 - Policy controls currently support explicit block-domain and URL-prefix rules; they can only narrow capture, not override deterministic sensitive-surface blocks.

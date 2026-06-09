@@ -37,6 +37,25 @@ CREATE TABLE IF NOT EXISTS visits (
   FOREIGN KEY(source_id) REFERENCES sources(id)
 );
 
+CREATE TABLE IF NOT EXISTS visit_events (
+  id TEXT PRIMARY KEY,
+  visit_id TEXT,
+  document_id TEXT,
+  source_id TEXT NOT NULL,
+  url TEXT NOT NULL,
+  normalized_url TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  event_started_at TEXT,
+  event_ended_at TEXT NOT NULL,
+  active_seconds INTEGER,
+  max_scroll_percent INTEGER,
+  metadata_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY(visit_id) REFERENCES visits(id) ON DELETE SET NULL,
+  FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE,
+  FOREIGN KEY(source_id) REFERENCES sources(id)
+);
+
 CREATE TABLE IF NOT EXISTS snapshots (
   id TEXT PRIMARY KEY,
   document_id TEXT NOT NULL,
@@ -139,6 +158,10 @@ CREATE TABLE IF NOT EXISTS deletion_receipts (
 CREATE INDEX IF NOT EXISTS idx_documents_domain ON documents(domain);
 CREATE INDEX IF NOT EXISTS idx_visits_captured_at ON visits(captured_at);
 CREATE INDEX IF NOT EXISTS idx_visits_normalized_url ON visits(normalized_url);
+CREATE INDEX IF NOT EXISTS idx_visit_events_visit_id ON visit_events(visit_id);
+CREATE INDEX IF NOT EXISTS idx_visit_events_document_id ON visit_events(document_id);
+CREATE INDEX IF NOT EXISTS idx_visit_events_normalized_url ON visit_events(normalized_url);
+CREATE INDEX IF NOT EXISTS idx_visit_events_event_ended_at ON visit_events(event_ended_at);
 CREATE INDEX IF NOT EXISTS idx_snapshots_document_id ON snapshots(document_id);
 CREATE INDEX IF NOT EXISTS idx_chunks_document_id ON chunks(document_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);

@@ -108,6 +108,8 @@ function renderDocument(payload) {
       </div>
       <h3>Visits</h3>
       <pre class="code">${escapeHtml(JSON.stringify(payload.visits, null, 2))}</pre>
+      <h3>Visit lifecycle events</h3>
+      <pre class="code">${escapeHtml(JSON.stringify(payload.visit_events || [], null, 2))}</pre>
       <h3>Chunk snippets</h3>
       <div class="list compact">${payload.chunks.map((chunk) => `<p class="snippet">${escapeHtml(chunk.snippet)}</p>`).join('')}</div>
     </article>

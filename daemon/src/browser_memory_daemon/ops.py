@@ -162,9 +162,23 @@ def document_detail(conn: sqlite3.Connection, document_id: str) -> dict[str, Any
         """,
         (document_id,),
     ).fetchall()
+    visit_events = conn.execute(
+        """
+        SELECT id, visit_id, document_id, url, normalized_url, event_type,
+               event_started_at, event_ended_at, active_seconds, max_scroll_percent,
+               metadata_json, created_at
+        FROM visit_events
+        WHERE document_id = ?
+           OR visit_id IN (SELECT id FROM visits WHERE document_id = ?)
+        ORDER BY event_ended_at DESC, created_at DESC
+        LIMIT 100
+        """,
+        (document_id, document_id),
+    ).fetchall()
     return {
         "document": dict(doc),
         "visits": [dict(row) for row in visits],
+        "visit_events": [dict(row) for row in visit_events],
         "snapshots": [_snapshot_summary(row) for row in snapshots],
         "chunks": [
             {
@@ -215,6 +229,7 @@ def doctor(config: RuntimeConfig, conn: sqlite3.Connection) -> dict[str, Any]:
         "sources",
         "documents",
         "visits",
+        "visit_events",
         "snapshots",
         "chunks",
         "chunks_fts",

@@ -199,7 +199,7 @@ def test_schema_has_planned_core_tables(tmp_path):
     init_db(cfg)
     with connect(cfg.db_path) as conn:
         tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type IN ('table','virtual table')")}
-    for expected in {"jobs", "embeddings", "redactions", "feedback_events", "deletion_receipts"}:
+    for expected in {"jobs", "embeddings", "redactions", "feedback_events", "deletion_receipts", "visit_events"}:
         assert expected in tables
 
 

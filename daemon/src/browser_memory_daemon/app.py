@@ -10,6 +10,7 @@ from .config import RuntimeConfig
 from .db import audit, connect, init_db
 from .forget import forget
 from .ingest import ingest_capture
+from .lifecycle import record_visit_event
 from .models import CapturePayload
 from .ops import doctor, document_detail, recent_captures, snapshot_detail, timeline
 from .policy import evaluate_capture
@@ -239,6 +240,25 @@ def make_handler(config: RuntimeConfig):
             except Exception as exc:
                 _json_response(self, 400, {"error": str(exc)})
                 return
+            if parsed.path == "/visit-events":
+                url = str(data.get("url") or "")
+                decision = evaluate_capture(url, is_incognito=bool(data.get("is_incognito") or data.get("incognito") or False))
+                init_db(config)
+                with connect(config.db_path) as conn:
+                    if decision.allowed:
+                        decision = evaluate_policy_rules(conn, url)
+                    if not decision.allowed:
+                        audit(conn, "visit_event.blocked", {"reason": decision.reason})
+                        conn.commit()
+                        _json_response(self, 200, {"stored": False, "blocked": True, "reason": decision.reason})
+                        return
+                    try:
+                        result = record_visit_event(conn, data)
+                        _json_response(self, 201 if result["stored"] else 200, result)
+                        return
+                    except Exception as exc:
+                        _json_response(self, 400, {"error": str(exc)})
+                        return
             if parsed.path == "/capture":
                 url = str(data.get("url") or "")
                 decision = evaluate_capture(url, is_incognito=bool(data.get("is_incognito") or data.get("incognito") or False))

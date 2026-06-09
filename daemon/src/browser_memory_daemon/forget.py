@@ -5,7 +5,7 @@ import sqlite3
 import uuid
 from pathlib import Path
 
-from .normalize import normalize_url
+from .normalize import domain_from_url, normalize_url
 from .policy import redact_url
 
 
@@ -26,6 +26,7 @@ def _document_ids_for_url(conn: sqlite3.Connection, url: str) -> list[str]:
 def forget(conn: sqlite3.Connection, *, domain: str | None = None, url: str | None = None) -> dict:
     if not domain and not url:
         raise ValueError("forget requires domain or url")
+    normalized_domain = None
     if domain:
         normalized_domain = domain.lower().strip().lstrip(".")
         doc_rows = conn.execute(
@@ -37,7 +38,7 @@ def forget(conn: sqlite3.Connection, *, domain: str | None = None, url: str | No
     else:
         document_ids = _document_ids_for_url(conn, url or "")
         scope = {"url": normalize_url(redact_url(url or "")[0])}
-    counts = {"documents": 0, "visits": 0, "snapshots": 0, "chunks": 0, "blobs": 0, "fts": 0, "embeddings": 0, "redactions": 0, "feedback_events": 0}
+    counts = {"documents": 0, "visits": 0, "visit_events": 0, "snapshots": 0, "chunks": 0, "blobs": 0, "fts": 0, "embeddings": 0, "redactions": 0, "feedback_events": 0}
     with conn:
         for document_id in document_ids:
             snapshot_rows = conn.execute("SELECT id, cleaned_text_path FROM snapshots WHERE document_id = ?", (document_id,)).fetchall()
@@ -56,9 +57,21 @@ def forget(conn: sqlite3.Connection, *, domain: str | None = None, url: str | No
                         counts["blobs"] += 1
             counts["chunks"] += conn.execute("DELETE FROM chunks WHERE document_id = ?", (document_id,)).rowcount
             counts["snapshots"] += conn.execute("DELETE FROM snapshots WHERE document_id = ?", (document_id,)).rowcount
+            counts["visit_events"] += conn.execute(
+                "DELETE FROM visit_events WHERE document_id = ? OR visit_id IN (SELECT id FROM visits WHERE document_id = ?)",
+                (document_id, document_id),
+            ).rowcount
             counts["visits"] += conn.execute("DELETE FROM visits WHERE document_id = ?", (document_id,)).rowcount
             counts["feedback_events"] += conn.execute("DELETE FROM feedback_events WHERE document_id = ?", (document_id,)).rowcount
             counts["documents"] += conn.execute("DELETE FROM documents WHERE id = ?", (document_id,)).rowcount
+        if domain:
+            event_rows = conn.execute("SELECT id, normalized_url FROM visit_events WHERE document_id IS NULL").fetchall()
+            for event in event_rows:
+                event_domain = domain_from_url(event["normalized_url"])
+                if event_domain == normalized_domain or event_domain.endswith(f".{normalized_domain}"):
+                    counts["visit_events"] += conn.execute("DELETE FROM visit_events WHERE id = ?", (event["id"],)).rowcount
+        else:
+            counts["visit_events"] += conn.execute("DELETE FROM visit_events WHERE normalized_url = ?", (scope["url"],)).rowcount
         receipt_id = str(uuid.uuid4())
         conn.execute(
             "INSERT INTO deletion_receipts(id, scope_json, counts_json) VALUES (?, ?, ?)",

@@ -6,7 +6,7 @@
 
 ```text
 Windows Chrome unpacked extension
-  → http://127.0.0.1:8765/capture
+  → http://127.0.0.1:8765/capture + /visit-events
   → WSL systemd --user service
   → ~/.local/share/browser-memory-daemon/browser-memory.sqlite3
 ```
@@ -111,7 +111,7 @@ Current UI controls:
 
 - search exact FTS snippets;
 - review recent captures and timeline by date;
-- open document and snapshot detail;
+- open document and snapshot detail, including visit dwell and lifecycle events;
 - add block-domain policy rules;
 - forget a domain after explicit browser confirmation;
 - run `doctor` diagnostics for DB, FTS, storage, and paths.

@@ -12,6 +12,20 @@
 
   const DELAYED_CAPTURE_MS = [0, 1500, 5000];
 
+  function currentScrollPercent() {
+    const element = document.documentElement || document.body;
+    const scrollTop = globalThis.scrollY || element.scrollTop || 0;
+    const scrollHeight = Math.max(element.scrollHeight || 0, document.body ? document.body.scrollHeight || 0 : 0);
+    const viewportHeight = globalThis.innerHeight || element.clientHeight || 0;
+    const denominator = Math.max(0, scrollHeight - viewportHeight);
+    if (denominator <= 0) return 100;
+    return Math.max(0, Math.min(100, Math.round((scrollTop / denominator) * 100)));
+  }
+
+  function updateMaxScrollPercent() {
+    globalThis.__BMD_MAX_SCROLL_PERCENT = Math.max(globalThis.__BMD_MAX_SCROLL_PERCENT || 0, currentScrollPercent());
+  }
+
   function captureKey(payload) {
     const text = String(payload.text || '');
     return [
@@ -36,7 +50,10 @@
       globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'skipped', reason: 'missing-extractor' };
       return;
     }
-    const payload = globalThis.extractPageFromDocument(document);
+    const payload = {
+      ...globalThis.extractPageFromDocument(document),
+      max_scroll_percent: globalThis.__BMD_MAX_SCROLL_PERCENT || 0
+    };
     if (!payload.text || payload.text.length < 20) {
       globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'skipped', reason: 'short-or-empty-text', captureReason: reason, textLength: payload.text ? payload.text.length : 0, blocked: Boolean(payload.blocked), url: payload.url };
       return;
@@ -82,6 +99,9 @@
   }
 
   globalThis.__BMD_CAPTURE_NOW = sendCapture;
+  updateMaxScrollPercent();
+  globalThis.addEventListener('scroll', updateMaxScrollPercent, { passive: true });
+  globalThis.addEventListener('resize', updateMaxScrollPercent, { passive: true });
   installSpaHooks();
   scheduleCapture('initial');
 })();

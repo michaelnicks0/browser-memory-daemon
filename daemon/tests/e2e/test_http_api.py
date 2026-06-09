@@ -40,6 +40,7 @@ def test_http_capture_search_forget_round_trip(tmp_path):
         assert blocked["stored"] is False
 
         status, stored = request("POST", f"{base}/capture", body={
+            "visit_id": "http-visit-1",
             "url": "https://example.org/stirling",
             "title": "Synthetic Stirling Article",
             "text": "Low temperature differential Stirling engines are memorable.",
@@ -51,6 +52,34 @@ def test_http_capture_search_forget_round_trip(tmp_path):
         status, found = request("GET", f"{base}/search?{q}")
         assert status == 200
         assert found["results"][0]["title"] == "Synthetic Stirling Article"
+
+        status, event = request("POST", f"{base}/visit-events", body={
+            "event_id": "http-event-1",
+            "visit_id": "http-visit-1",
+            "url": "https://example.org/stirling",
+            "event_type": "tab-deactivated",
+            "event_started_at": "2026-06-08T12:00:00Z",
+            "event_ended_at": "2026-06-08T12:00:25Z",
+            "active_seconds": 25,
+            "max_scroll_percent": 91,
+        })
+        assert status == 201
+        assert event["dwell_updated"] is True
+
+        status, document = request("GET", f"{base}/documents/{stored['document_id']}")
+        assert status == 200
+        assert document["visits"][0]["dwell_seconds"] == 25
+        assert document["visit_events"][0]["max_scroll_percent"] == 91
+
+        status, blocked_event = request("POST", f"{base}/visit-events", body={
+            "visit_id": "blocked-event",
+            "url": "https://mail.google.com/mail",
+            "event_type": "tab-deactivated",
+            "event_ended_at": "2026-06-08T12:00:25Z",
+            "active_seconds": 25,
+        })
+        assert status == 200
+        assert blocked_event["stored"] is False
 
         bad_q = urllib.parse.urlencode({"q": '"unterminated', "limit": "3"})
         status, malformed = request("GET", f"{base}/search?{bad_q}")

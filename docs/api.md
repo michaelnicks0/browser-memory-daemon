@@ -22,6 +22,7 @@ Captured page text is untrusted evidence. API responses may contain redacted sni
 | `/ui` | `GET` | Local static web UI. | No for assets; API calls require token |
 | `/ready` | `GET` | Initialize/check DB readiness. | Yes |
 | `/capture` | `POST` | Store an allowed extension capture. | Yes |
+| `/visit-events` | `POST` | Store metadata-only tab lifecycle events and update visit dwell seconds. | Yes |
 | `/search?q=...&limit=...` | `GET` | Exact FTS search with source metadata/snippets. | Yes |
 | `/recent?limit=...` | `GET` | Recent capture metadata and first snippets. | Yes |
 | `/timeline?date=YYYY-MM-DD` | `GET` | Capture timeline for a day. | Yes |
@@ -55,6 +56,26 @@ Only blocking rules are supported in this phase. They can narrow capture, not ov
 }
 ```
 
+## Visit lifecycle event shape
+
+`/visit-events` is metadata-only. It does not accept page body text. The extension uses it for active tab segments such as deactivation, close, window blur, and SPA navigation-away bookkeeping.
+
+```json
+{
+  "event_id": "vevt_...",
+  "visit_id": "visit_...",
+  "url": "https://example.com/article",
+  "event_type": "tab-deactivated",
+  "event_started_at": "2026-06-08T12:00:00Z",
+  "event_ended_at": "2026-06-08T12:01:33Z",
+  "active_seconds": 93,
+  "max_scroll_percent": 82,
+  "metadata": {"tab_id": 123}
+}
+```
+
+If `visit_id` matches a stored visit, positive `active_seconds` is added to that visit's `dwell_seconds`. Duplicate event IDs and overlapping active segments do not double-count dwell.
+
 ## Deletion shape
 
 ```json
@@ -67,4 +88,4 @@ or:
 {"url": "https://example.com/article"}
 ```
 
-The response includes `receipt_id`, `scope`, and per-store deletion counts for documents, visits, snapshots, chunks, FTS, blobs, embeddings, redactions, and feedback events.
+The response includes `receipt_id`, `scope`, and per-store deletion counts for documents, visits, visit lifecycle events, snapshots, chunks, FTS, blobs, embeddings, redactions, and feedback events.

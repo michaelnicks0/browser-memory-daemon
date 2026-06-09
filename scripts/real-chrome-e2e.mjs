@@ -424,14 +424,16 @@ async function configureExtensionStorage(cdp) {
           daemonUrl,
           apiToken: token,
           capturePaused: false,
-          captureQueue: []
+          captureQueue: [],
+          visitEventQueue: [],
+          tabVisitState: {}
         })}).then(() => 'ok')`,
         { awaitPromise: true }
       );
       const stored = await evaluate(
         cdp,
         sessionId,
-        `chrome.storage.local.get(['daemonUrl', 'apiToken', 'capturePaused', 'captureQueue']).then((value) => JSON.stringify(value))`,
+        `chrome.storage.local.get(['daemonUrl', 'apiToken', 'capturePaused', 'captureQueue', 'visitEventQueue', 'tabVisitState']).then((value) => JSON.stringify(value))`,
         { awaitPromise: true }
       );
       const parsed = JSON.parse(stored || '{}');
@@ -454,6 +456,7 @@ async function configureExtensionStorage(cdp) {
 
 async function openPageAndWait(cdp, url) {
   const { targetId } = await cdp.send('Target.createTarget', { url: 'about:blank' });
+  await cdp.send('Target.activateTarget', { targetId });
   const sessionId = await attach(cdp, targetId);
   await cdp.send('Runtime.enable', {}, sessionId);
   await cdp.send('Log.enable', {}, sessionId);
@@ -492,14 +495,39 @@ async function getContentScriptStatus(cdp, storageSessionId, url) {
   return JSON.parse(result || '[]');
 }
 
-async function getQueueLength(cdp, storageSessionId) {
+async function getQueueLengths(cdp, storageSessionId) {
   const stored = await evaluate(
     cdp,
     storageSessionId,
-    `chrome.storage.local.get({captureQueue: []}).then((value) => JSON.stringify(value.captureQueue || []))`,
+    `chrome.storage.local.get({captureQueue: [], visitEventQueue: []}).then((value) => JSON.stringify({captureQueue: value.captureQueue || [], visitEventQueue: value.visitEventQueue || []}))`,
     { awaitPromise: true }
   );
-  return JSON.parse(stored || '[]').length;
+  const parsed = JSON.parse(stored || '{}');
+  return {
+    captureQueue: (parsed.captureQueue || []).length,
+    visitEventQueue: (parsed.visitEventQueue || []).length
+  };
+}
+
+async function waitForQueuesEmpty(cdp, storageSessionId, timeoutMs = 15000) {
+  const started = Date.now();
+  let lengths = { captureQueue: -1, visitEventQueue: -1 };
+  while (Date.now() - started < timeoutMs) {
+    lengths = await getQueueLengths(cdp, storageSessionId);
+    if (lengths.captureQueue === 0 && lengths.visitEventQueue === 0) return lengths;
+    await sleep(500);
+  }
+  return lengths;
+}
+
+async function getQueueDebug(cdp, storageSessionId) {
+  const stored = await evaluate(
+    cdp,
+    storageSessionId,
+    `chrome.storage.local.get({captureQueue: [], visitEventQueue: [], lastVisitEventError: null}).then((value) => JSON.stringify({captureQueue: value.captureQueue || [], visitEventQueue: value.visitEventQueue || [], lastVisitEventError: value.lastVisitEventError || null}))`,
+    { awaitPromise: true }
+  );
+  return JSON.parse(stored || '{}');
 }
 
 function queryDbCounts() {
@@ -508,7 +536,7 @@ function queryDbCounts() {
 import json, sqlite3, sys
 conn = sqlite3.connect(${JSON.stringify(dbPath)})
 counts = {}
-for table in ['documents', 'visits', 'snapshots', 'chunks', 'audit_events']:
+for table in ['documents', 'visits', 'visit_events', 'snapshots', 'chunks', 'audit_events']:
     counts[table] = conn.execute(f'SELECT COUNT(*) FROM {table}').fetchone()[0]
 counts['audit_event_types'] = dict(conn.execute('SELECT event_type, COUNT(*) FROM audit_events GROUP BY event_type').fetchall())
 print(json.dumps(counts, sort_keys=True))
@@ -516,6 +544,32 @@ print(json.dumps(counts, sort_keys=True))
   const result = spawnSync('python3', ['-c', script], { encoding: 'utf8' });
   if (result.status !== 0) fail(`DB count query failed: ${result.stderr || result.stdout}`);
   return JSON.parse(result.stdout.trim());
+}
+
+function queryVisitTelemetry() {
+  const dbPath = path.join(runtimeRoot, 'browser-memory.sqlite3');
+  const script = `
+import json, sqlite3
+conn = sqlite3.connect(${JSON.stringify(dbPath)})
+conn.row_factory = sqlite3.Row
+visits = [dict(row) for row in conn.execute('SELECT id, url, dwell_seconds FROM visits ORDER BY captured_at ASC').fetchall()]
+events = [dict(row) for row in conn.execute('SELECT visit_id, url, event_type, active_seconds, max_scroll_percent FROM visit_events ORDER BY created_at ASC').fetchall()]
+print(json.dumps({'visits': visits, 'events': events}, sort_keys=True))
+`;
+  const result = spawnSync('python3', ['-c', script], { encoding: 'utf8' });
+  if (result.status !== 0) fail(`DB telemetry query failed: ${result.stderr || result.stdout}`);
+  return JSON.parse(result.stdout.trim());
+}
+
+async function waitForVisitTelemetry(predicate, label, timeoutMs = 15000) {
+  const started = Date.now();
+  let telemetry = { visits: [], events: [] };
+  while (Date.now() - started < timeoutMs) {
+    telemetry = queryVisitTelemetry();
+    if (predicate(telemetry)) return telemetry;
+    await sleep(500);
+  }
+  fail(`timed out waiting for visit telemetry ${label}: ${JSON.stringify(telemetry)}`);
 }
 
 async function runScenario() {
@@ -532,7 +586,7 @@ async function runScenario() {
   try {
     visibleResults = await waitForSearchHit(visibleNeedle);
   } catch (error) {
-    const queueLength = await getQueueLength(browserCdp, storageSessionId).catch((queueError) => `queue-error:${queueError.message || queueError}`);
+    const queueLengths = await getQueueLengths(browserCdp, storageSessionId).catch((queueError) => `queue-error:${queueError.message || queueError}`);
     const storageDump = await evaluate(
       browserCdp,
       storageSessionId,
@@ -543,7 +597,7 @@ async function runScenario() {
     const contentStatus = await getContentScriptStatus(browserCdp, storageSessionId, allowedUrl).catch((statusError) => `status-error:${statusError.message || statusError}`);
     const recentEvents = (browserCdp.events || []).slice(-30).map((event) => ({ sessionId: event.sessionId, method: event.method, params: event.params })).filter((event) => ['Runtime.exceptionThrown', 'Log.entryAdded', 'Runtime.consoleAPICalled'].includes(event.method));
     const counts = queryDbCounts();
-    fail(`${error.message}; queueLength=${queueLength}; contentStatus=${JSON.stringify(contentStatus)}; storage=${storageDump}; dbCounts=${JSON.stringify(counts)}; events=${JSON.stringify(recentEvents).slice(0, 2000)}; targets=${targets.map((target) => `${target.type}:${target.url}`).join(', ')}`);
+    fail(`${error.message}; queueLengths=${JSON.stringify(queueLengths)}; contentStatus=${JSON.stringify(contentStatus)}; storage=${storageDump}; dbCounts=${JSON.stringify(counts)}; events=${JSON.stringify(recentEvents).slice(0, 2000)}; targets=${targets.map((target) => `${target.type}:${target.url}`).join(', ')}`);
   }
   log(`allowed page search hit count=${visibleResults.length}`);
 
@@ -572,12 +626,29 @@ async function runScenario() {
   if (localResults.length !== 0) fail(`localhost/private page was stored: ${JSON.stringify(localResults)}`);
   log('localhost/private page absent from search');
 
-  const queueLength = await getQueueLength(browserCdp, storageSessionId);
-  if (queueLength !== 0) fail(`extension queue not drained/empty: length=${queueLength}`);
-  log('extension capture queue is empty');
+  const telemetry = await waitForVisitTelemetry(
+    (state) => state.events.length >= 1 && state.visits.some((visit) => visit.url === allowedUrl && Number(visit.dwell_seconds || 0) >= 1),
+    'allowed tab dwell event'
+  );
+  const allowedVisit = telemetry.visits.find((visit) => visit.url === allowedUrl);
+  const allowedEvent = telemetry.events.find((event) => event.url === allowedUrl);
+  if (!allowedEvent || !['tab-deactivated', 'navigation-away', 'tab-closed', 'window-blurred'].includes(allowedEvent.event_type)) {
+    fail(`missing expected lifecycle event for allowed page: ${JSON.stringify(telemetry)}`);
+  }
+  if (Number(allowedEvent.max_scroll_percent || 0) < 0 || Number(allowedEvent.max_scroll_percent || 0) > 100) {
+    fail(`invalid scroll percent in lifecycle event: ${JSON.stringify(allowedEvent)}`);
+  }
+  log(`visit lifecycle telemetry recorded dwell=${allowedVisit.dwell_seconds}s event=${allowedEvent.event_type}`);
+
+  const queueLengths = await waitForQueuesEmpty(browserCdp, storageSessionId);
+  if (queueLengths.captureQueue !== 0 || queueLengths.visitEventQueue !== 0) {
+    const queueDebug = await getQueueDebug(browserCdp, storageSessionId);
+    fail(`extension queues not drained/empty: ${JSON.stringify(queueLengths)} debug=${JSON.stringify(queueDebug).slice(0, 2000)}`);
+  }
+  log('extension capture and lifecycle queues are empty');
 
   const counts = queryDbCounts();
-  if (counts.documents !== 2 || counts.snapshots !== 2 || counts.chunks < 2) {
+  if (counts.documents !== 2 || counts.snapshots !== 2 || counts.chunks < 2 || counts.visit_events < 1) {
     fail(`unexpected DB counts after allowed+spa+blocked scenarios: ${JSON.stringify(counts)}`);
   }
   log(`DB counts ${JSON.stringify(counts)}`);
@@ -599,6 +670,7 @@ async function runScenario() {
     extensionWorkRoot,
     windowsWorkRoot,
     counts,
+    telemetry,
     visibleResult: visibleResults[0]
   }, null, 2));
 }
