@@ -1,6 +1,19 @@
 (function () {
-const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'OPTION']);
+const STRICT_SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'OPTION']);
+const ALL_MODE_SKIP_TAGS = STRICT_SKIP_TAGS;
 const SENSITIVE_URL_WORDS = new Set(['account', 'accounts', 'admin', 'auth', 'bank', 'bankofamerica', 'billing', 'card', 'chase', 'chat', 'checkout', 'discord', 'gmail', 'health', 'insurance', 'legal', 'login', 'mail', 'medical', 'mychart', 'oauth', 'outlook', 'password', 'patient', 'payment', 'paypal', 'profile', 'settings', 'signin', 'slack', 'tax', 'telegram', 'token']);
+const BLOCKED_DOMAIN_SUFFIXES = new Set(['accounts.google.com', 'bankofamerica.com', 'capitalone.com', 'chase.com', 'mail.google.com', 'outlook.live.com', 'outlook.office.com', 'paypal.com', 'wellsfargo.com']);
+const BALANCED_QUERY_KEYS = new Set(['access_token', 'api_key', 'password', 'refresh_token', 'session', 'sessionid', 'sid', 'token']);
+const STRICT_QUERY_KEYS = new Set(['access_token', 'api_key', 'auth', 'code', 'key', 'magic', 'password', 'refresh_token', 'session', 'sessionid', 'sid', 'state', 'token']);
+
+function normalizePolicyMode(policyMode) {
+  const mode = String(policyMode || 'all').toLowerCase();
+  return ['all', 'recall', 'balanced', 'strict'].includes(mode) ? mode : 'all';
+}
+
+function isAllMode(options = {}) {
+  return normalizePolicyMode(options.policyMode) === 'all';
+}
 
 function attrValue(node, name) {
   if (!node) return undefined;
@@ -16,6 +29,16 @@ function attrValue(node, name) {
   return undefined;
 }
 
+function formValue(node) {
+  if (!node) return '';
+  const values = [];
+  for (const key of ['value', 'checked', 'selected', 'placeholder', 'aria-label']) {
+    const value = node[key] !== undefined ? node[key] : attrValue(node, key);
+    if (value !== undefined && value !== null && String(value).trim()) values.push(String(value));
+  }
+  return collapseWhitespace(values.join(' '));
+}
+
 function isEditableNode(node) {
   const editable = attrValue(node, 'contenteditable') ?? attrValue(node, 'contentEditable');
   return editable === true || editable === 'true' || editable === '';
@@ -28,9 +51,14 @@ function isHiddenNode(node) {
   return style.includes('display:none') || style.includes('visibility:hidden');
 }
 
-function shouldSkipElement(tagName, attrs = {}) {
+function shouldSkipElement(tagName, attrs = {}, options = {}) {
   const tag = String(tagName || '').toUpperCase();
-  if (SKIP_TAGS.has(tag)) return true;
+  if (isAllMode(options)) {
+    if (ALL_MODE_SKIP_TAGS.has(tag)) return true;
+    const editable = attrs.contenteditable ?? attrs.contentEditable;
+    return editable === true || editable === 'true' || editable === '';
+  }
+  if (STRICT_SKIP_TAGS.has(tag)) return true;
   const editable = attrs.contenteditable ?? attrs.contentEditable;
   if (editable === true || editable === 'true' || editable === '') return true;
   const type = String(attrs.type || '').toLowerCase();
@@ -54,42 +82,66 @@ function isPrivateHost(host) {
   return clean.startsWith('fc') || clean.startsWith('fd') || clean.startsWith('fe80:');
 }
 
-function shouldBlockUrl(rawUrl) {
+function hostMatchesSuffix(host, suffix) {
+  return host === suffix || host.endsWith(`.${suffix}`);
+}
+
+function shouldBlockUrl(rawUrl, options = {}) {
+  const mode = normalizePolicyMode(options.policyMode);
+  if (mode === 'all') return false;
   try {
     const url = new URL(rawUrl);
     if (!['http:', 'https:'].includes(url.protocol)) return true;
+    if (mode === 'recall') return false;
     const host = url.hostname.toLowerCase().replace(/\.$/, '');
     if (isPrivateHost(host)) return true;
+    for (const suffix of BLOCKED_DOMAIN_SUFFIXES) {
+      if (hostMatchesSuffix(host, suffix)) return true;
+    }
+    const queryKeys = Array.from(url.searchParams.keys()).map((key) => key.toLowerCase());
+    const blockedQueryKeys = mode === 'strict' ? STRICT_QUERY_KEYS : BALANCED_QUERY_KEYS;
+    if (queryKeys.some((key) => blockedQueryKeys.has(key))) return true;
+    if (mode === 'balanced') return false;
     const words = `${host} ${url.pathname} ${url.search}`.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
     return words.some((word) => SENSITIVE_URL_WORDS.has(word));
   } catch (_) {
-    return true;
+    return mode !== 'all';
   }
 }
 
-function extractTextFromTree(node) {
+function extractTextFromTree(node, options = {}) {
   if (!node) return '';
   if (typeof node === 'string') return collapseWhitespace(node);
   if (node.nodeType === 3) return collapseWhitespace(node.textContent || node.text || '');
-  if (shouldSkipElement(node.tagName, node.attrs || node.attributes || {})) return '';
+  if (shouldSkipElement(node.tagName, node.attrs || node.attributes || {}, options)) return '';
   const parts = [];
+  const tag = String(node.tagName || '').toUpperCase();
+  if (isAllMode(options) && ['INPUT', 'TEXTAREA', 'SELECT', 'OPTION', 'BUTTON'].includes(tag)) {
+    const value = formValue(node);
+    if (value) parts.push(value);
+  }
   if (node.text) parts.push(node.text);
   for (const child of node.children || []) {
-    const childText = extractTextFromTree(child);
+    const childText = extractTextFromTree(child, options);
     if (childText) parts.push(childText);
   }
   return collapseWhitespace(parts.join(' '));
 }
 
-function extractTextFromDomNode(node) {
+function extractTextFromDomNode(node, options = {}) {
   if (!node) return '';
   if (node.nodeType === 3) return collapseWhitespace(node.textContent || '');
   if (node.nodeType !== 1 && node.nodeType !== 9 && node.nodeType !== 11) return '';
   const tag = String(node.tagName || '').toUpperCase();
-  if (SKIP_TAGS.has(tag) || isEditableNode(node) || isHiddenNode(node)) return '';
+  if (shouldSkipElement(tag, {}, options)) return '';
+  if (isEditableNode(node) || isHiddenNode(node)) return '';
   const parts = [];
+  if (isAllMode(options) && ['INPUT', 'TEXTAREA', 'SELECT', 'OPTION', 'BUTTON'].includes(tag)) {
+    const value = formValue(node);
+    if (value) parts.push(value);
+  }
   for (const child of Array.from(node.childNodes || [])) {
-    const childText = extractTextFromDomNode(child);
+    const childText = extractTextFromDomNode(child, options);
     if (childText) parts.push(childText);
   }
   return collapseWhitespace(parts.join(' '));
@@ -106,21 +158,25 @@ function metadataFromDocument(doc) {
   };
 }
 
-function extractPageFromDocument(doc) {
+function extractPageFromDocument(doc, options = {}) {
+  const mode = normalizePolicyMode(options.policyMode);
   const metadata = metadataFromDocument(doc);
-  if (shouldBlockUrl(metadata.url)) {
-    return { ...metadata, text: '', blocked: true };
+  if (shouldBlockUrl(metadata.url, { policyMode: mode })) {
+    return { ...metadata, text: '', blocked: true, policy_mode: mode };
   }
   return {
     ...metadata,
-    text: extractTextFromDomNode(doc.body)
+    extraction_method: mode === 'all' ? 'dom-all-text-v1' : metadata.extraction_method,
+    policy_mode: mode,
+    text: extractTextFromDomNode(doc.body, { policyMode: mode })
   };
 }
 
 globalThis.extractPageFromDocument = extractPageFromDocument;
 globalThis.shouldBlockBrowserMemoryUrl = shouldBlockUrl;
+globalThis.normalizeBrowserMemoryPolicyMode = normalizePolicyMode;
 
 if (typeof module !== 'undefined') {
-  module.exports = { shouldSkipElement, shouldBlockUrl, isPrivateHost, extractTextFromTree, extractTextFromDomNode, collapseWhitespace, metadataFromDocument, extractPageFromDocument };
+  module.exports = { shouldSkipElement, shouldBlockUrl, isPrivateHost, extractTextFromTree, extractTextFromDomNode, collapseWhitespace, metadataFromDocument, extractPageFromDocument, normalizePolicyMode };
 }
 })();

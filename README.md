@@ -1,24 +1,44 @@
 # Browser Memory Daemon
 
-> **Status:** Phase 0/1 foundation complete; Phase 2/6 local controls and UI slice added; Phase 3 dedupe/versioning, SPA/delayed capture, and dwell lifecycle slices added
-> **Scope:** Windows Chrome capture with WSL-resident storage, search, policy, deletion, diagnostics, local UI, and future agent integration.
+> **Status:** ✅ Windows Chrome → WSL local-first recall system with adjustable policy modes, local UI, CLI, exact search, deletion, and real Chrome e2e.
+> **Default policy:** `all` — maximum personal recall, no URL policy filtering or daemon redaction.
+> **Scope:** Windows Chrome capture with WSL-resident storage/search/ops.
 
-This repo implements the plan from:
+This implementation follows the plan from:
 
 ```text
 ~/repos/research/browser-memory-daemon-architecture/chrome-windows-wsl-implementation-plan.md
 ```
 
-The current implementation is the first verified vertical slice:
+---
+
+## Current data path
 
 ```text
-Chrome extension payload
-  → authenticated WSL HTTP daemon
-  → deterministic privacy/redaction
-  → SQLite + FTS5 + clean-text blobs under WSL runtime paths
-  → search / recent / timeline / detail / forget / doctor APIs
-  → local web UI and extension popup controls
+Windows Chrome extension
+  → service-worker-owned authenticated localhost HTTP
+  → WSL daemon policy mode
+  → SQLite + FTS5 + text blobs under WSL runtime paths
+  → CLI / local UI / search / timeline / detail / forget / doctor
 ```
+
+---
+
+## Docs
+
+Start with:
+
+- [`docs/README.md`](docs/README.md) — documentation reading path.
+- [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) — operator guide.
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system architecture and requirements trace.
+- [`docs/DIAGRAMS.md`](docs/DIAGRAMS.md) — Mermaid visual atlas.
+- [`docs/CLI_UX_CONTRACT.md`](docs/CLI_UX_CONTRACT.md) — CLI contract.
+- [`docs/api.md`](docs/api.md) — HTTP API.
+- [`docs/security-model.md`](docs/security-model.md) — policy/security model.
+- [`docs/STATUS.md`](docs/STATUS.md) — implemented vs pending.
+- [`docs/TESTS.md`](docs/TESTS.md) — verification gates.
+
+---
 
 ## Runtime data boundary
 
@@ -32,9 +52,18 @@ Live data belongs under WSL runtime paths, not this repo:
 
 Do not commit browser captures, DBs, logs, extension private keys, raw HTML, tokens, cookies, or Chrome profile material.
 
-## Chrome automation note
+---
 
-Official branded Chrome 137+ ignores `--load-extension` for command-line unpacked-extension automation. The real-browser e2e therefore uses **Chrome for Testing** on Windows, cached under Windows LocalAppData by default, while production/daily-driver Chrome installation remains a later packaging/manual-install task.
+## Policy modes
+
+| Mode | Behavior |
+|---|---|
+| `all` | Default. Captures every URL surface Chrome/extension runtime allows; no daemon redaction; skips hidden/form/editable/script/style/no-script DOM text; ignores local block rules. |
+| `recall` | Broad capture with minimal internal/incognito/non-web blocking and redaction. |
+| `balanced` | Practical blocks for private hosts, known high-risk domains/query keys, and redaction. |
+| `strict` | Legacy broad privacy filtering and redaction. |
+
+---
 
 ## Commands
 
@@ -47,51 +76,55 @@ cd extension
 npm test
 npm run build
 
-# Run all current checks, including the real Windows Chrome-family e2e
+# Run all checks, including real Windows Chrome-family e2e
 ./scripts/run-e2e.sh
 
 # Run only the real browser extension e2e
 ./scripts/run-real-chrome-e2e.sh
 
-# Install/refresh the daily-driver WSL service + Windows extension copy
-./scripts/install-daily-driver.sh
+# Install/refresh daily-driver WSL service + Windows extension copy in all mode
+BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
 
 # Start daemon in dev/test mode
-BMD_API_TOKEN=dev-token ./scripts/dev-daemon.sh
+PYTHONPATH=daemon/src BMD_API_TOKEN=dev-token \
+  python3 -m browser_memory_daemon --token dev-token --policy-mode all serve
 
 # Search through the CLI
-PYTHONPATH=daemon/src BMD_API_TOKEN=dev-token python3 -m browser_memory_daemon --token dev-token search "example"
+PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
+  --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
+  search "example"
+```
 
-# Open the local UI while the daemon is running
-# Paste the daemon token into the UI once; it is stored in browser localStorage.
+Local UI:
+
+```text
 http://127.0.0.1:8765/ui
 ```
 
+---
+
 ## Implemented now
 
-- Daemon config/path handling.
-- SQLite schema with visits/documents/snapshots/chunks/FTS/audit/deletion receipts.
-- Capture policy for blocked schemes, localhost/private IPs, and sensitive domains.
-- Redaction before storage and FTS indexing.
-- Ingest, exact FTS search, and forget-by-domain/URL.
-- URL normalization removes tracking params/fragments/default ports and sorts meaningful query params for stable document identity.
-- Repeat captures of unchanged content add visits without duplicating snapshots/chunks; changed content creates a new snapshot under the same document.
-- Content script schedules delayed capture passes and hooks SPA history route changes while deduping unchanged payloads.
-- Service worker records tab deactivation/close/navigation lifecycle events, updates visit dwell seconds, and carries max-scroll reading signals as metadata only.
-- HTTP API: `/health`, `/ready`, `/capture`, `/visit-events`, `/search`, `/recent`, `/timeline`, `/documents/{id}`, `/snapshots/{id}`, `/policy/*`, `/doctor`, `/forget`.
-- CLI: `serve`, `health`, `search`, `recent`, `timeline`, `document`, `snapshot`, `policy-rules`, `doctor`, `forget`, `capture-fixture`.
-- Local web UI served at `/ui` with search, recent captures, timeline, document/snapshot detail, block-domain, forget-domain, and doctor panels.
-- MV3 extension with service-worker-owned programmatic content-script injection, queue helpers, options, popup operational controls, and build/test scripts.
-- Automated real Windows Chrome-family e2e harness using Chrome for Testing, isolated Windows profile, synthetic allowed/blocked pages, and WSL SQLite/FTS verification.
-- Daily-driver install helper that builds/copies the extension to Windows, creates the WSL token/env, enables the `systemd --user` daemon, and verifies WSL + Windows loopback health.
+- Daemon config/path handling with `BMD_POLICY_MODE` / `--policy-mode`.
+- SQLite schema with visits/documents/snapshots/chunks/FTS/audit/deletion receipts/lifecycle events.
+- Adjustable capture modes: `all`, `recall`, `balanced`, `strict`.
+- All-mode no-redaction ingest path and no extension URL privacy filters; DOM extraction still skips hidden/form/editable/script/style/no-script text.
+- Non-all redaction before storage and FTS indexing.
+- Ingest, exact FTS search, recent/timeline/detail, and forget-by-domain/URL.
+- URL normalization and snapshot dedupe/versioning.
+- Delayed SPA capture and History API hooks.
+- Tab lifecycle events, dwell seconds, and max-scroll metadata.
+- Local web UI and MV3 extension popup/options controls.
+- Real Windows Chrome for Testing e2e harness.
+- Daily-driver install helper for WSL systemd service and Windows unpacked extension artifact.
+
+---
 
 ## Not implemented yet
 
 - Semantic/vector search.
 - MCP/Hermes tools.
-- Native messaging fallback.
+- Native messaging fallback/hardening.
 - Encrypted backups/restore.
 - Multi-source importers.
-- Rich policy allow/redact/quarantine rules and retention jobs.
-
-Those are later phases in the V-model plan.
+- Rich allow/redact/quarantine policy editing and retention jobs.

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import os
 from pathlib import Path
 
+from .policy import DEFAULT_POLICY_MODE, normalize_policy_mode
 
 DEFAULT_PORT = 8765
 DEFAULT_HOST = "127.0.0.1"
@@ -15,6 +16,7 @@ class RuntimeConfig:
     host: str = DEFAULT_HOST
     port: int = DEFAULT_PORT
     api_token: str = ""
+    policy_mode: str = DEFAULT_POLICY_MODE
     config_root: Path = Path.home() / ".config" / APP_NAME
     data_root: Path = Path.home() / ".local" / "share" / APP_NAME
     state_root: Path = Path.home() / ".local" / "state" / APP_NAME
@@ -49,6 +51,7 @@ def load_config(
     host: str | None = None,
     port: int | None = None,
     token: str | None = None,
+    policy_mode: str | None = None,
     runtime_root: str | Path | None = None,
     test_mode: bool = False,
 ) -> RuntimeConfig:
@@ -68,10 +71,12 @@ def load_config(
         config_root = Path.home() / ".config" / APP_NAME
         state_root = Path.home() / ".local" / "state" / APP_NAME
     selected_port = port if port is not None else int(os.environ.get("BMD_PORT", DEFAULT_PORT))
+    selected_policy_mode = normalize_policy_mode(policy_mode or os.environ.get("BMD_POLICY_MODE") or DEFAULT_POLICY_MODE)
     cfg = RuntimeConfig(
         host=host or os.environ.get("BMD_HOST", DEFAULT_HOST),
         port=int(selected_port),
         api_token=api_token,
+        policy_mode=selected_policy_mode,
         config_root=config_root,
         data_root=data_root,
         state_root=state_root,

@@ -22,6 +22,9 @@ const extensionWorkRoot = process.env.BMD_REAL_CHROME_EXTENSION_ROOT || path.joi
 const removeProfileRoot = !process.env.BMD_REAL_CHROME_PROFILE;
 const removeExtensionWorkRoot = !process.env.BMD_REAL_CHROME_EXTENSION_ROOT;
 const keepArtifacts = process.env.BMD_KEEP_REAL_CHROME_E2E === '1';
+const policyMode = (process.env.BMD_REAL_CHROME_POLICY_MODE || 'all').toLowerCase();
+if (!['all', 'recall', 'balanced', 'strict'].includes(policyMode)) fail(`invalid BMD_REAL_CHROME_POLICY_MODE=${policyMode}`);
+const allMode = policyMode === 'all';
 
 const visibleNeedle = `BMD_REAL_CHROME_VISIBLE_${runId.replace(/[^A-Za-z0-9]/g, '_')}`;
 const hiddenNeedle = `BMD_REAL_CHROME_HIDDEN_${runId.replace(/[^A-Za-z0-9]/g, '_')}`;
@@ -218,7 +221,8 @@ async function startDaemon() {
     BMD_API_TOKEN: token,
     BMD_RUNTIME_ROOT: runtimeRoot,
     BMD_PORT: String(daemonPort),
-    BMD_HOST: '127.0.0.1'
+    BMD_HOST: '127.0.0.1',
+    BMD_POLICY_MODE: policyMode
   };
   daemonProcess = spawn('python3', [
     '-m', 'browser_memory_daemon',
@@ -226,6 +230,7 @@ async function startDaemon() {
     '--port', String(daemonPort),
     '--token', token,
     '--runtime-root', runtimeRoot,
+    '--policy-mode', policyMode,
     'serve'
   ], { cwd: ROOT, env, stdio: ['ignore', 'pipe', 'pipe'] });
 
@@ -424,6 +429,7 @@ async function configureExtensionStorage(cdp) {
           daemonUrl,
           apiToken: token,
           capturePaused: false,
+          policyMode,
           captureQueue: [],
           visitEventQueue: [],
           tabVisitState: {}
@@ -433,11 +439,11 @@ async function configureExtensionStorage(cdp) {
       const stored = await evaluate(
         cdp,
         sessionId,
-        `chrome.storage.local.get(['daemonUrl', 'apiToken', 'capturePaused', 'captureQueue', 'visitEventQueue', 'tabVisitState']).then((value) => JSON.stringify(value))`,
+        `chrome.storage.local.get(['daemonUrl', 'apiToken', 'capturePaused', 'policyMode', 'captureQueue', 'visitEventQueue', 'tabVisitState']).then((value) => JSON.stringify(value))`,
         { awaitPromise: true }
       );
       const parsed = JSON.parse(stored || '{}');
-      if (parsed.daemonUrl !== daemonUrl || parsed.apiToken !== token || parsed.capturePaused !== false) {
+      if (parsed.daemonUrl !== daemonUrl || parsed.apiToken !== token || parsed.capturePaused !== false || parsed.policyMode !== policyMode) {
         fail(`extension storage verification failed: ${stored}`);
       }
       const injectionProbe = await evaluate(
@@ -446,7 +452,7 @@ async function configureExtensionStorage(cdp) {
         `JSON.stringify({hasScripting: Boolean(chrome.scripting && chrome.scripting.executeScript), hasTabs: Boolean(chrome.tabs && chrome.tabs.onUpdated), hasPolicy: Boolean(globalThis.shouldBlockBrowserMemoryUrl)})`
       );
       log(`extension injection capabilities ${injectionProbe}`);
-      log(`configured extension ${extensionId} storage for ${daemonUrl}`);
+      log(`configured extension ${extensionId} storage for ${daemonUrl} policyMode=${policyMode}`);
       return { extensionId, storageSessionId: sessionId };
     }
     await sleep(250);
@@ -615,16 +621,24 @@ async function runScenario() {
   await openPageAndWait(browserCdp, blockedUrl);
   await triggerExtensionInjection(browserCdp, storageSessionId, blockedUrl);
   await sleep(2000);
-  const blockedResults = await daemonSearch(blockedNeedle);
-  if (blockedResults.length !== 0) fail(`sensitive-domain page was stored: ${JSON.stringify(blockedResults)}`);
-  log('sensitive-domain page absent from search');
+  const blockedResults = allMode ? await waitForSearchHit(blockedNeedle) : await daemonSearch(blockedNeedle);
+  if (allMode) {
+    log(`all mode stored sensitive-domain fixture hit count=${blockedResults.length}`);
+  } else {
+    if (blockedResults.length !== 0) fail(`sensitive-domain page was stored: ${JSON.stringify(blockedResults)}`);
+    log('sensitive-domain page absent from search');
+  }
 
   await openPageAndWait(browserCdp, localUrl);
   await triggerExtensionInjection(browserCdp, storageSessionId, localUrl);
   await sleep(2000);
-  const localResults = await daemonSearch(localNeedle);
-  if (localResults.length !== 0) fail(`localhost/private page was stored: ${JSON.stringify(localResults)}`);
-  log('localhost/private page absent from search');
+  const localResults = allMode ? await waitForSearchHit(localNeedle) : await daemonSearch(localNeedle);
+  if (allMode) {
+    log(`all mode stored localhost/private fixture hit count=${localResults.length}`);
+  } else {
+    if (localResults.length !== 0) fail(`localhost/private page was stored: ${JSON.stringify(localResults)}`);
+    log('localhost/private page absent from search');
+  }
 
   const telemetry = await waitForVisitTelemetry(
     (state) => state.events.length >= 1 && state.visits.some((visit) => visit.url === allowedUrl && Number(visit.dwell_seconds || 0) >= 1),
@@ -648,13 +662,16 @@ async function runScenario() {
   log('extension capture and lifecycle queues are empty');
 
   const counts = queryDbCounts();
-  if (counts.documents !== 2 || counts.snapshots !== 2 || counts.chunks < 2 || counts.visit_events < 1) {
-    fail(`unexpected DB counts after allowed+spa+blocked scenarios: ${JSON.stringify(counts)}`);
+  const expectedDocuments = allMode ? 5 : 2;
+  const expectedSnapshots = allMode ? 5 : 2;
+  if (counts.documents !== expectedDocuments || counts.snapshots !== expectedSnapshots || counts.chunks < expectedSnapshots || counts.visit_events < 1) {
+    fail(`unexpected DB counts after policy-mode scenarios: ${JSON.stringify({ policyMode, counts, expectedDocuments, expectedSnapshots })}`);
   }
   log(`DB counts ${JSON.stringify(counts)}`);
 
   console.log(JSON.stringify({
     ok: true,
+    policyMode,
     daemonUrl,
     allowedUrl,
     spaUrl,

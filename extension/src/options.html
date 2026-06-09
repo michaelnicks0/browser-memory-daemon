@@ -5,6 +5,14 @@
     <h1>Browser Memory Daemon</h1>
     <label>Daemon URL <input id="daemonUrl" value="http://127.0.0.1:8765"></label><br>
     <label>API Token <input id="apiToken" type="password"></label><br>
+    <label>Policy mode
+      <select id="policyMode">
+        <option value="all">all — capture everything Chrome allows, no redaction</option>
+        <option value="recall">recall — broad capture with secret redaction</option>
+        <option value="balanced">balanced — block high-risk domains/query keys</option>
+        <option value="strict">strict — legacy broad privacy filtering</option>
+      </select>
+    </label><br>
     <label><input id="capturePaused" type="checkbox"> Pause capture</label><br>
     <button id="save">Save</button>
     <pre id="status"></pre>

@@ -1,4 +1,4 @@
-const DEFAULTS = { daemonUrl: 'http://127.0.0.1:8765', apiToken: '', capturePaused: false };
+const DEFAULTS = { daemonUrl: 'http://127.0.0.1:8765', apiToken: '', capturePaused: false, policyMode: 'all' };
 let currentDomain = '';
 
 function setStatus(value) {
@@ -18,6 +18,8 @@ async function loadCurrentDomain() {
     currentDomain = '';
   }
   document.getElementById('domain').textContent = currentDomain || 'No http(s) tab selected.';
+  const cfg = await config();
+  document.getElementById('mode').textContent = `mode=${cfg.policyMode || 'all'} paused=${Boolean(cfg.capturePaused)}`;
 }
 
 async function config() {
@@ -28,12 +30,13 @@ async function togglePause() {
   const cfg = await config();
   await chrome.storage.local.set({ capturePaused: !cfg.capturePaused });
   setStatus(`capturePaused=${!cfg.capturePaused}`);
+  await loadCurrentDomain();
 }
 
 async function health() {
   const cfg = await config();
   const response = await fetch(`${normalizeDaemonUrl(cfg.daemonUrl)}/health`, { targetAddressSpace: 'loopback' });
-  setStatus(await response.json());
+  setStatus({ extension: { policyMode: cfg.policyMode || 'all', capturePaused: Boolean(cfg.capturePaused) }, daemon: await response.json() });
 }
 
 async function daemonRequest(path, body) {

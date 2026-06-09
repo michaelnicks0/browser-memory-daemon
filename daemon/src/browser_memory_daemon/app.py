@@ -13,7 +13,7 @@ from .ingest import ingest_capture
 from .lifecycle import record_visit_event
 from .models import CapturePayload
 from .ops import doctor, document_detail, recent_captures, snapshot_detail, timeline
-from .policy import evaluate_capture
+from .policy import POLICY_MODE_ALL, evaluate_capture
 from .policy_store import create_policy_rule, delete_policy_rule, evaluate_policy_rules, list_policy_rules
 from .search import search_memory
 
@@ -124,6 +124,7 @@ def make_handler(config: RuntimeConfig):
                         "version": __version__,
                         "storage_root": str(config.data_root),
                         "capture_enabled": True,
+                        "policy_mode": config.policy_mode,
                     },
                 )
                 return
@@ -205,9 +206,9 @@ def make_handler(config: RuntimeConfig):
                     return
                 if parsed.path == "/policy/evaluate":
                     url = params.get("url", [""])[0]
-                    static_decision = evaluate_capture(url)
+                    static_decision = evaluate_capture(url, policy_mode=config.policy_mode)
                     persistent_decision = static_decision
-                    if static_decision.allowed:
+                    if static_decision.allowed and config.policy_mode != POLICY_MODE_ALL:
                         init_db(config)
                         with connect(config.db_path) as conn:
                             persistent_decision = evaluate_policy_rules(conn, url)
@@ -218,6 +219,7 @@ def make_handler(config: RuntimeConfig):
                             "allowed": persistent_decision.allowed,
                             "reason": persistent_decision.reason,
                             "privacy_class": persistent_decision.privacy_class,
+                            "policy_mode": config.policy_mode,
                             "static_reason": static_decision.reason,
                         },
                     )
@@ -242,10 +244,14 @@ def make_handler(config: RuntimeConfig):
                 return
             if parsed.path == "/visit-events":
                 url = str(data.get("url") or "")
-                decision = evaluate_capture(url, is_incognito=bool(data.get("is_incognito") or data.get("incognito") or False))
+                decision = evaluate_capture(
+                    url,
+                    is_incognito=bool(data.get("is_incognito") or data.get("incognito") or False),
+                    policy_mode=config.policy_mode,
+                )
                 init_db(config)
                 with connect(config.db_path) as conn:
-                    if decision.allowed:
+                    if decision.allowed and config.policy_mode != POLICY_MODE_ALL:
                         decision = evaluate_policy_rules(conn, url)
                     if not decision.allowed:
                         audit(conn, "visit_event.blocked", {"reason": decision.reason})
@@ -253,7 +259,7 @@ def make_handler(config: RuntimeConfig):
                         _json_response(self, 200, {"stored": False, "blocked": True, "reason": decision.reason})
                         return
                     try:
-                        result = record_visit_event(conn, data)
+                        result = record_visit_event(conn, data, policy_mode=config.policy_mode)
                         _json_response(self, 201 if result["stored"] else 200, result)
                         return
                     except Exception as exc:
@@ -261,10 +267,14 @@ def make_handler(config: RuntimeConfig):
                         return
             if parsed.path == "/capture":
                 url = str(data.get("url") or "")
-                decision = evaluate_capture(url, is_incognito=bool(data.get("is_incognito") or data.get("incognito") or False))
+                decision = evaluate_capture(
+                    url,
+                    is_incognito=bool(data.get("is_incognito") or data.get("incognito") or False),
+                    policy_mode=config.policy_mode,
+                )
                 init_db(config)
                 with connect(config.db_path) as conn:
-                    if decision.allowed:
+                    if decision.allowed and config.policy_mode != POLICY_MODE_ALL:
                         decision = evaluate_policy_rules(conn, url)
                     if not decision.allowed:
                         audit(conn, "capture.blocked", {"reason": decision.reason})
@@ -272,7 +282,7 @@ def make_handler(config: RuntimeConfig):
                         _json_response(self, 200, {"stored": False, "blocked": True, "reason": decision.reason})
                         return
                     try:
-                        payload = CapturePayload.from_dict(data)
+                        payload = CapturePayload.from_dict(data, allow_any_url=config.policy_mode == POLICY_MODE_ALL)
                         result = ingest_capture(conn, config, payload)
                         _json_response(self, 201, result)
                         return

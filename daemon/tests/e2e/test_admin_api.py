@@ -31,7 +31,7 @@ def raw_request(method, url, token: str | None = "test-token"):
 
 @pytest.fixture()
 def server(tmp_path):
-    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", host="127.0.0.1", port=0)
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", host="127.0.0.1", port=0, policy_mode="strict")
     srv = make_server(cfg)
     thread = threading.Thread(target=srv.serve_forever, daemon=True)
     thread.start()

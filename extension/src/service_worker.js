@@ -4,6 +4,7 @@ const DEFAULTS = {
   daemonUrl: 'http://127.0.0.1:8765',
   apiToken: '',
   capturePaused: false,
+  policyMode: 'all',
   captureQueue: [],
   visitEventQueue: [],
   tabVisitState: {}
@@ -49,13 +50,25 @@ function sanitizedScrollPercent(value) {
   return Math.max(0, Math.min(100, Math.round(parsed)));
 }
 
-function isTrackableUrl(url) {
-  return Boolean(url) && !(globalThis.shouldBlockBrowserMemoryUrl && globalThis.shouldBlockBrowserMemoryUrl(url));
+function normalizePolicyMode(policyMode) {
+  if (globalThis.normalizeBrowserMemoryPolicyMode) return globalThis.normalizeBrowserMemoryPolicyMode(policyMode);
+  const mode = String(policyMode || 'all').toLowerCase();
+  return ['all', 'recall', 'balanced', 'strict'].includes(mode) ? mode : 'all';
+}
+
+function allowsIncognito(policyMode) {
+  return normalizePolicyMode(policyMode) === 'all';
+}
+
+function isTrackableUrl(url, policyMode = 'all') {
+  if (!url) return false;
+  if (normalizePolicyMode(policyMode) === 'all') return true;
+  return !(globalThis.shouldBlockBrowserMemoryUrl && globalThis.shouldBlockBrowserMemoryUrl(url, { policyMode }));
 }
 
 async function getConfig() {
   const stored = await chrome.storage.local.get(DEFAULTS);
-  return { ...DEFAULTS, ...stored };
+  return { ...DEFAULTS, ...stored, policyMode: normalizePolicyMode(stored.policyMode || DEFAULTS.policyMode) };
 }
 
 async function saveQueue(queue) {
@@ -148,7 +161,7 @@ async function drainAllQueues() {
 
 async function enqueueCapture(payload) {
   const config = await getConfig();
-  if (payload.is_incognito) return { skipped: true, reason: 'incognito' };
+  if (payload.is_incognito && !allowsIncognito(config.policyMode)) return { skipped: true, reason: 'incognito' };
   if (config.capturePaused) return { skipped: true, reason: 'paused' };
   if (!config.apiToken) return { skipped: true, reason: 'missing-token' };
   const queue = Array.from(config.captureQueue || []);
@@ -159,10 +172,10 @@ async function enqueueCapture(payload) {
 
 async function enqueueVisitEvent(payload) {
   const config = await getConfig();
-  if (payload.is_incognito) return { skipped: true, reason: 'incognito' };
+  if (payload.is_incognito && !allowsIncognito(config.policyMode)) return { skipped: true, reason: 'incognito' };
   if (config.capturePaused) return { skipped: true, reason: 'paused' };
   if (!config.apiToken) return { skipped: true, reason: 'missing-token' };
-  if (!isTrackableUrl(payload.url)) return { skipped: true, reason: 'blocked-url' };
+  if (!isTrackableUrl(payload.url, config.policyMode)) return { skipped: true, reason: 'blocked-url' };
   try {
     const delivered = await postVisitEvent(payload, config);
     await chrome.storage.local.remove('lastVisitEventError');
@@ -178,7 +191,8 @@ async function enqueueVisitEvent(payload) {
 }
 
 async function emitVisitEventForState(state, eventType, endedAt = nowIso()) {
-  if (!state || !state.url || !state.visitId || !isTrackableUrl(state.url)) {
+  const config = await getConfig();
+  if (!state || !state.url || !state.visitId || !isTrackableUrl(state.url, config.policyMode)) {
     return { skipped: true, reason: 'missing-state' };
   }
   const segmentStartedAt = state.activeStartedAt || state.visitStartedAt || endedAt;
@@ -203,7 +217,8 @@ async function finishActiveSegmentsExcept(activeTabId, eventType = 'tab-deactiva
   const deliveries = [];
   for (const [key, state] of Object.entries(states)) {
     if (String(activeTabId) === key || !state || !state.activeStartedAt) continue;
-    deliveries.push(emitVisitEventForState(state, eventType, endedAt));
+    const eventState = { ...state };
+    deliveries.push(emitVisitEventForState(eventState, eventType, endedAt));
     state.activeStartedAt = null;
     states[key] = state;
   }
@@ -228,7 +243,7 @@ async function finishTabVisit(tabId, eventType = 'tab-deactivated', { remove = f
 
 async function ensureVisitState(tabId, url) {
   const config = await getConfig();
-  if (config.capturePaused || !config.apiToken || !isTrackableUrl(url)) return null;
+  if (config.capturePaused || !config.apiToken || !isTrackableUrl(url, config.policyMode)) return null;
   const key = String(tabId);
   let states = await getTabVisitState();
   let state = states[key];
@@ -274,9 +289,10 @@ async function updateStateFromPayload(tabId, payload) {
 }
 
 async function decorateCapturePayload(payload, sender) {
+  const config = await getConfig();
   const tab = sender && sender.tab ? sender.tab : null;
-  const decorated = { ...payload, is_incognito: Boolean(tab && tab.incognito) };
-  if (!tab || typeof tab.id !== 'number' || !decorated.url || !isTrackableUrl(decorated.url)) return decorated;
+  const decorated = { ...payload, is_incognito: Boolean(tab && tab.incognito), policy_mode: normalizePolicyMode(config.policyMode) };
+  if (!tab || typeof tab.id !== 'number' || !decorated.url || !isTrackableUrl(decorated.url, config.policyMode)) return decorated;
   const state = await updateStateFromPayload(tab.id, decorated);
   if (!state) return decorated;
   if (tab.active && !state.activeStartedAt) {
@@ -295,7 +311,7 @@ const injectedTabs = new Map();
 async function maybeInjectCapture(tabId, tabUrl) {
   const config = await getConfig();
   if (config.capturePaused || !config.apiToken) return { skipped: true, reason: config.capturePaused ? 'paused' : 'missing-token' };
-  if (!isTrackableUrl(tabUrl)) return { skipped: true, reason: 'blocked-url' };
+  if (!isTrackableUrl(tabUrl, config.policyMode)) return { skipped: true, reason: 'blocked-url' };
   if (injectedTabs.get(tabId) === tabUrl) return { skipped: true, reason: 'already-injected' };
   try {
     await chrome.scripting.executeScript({

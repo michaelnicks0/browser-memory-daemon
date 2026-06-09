@@ -7,7 +7,7 @@ from .config import RuntimeConfig
 from .db import audit
 from .models import CapturePayload
 from .normalize import domain_from_url, normalize_url
-from .policy import redact_text, redact_url
+from .policy import POLICY_MODE_ALL, redact_text, redact_url
 
 
 def stable_id(prefix: str, value: str) -> str:
@@ -40,28 +40,40 @@ def chunk_text(text: str, *, max_chars: int = 1800) -> list[str]:
     return chunks
 
 
-def ingest_capture(conn: sqlite3.Connection, config: RuntimeConfig, payload: CapturePayload) -> dict:
+def _prepare_storage_values(config: RuntimeConfig, payload: CapturePayload) -> tuple[str, str, str, str, int, list[str]]:
+    if config.policy_mode == POLICY_MODE_ALL:
+        safe_url = payload.url
+        safe_canonical = payload.canonical_url if payload.canonical_url else payload.url
+        safe_title = payload.title
+        stored_text = payload.text
+        return safe_url, safe_canonical, safe_title, stored_text, 0, []
+
     safe_url, url_redactions, url_classes = redact_url(payload.url)
     if payload.canonical_url and payload.canonical_url != payload.url:
         safe_canonical, canonical_redactions, canonical_classes = redact_url(payload.canonical_url)
     else:
         safe_canonical, canonical_redactions, canonical_classes = safe_url, 0, []
     safe_title, title_redactions, title_classes = redact_text(payload.title)
-    redacted_text, text_redactions, text_classes = redact_text(payload.text)
+    stored_text, text_redactions, text_classes = redact_text(payload.text)
     redaction_count = url_redactions + canonical_redactions + title_redactions + text_redactions
     redaction_classes = []
     for label in [*url_classes, *canonical_classes, *title_classes, *text_classes]:
         if label not in redaction_classes:
             redaction_classes.append(label)
+    return safe_url, safe_canonical, safe_title, stored_text, redaction_count, redaction_classes
+
+
+def ingest_capture(conn: sqlite3.Connection, config: RuntimeConfig, payload: CapturePayload) -> dict:
+    safe_url, safe_canonical, safe_title, stored_text, redaction_count, redaction_classes = _prepare_storage_values(config, payload)
 
     normalized = normalize_url(safe_canonical or safe_url)
     original_normalized = normalize_url(safe_url)
     domain = domain_from_url(normalized)
     document_id = stable_id("doc", normalized)
-    digest = text_hash(redacted_text)
+    digest = text_hash(stored_text)
     snapshot_id = stable_id("snap", f"{document_id}:{digest}")
     clean_path = config.clean_text_root / f"{snapshot_id}.txt"
-    chunks = chunk_text(redacted_text)
+    chunks = chunk_text(stored_text)
 
     with conn:
         conn.execute(
@@ -99,13 +111,13 @@ def ingest_capture(conn: sqlite3.Connection, config: RuntimeConfig, payload: Cap
         snapshot_exists = conn.execute("SELECT 1 FROM snapshots WHERE id = ?", (snapshot_id,)).fetchone() is not None
         if not snapshot_exists:
             clean_path.parent.mkdir(parents=True, exist_ok=True)
-            clean_path.write_text(redacted_text, encoding="utf-8")
+            clean_path.write_text(stored_text, encoding="utf-8")
             conn.execute(
                 """
                 INSERT INTO snapshots(
                   id, document_id, visit_id, captured_at, content_type, extraction_method,
                   text_hash, cleaned_text_path, privacy_class, redaction_count
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'normal', ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     snapshot_id,
@@ -116,6 +128,7 @@ def ingest_capture(conn: sqlite3.Connection, config: RuntimeConfig, payload: Cap
                     payload.extraction_method,
                     digest,
                     str(clean_path),
+                    config.policy_mode,
                     redaction_count,
                 ),
             )
@@ -146,6 +159,7 @@ def ingest_capture(conn: sqlite3.Connection, config: RuntimeConfig, payload: Cap
                 "redaction_count": redaction_count,
                 "redaction_classes": redaction_classes,
                 "domain": domain,
+                "policy_mode": config.policy_mode,
             },
         )
     return {
@@ -156,4 +170,5 @@ def ingest_capture(conn: sqlite3.Connection, config: RuntimeConfig, payload: Cap
         "snapshot_created": not snapshot_exists,
         "chunk_count": 0 if snapshot_exists else len(chunks),
         "redaction_count": redaction_count,
+        "policy_mode": config.policy_mode,
     }

@@ -19,7 +19,7 @@ def request(method, url, token="test-token", body=None):
 
 
 def test_http_capture_search_forget_round_trip(tmp_path):
-    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", host="127.0.0.1", port=0)
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", host="127.0.0.1", port=0, policy_mode="strict")
     server = make_server(cfg)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()

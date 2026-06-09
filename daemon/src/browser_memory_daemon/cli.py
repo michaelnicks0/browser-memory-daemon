@@ -26,6 +26,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--port", type=int, default=None)
     parser.add_argument("--token", default=None)
     parser.add_argument("--runtime-root", default=None)
+    parser.add_argument("--policy-mode", choices=["all", "recall", "balanced", "strict"], default=None)
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("serve")
     sub.add_parser("health")
@@ -55,7 +56,14 @@ def main(argv: list[str] | None = None) -> int:
     cap.add_argument("--text", required=True)
     args = parser.parse_args(argv)
 
-    cfg = load_config(host=args.host, port=args.port, token=args.token, runtime_root=args.runtime_root, test_mode=False)
+    cfg = load_config(
+        host=args.host,
+        port=args.port,
+        token=args.token,
+        policy_mode=args.policy_mode,
+        runtime_root=args.runtime_root,
+        test_mode=False,
+    )
     base = f"http://{cfg.host}:{cfg.port}"
     if args.command == "serve":
         server = make_server(cfg)

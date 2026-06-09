@@ -254,7 +254,7 @@ def doctor(config: RuntimeConfig, conn: sqlite3.Connection) -> dict[str, Any]:
     return {
         "ok": integrity == "ok" and missing_fts == 0,
         "version": __version__,
-        "daemon": {"host": config.host, "port": config.port},
+        "daemon": {"host": config.host, "port": config.port, "policy_mode": config.policy_mode},
         "paths": {
             "config_root": str(config.config_root),
             "data_root": str(config.data_root),

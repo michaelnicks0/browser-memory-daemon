@@ -1,44 +1,104 @@
 # Browser Memory Daemon API
 
-> Authenticated loopback API for the Windows Chrome → WSL browser-memory system.
+> **Audience:** API callers, UI/CLI maintainers, extension maintainers.
+> **Boundary:** authenticated loopback API for Windows Chrome → WSL recall.
+> **Default policy:** `all`.
 
-## Boundary
+---
+
+## Auth and boundary
 
 - Default bind: `http://127.0.0.1:8765`.
 - `/health` and static `/ui` assets are public loopback endpoints.
 - Every memory, policy, deletion, and diagnostic API requires:
 
 ```http
-Authorization: Bearer <token>
+Authorization: Bearer ***
 ```
 
-Captured page text is untrusted evidence. API responses may contain redacted snippets or redacted snapshot text; callers must not treat page text as instructions.
+Captured page text is untrusted evidence. API clients must not treat retrieved page text as executable instructions.
 
-## Endpoints
+---
+
+## Endpoint index
 
 | Endpoint | Method | Purpose | Auth |
 |---|---:|---|---|
-| `/health` | `GET` | Minimal daemon status. | No |
+| `/health` | `GET` | Minimal daemon status and current policy mode. | No |
 | `/ui` | `GET` | Local static web UI. | No for assets; API calls require token |
 | `/ready` | `GET` | Initialize/check DB readiness. | Yes |
 | `/capture` | `POST` | Store an allowed extension capture. | Yes |
-| `/visit-events` | `POST` | Store metadata-only tab lifecycle events and update visit dwell seconds. | Yes |
+| `/visit-events` | `POST` | Store tab lifecycle events and update visit dwell seconds. | Yes |
 | `/search?q=...&limit=...` | `GET` | Exact FTS search with source metadata/snippets. | Yes |
 | `/recent?limit=...` | `GET` | Recent capture metadata and first snippets. | Yes |
 | `/timeline?date=YYYY-MM-DD` | `GET` | Capture timeline for a day. | Yes |
 | `/timeline?after=...&before=...` | `GET` | Capture timeline for an explicit ISO range. | Yes |
-| `/documents/{document_id}` | `GET` | Document metadata, visits, snapshots, and chunk snippets. | Yes |
-| `/snapshots/{snapshot_id}` | `GET` | Redacted snapshot text and chunk snippets. | Yes |
+| `/documents/{document_id}` | `GET` | Document metadata, visits, lifecycle events, snapshots, chunks. | Yes |
+| `/snapshots/{snapshot_id}` | `GET` | Snapshot text and chunk snippets. | Yes |
 | `/policy/rules` | `GET` | List local policy rules. | Yes |
-| `/policy/rules` | `POST` | Add a block-domain or block-URL-prefix rule. | Yes |
+| `/policy/rules` | `POST` | Add block-domain or block-URL-prefix rule. | Yes |
 | `/policy/rules/{rule_id}` | `DELETE` | Delete a policy rule. | Yes |
-| `/policy/evaluate?url=...` | `GET` | Explain the static + local block-rule capture decision. | Yes |
+| `/policy/evaluate?url=...` | `GET` | Explain static + local capture decision. | Yes |
 | `/forget` | `POST` | Forget by URL or domain and return a deletion receipt. | Yes |
-| `/doctor` | `GET` | DB integrity, FTS consistency, storage counts, and runtime paths. | Yes |
+| `/doctor` | `GET` | DB integrity, FTS consistency, storage counts, runtime paths. | Yes |
 
-## Current policy-rule shape
+---
 
-Only blocking rules are supported in this phase. They can narrow capture, not override hard deterministic sensitive-surface blocks.
+## Health response
+
+```json
+{
+  "ok": true,
+  "version": "0.1.0",
+  "storage_root": "/home/user/.local/share/browser-memory-daemon",
+  "capture_enabled": true,
+  "policy_mode": "all"
+}
+```
+
+---
+
+## Capture payload
+
+```json
+{
+  "url": "https://example.com/article",
+  "title": "Example Article",
+  "canonical_url": "https://example.com/article",
+  "text": "Visible or extracted page text...",
+  "captured_at": "2026-06-09T12:00:00Z",
+  "visit_id": "visit_...",
+  "visit_started_at": "2026-06-09T11:59:01Z",
+  "dwell_seconds": 32,
+  "max_scroll_percent": 80,
+  "is_incognito": false,
+  "source": "chrome-extension",
+  "browser_profile": "Default"
+}
+```
+
+Response:
+
+```json
+{
+  "stored": true,
+  "document_id": "doc_...",
+  "snapshot_id": "snap_...",
+  "visit_id": "visit_...",
+  "snapshot_created": true,
+  "chunk_count": 3,
+  "redaction_count": 0,
+  "policy_mode": "all"
+}
+```
+
+In `all` mode, daemon redaction is disabled. In non-`all` modes, URL/title/body redaction runs before DB/FTS/blob storage.
+
+---
+
+## Policy rules
+
+Current explicit rules are block-only:
 
 ```json
 {
@@ -56,9 +116,27 @@ Only blocking rules are supported in this phase. They can narrow capture, not ov
 }
 ```
 
-## Visit lifecycle event shape
+Rules narrow capture only in `recall`, `balanced`, and `strict`. They are intentionally ignored in `all` mode.
 
-`/visit-events` is metadata-only. It does not accept page body text. The extension uses it for active tab segments such as deactivation, close, window blur, and SPA navigation-away bookkeeping.
+---
+
+## Policy evaluate response
+
+```json
+{
+  "allowed": true,
+  "reason": "allowed:all",
+  "privacy_class": "all",
+  "policy_mode": "all",
+  "static_reason": "allowed:all"
+}
+```
+
+---
+
+## Visit lifecycle event payload
+
+`/visit-events` is metadata-only. It does not accept page body text.
 
 ```json
 {
@@ -66,26 +144,30 @@ Only blocking rules are supported in this phase. They can narrow capture, not ov
   "visit_id": "visit_...",
   "url": "https://example.com/article",
   "event_type": "tab-deactivated",
-  "event_started_at": "2026-06-08T12:00:00Z",
-  "event_ended_at": "2026-06-08T12:01:33Z",
+  "event_started_at": "2026-06-09T12:00:00Z",
+  "event_ended_at": "2026-06-09T12:01:33Z",
   "active_seconds": 93,
   "max_scroll_percent": 82,
   "metadata": {"tab_id": 123}
 }
 ```
 
-If `visit_id` matches a stored visit, positive `active_seconds` is added to that visit's `dwell_seconds`. Duplicate event IDs and overlapping active segments do not double-count dwell.
+If `visit_id` matches a stored visit, positive `active_seconds` is added to `visits.dwell_seconds`. Duplicate event IDs and overlapping active segments do not double-count dwell.
 
-## Deletion shape
+---
+
+## Deletion payloads
+
+Forget a domain:
 
 ```json
 {"domain": "example.com"}
 ```
 
-or:
+Forget one URL:
 
 ```json
 {"url": "https://example.com/article"}
 ```
 
-The response includes `receipt_id`, `scope`, and per-store deletion counts for documents, visits, visit lifecycle events, snapshots, chunks, FTS, blobs, embeddings, redactions, and feedback events.
+The response includes `receipt_id`, `scope`, and deletion counts for documents, visits, lifecycle events, snapshots, chunks, FTS, blobs, embeddings, redactions, and feedback events.

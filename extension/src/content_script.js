@@ -11,6 +11,15 @@
   globalThis.__BMD_LAST_CAPTURE_KEY = '';
 
   const DELAYED_CAPTURE_MS = [0, 1500, 5000];
+  const DEFAULT_CAPTURE_CONFIG = { policyMode: 'all' };
+
+  function normalizePolicyMode(policyMode) {
+    if (typeof globalThis.normalizeBrowserMemoryPolicyMode === 'function') {
+      return globalThis.normalizeBrowserMemoryPolicyMode(policyMode);
+    }
+    const mode = String(policyMode || 'all').toLowerCase();
+    return ['all', 'recall', 'balanced', 'strict'].includes(mode) ? mode : 'all';
+  }
 
   function currentScrollPercent() {
     const element = document.documentElement || document.body;
@@ -37,6 +46,15 @@
     ].join('\n');
   }
 
+  function getCaptureConfig() {
+    if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
+      return Promise.resolve(DEFAULT_CAPTURE_CONFIG);
+    }
+    return chrome.storage.local.get(DEFAULT_CAPTURE_CONFIG).then((cfg) => ({
+      policyMode: normalizePolicyMode(cfg.policyMode)
+    }));
+  }
+
   function sendCapture(reason = 'scheduled') {
     if (globalThis.__BMD_CAPTURE_IN_PROGRESS) {
       globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'skipped', reason: 'capture-in-progress' };
@@ -50,28 +68,38 @@
       globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'skipped', reason: 'missing-extractor' };
       return;
     }
-    const payload = {
-      ...globalThis.extractPageFromDocument(document),
-      max_scroll_percent: globalThis.__BMD_MAX_SCROLL_PERCENT || 0
-    };
-    if (!payload.text || payload.text.length < 20) {
-      globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'skipped', reason: 'short-or-empty-text', captureReason: reason, textLength: payload.text ? payload.text.length : 0, blocked: Boolean(payload.blocked), url: payload.url };
-      return;
-    }
-    const key = captureKey(payload);
-    if (key === globalThis.__BMD_LAST_CAPTURE_KEY) {
-      globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'skipped', reason: 'duplicate-payload', captureReason: reason, textLength: payload.text.length, url: payload.url };
-      return;
-    }
+
     globalThis.__BMD_CAPTURE_IN_PROGRESS = true;
-    globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'sending', captureReason: reason, textLength: payload.text.length, url: payload.url };
-    chrome.runtime.sendMessage({ type: 'BMD_CAPTURE', payload: { ...payload, capture_reason: reason } }, (response) => {
-      const lastError = chrome.runtime.lastError ? chrome.runtime.lastError.message : '';
-      globalThis.__BMD_CAPTURE_IN_PROGRESS = false;
-      if (!lastError && response && response.ok) {
-        globalThis.__BMD_LAST_CAPTURE_KEY = key;
+    getCaptureConfig().then((cfg) => {
+      const policyMode = normalizePolicyMode(cfg.policyMode);
+      const payload = {
+        ...globalThis.extractPageFromDocument(document, { policyMode }),
+        max_scroll_percent: globalThis.__BMD_MAX_SCROLL_PERCENT || 0
+      };
+      const textLength = payload.text ? payload.text.length : 0;
+      if (!payload.text || (policyMode !== 'all' && textLength < 20)) {
+        globalThis.__BMD_CAPTURE_IN_PROGRESS = false;
+        globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'skipped', reason: 'short-or-empty-text', captureReason: reason, textLength, blocked: Boolean(payload.blocked), url: payload.url, policyMode };
+        return;
       }
-      globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'sent', ok: Boolean(response && response.ok), response, lastError, captureReason: reason, textLength: payload.text.length, url: payload.url };
+      const key = captureKey(payload);
+      if (key === globalThis.__BMD_LAST_CAPTURE_KEY) {
+        globalThis.__BMD_CAPTURE_IN_PROGRESS = false;
+        globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'skipped', reason: 'duplicate-payload', captureReason: reason, textLength, url: payload.url, policyMode };
+        return;
+      }
+      globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'sending', captureReason: reason, textLength, url: payload.url, policyMode };
+      chrome.runtime.sendMessage({ type: 'BMD_CAPTURE', payload: { ...payload, capture_reason: reason, policy_mode: policyMode } }, (response) => {
+        const lastError = chrome.runtime.lastError ? chrome.runtime.lastError.message : '';
+        globalThis.__BMD_CAPTURE_IN_PROGRESS = false;
+        if (!lastError && response && response.ok) {
+          globalThis.__BMD_LAST_CAPTURE_KEY = key;
+        }
+        globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'sent', ok: Boolean(response && response.ok), response, lastError, captureReason: reason, textLength, url: payload.url, policyMode };
+      });
+    }).catch((error) => {
+      globalThis.__BMD_CAPTURE_IN_PROGRESS = false;
+      globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'error', error: String(error && error.message || error), captureReason: reason };
     });
   }
 

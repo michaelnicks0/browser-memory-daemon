@@ -1,28 +1,38 @@
 # Test Plan
 
+> **Audience:** maintainers and future agents.
+> **Scope:** requirement-to-test traceability for the current implementation.
+> **Default policy under test:** `all`, with explicit strict/balanced/recall coverage where needed.
+
+---
+
 ## Current requirement coverage
 
 | Requirement | Test evidence |
 |---|---|
-| REQ-001 capture | `daemon/tests/e2e/test_http_api.py` synthetic capture; `scripts/run-real-chrome-e2e.sh` verifies allowed page and delayed SPA route capture from Windows Chrome for Testing |
-| REQ-002 WSL storage | tests use runtime root outside repo; runtime paths ignored |
-| REQ-003 service worker bridge | `scripts/run-real-chrome-e2e.sh` loads the extension in Windows Chrome for Testing and verifies service-worker-owned injection/capture |
-| REQ-004 auth + loopback | HTTP unauthorized test; bind defaults in config |
-| REQ-005 privacy blocks | `daemon/tests/unit/test_policy.py` |
-| REQ-006 redaction | policy and ingest tests verify secrets absent |
-| REQ-007 FTS search | integration/e2e search tests |
-| REQ-008 schema | DB initialized by integration/e2e tests |
-| REQ-009 dedupe/versioning | `daemon/tests/integration/test_ingest_search_forget.py` verifies query-normalized repeat visits create one snapshot and changed content creates a new snapshot under one document |
-| REQ-018 dwell/reading signals | `daemon/tests/integration/test_visit_lifecycle.py` verifies lifecycle events update dwell, avoid duplicate segment counting, and preserve metadata-only orphan navigation events; `scripts/run-real-chrome-e2e.sh` verifies real tab-switch dwell and max-scroll metadata |
-| REQ-010/011 forget | integration/e2e forget tests |
-| REQ-012 cited results | `/search`, `/documents/{id}`, and `/snapshots/{id}` expose source metadata, snapshot IDs, and snippets/text |
-| REQ-014 extension controls | Extension popup can pause capture, open dashboard, block current domain, and forget current domain; daemon policy-rule e2e verifies block behavior |
-| REQ-015 CLI | `daemon/tests/e2e/test_cli_admin.py` covers `recent`, `document`, `snapshot`, `doctor`, and `policy-rules` |
-| REQ-016 local UI | `daemon/tests/e2e/test_admin_api.py` verifies `/ui` asset serving plus UI-backed API surfaces |
-| REQ-025 audit logging | Admin API paths write metadata-only audit events for search/recent/timeline/detail/doctor/policy/delete |
-| REQ-028 doctor | `/doctor` and CLI `doctor` e2e verify DB integrity, FTS consistency, storage counts, and runtime paths |
-| REQ-030 artifact boundary | `.gitignore` and `scripts/secret-scan.sh` |
-| REQ-031 Windows browser e2e | `scripts/run-real-chrome-e2e.sh` synthetic allowed/blocked/localhost scenarios |
+| REQ-001 capture | `daemon/tests/e2e/test_http_api.py` synthetic capture; `scripts/run-real-chrome-e2e.sh` verifies Windows Chrome capture. |
+| REQ-002 WSL storage | tests use runtime roots outside repo; runtime paths ignored; doctor exposes runtime paths. |
+| REQ-003 service worker bridge | real Chrome e2e verifies service-worker-owned injection/capture. |
+| REQ-004 auth + loopback | HTTP unauthorized tests; bind defaults in config; Windows PowerShell health checks. |
+| REQ-005 adjustable policy modes | `daemon/tests/unit/test_policy.py`; `extension/tests/unit/extractor.test.js`. |
+| REQ-006 all-mode no URL filtering/redaction | daemon integration stores unredacted fixture secrets; extension unit tests verify URL filters are off while hidden/form/editable/script/style/no-script DOM text is skipped; real Chrome e2e default expects banking/local fixtures searchable. |
+| REQ-007 non-all redaction | policy and ingest tests verify secrets absent in strict mode. |
+| REQ-008 FTS search | integration/e2e search tests. |
+| REQ-009 schema | DB initialized and table inventory checked by integration/e2e tests. |
+| REQ-010 dedupe/versioning | ingest tests verify repeat visits do not duplicate snapshots and changed content creates new snapshots. |
+| REQ-011 SPA/delayed capture | real Chrome e2e delayed `history.pushState` fixture. |
+| REQ-012 dwell/reading signals | lifecycle integration tests and real Chrome e2e tab-switch dwell/max-scroll checks. |
+| REQ-013 forget/delete | integration/e2e forget tests. |
+| REQ-014 cited results | `/search`, `/documents/{id}`, `/snapshots/{id}` expose source metadata, snapshot IDs, snippets/text. |
+| REQ-015 extension controls | popup/options support pause, health, dashboard, block/forget domain, policy mode. |
+| REQ-016 local UI | admin API tests verify `/ui` asset serving and UI-backed API surfaces. |
+| REQ-017 CLI | `daemon/tests/e2e/test_cli_admin.py` covers read/admin commands. |
+| REQ-018 audit logging | API paths write metadata-only audit events. |
+| REQ-019 doctor | `/doctor` and CLI doctor verify DB integrity, FTS consistency, paths, counts, and policy mode. |
+| REQ-020 artifact boundary | `.gitignore` and `scripts/secret-scan.sh`. |
+| REQ-021 Windows browser e2e | `scripts/run-real-chrome-e2e.sh` synthetic allowed/SPA/banking/local scenarios. |
+
+---
 
 ## Current commands
 
@@ -33,4 +43,33 @@ cd extension && npm test && npm run build
 ./scripts/run-e2e.sh
 ```
 
-`run-real-chrome-e2e.sh` uses Windows Chrome for Testing because branded Chrome 137+ no longer honors command-line `--load-extension` automation.
+`run-real-chrome-e2e.sh` uses Windows Chrome for Testing because branded Chrome 137+ no longer reliably honors command-line `--load-extension` automation.
+
+---
+
+## Mode-specific e2e
+
+Default all-mode:
+
+```bash
+./scripts/run-real-chrome-e2e.sh
+```
+
+Strict-mode regression:
+
+```bash
+BMD_REAL_CHROME_POLICY_MODE=strict ./scripts/run-real-chrome-e2e.sh
+```
+
+Balanced/recall smoke:
+
+```bash
+BMD_REAL_CHROME_POLICY_MODE=balanced ./scripts/run-real-chrome-e2e.sh
+BMD_REAL_CHROME_POLICY_MODE=recall ./scripts/run-real-chrome-e2e.sh
+```
+
+---
+
+## Documentation verification
+
+See [`TESTS.md`](TESTS.md) for Markdown fence checks, Mermaid-render guidance, and daily-driver smoke checklist.

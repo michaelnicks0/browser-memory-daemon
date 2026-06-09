@@ -14,12 +14,18 @@ ENV_FILE="$CFG_DIR/env"
 UNIT_FILE="$UNIT_DIR/browser-memory-daemon.service"
 HOST="${BMD_HOST:-127.0.0.1}"
 PORT="${BMD_PORT:-8765}"
+POLICY_MODE="${BMD_POLICY_MODE:-all}"
 PS="${BMD_POWERSHELL:-/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe}"
 
 if [ ! -x "$PY" ]; then
   echo "Python runtime not executable: $PY" >&2
   exit 1
 fi
+
+case "$POLICY_MODE" in
+  all|recall|balanced|strict) ;;
+  *) echo "BMD_POLICY_MODE must be one of: all, recall, balanced, strict" >&2; exit 1 ;;
+esac
 
 mkdir -p "$CFG_DIR" "$DATA_DIR" "$STATE_DIR" "$UNIT_DIR" "$EXT_DIR"
 chmod 700 "$CFG_DIR"
@@ -44,6 +50,7 @@ cat > "$ENV_FILE" <<EOF
 BMD_HOST=$HOST
 BMD_PORT=$PORT
 BMD_API_TOKEN=$TOKEN
+BMD_POLICY_MODE=$POLICY_MODE
 PYTHONPATH=$ROOT/daemon/src
 EOF
 chmod 600 "$ENV_FILE"
@@ -78,13 +85,14 @@ chmod 644 "$UNIT_FILE"
 find "$EXT_DIR" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
 cp -a "$ROOT/extension/dist/." "$EXT_DIR/"
 
-"$PY" - "$TOKEN_FILE" "$EXT_DIR" <<'PY'
+"$PY" - "$TOKEN_FILE" "$EXT_DIR" "$POLICY_MODE" <<'PY'
 from pathlib import Path
 import json
 import sys
 
 token = Path(sys.argv[1]).read_text().strip()
 ext_dir = Path(sys.argv[2])
+policy_mode = sys.argv[3]
 files = [
     ext_dir / "src" / "service_worker.js",
     ext_dir / "src" / "options.js",
@@ -92,14 +100,19 @@ files = [
 ]
 for path in files:
     text = path.read_text()
-    needle = "apiToken: '',"
-    replacement = "apiToken: " + json.dumps(token) + ","
-    if needle in text:
-        path.write_text(text.replace(needle, replacement, 1))
-    elif replacement in text:
-        continue
-    else:
+    token_needle = "apiToken: '',"
+    token_replacement = "apiToken: " + json.dumps(token) + ","
+    if token_needle in text:
+        text = text.replace(token_needle, token_replacement, 1)
+    elif token_replacement not in text:
         raise SystemExit(f"Could not patch apiToken default in {path}")
+    mode_needle = "policyMode: 'all'"
+    mode_replacement = "policyMode: " + json.dumps(policy_mode)
+    if mode_needle in text:
+        text = text.replace(mode_needle, mode_replacement, 1)
+    elif mode_replacement not in text:
+        raise SystemExit(f"Could not patch policyMode default in {path}")
+    path.write_text(text)
 PY
 
 systemctl --user daemon-reload
@@ -131,10 +144,13 @@ Daily-driver assets installed.
 Extension directory:
   $(wslpath -w "$EXT_DIR" 2>/dev/null || printf '%s' "$EXT_DIR")
 
+Policy mode:
+  $POLICY_MODE
+
 WSL service:
   systemctl --user status browser-memory-daemon.service
   journalctl --user -u browser-memory-daemon.service -f
 
-Chrome manual load step still required by Chrome:
-  chrome://extensions → Developer mode → Load unpacked → select the extension directory above
+Chrome manual load/reload step still required by Chrome:
+  chrome://extensions → Browser Memory Daemon → Reload
 EOF

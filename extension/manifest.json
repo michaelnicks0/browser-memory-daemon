@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "description": "Local-first browser memory capture for a WSL daemon.",
   "permissions": ["storage", "tabs", "webNavigation", "scripting"],
-  "host_permissions": ["http://*/*", "https://*/*", "http://127.0.0.1/*", "http://localhost/*"],
+  "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "src/service_worker.js"
   },

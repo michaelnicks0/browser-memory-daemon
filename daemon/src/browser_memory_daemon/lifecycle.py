@@ -9,7 +9,7 @@ from typing import Any
 from .db import audit
 from .models import utc_now_iso, validate_iso_datetime
 from .normalize import normalize_url
-from .policy import redact_url
+from .policy import redact_url, redaction_enabled
 
 _ALLOWED_EVENT_TYPES = {
     "active-segment",
@@ -68,7 +68,7 @@ def _find_document_id(conn: sqlite3.Connection, normalized_url: str) -> str | No
     return row["id"] if row else None
 
 
-def record_visit_event(conn: sqlite3.Connection, data: dict[str, Any]) -> dict[str, Any]:
+def record_visit_event(conn: sqlite3.Connection, data: dict[str, Any], *, policy_mode: str | None = None) -> dict[str, Any]:
     """Store a metadata-only browser lifecycle event and update visit dwell time.
 
     The event payload intentionally contains URL/time/scroll metadata only. Page body
@@ -77,7 +77,9 @@ def record_visit_event(conn: sqlite3.Connection, data: dict[str, Any]) -> dict[s
     raw_url = str(data.get("url") or "").strip()
     if not raw_url:
         raise ValueError("url is required")
-    safe_url, _, _ = redact_url(raw_url)
+    safe_url = raw_url
+    if redaction_enabled(policy_mode):
+        safe_url, _, _ = redact_url(raw_url)
     normalized_url = normalize_url(safe_url)
 
     event_type = str(data.get("event_type") or data.get("eventType") or "").strip()

@@ -7,7 +7,7 @@ from browser_memory_daemon.search import search_memory
 
 
 def test_ingest_search_redact_and_forget(tmp_path):
-    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token")
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="strict")
     init_db(cfg)
     fake_secret = "SECRETSECRETSECRET12345"
     payload = CapturePayload.from_dict({
@@ -32,7 +32,7 @@ def test_ingest_search_redact_and_forget(tmp_path):
 
 
 def test_metadata_redacted_before_fts_and_forget_by_original_url(tmp_path):
-    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token")
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="strict")
     init_db(cfg)
     title_secret = "TITLESECRET000000000000"
     url_secret = "URLSECRET000000000000"
@@ -55,9 +55,9 @@ def test_metadata_redacted_before_fts_and_forget_by_original_url(tmp_path):
 
 
 def test_url_path_secret_redacted_and_not_searchable(tmp_path):
-    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token")
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="strict")
     init_db(cfg)
-    path_secret = "SECRETSECRETSECRET12345"
+    path_secret = "SECRETSECRETSECRET1234567890OPAQUEID"
     payload = CapturePayload.from_dict({
         "url": f"https://example.net/share/{path_secret}",
         "title": "Shared public article",
@@ -72,7 +72,7 @@ def test_url_path_secret_redacted_and_not_searchable(tmp_path):
 
 
 def test_url_userinfo_redacted_before_storage_and_fts(tmp_path):
-    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token")
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="strict")
     init_db(cfg)
     userinfo_secret = "USERINFOSECRET000000000000"
     payload = CapturePayload.from_dict({
@@ -92,8 +92,31 @@ def test_url_userinfo_redacted_before_storage_and_fts(tmp_path):
         assert visit["url"] == "https://example.org/public-article"
 
 
+def test_all_mode_stores_without_redaction_and_accepts_file_urls(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    fake_secret = "ALLMODESECRETSECRET12345"
+    payload = CapturePayload.from_dict(
+        {
+            "url": f"file:///tmp/local-note.html?token={fake_secret}#fragment",
+            "title": f"All mode title token = {fake_secret}",
+            "text": f"All mode body preserves api_key = {fake_secret} and exact text.",
+        },
+        allow_any_url=True,
+    )
+    with connect(cfg.db_path) as conn:
+        result = ingest_capture(conn, cfg, payload)
+        assert result["redaction_count"] == 0
+        assert result["policy_mode"] == "all"
+        rows = search_memory(conn, fake_secret, limit=10)
+        assert rows
+        assert any(fake_secret in row["title"] or fake_secret in row["url"] or fake_secret in row["snippet"] for row in rows)
+        visit = conn.execute("SELECT url, is_incognito FROM visits").fetchone()
+        assert fake_secret in visit["url"]
+
+
 def test_forget_domain_includes_subdomains(tmp_path):
-    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token")
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="strict")
     init_db(cfg)
     payload = CapturePayload.from_dict({
         "url": "https://www.example.com/page",
@@ -109,7 +132,7 @@ def test_forget_domain_includes_subdomains(tmp_path):
 
 
 def test_repeat_capture_dedupes_snapshot_but_adds_visit(tmp_path):
-    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token")
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="strict")
     init_db(cfg)
     first = CapturePayload.from_dict({
         "url": "https://Example.COM:443/article?utm_source=feed&b=2&a=1",
@@ -153,7 +176,7 @@ def test_repeat_capture_dedupes_snapshot_but_adds_visit(tmp_path):
 
 
 def test_changed_content_creates_new_snapshot_under_same_document(tmp_path):
-    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token")
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="strict")
     init_db(cfg)
     first = CapturePayload.from_dict({
         "url": "https://example.net/versioned",
@@ -195,7 +218,7 @@ def test_changed_content_creates_new_snapshot_under_same_document(tmp_path):
 
 
 def test_schema_has_planned_core_tables(tmp_path):
-    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token")
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="strict")
     init_db(cfg)
     with connect(cfg.db_path) as conn:
         tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type IN ('table','virtual table')")}

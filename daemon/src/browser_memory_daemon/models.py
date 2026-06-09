@@ -39,10 +39,13 @@ class CapturePayload:
     is_incognito: bool = False
 
     @classmethod
-    def from_dict(cls, data: dict, *, max_text_chars: int = 1_000_000) -> "CapturePayload":
+    def from_dict(cls, data: dict, *, max_text_chars: int = 1_000_000, allow_any_url: bool = False) -> "CapturePayload":
         url = str(data.get("url") or "").strip()
         parts = urlsplit(url)
-        if parts.scheme not in {"http", "https"} or not parts.netloc:
+        if allow_any_url:
+            if not parts.scheme:
+                raise ValueError("url must be absolute when policy_mode=all")
+        elif parts.scheme not in {"http", "https"} or not parts.netloc:
             raise ValueError("url must be an absolute http(s) URL")
         text = str(data.get("text") or "")
         if not text.strip():

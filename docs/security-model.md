@@ -1,27 +1,96 @@
-# Security Model
+# Security and Policy Model
 
-The daemon is local-first and WSL-resident. It assumes captured page text may be private and may contain hostile prompt-injection text.
+> **Audience:** operator and maintainers.
+> **Status:** ✅ Adjustable policy modes implemented.
+> **Default:** `all` — maximum personal recall, no URL policy filtering or daemon redaction.
+
+---
+
+## Core boundary
+
+The daemon is local-first and WSL-resident. It assumes captured page text may be private and may contain hostile prompt-injection text. It does **not** assume a multi-user enterprise DLP posture.
+
+| Boundary | Current control |
+|---|---|
+| Network | Daemon binds to `127.0.0.1` by default. |
+| API auth | Bearer token required for memory/admin APIs. |
+| Health/UI assets | `/health` and static `/ui` assets are public loopback only. |
+| Durable storage | WSL XDG paths; repo and Chrome profile are not storage roots. |
+| Browser bridge | Content scripts message service worker; service worker owns daemon fetch/auth/queues. |
+| Agent safety | Captured page text is untrusted evidence, never instructions. |
+
+---
+
+## Policy modes
+
+| Mode | Purpose | Filtering | Redaction | Notes |
+|---|---|---:|---:|---|
+| `all` | Maximum personal recall. | URL off; DOM skip retained | ❌ Off | Default. Ignores local block rules. |
+| `recall` | Broad recall with minimal protective boundaries. | ⚠️ Minimal | ✅ On | Blocks incognito/internal/file/non-web schemes. |
+| `balanced` | Practical privacy with less overblocking than strict. | ✅ Moderate | ✅ On | Blocks private hosts, known high-risk domains, and high-risk query keys. |
+| `strict` | Legacy broad privacy filtering. | ✅ Broad | ✅ On | Keyword-heavy domain/path/query blocks. |
+
+---
+
+## `all` mode risk acceptance
+
+`all` intentionally stores original URL/title/body text without daemon redaction and without URL/domain/path/query filtering. It still skips hidden/form/editable/script/style/no-script DOM text because Operator requested those surfaces stay omitted. This is an operator-selected personal recall mode.
+
+Known consequences:
+
+- visible/exposed page secrets can be stored and indexed;
+- account, email, chat, health, payment, and local/private pages can be stored;
+- local block rules do not narrow capture;
+- Chrome platform restrictions still apply where extension injection is refused.
+
+Mitigations that remain even in `all`:
+
+- loopback-only daemon bind by default;
+- bearer auth for memory/admin APIs;
+- runtime data is outside the repo;
+- secret scan protects committed repo content;
+- forget-by-domain/URL can delete stored memory after the fact.
+
+---
+
+## Non-`all` redaction
+
+In `recall`, `balanced`, and `strict`, redaction runs before DB/FTS/blob storage for:
+
+- private-key blocks;
+- bearer-token-shaped strings;
+- `api_key` / `secret` / `token` assignment shapes;
+- SSN-shaped strings;
+- credit-card-like digit runs;
+- URL username/password;
+- sensitive query values and fragments;
+- opaque long path/token segments.
+
+---
 
 ## Current controls
 
 - API token required for `/capture`, `/visit-events`, `/search`, `/ready`, `/recent`, `/timeline`, `/documents/{id}`, `/snapshots/{id}`, `/policy/*`, `/doctor`, and `/forget`.
-- `/health` exposes only minimal status.
-- Daemon binds to `127.0.0.1` by default.
-- Deterministic policy blocks sensitive schemes/domains and private/loopback hosts.
-- Redaction runs before storage and FTS indexing, including URL query/fragment/path secrets and URL userinfo credentials.
-- Audit logs are metadata-only in SQLite.
-- Extension uses broad HTTP/HTTPS host permission so the service worker can inject capture scripts, but both service worker and injected extractor apply URL privacy gates before queue/storage.
-- Injected content scripts extract text; service worker owns daemon communication.
-- Tab lifecycle events are metadata-only (`url`, timestamps, active seconds, max scroll percent, event type) and pass through the same auth and URL policy gates as captures; body text is never sent to `/visit-events`.
-- Daily-driver install stores the daemon API token in protected WSL config files and injects it into the Windows-local extension artifact; the token is never committed, and rotation is supported via `BMD_ROTATE_TOKEN=1 ./scripts/install-daily-driver.sh`.
-- Local web UI is served from the loopback daemon at `/ui`; static UI assets are public, but every memory/admin API call still requires the bearer token. The UI stores a pasted token in browser `localStorage` only.
-- Policy controls currently support explicit block-domain and URL-prefix rules; they can only narrow capture, not override deterministic sensitive-surface blocks.
-- Deletion UX requires an explicit browser confirmation before UI/popup forget-domain calls, and the daemon returns a deletion receipt with DB/FTS/blob counts.
+- `/health` exposes minimal daemon status plus `policy_mode`.
+- Daily-driver install stores the daemon API token in protected WSL config files and injects it into the Windows-local extension artifact; the token is never committed.
+- Token rotation is supported:
+
+  ```bash
+  BMD_ROTATE_TOKEN=1 BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
+  ```
+
+- Local web UI is served from loopback at `/ui`; static assets are public, but every memory/admin API call requires the bearer token.
+- Deletion UX requires explicit browser confirmation before UI/popup forget-domain calls, and the daemon returns deletion receipts.
+
+---
 
 ## Current limitations
 
-- Native messaging hardening is not implemented yet.
-- Extension queue persistence is skeletal.
-- No semantic embeddings yet.
-- No encrypted backups yet.
-- Policy rules are block-only in this phase; allow/redact/quarantine editing is not implemented yet.
+| Limit | Status |
+|---|---|
+| Native messaging hardening | Not implemented. |
+| Semantic embeddings | Not implemented. |
+| Encrypted backups | Not implemented. |
+| Rich allow/redact/metadata-only rules | Not implemented. |
+| Retention/compaction | Not implemented. |
+| Cloud processing | Not implemented and should not be added without explicit approval. |
