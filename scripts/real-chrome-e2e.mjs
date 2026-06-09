@@ -27,8 +27,10 @@ const visibleNeedle = `BMD_REAL_CHROME_VISIBLE_${runId.replace(/[^A-Za-z0-9]/g, 
 const hiddenNeedle = `BMD_REAL_CHROME_HIDDEN_${runId.replace(/[^A-Za-z0-9]/g, '_')}`;
 const blockedNeedle = `BMD_REAL_CHROME_BLOCKED_${runId.replace(/[^A-Za-z0-9]/g, '_')}`;
 const localNeedle = `BMD_REAL_CHROME_LOCAL_${runId.replace(/[^A-Za-z0-9]/g, '_')}`;
+const spaNeedle = `BMD_REAL_CHROME_SPA_${runId.replace(/[^A-Za-z0-9]/g, '_')}`;
 
 const allowedUrl = `http://bmd-allowed.test:${pagePort}/allowed`;
+const spaUrl = `http://bmd-allowed.test:${pagePort}/spa`;
 const blockedUrl = `http://bank.example.test:${pagePort}/blocked`;
 const localUrl = `http://127.0.0.1:${pagePort}/local`;
 const daemonUrl = `http://127.0.0.1:${daemonPort}`;
@@ -164,6 +166,24 @@ function startPageServer() {
       <textarea>Textarea must not be captured ${hiddenNeedle}_TEXTAREA</textarea>
       <div contenteditable="true">Editable text must not be captured ${hiddenNeedle}_EDITABLE</div>
     </main>
+  </body>
+</html>`);
+      return;
+    }
+    if (url.pathname === '/spa' || url.pathname === '/spa/route-two') {
+      res.end(`<!doctype html>
+<html>
+  <head><title>Delayed SPA fixture</title></head>
+  <body>
+    <main>
+      <p id="spa-content">Loading</p>
+    </main>
+    <script>
+      setTimeout(() => {
+        history.pushState({}, '', '/spa/route-two');
+        document.getElementById('spa-content').textContent = 'Delayed SPA route proof ${spaNeedle} after history.pushState.';
+      }, 500);
+    </script>
   </body>
 </html>`);
       return;
@@ -531,6 +551,13 @@ async function runScenario() {
   if (hiddenResults.length !== 0) fail(`hidden/editable/form text leaked into search: ${JSON.stringify(hiddenResults)}`);
   log('hidden/form/editable text absent from search');
 
+  const spaPage = await openPageAndWait(browserCdp, spaUrl);
+  const spaCurrentUrl = await evaluate(browserCdp, spaPage.sessionId, 'location.href');
+  await triggerExtensionInjection(browserCdp, storageSessionId, spaCurrentUrl);
+  const spaResults = await waitForSearchHit(spaNeedle, 20000);
+  if (!spaResults[0].url.endsWith('/spa/route-two')) fail(`SPA route capture used wrong URL: ${JSON.stringify(spaResults[0])}`);
+  log(`delayed SPA route capture hit count=${spaResults.length}`);
+
   await openPageAndWait(browserCdp, blockedUrl);
   await triggerExtensionInjection(browserCdp, storageSessionId, blockedUrl);
   await sleep(2000);
@@ -550,8 +577,8 @@ async function runScenario() {
   log('extension capture queue is empty');
 
   const counts = queryDbCounts();
-  if (counts.documents !== 1 || counts.snapshots !== 1 || counts.chunks < 1) {
-    fail(`unexpected DB counts after allowed+blocked scenarios: ${JSON.stringify(counts)}`);
+  if (counts.documents !== 2 || counts.snapshots !== 2 || counts.chunks < 2) {
+    fail(`unexpected DB counts after allowed+spa+blocked scenarios: ${JSON.stringify(counts)}`);
   }
   log(`DB counts ${JSON.stringify(counts)}`);
 
@@ -559,10 +586,12 @@ async function runScenario() {
     ok: true,
     daemonUrl,
     allowedUrl,
+    spaUrl,
     blockedUrl,
     localUrl,
     visibleNeedle,
     hiddenNeedle,
+    spaNeedle,
     blockedNeedle,
     localNeedle,
     runtimeRoot,

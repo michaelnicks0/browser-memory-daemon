@@ -1,28 +1,87 @@
 (function () {
-  if (globalThis.__BMD_CAPTURE_SENT || globalThis.__BMD_CAPTURE_IN_PROGRESS) return;
-  globalThis.__BMD_CAPTURE_IN_PROGRESS = true;
-  globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'started' };
-  if (typeof chrome === 'undefined' || !chrome.runtime) {
-    globalThis.__BMD_CAPTURE_IN_PROGRESS = false;
-    globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'skipped', reason: 'missing-chrome-runtime' };
+  if (globalThis.__BMD_CONTENT_SCRIPT_INSTALLED) {
+    if (typeof globalThis.__BMD_CAPTURE_NOW === 'function') {
+      globalThis.__BMD_CAPTURE_NOW('reinjected');
+    }
     return;
   }
-  if (!globalThis.extractPageFromDocument) {
-    globalThis.__BMD_CAPTURE_IN_PROGRESS = false;
-    globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'skipped', reason: 'missing-extractor' };
-    return;
+  globalThis.__BMD_CONTENT_SCRIPT_INSTALLED = true;
+  globalThis.__BMD_CAPTURE_IN_PROGRESS = false;
+  globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'installed' };
+  globalThis.__BMD_LAST_CAPTURE_KEY = '';
+
+  const DELAYED_CAPTURE_MS = [0, 1500, 5000];
+
+  function captureKey(payload) {
+    const text = String(payload.text || '');
+    return [
+      payload.url || '',
+      payload.title || '',
+      text.length,
+      text.slice(0, 256),
+      text.slice(-256)
+    ].join('\n');
   }
-  const payload = globalThis.extractPageFromDocument(document);
-  if (!payload.text || payload.text.length < 20) {
-    globalThis.__BMD_CAPTURE_IN_PROGRESS = false;
-    globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'skipped', reason: 'short-or-empty-text', textLength: payload.text ? payload.text.length : 0, blocked: Boolean(payload.blocked), url: payload.url };
-    return;
+
+  function sendCapture(reason = 'scheduled') {
+    if (globalThis.__BMD_CAPTURE_IN_PROGRESS) {
+      globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'skipped', reason: 'capture-in-progress' };
+      return;
+    }
+    if (typeof chrome === 'undefined' || !chrome.runtime) {
+      globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'skipped', reason: 'missing-chrome-runtime' };
+      return;
+    }
+    if (!globalThis.extractPageFromDocument) {
+      globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'skipped', reason: 'missing-extractor' };
+      return;
+    }
+    const payload = globalThis.extractPageFromDocument(document);
+    if (!payload.text || payload.text.length < 20) {
+      globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'skipped', reason: 'short-or-empty-text', captureReason: reason, textLength: payload.text ? payload.text.length : 0, blocked: Boolean(payload.blocked), url: payload.url };
+      return;
+    }
+    const key = captureKey(payload);
+    if (key === globalThis.__BMD_LAST_CAPTURE_KEY) {
+      globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'skipped', reason: 'duplicate-payload', captureReason: reason, textLength: payload.text.length, url: payload.url };
+      return;
+    }
+    globalThis.__BMD_CAPTURE_IN_PROGRESS = true;
+    globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'sending', captureReason: reason, textLength: payload.text.length, url: payload.url };
+    chrome.runtime.sendMessage({ type: 'BMD_CAPTURE', payload: { ...payload, capture_reason: reason } }, (response) => {
+      const lastError = chrome.runtime.lastError ? chrome.runtime.lastError.message : '';
+      globalThis.__BMD_CAPTURE_IN_PROGRESS = false;
+      if (!lastError && response && response.ok) {
+        globalThis.__BMD_LAST_CAPTURE_KEY = key;
+      }
+      globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'sent', ok: Boolean(response && response.ok), response, lastError, captureReason: reason, textLength: payload.text.length, url: payload.url };
+    });
   }
-  globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'sending', textLength: payload.text.length, url: payload.url };
-  chrome.runtime.sendMessage({ type: 'BMD_CAPTURE', payload }, (response) => {
-    const lastError = chrome.runtime.lastError ? chrome.runtime.lastError.message : '';
-    globalThis.__BMD_CAPTURE_IN_PROGRESS = false;
-    globalThis.__BMD_CAPTURE_SENT = !lastError && Boolean(response && response.ok);
-    globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'sent', ok: Boolean(response && response.ok), response, lastError, textLength: payload.text.length, url: payload.url };
-  });
+
+  function scheduleCapture(reason, delays = DELAYED_CAPTURE_MS) {
+    for (const delay of delays) {
+      globalThis.setTimeout(() => sendCapture(reason), delay);
+    }
+  }
+
+  function installSpaHooks() {
+    if (globalThis.__BMD_SPA_HOOKS_INSTALLED) return;
+    globalThis.__BMD_SPA_HOOKS_INSTALLED = true;
+    const scheduleRouteCapture = (reason) => scheduleCapture(reason, [100, 1200, 3500]);
+    for (const method of ['pushState', 'replaceState']) {
+      const original = history[method];
+      if (typeof original !== 'function') continue;
+      history[method] = function (...args) {
+        const result = original.apply(this, args);
+        scheduleRouteCapture(`history.${method}`);
+        return result;
+      };
+    }
+    globalThis.addEventListener('popstate', () => scheduleRouteCapture('popstate'));
+    globalThis.addEventListener('hashchange', () => scheduleRouteCapture('hashchange'));
+  }
+
+  globalThis.__BMD_CAPTURE_NOW = sendCapture;
+  installSpaHooks();
+  scheduleCapture('initial');
 })();

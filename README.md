@@ -76,6 +76,7 @@ http://127.0.0.1:8765/ui
 - Ingest, exact FTS search, and forget-by-domain/URL.
 - URL normalization removes tracking params/fragments/default ports and sorts meaningful query params for stable document identity.
 - Repeat captures of unchanged content add visits without duplicating snapshots/chunks; changed content creates a new snapshot under the same document.
+- Content script schedules delayed capture passes and hooks SPA history route changes while deduping unchanged payloads.
 - HTTP API: `/health`, `/ready`, `/capture`, `/search`, `/recent`, `/timeline`, `/documents/{id}`, `/snapshots/{id}`, `/policy/*`, `/doctor`, `/forget`.
 - CLI: `serve`, `health`, `search`, `recent`, `timeline`, `document`, `snapshot`, `policy-rules`, `doctor`, `forget`, `capture-fixture`.
 - Local web UI served at `/ui` with search, recent captures, timeline, document/snapshot detail, block-domain, forget-domain, and doctor panels.

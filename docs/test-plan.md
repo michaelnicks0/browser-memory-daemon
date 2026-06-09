@@ -4,7 +4,7 @@
 
 | Requirement | Test evidence |
 |---|---|
-| REQ-001 capture | `daemon/tests/e2e/test_http_api.py` synthetic capture |
+| REQ-001 capture | `daemon/tests/e2e/test_http_api.py` synthetic capture; `scripts/run-real-chrome-e2e.sh` verifies allowed page and delayed SPA route capture from Windows Chrome for Testing |
 | REQ-002 WSL storage | tests use runtime root outside repo; runtime paths ignored |
 | REQ-003 service worker bridge | `scripts/run-real-chrome-e2e.sh` loads the extension in Windows Chrome for Testing and verifies service-worker-owned injection/capture |
 | REQ-004 auth + loopback | HTTP unauthorized test; bind defaults in config |
