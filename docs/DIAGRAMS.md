@@ -14,7 +14,10 @@ flowchart TB
   Chrome --> Extension[Browser Memory MV3 extension]
   Extension -->|Bearer HTTP over localhost| Daemon[WSL browser-memory daemon]
   Daemon --> SQLite[(SQLite + FTS5)]
-  Daemon --> Blobs[Clean text blobs]
+  Daemon --> MediaWorker[Media worker]
+  MediaWorker --> SQLite
+  Daemon --> Blobs[Clean text + media blobs]
+  MediaWorker --> Blobs
   Daemon --> UI[Local UI]
   Daemon --> CLI[CLI]
   UI --> Operator
@@ -32,8 +35,10 @@ flowchart LR
   Page[Page DOM] --> Extractor[extractor.js]
   Extractor --> Content[content_script.js]
   Content -->|chrome.runtime.sendMessage| ServiceWorker[service_worker.js]
-  ServiceWorker -->|fetch /capture| DaemonCapture[POST /capture]
+  ServiceWorker -->|fast fetch /capture| DaemonCapture[POST /capture]
   ServiceWorker -->|fetch /visit-events| DaemonVisit[POST /visit-events]
+  ServiceWorker -->|credentialed media fetch + raw PUT| DaemonMedia["PUT /media-artifacts/id/blob"]
+  ServiceWorker --> IDB[(IndexedDB media queue)]
   Popup[popup.js] --> ServiceWorker
   Options[options.js] --> Storage[(chrome.storage.local)]
   Storage --> Content
@@ -75,7 +80,7 @@ sequenceDiagram
   participant Ingest as Ingest pipeline
   participant DB as SQLite/FTS
 
-  Page->>CS: DOM text + URL + title
+  Page->>CS: DOM text + URL + title + media refs
   CS->>SW: BMD_CAPTURE payload
   SW->>API: POST /capture + bearer token
   API->>API: evaluate policy mode
@@ -87,15 +92,38 @@ sequenceDiagram
     Ingest->>Ingest: redact URL/title/text
     Ingest->>DB: store redacted URL/title/text
   end
-  DB-->>API: document/snapshot/chunk IDs
+  DB-->>API: document/snapshot/chunk IDs + media artifact IDs
   API-->>SW: stored result
 ```
 
-`all` bypasses redaction. Other modes redact before DB/FTS/blob storage.
+`all` bypasses redaction. Other modes redact before DB/FTS/blob storage. Media binary fetch is intentionally outside this fast path.
 
 ---
 
-## 5. Dedupe and versioning
+## 5. Durable media sidecars
+
+```mermaid
+flowchart TB
+  Capture["/capture result with artifact IDs"] --> BrowserQueue[(Chrome IndexedDB media queue)]
+  Capture --> DaemonTasks[(SQLite media_fetch_tasks)]
+
+  BrowserQueue --> BrowserFetch["Browser lazy sidecar<br/>fetch(credentials: include)"]
+  BrowserFetch --> BrowserBlob[(IndexedDB fetched blob)]
+  BrowserBlob --> RawPut["PUT /media-artifacts/{id}/blob"]
+  RawPut --> MediaBlobs[(blobs/media)]
+  RawPut --> ArtifactStored["media_artifacts.status = stored"]
+
+  DaemonTasks --> Lease["daemon media worker lease"]
+  Lease --> PublicFetch["public fetch<br/>no Chrome cookies"]
+  PublicFetch --> MediaBlobs
+  PublicFetch --> Terminal["stored / skipped / failed / purged"]
+```
+
+This is the core durability split: text/FTS capture completes first; media bytes are best-effort sidecars with explicit states and cache controls.
+
+---
+
+## 6. Dedupe and versioning
 
 ```mermaid
 flowchart TD
@@ -112,7 +140,7 @@ Repeated unchanged captures add visits without duplicating text. Changed text at
 
 ---
 
-## 6. Lifecycle telemetry
+## 7. Lifecycle telemetry
 
 ```mermaid
 stateDiagram-v2
@@ -129,7 +157,7 @@ Lifecycle events carry URL, timestamps, active seconds, and max-scroll percent. 
 
 ---
 
-## 7. Local read model
+## 8. Local read model
 
 ```mermaid
 flowchart LR
@@ -152,7 +180,7 @@ The read model is exact-search-first. Semantic search and agent/MCP tools are la
 
 ---
 
-## 8. Forget/delete cascade
+## 9. Forget/delete cascade
 
 ```mermaid
 flowchart TD
@@ -183,7 +211,8 @@ These diagrams trace to current implementation files:
 | System/context | `README.md`, `config.py`, `app.py` |
 | Extension boundary | `manifest.json`, `extractor.js`, `content_script.js`, `service_worker.js` |
 | Policy ladder | `policy.py`, `extractor.js`, `options.js`, `install-daily-driver.sh` |
-| Ingest pipeline | `models.py`, `ingest.py`, `schema.sql` |
+| Ingest pipeline | `models.py`, `ingest.py`, `schema.sql`, `media.py` |
+| Media sidecars | `service_worker.js`, `media_queue.js`, `media.py`, `media_worker.py`, `schema.sql` |
 | Lifecycle | `service_worker.js`, `lifecycle.py`, `schema.sql` |
 | Read model | `search.py`, `ops.py`, `ui/`, `cli.py` |
 | Forget/delete | `forget.py`, `schema.sql` |

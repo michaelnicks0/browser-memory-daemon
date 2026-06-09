@@ -28,8 +28,11 @@ Captured page text is untrusted evidence. API clients must not treat retrieved p
 | `/ui` | `GET` | Local static web UI. | No for assets; API calls require token |
 | `/ready` | `GET` | Initialize/check DB readiness. | Yes |
 | `/capture` | `POST` | Store an allowed extension capture plus media references. | Yes |
-| `/media-artifacts` | `POST` | Store/upgrade a related image/video artifact row and optional blob. | Yes |
+| `/media-artifacts` | `POST` | Compatibility JSON store/upgrade for related media row and optional base64 blob. | Yes |
+| `/media-artifacts/{artifact_id}/blob` | `PUT` | Raw binary blob upload from browser lazy media sidecar. | Yes |
 | `/media-artifacts/fetch-pending` | `POST` | Daemon-side fetch of pending public media artifact refs. | Yes |
+| `/media-artifacts/queue-status?limit=...` | `GET` | Media artifact/task queue health and cache-gate status. | Yes |
+| `/media-artifacts/purge-cache` | `POST` | Dry-run or execute media blob cache purge, optionally rehydrate. | Yes |
 | `/visit-events` | `POST` | Store tab lifecycle events and update visit dwell seconds. | Yes |
 | `/search?q=...&limit=...` | `GET` | Exact FTS search with source metadata/snippets. | Yes |
 | `/recent?limit=...` | `GET` | Recent capture metadata and first snippets. | Yes |
@@ -102,6 +105,16 @@ Response:
   "snapshot_created": true,
   "chunk_count": 3,
   "media_ref_count": 1,
+  "media_artifacts": [
+    {
+      "artifact_id": "media_...",
+      "document_id": "doc_...",
+      "snapshot_id": "snap_...",
+      "media_type": "image",
+      "role": "content",
+      "source_url": "https://example.com/hero.png"
+    }
+  ],
   "redaction_count": 0,
   "policy_mode": "all"
 }
@@ -111,9 +124,21 @@ In `all` mode, daemon redaction is disabled. In non-`all` modes, URL/title/body 
 
 ---
 
-## Media artifact payload
+## Media artifact APIs
 
-Media references in `/capture` are relationship metadata only. Binary storage uses `/media-artifacts` after `/capture` returns `document_id` and `snapshot_id`.
+Media references in `/capture` are relationship metadata only. Binary storage is asynchronous: the browser lazy sidecar fetches with Chrome cookies and uploads raw blobs, while the daemon media worker backfills public refs without Chrome cookies.
+
+Raw browser upload:
+
+```http
+PUT /media-artifacts/<artifact_id>/blob
+Authorization: Bearer ***
+Content-Type: image/png
+X-BMD-Document-ID: doc_...
+X-BMD-Snapshot-ID: snap_...
+```
+
+Compatibility JSON upload:
 
 ```json
 {
@@ -131,7 +156,9 @@ Media references in `/capture` are relationship metadata only. Binary storage us
 }
 ```
 
-If `content_base64` is omitted, the artifact is metadata-only. Pending public artifacts can be fetched by the daemon:
+If `content_base64` is omitted, the artifact is metadata-only.
+
+Public daemon backfill:
 
 ```http
 POST /media-artifacts/fetch-pending
@@ -143,7 +170,24 @@ Content-Type: application/json
 {"domain": "x.com", "limit": 100}
 ```
 
-That endpoint asks the daemon to fetch pending public `referenced` / `metadata-only` artifact URLs itself. It is useful when Chrome MV3 service-worker upload is suspended before large social/media pages finish binary upload.
+Queue/cache status:
+
+```http
+GET /media-artifacts/queue-status?limit=50
+Authorization: Bearer ***
+```
+
+Purge local media blob cache without deleting text/FTS/ref rows:
+
+```http
+POST /media-artifacts/purge-cache
+Authorization: Bearer ***
+Content-Type: application/json
+```
+
+```json
+{"domain": "linkedin.com", "dry_run": true, "rehydrate": false}
+```
 
 Stored binaries are available via:
 

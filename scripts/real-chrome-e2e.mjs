@@ -33,6 +33,7 @@ const localNeedle = `BMD_REAL_CHROME_LOCAL_${runId.replace(/[^A-Za-z0-9]/g, '_')
 const spaNeedle = `BMD_REAL_CHROME_SPA_${runId.replace(/[^A-Za-z0-9]/g, '_')}`;
 
 const mediaImageUrl = `http://bmd-allowed.test:${pagePort}/media-image.png`;
+const cookieMediaUrl = `http://bmd-allowed.test:${pagePort}/cookie-media.png`;
 const allowedUrl = `http://bmd-allowed.test:${pagePort}/allowed`;
 const spaUrl = `http://bmd-allowed.test:${pagePort}/spa`;
 const blockedUrl = `http://bank.example.test:${pagePort}/blocked`;
@@ -45,6 +46,7 @@ let chromeProcess;
 let pageServer;
 let browserCdp;
 let extensionLoadPathWin;
+let cookieMediaRequests = 0;
 
 function log(message) {
   console.log(`[real-chrome-e2e] ${message}`);
@@ -155,15 +157,23 @@ async function waitForSearchHit(query, timeoutMs = 15000) {
 function startPageServer() {
   pageServer = createServer((req, res) => {
     const url = new URL(req.url || '/', `http://${req.headers.host || 'bmd-allowed.test'}`);
-    if (url.pathname === '/media-image.png') {
+    if (url.pathname === '/media-image.png' || url.pathname === '/cookie-media.png') {
       const png = Buffer.from('iVBORw0KGgo=', 'base64');
+      if (url.pathname === '/cookie-media.png') cookieMediaRequests += 1;
+      if (url.pathname === '/cookie-media.png' && !String(req.headers.cookie || '').includes('bmd_media_cookie=ok')) {
+        res.statusCode = 403;
+        res.end('missing media cookie');
+        return;
+      }
       res.setHeader('content-type', 'image/png');
+      res.setHeader('cache-control', 'no-store');
       res.setHeader('content-length', String(png.length));
       res.end(png);
       return;
     }
     res.setHeader('content-type', 'text/html; charset=utf-8');
     if (url.pathname === '/allowed') {
+      res.setHeader('Set-Cookie', 'bmd_media_cookie=ok; Path=/; SameSite=Lax');
       res.end(`<!doctype html>
 <html>
   <head><title>Allowed Real Chrome E2E</title></head>
@@ -171,7 +181,8 @@ function startPageServer() {
     <main>
       <h1>Allowed capture fixture</h1>
       <p>Visible capture proof ${visibleNeedle} from a real Windows Chrome extension.</p>
-      <img src="/media-image.png" width="64" height="64" alt="Synthetic media artifact">
+      <img src="/media-image.png" width="64" height="64" alt="Synthetic public media artifact">
+      <img src="/cookie-media.png" width="64" height="64" alt="Synthetic cookie media artifact">
       <p style="display:none">Hidden text must not be captured ${hiddenNeedle}</p>
       <p aria-hidden="true">ARIA hidden text must not be captured ${hiddenNeedle}_ARIA</p>
       <input value="Input field must not be captured ${hiddenNeedle}_INPUT">
@@ -535,6 +546,29 @@ async function waitForQueuesEmpty(cdp, storageSessionId, timeoutMs = 15000) {
   return lengths;
 }
 
+async function getMediaQueueCounts(cdp, storageSessionId) {
+  const stored = await evaluate(
+    cdp,
+    storageSessionId,
+    `globalThis.BrowserMemoryMediaQueue ? BrowserMemoryMediaQueue.countMediaTasksByStatus().then((value) => JSON.stringify(value)) : JSON.stringify({unavailable: 1})`,
+    { awaitPromise: true }
+  );
+  return JSON.parse(stored || '{}');
+}
+
+async function waitForMediaQueueEmpty(cdp, storageSessionId, timeoutMs = 20000) {
+  const started = Date.now();
+  let counts = {};
+  while (Date.now() - started < timeoutMs) {
+    counts = await getMediaQueueCounts(cdp, storageSessionId);
+    const total = Object.values(counts).reduce((sum, value) => sum + Number(value || 0), 0);
+    if (total === 0) return counts;
+    await evaluate(cdp, storageSessionId, `drainMediaQueue({limit: 10, budgetMs: 10000}).then((value) => JSON.stringify(value))`, { awaitPromise: true }).catch(() => null);
+    await sleep(500);
+  }
+  return counts;
+}
+
 async function getQueueDebug(cdp, storageSessionId) {
   const stored = await evaluate(
     cdp,
@@ -551,7 +585,7 @@ function queryDbCounts() {
 import json, sqlite3, sys
 conn = sqlite3.connect(${JSON.stringify(dbPath)})
 counts = {}
-for table in ['documents', 'visits', 'visit_events', 'snapshots', 'chunks', 'media_artifacts', 'audit_events']:
+for table in ['documents', 'visits', 'visit_events', 'snapshots', 'chunks', 'media_artifacts', 'media_fetch_tasks', 'audit_events']:
     counts[table] = conn.execute(f'SELECT COUNT(*) FROM {table}').fetchone()[0]
 counts['audit_event_types'] = dict(conn.execute('SELECT event_type, COUNT(*) FROM audit_events GROUP BY event_type').fetchall())
 print(json.dumps(counts, sort_keys=True))
@@ -568,26 +602,27 @@ import json, pathlib, sqlite3
 conn = sqlite3.connect(${JSON.stringify(dbPath)})
 conn.row_factory = sqlite3.Row
 rows = [dict(row) for row in conn.execute('SELECT id, media_type, role, source_url, mime_type, byte_size, file_path, capture_status FROM media_artifacts ORDER BY created_at ASC').fetchall()]
+tasks = dict(conn.execute('SELECT status, COUNT(*) FROM media_fetch_tasks GROUP BY status').fetchall())
 for row in rows:
     path = pathlib.Path(row['file_path']) if row.get('file_path') else None
     row['has_file'] = bool(path and path.exists())
     row['file_size'] = path.stat().st_size if path and path.exists() else 0
-print(json.dumps({'rows': rows, 'stored': sum(1 for row in rows if row.get('has_file')), 'bytes': sum(row.get('file_size', 0) for row in rows)}, sort_keys=True))
+print(json.dumps({'rows': rows, 'stored': sum(1 for row in rows if row.get('has_file')), 'bytes': sum(row.get('file_size', 0) for row in rows), 'tasks': tasks}, sort_keys=True))
 `;
   const result = spawnSync('python3', ['-c', script], { encoding: 'utf8' });
   if (result.status !== 0) fail(`DB media query failed: ${result.stderr || result.stdout}`);
   return JSON.parse(result.stdout.trim());
 }
 
-async function waitForMediaArtifactStored(timeoutMs = 15000) {
+async function waitForMediaArtifactStored(timeoutMs = 20000) {
   const started = Date.now();
-  let media = { rows: [], stored: 0, bytes: 0 };
+  let media = { rows: [], stored: 0, bytes: 0, tasks: {} };
   while (Date.now() - started < timeoutMs) {
     media = queryDbMediaState();
-    if (media.stored >= 1 && media.bytes >= 8) return media;
+    if (media.stored >= 2 && media.bytes >= 16) return media;
     await sleep(500);
   }
-  fail(`timed out waiting for stored media artifact: ${JSON.stringify(media)}`);
+  fail(`timed out waiting for stored media artifacts: ${JSON.stringify(media)}`);
 }
 
 function queryVisitTelemetry() {
@@ -644,8 +679,11 @@ async function runScenario() {
     fail(`${error.message}; queueLengths=${JSON.stringify(queueLengths)}; contentStatus=${JSON.stringify(contentStatus)}; storage=${storageDump}; dbCounts=${JSON.stringify(counts)}; events=${JSON.stringify(recentEvents).slice(0, 2000)}; targets=${targets.map((target) => `${target.type}:${target.url}`).join(', ')}`);
   }
   log(`allowed page search hit count=${visibleResults.length}`);
+  const drainResult = await evaluate(browserCdp, storageSessionId, `drainMediaQueue({limit: 10, budgetMs: 15000}).then((value) => JSON.stringify(value))`, { awaitPromise: true });
+  log(`browser lazy media drain ${drainResult}`);
   const mediaState = await waitForMediaArtifactStored();
-  log(`allowed page media artifact stored count=${mediaState.stored} bytes=${mediaState.bytes}`);
+  if (cookieMediaRequests < 2) fail(`cookie media sidecar fetch was not proven; request count=${cookieMediaRequests}`);
+  log(`allowed page media artifact stored count=${mediaState.stored} bytes=${mediaState.bytes} cookieRequests=${cookieMediaRequests}`);
 
   const hiddenResults = await daemonSearch(hiddenNeedle);
   if (hiddenResults.length !== 0) fail(`hidden/editable/form text leaked into search: ${JSON.stringify(hiddenResults)}`);
@@ -695,11 +733,13 @@ async function runScenario() {
   log(`visit lifecycle telemetry recorded dwell=${allowedVisit.dwell_seconds}s event=${allowedEvent.event_type}`);
 
   const queueLengths = await waitForQueuesEmpty(browserCdp, storageSessionId);
-  if (queueLengths.captureQueue !== 0 || queueLengths.visitEventQueue !== 0) {
+  const mediaQueueCounts = await waitForMediaQueueEmpty(browserCdp, storageSessionId);
+  const mediaQueueTotal = Object.values(mediaQueueCounts).reduce((sum, value) => sum + Number(value || 0), 0);
+  if (queueLengths.captureQueue !== 0 || queueLengths.visitEventQueue !== 0 || mediaQueueTotal !== 0) {
     const queueDebug = await getQueueDebug(browserCdp, storageSessionId);
-    fail(`extension queues not drained/empty: ${JSON.stringify(queueLengths)} debug=${JSON.stringify(queueDebug).slice(0, 2000)}`);
+    fail(`extension queues not drained/empty: ${JSON.stringify({ ...queueLengths, mediaQueueCounts })} debug=${JSON.stringify(queueDebug).slice(0, 2000)}`);
   }
-  log('extension capture and lifecycle queues are empty');
+  log('extension capture, lifecycle, and media queues are empty');
 
   const counts = queryDbCounts();
   const expectedDocuments = allMode ? 5 : 2;
@@ -728,6 +768,7 @@ async function runScenario() {
     windowsWorkRoot,
     counts,
     mediaState,
+    mediaQueueCounts,
     telemetry,
     visibleResult: visibleResults[0]
   }, null, 2));

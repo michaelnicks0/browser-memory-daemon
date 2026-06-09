@@ -12,7 +12,14 @@ from .db import audit, connect, init_db
 from .forget import forget
 from .ingest import ingest_capture
 from .lifecycle import record_visit_event
-from .media import fetch_pending_media_artifacts, media_artifact, store_media_artifact
+from .media import (
+    fetch_pending_media_artifacts,
+    media_artifact,
+    media_queue_status,
+    purge_media_cache,
+    store_media_artifact,
+    store_media_blob_stream,
+)
 from .models import CapturePayload
 from .ops import doctor, document_detail, recent_captures, snapshot_detail, timeline
 from .policy import POLICY_MODE_ALL, evaluate_capture
@@ -45,8 +52,8 @@ def _json_response(handler: BaseHTTPRequestHandler, status: int, payload: dict |
     if _origin_allowed(origin):
         handler.send_header("Access-Control-Allow-Origin", origin)
         handler.send_header("Vary", "Origin")
-    handler.send_header("Access-Control-Allow-Headers", "authorization, content-type")
-    handler.send_header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
+    handler.send_header("Access-Control-Allow-Headers", "authorization, content-type, x-bmd-document-id, x-bmd-snapshot-id, x-bmd-source-url")
+    handler.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
     handler.end_headers()
     handler.wfile.write(body)
 
@@ -243,6 +250,14 @@ def make_handler(config: RuntimeConfig):
                         conn.commit()
                     _json_response(self, 200, result)
                     return
+                if parsed.path == "/media-artifacts/queue-status":
+                    init_db(config)
+                    with connect(config.db_path) as conn:
+                        result = media_queue_status(conn, config, limit=_coerce_limit(params.get("limit", ["50"])[0], 50, 200))
+                        audit(conn, "media.queue_status", {})
+                        conn.commit()
+                    _json_response(self, 200, result)
+                    return
                 if parsed.path.startswith("/media-artifacts/"):
                     artifact_id = unquote(parsed.path.removeprefix("/media-artifacts/"))
                     init_db(config)
@@ -303,6 +318,35 @@ def make_handler(config: RuntimeConfig):
                 return
             _json_response(self, 404, {"error": "not found"})
 
+        def do_PUT(self) -> None:
+            if not _authorized(self, config):
+                _json_response(self, 401, {"error": "unauthorized"})
+                return
+            parsed = urlparse(self.path)
+            if parsed.path.startswith("/media-artifacts/") and parsed.path.endswith("/blob"):
+                artifact_id = unquote(parsed.path.removeprefix("/media-artifacts/").removesuffix("/blob").strip("/"))
+                try:
+                    content_length = int(self.headers.get("Content-Length", "0") or 0)
+                except ValueError:
+                    _json_response(self, 400, {"error": "invalid content length"})
+                    return
+                try:
+                    init_db(config)
+                    with connect(config.db_path) as conn:
+                        headers = {key: self.headers.get(key, "") for key in ["Content-Type", "X-BMD-Document-ID", "X-BMD-Snapshot-ID", "X-BMD-Source-URL"]}
+                        result = store_media_blob_stream(conn, config, artifact_id, self.rfile, headers=headers, content_length=content_length)
+                        audit(conn, "media.blob_put", {"artifact_id": artifact_id, "stored": result["stored"], "capture_status": result["capture_status"], "byte_size": result["byte_size"]})
+                        conn.commit()
+                    _json_response(self, 201 if result["stored"] else 200, result)
+                    return
+                except KeyError as exc:
+                    _json_response(self, 404, {"error": str(exc).strip("'")})
+                    return
+                except Exception as exc:
+                    _json_response(self, 400, {"error": str(exc)})
+                    return
+            _json_response(self, 404, {"error": "not found"})
+
         def do_POST(self) -> None:
             if not _authorized(self, config):
                 _json_response(self, 401, {"error": "unauthorized"})
@@ -314,6 +358,18 @@ def make_handler(config: RuntimeConfig):
             except Exception as exc:
                 _json_response(self, 400, {"error": str(exc)})
                 return
+            if parsed.path == "/media-artifacts/purge-cache":
+                try:
+                    init_db(config)
+                    with connect(config.db_path) as conn:
+                        result = purge_media_cache(conn, config, data)
+                        audit(conn, "media.cache_purge", {"dry_run": result["dry_run"], "rehydrate": result["rehydrate"], "selected": result["selected"], "purged": result["purged"], "bytes": result["bytes"]})
+                        conn.commit()
+                    _json_response(self, 200, result)
+                    return
+                except Exception as exc:
+                    _json_response(self, 400, {"error": str(exc)})
+                    return
             if parsed.path == "/media-artifacts/fetch-pending":
                 try:
                     init_db(config)

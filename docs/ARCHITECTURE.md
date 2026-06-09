@@ -41,6 +41,9 @@ The system shall enable Operator to reconstruct recently viewed web content by c
 | REQ-012 | Local UI and CLI operations. | `ui/`, `cli.py`, admin APIs | admin/CLI e2e tests |
 | REQ-013 | Delete stored memory with receipts. | `forget.py`, `deletion_receipts` | forget integration/e2e tests |
 | REQ-014 | Real daily-driver install path. | `install-daily-driver.sh` | WSL + Windows health checks |
+| REQ-015 | Media bytes shall never block text/FTS capture. | `/capture` media refs, extension IndexedDB queue, media worker | integration + real Chrome e2e |
+| REQ-016 | Credentialed media fetch shall stay inside Chrome; WSL shall not receive browser cookies. | browser lazy sidecar `fetch(... credentials: 'include')` + raw `PUT` | cookie-required real Chrome fixture |
+| REQ-017 | Media cache shall be bounded and disposable/rebuildable. | size gates, `/media-artifacts/purge-cache`, `media-cache` CLI | HTTP/integration tests |
 
 ---
 
@@ -51,11 +54,13 @@ The system shall enable Operator to reconstruct recently viewed web content by c
 | Chrome manifest | Permission envelope and extension entrypoints. | Uses `<all_urls>` so `all` mode is meaningful. |
 | Extractor | Traverse DOM and build capture payload. | Policy-aware; all modes skip hidden/form/editable/script/style/no-script DOM text. |
 | Content script | Schedule initial/delayed/SPA captures and scroll tracking. | Reads `policyMode` from extension storage. |
-| Service worker | Auth, queues, injection, lifecycle state, daemon POSTs. | Content scripts never call daemon directly. |
-| Daemon API | Auth, CORS, routing, UI asset serving. | `/health` public loopback; memory APIs tokened. |
+| Service worker | Auth, queues, injection, lifecycle state, fast `/capture`, browser lazy media queue/drain, daemon POST/PUTs. | Text capture does not wait on media bytes. |
+| Extension media queue | Durable IndexedDB queue for credentialed media fetch/upload. | Stores fetched blobs until raw upload succeeds. |
+| Daemon API | Auth, CORS, routing, UI asset serving, raw media blob upload, cache controls. | `/health` public loopback; memory APIs tokened. |
 | Policy engine | Mode-specific allow/block/redact decisions. | `all`, `recall`, `balanced`, `strict`. |
 | Ingest pipeline | Normalize, store visits/documents/snapshots/chunks/FTS plus related media artifact refs/blobs. | `all` bypasses redaction. |
 | Lifecycle pipeline | Store metadata-only visit events and update dwell. | Uses policy mode for URL redaction/filtering. |
+| Daemon media worker | Durable public-media backfill with leases/backoff/retry. | Does not receive or export Chrome cookies. |
 | Ops/read model | Search, recent, timeline, detail, doctor. | Captured text remains untrusted evidence. |
 | Deletion pipeline | Domain/URL forget and receipt creation. | Removes DB rows, FTS rows, text/media blobs, lifecycle rows. |
 
@@ -70,6 +75,7 @@ flowchart LR
     Extractor[Extractor]
     CS[Content script]
     SW[MV3 service worker]
+    IDB[(Extension IndexedDB media queue)]
     Popup[Popup/options]
   end
 
@@ -77,18 +83,23 @@ flowchart LR
     API[Loopback HTTP API]
     Policy[Policy mode engine]
     Ingest[Ingest + normalization]
+    MediaWorker[Media worker]
     DB[(SQLite + FTS5)]
-    Blobs[Clean text blobs]
+    Blobs[Clean text + media blobs]
     UI[Local UI]
   end
 
   Page --> Extractor --> CS --> SW
+  SW --> IDB
   Popup --> SW
-  SW -- Bearer token --> API
+  SW -- Bearer /capture + /visit-events + raw media PUT --> API
   API --> Policy
   Policy --> Ingest
   Ingest --> DB
   Ingest --> Blobs
+  IDB -- credentialed media fetch/upload --> API
+  MediaWorker -- public fetch tasks --> DB
+  MediaWorker --> Blobs
   UI --> API
 ```
 
@@ -116,10 +127,13 @@ flowchart LR
 | `visit_events` | Metadata-only lifecycle segments. |
 | `snapshots` | Distinct text versions per document. |
 | `chunks` / `chunks_fts` | Searchable text chunks and exact FTS index. |
+| `media_artifacts` | Related image/video refs, current blob status, provenance, purge state. |
+| `media_fetch_tasks` | Durable daemon-public media backfill leases/retries/status. |
 | `privacy_rules` | Block rules for non-`all` modes. |
 | `audit_events` | Metadata-only operational audit. |
 | `deletion_receipts` | Forget receipts and counts. |
 | `~/.local/share/browser-memory-daemon/blobs/clean-text/` | Stored text snapshots. |
+| `~/.local/share/browser-memory-daemon/blobs/media/` | Stored media blobs; purgeable cache. |
 
 ---
 

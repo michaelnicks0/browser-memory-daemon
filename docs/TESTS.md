@@ -25,14 +25,16 @@ git diff --check -- .
 | Test file/script | Covers |
 |---|---|
 | `daemon/tests/unit/test_policy.py` | Policy-mode decisions and redaction helpers. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | Ingest, redaction/non-redaction, FTS, dedupe, media artifact refs/blobs/fetch-pending, forget, schema. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | Ingest, redaction/non-redaction, FTS, dedupe, media artifact refs/blobs/tasks/size gates/fetch-pending, forget, schema. |
+| `daemon/tests/integration/test_media_worker.py` | Durable daemon media worker leases, public fetch, succeeded tasks, purge/rehydrate. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | Lifecycle events, dwell updates, duplicate/overlap protection. |
-| `daemon/tests/e2e/test_http_api.py` | HTTP capture/search/forget/auth/media fetch-pending behavior. |
+| `daemon/tests/e2e/test_http_api.py` | HTTP capture/search/forget/auth/media fetch-pending, raw blob upload, queue status, purge/rehydrate behavior. |
 | `daemon/tests/e2e/test_admin_api.py` | UI asset serving and admin/read/policy endpoints. |
 | `daemon/tests/e2e/test_cli_admin.py` | CLI read/admin commands. |
 | `extension/tests/unit/extractor.test.js` | DOM extraction and URL policy modes. |
 | `extension/tests/unit/queue.test.js` | Queue/helper behavior. |
-| `scripts/real-chrome-e2e.mjs` | Real Windows Chrome for Testing extension/daemon path. |
+| `extension/tests/unit/media_queue.test.js` | IndexedDB-compatible durable media queue semantics and retry timing. |
+| `scripts/real-chrome-e2e.mjs` | Real Windows Chrome for Testing extension/daemon path, including public + cookie-required media blobs. |
 | `scripts/secret-scan.sh` | Secret-shaped content scan over repo. |
 
 ---
@@ -62,6 +64,7 @@ After `./scripts/install-daily-driver.sh` and Chrome extension reload:
 
    ```bash
    systemctl --user is-active browser-memory-daemon.service
+   systemctl --user is-active browser-memory-media-worker.service
    PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
      --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" doctor
    ```

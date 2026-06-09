@@ -15,14 +15,14 @@
 | SQLite/FTS/media storage | ✅ Documents/visits/snapshots/chunks/FTS/media/audit/deletion receipts. | `schema.sql`, integration/e2e tests. |
 | Exact search | ✅ FTS5 exact search with snippets/source metadata and media artifact counts. | `search.py`, `/search`, tests. |
 | Forget/delete | ✅ URL/domain forget with receipts and text/media blob + FTS cleanup. | `forget.py`, tests. |
-| Media artifacts | ✅ Image/video references and fetchable binaries stored beside snapshots; daemon-side public media fetch fallback; no OCR/media indexing. | `media.py`, `/media-artifacts`, `/media-artifacts/fetch-pending`, real Chrome e2e. |
+| Media artifacts | ✅ Durable image/video refs and binaries: fast text/manifest capture, browser IndexedDB lazy queue, credentialed fetch, raw blob upload, daemon public worker, purge/rehydrate controls; no OCR/media indexing. | `media.py`, `media_worker.py`, `media_queue.js`, `/media-artifacts/*`, real Chrome e2e. |
 | Local UI | ✅ Search/recent/timeline/detail/doctor/policy/delete panels. | `ui/`, admin API tests. |
 | CLI | ✅ serve/health/search/recent/timeline/detail/policy/forget/capture-fixture. | `cli.py`, CLI e2e. |
 | Dedupe/versioning | ✅ URL normalization + text-hash snapshots. | ingest tests. |
 | SPA/delayed capture | ✅ Delayed passes and History API hooks. | real Chrome SPA fixture. |
 | Dwell/lifecycle | ✅ Metadata-only visit events with idempotent dwell updates. | lifecycle tests + real e2e. |
 | Policy modes | ✅ `all`, `recall`, `balanced`, `strict`. | daemon + extension unit tests. |
-| Daily-driver install | ✅ systemd user service + Windows extension copy + health checks. | `scripts/install-daily-driver.sh`. |
+| Daily-driver install | ✅ systemd user daemon + media-worker services, Windows extension copy, health checks. | `scripts/install-daily-driver.sh`. |
 
 ---
 
@@ -64,7 +64,7 @@ This means:
 | Chrome internal pages may not inject. | Platform limit; e2e covers web pages. |
 | Branded Chrome automation ignores unpacked extension flags. | E2E uses Chrome for Testing. Daily driver uses manual Load unpacked/reload. |
 | Extension token is copied into Windows-local unpacked extension artifact. | Token is generated in WSL, never committed, and can rotate. |
-| SQLite can grow over time. | No retention/compaction job yet. |
+| SQLite can grow over time. | Media blobs have size/cache gates plus purge/rehydrate controls; no retention/compaction job yet for the full DB/text store. |
 | Captured text may contain prompt injection. | UI/CLI treat it as evidence; future agents must not follow page instructions. |
 
 ---

@@ -20,7 +20,9 @@ Windows Chrome extension → http://127.0.0.1:8765 → WSL SQLite/FTS/blobs → 
 
 ```bash
 systemctl --user is-active browser-memory-daemon.service
+systemctl --user is-active browser-memory-media-worker.service
 systemctl --user is-enabled browser-memory-daemon.service
+systemctl --user is-enabled browser-memory-media-worker.service
 PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
   --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" doctor
 ```
@@ -112,6 +114,36 @@ http://127.0.0.1:8765/ui
 ```
 
 Paste the token once into the UI when prompted. Static UI files are public loopback assets; every memory/admin API call still requires the token.
+
+---
+
+## Media cache controls
+
+Text/FTS rows are the durable recall source. Media blobs are a bounded cache under `~/.local/share/browser-memory-daemon/blobs/media/`; artifact refs remain even if blobs are purged.
+
+Dry-run a domain purge:
+
+```bash
+PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
+  --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
+  media-cache purge --domain linkedin.com --dry-run
+```
+
+Execute purge and queue best-effort public rehydration:
+
+```bash
+PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
+  --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
+  media-cache purge --domain linkedin.com --execute --rehydrate
+```
+
+Run one media worker pass manually:
+
+```bash
+PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
+  --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
+  media-worker --once --limit 100
+```
 
 ---
 

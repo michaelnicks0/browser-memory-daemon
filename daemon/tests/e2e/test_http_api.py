@@ -1,6 +1,7 @@
 import json
 from dataclasses import replace
 import threading
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -30,7 +31,18 @@ def raw_request(method, url, token="test-token", body=None):
         return response.status, response.headers, response.read()
 
 
-def test_http_media_fetch_pending_endpoint_stores_referenced_data_url(tmp_path):
+def binary_request(method, url, token="test-token", body=b"", content_type="application/octet-stream", headers=None):
+    req = urllib.request.Request(url, data=body, method=method)
+    if token:
+        req.add_header("Authorization", f"Bearer {token}")
+    req.add_header("Content-Type", content_type)
+    for key, value in (headers or {}).items():
+        req.add_header(key, value)
+    with urllib.request.urlopen(req, timeout=10) as response:
+        return response.status, json.loads(response.read().decode() or "{}")
+
+
+def test_http_media_fetch_raw_upload_and_purge_rehydrate_controls(tmp_path):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", host="127.0.0.1", port=0, policy_mode="all")
     cfg = replace(cfg, media_fetch_on_capture=False)
     server = make_server(cfg)
@@ -52,17 +64,48 @@ def test_http_media_fetch_pending_endpoint_stores_referenced_data_url(tmp_path):
         })
         assert status == 201
         assert stored["media_ref_count"] == 1
+        artifact_id = stored["media_artifacts"][0]["artifact_id"]
+
+        status, uploaded = binary_request(
+            "PUT",
+            f"{base}/media-artifacts/{artifact_id}/blob",
+            body=b"\x89PNG\r\n\x1a\n",
+            content_type="image/png",
+            headers={"X-BMD-Document-ID": stored["document_id"], "X-BMD-Snapshot-ID": stored["snapshot_id"]},
+        )
+        assert status == 201
+        assert uploaded["stored"] is True
+        status, headers, binary = raw_request("GET", f"{base}/media-artifacts/{artifact_id}")
+        assert status == 200
+        assert headers.get_content_type() == "image/png"
+        assert binary == b"\x89PNG\r\n\x1a\n"
+
+        status, queue_status = request("GET", f"{base}/media-artifacts/queue-status")
+        assert status == 200
+        assert queue_status["artifacts"]["stored"] == 1
+        assert queue_status["bytes"]["stored"] == 8
+
+        status, dry = request("POST", f"{base}/media-artifacts/purge-cache", body={"domain": "example.org", "dry_run": True})
+        assert status == 200
+        assert dry["selected"] == 1
+        assert dry["bytes"] == 8
+        status, headers, binary = raw_request("GET", f"{base}/media-artifacts/{artifact_id}")
+        assert status == 200
+
+        status, purged = request("POST", f"{base}/media-artifacts/purge-cache", body={"domain": "example.org", "dry_run": False, "rehydrate": True})
+        assert status == 200
+        assert purged["purged"] == 1
+        try:
+            raw_request("GET", f"{base}/media-artifacts/{artifact_id}")
+            raise AssertionError("purged media file should not be available")
+        except urllib.error.HTTPError as exc:
+            assert exc.code == 404
 
         status, fetched = request("POST", f"{base}/media-artifacts/fetch-pending", body={"snapshot_id": stored["snapshot_id"], "limit": 10})
         assert status == 200
         assert fetched["attempted"] == 1
         assert fetched["stored"] == 1
         assert fetched["remaining"] == 0
-        artifact_id = fetched["results"][0]["artifact_id"]
-        status, headers, binary = raw_request("GET", f"{base}/media-artifacts/{artifact_id}")
-        assert status == 200
-        assert headers.get_content_type() == "image/png"
-        assert binary == b"\x89PNG\r\n\x1a\n"
     finally:
         server.shutdown()
         thread.join(timeout=5)

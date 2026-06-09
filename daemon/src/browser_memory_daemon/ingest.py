@@ -6,7 +6,7 @@ import sqlite3
 from .config import RuntimeConfig
 from .db import audit
 from .models import CapturePayload
-from .media import parse_media_refs, record_media_references
+from .media import media_artifact_id, parse_media_refs, record_media_references
 from .normalize import domain_from_url, normalize_url
 from .policy import POLICY_MODE_ALL, redact_text, redact_url
 
@@ -182,6 +182,24 @@ def ingest_capture(conn: sqlite3.Connection, config: RuntimeConfig, payload: Cap
         "snapshot_created": not snapshot_exists,
         "chunk_count": 0 if snapshot_exists else len(chunks),
         "media_ref_count": media_ref_count,
+        "media_artifacts": [
+            {
+                "artifact_id": media_artifact_id(snapshot_id, ref),
+                "document_id": document_id,
+                "snapshot_id": snapshot_id,
+                "visit_id": payload.visit_id,
+                "page_url": safe_url,
+                "media_type": ref.media_type,
+                "role": ref.role,
+                "source_url": ref.source_url,
+                "mime_type": ref.mime_type,
+                "width": ref.width,
+                "height": ref.height,
+                "duration_seconds": ref.duration_seconds,
+                "metadata": ref.metadata or {},
+            }
+            for ref in media_refs
+        ],
         "redaction_count": redaction_count,
         "policy_mode": config.policy_mode,
     }

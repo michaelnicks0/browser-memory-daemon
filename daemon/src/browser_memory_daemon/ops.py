@@ -7,7 +7,7 @@ from typing import Any
 
 from . import __version__
 from .config import RuntimeConfig
-from .media import media_artifacts_for_document, media_artifacts_for_snapshot
+from .media import media_artifacts_for_document, media_artifacts_for_snapshot, media_queue_status
 
 
 def _clamp_limit(limit: int | str | None, *, default: int = 25, maximum: int = 100) -> int:
@@ -239,6 +239,7 @@ def doctor(config: RuntimeConfig, conn: sqlite3.Connection) -> dict[str, Any]:
         "chunks",
         "chunks_fts",
         "media_artifacts",
+        "media_fetch_tasks",
         "privacy_rules",
         "audit_events",
         "deletion_receipts",
@@ -283,6 +284,7 @@ def doctor(config: RuntimeConfig, conn: sqlite3.Connection) -> dict[str, Any]:
             "media_files": media_files,
             "media_bytes": media_bytes,
         },
+        "media_queue": media_queue_status(conn, config, limit=25),
     }
 
 

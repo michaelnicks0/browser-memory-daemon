@@ -1,8 +1,13 @@
+from dataclasses import replace
+import io
+
+import pytest
+
 from browser_memory_daemon.config import load_config
 from browser_memory_daemon.db import connect, init_db
 from browser_memory_daemon.forget import forget
 from browser_memory_daemon.ingest import ingest_capture
-from browser_memory_daemon.media import fetch_pending_media_artifacts, media_artifacts_for_snapshot, store_media_artifact
+from browser_memory_daemon.media import fetch_pending_media_artifacts, media_artifacts_for_snapshot, store_media_artifact, store_media_blob_stream
 from browser_memory_daemon.models import CapturePayload
 from browser_memory_daemon.search import search_memory
 
@@ -145,6 +150,10 @@ def test_media_artifacts_are_related_to_snapshot_not_fts_and_deleted_by_forget(t
         media = media_artifacts_for_snapshot(conn, result["snapshot_id"])
         assert len(media) == 1
         assert media[0]["capture_status"] == "referenced"
+        task = conn.execute("SELECT artifact_id, worker_kind, status FROM media_fetch_tasks").fetchone()
+        assert task["artifact_id"] == media[0]["id"]
+        assert task["worker_kind"] == "daemon-public"
+        assert task["status"] == "pending"
         stored = store_media_artifact(
             conn,
             cfg,
@@ -170,6 +179,80 @@ def test_media_artifacts_are_related_to_snapshot_not_fts_and_deleted_by_forget(t
         assert receipt["counts"]["media_artifacts"] == 1
         assert receipt["counts"]["media_blobs"] == 1
         assert not media_path.exists()
+
+
+def test_media_artifact_size_gate_skips_oversized_blob(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    cfg = replace(cfg, max_media_artifact_bytes=4)
+    init_db(cfg)
+    payload = CapturePayload.from_dict(
+        {
+            "url": "https://example.com/oversized-media-page",
+            "title": "Oversized Media Page",
+            "text": "Readable body for oversized media gate.",
+            "media_artifacts": [{"media_type": "image", "source_url": "https://example.com/too-big.png", "mime_type": "image/png"}],
+        },
+        allow_any_url=True,
+    )
+    with connect(cfg.db_path) as conn:
+        result = ingest_capture(conn, cfg, payload)
+        stored = store_media_artifact(
+            conn,
+            cfg,
+            {
+                "document_id": result["document_id"],
+                "snapshot_id": result["snapshot_id"],
+                "visit_id": result["visit_id"],
+                "page_url": "https://example.com/oversized-media-page",
+                "media_type": "image",
+                "source_url": "https://example.com/too-big.png",
+                "mime_type": "image/png",
+                "content_base64": "iVBORw0KGgo=",
+            },
+        )
+        assert stored["stored"] is False
+        assert stored["capture_status"] == "skipped"
+        media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
+        assert media["status_reason"] == "media-too-large"
+        assert media["has_file"] is False
+
+
+def test_raw_blob_upload_rejects_truncated_body_and_infers_mime_from_url(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    payload = CapturePayload.from_dict(
+        {
+            "url": "https://example.com/raw-media-page",
+            "title": "Raw Media Page",
+            "text": "Readable body for raw media upload.",
+            "media_artifacts": [{"media_type": "image", "source_url": "https://example.com/raw.png"}],
+        },
+        allow_any_url=True,
+    )
+    with connect(cfg.db_path) as conn:
+        result = ingest_capture(conn, cfg, payload)
+        artifact = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
+        with pytest.raises(ValueError, match="incomplete media upload"):
+            store_media_blob_stream(
+                conn,
+                cfg,
+                artifact["id"],
+                io.BytesIO(b"1234"),
+                headers={"Content-Type": "application/octet-stream"},
+                content_length=8,
+            )
+        stored = store_media_blob_stream(
+            conn,
+            cfg,
+            artifact["id"],
+            io.BytesIO(b"12345678"),
+            headers={"Content-Type": "application/octet-stream"},
+            content_length=8,
+        )
+        assert stored["stored"] is True
+        media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
+        assert media["mime_type"] == "image/png"
+        assert media["byte_size"] == 8
 
 
 def test_fetch_pending_media_artifacts_stores_data_url_without_indexing_media_metadata(tmp_path):
@@ -313,7 +396,7 @@ def test_schema_has_planned_core_tables(tmp_path):
     init_db(cfg)
     with connect(cfg.db_path) as conn:
         tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type IN ('table','virtual table')")}
-    for expected in {"jobs", "embeddings", "redactions", "feedback_events", "deletion_receipts", "visit_events", "media_artifacts"}:
+    for expected in {"jobs", "embeddings", "redactions", "feedback_events", "deletion_receipts", "visit_events", "media_artifacts", "media_fetch_tasks"}:
         assert expected in tables
 
 

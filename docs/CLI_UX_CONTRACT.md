@@ -45,6 +45,9 @@ Global defaults:
 | `policy-rules [--block-domain DOMAIN]` | List or add block-domain rule. | Pretty JSON. Ignored in `all` mode. |
 | `forget [--domain DOMAIN] [--url URL]` | Delete memory by domain or URL. | Pretty JSON deletion receipt. |
 | `capture-fixture --url URL --title TITLE --text TEXT` | Synthetic capture through HTTP API. | Pretty JSON ingest result. |
+| `media-worker [--once|--loop] [--limit N] [--interval SEC]` | Run daemon public-media worker manually or as service. | Pretty JSON for `--once`; long-running loop for `--loop`. |
+| `media-cache purge [--domain DOMAIN] [--dry-run|--execute] [--rehydrate]` | Dry-run/execute media blob cache purge without deleting text/FTS/ref rows. | Pretty JSON purge summary. |
+| `media-cache rehydrate [--domain DOMAIN] [--limit N]` | Queue/refetch purged public media refs. | Pretty JSON worker summary. |
 
 ---
 
@@ -92,6 +95,14 @@ Forget a domain:
 PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
   --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
   forget --domain example.com
+```
+
+Media cache dry-run:
+
+```bash
+PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
+  --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
+  media-cache purge --domain linkedin.com --dry-run
 ```
 
 ---

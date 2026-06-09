@@ -12,6 +12,7 @@ UNIT_DIR="$HOME/.config/systemd/user"
 TOKEN_FILE="$CFG_DIR/token"
 ENV_FILE="$CFG_DIR/env"
 UNIT_FILE="$UNIT_DIR/browser-memory-daemon.service"
+WORKER_UNIT_FILE="$UNIT_DIR/browser-memory-media-worker.service"
 HOST="${BMD_HOST:-127.0.0.1}"
 PORT="${BMD_PORT:-8765}"
 POLICY_MODE="${BMD_POLICY_MODE:-all}"
@@ -51,6 +52,8 @@ BMD_HOST=$HOST
 BMD_PORT=$PORT
 BMD_API_TOKEN=$TOKEN
 BMD_POLICY_MODE=$POLICY_MODE
+BMD_MEDIA_WORKER_INTERVAL=${BMD_MEDIA_WORKER_INTERVAL:-30}
+BMD_MEDIA_WORKER_LIMIT=${BMD_MEDIA_WORKER_LIMIT:-25}
 PYTHONPATH=$ROOT/daemon/src
 EOF
 chmod 600 "$ENV_FILE"
@@ -76,6 +79,28 @@ NoNewPrivileges=true
 WantedBy=default.target
 EOF
 chmod 644 "$UNIT_FILE"
+
+cat > "$WORKER_UNIT_FILE" <<EOF
+[Unit]
+Description=Browser Memory Media Worker
+Documentation=file:$ROOT/README.md
+After=browser-memory-daemon.service
+
+[Service]
+Type=simple
+WorkingDirectory=$ROOT
+EnvironmentFile=%h/.config/browser-memory-daemon/env
+ExecStart=$PY -m browser_memory_daemon media-worker --loop --interval \${BMD_MEDIA_WORKER_INTERVAL} --limit \${BMD_MEDIA_WORKER_LIMIT}
+Restart=on-failure
+RestartSec=5
+UMask=0077
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target
+EOF
+chmod 644 "$WORKER_UNIT_FILE"
 
 (
   cd "$ROOT/extension"
@@ -116,10 +141,11 @@ for path in files:
 PY
 
 systemctl --user daemon-reload
-systemctl --user enable --now browser-memory-daemon.service >/dev/null
-systemctl --user restart browser-memory-daemon.service
+systemctl --user enable --now browser-memory-daemon.service browser-memory-media-worker.service >/dev/null
+systemctl --user restart browser-memory-daemon.service browser-memory-media-worker.service
 sleep 1
 systemctl --user is-active --quiet browser-memory-daemon.service
+systemctl --user is-active --quiet browser-memory-media-worker.service
 
 "$PY" - <<PY
 import urllib.request
@@ -147,9 +173,11 @@ Extension directory:
 Policy mode:
   $POLICY_MODE
 
-WSL service:
+WSL services:
   systemctl --user status browser-memory-daemon.service
+  systemctl --user status browser-memory-media-worker.service
   journalctl --user -u browser-memory-daemon.service -f
+  journalctl --user -u browser-memory-media-worker.service -f
 
 Chrome manual load/reload step still required by Chrome:
   chrome://extensions → Browser Memory Daemon → Reload

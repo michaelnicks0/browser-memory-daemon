@@ -30,7 +30,8 @@
 | REQ-018 audit logging | API paths write metadata-only audit events. |
 | REQ-019 doctor | `/doctor` and CLI doctor verify DB integrity, FTS consistency, paths, counts, and policy mode. |
 | REQ-020 artifact boundary | `.gitignore` and `scripts/secret-scan.sh`. |
-| REQ-021 Windows browser e2e | `scripts/run-real-chrome-e2e.sh` synthetic allowed/SPA/banking/local scenarios. |
+| REQ-021 Windows browser e2e | `scripts/run-real-chrome-e2e.sh` synthetic allowed/SPA/banking/local scenarios plus public and cookie-required media artifacts. |
+| REQ-022 durable media sidecars | `test_media_worker.py`, `media_queue.test.js`, HTTP raw blob/purge tests, real Chrome media e2e. |
 
 ---
 

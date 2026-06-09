@@ -8,6 +8,9 @@ import urllib.request
 
 from .app import make_server
 from .config import load_config
+from .db import connect, init_db
+from .media import purge_media_cache
+from .media_worker import run_loop as run_media_worker_loop, run_once as run_media_worker_once
 
 
 def _request(method: str, url: str, *, token: str, body: dict | None = None) -> dict:
@@ -54,6 +57,27 @@ def main(argv: list[str] | None = None) -> int:
     cap.add_argument("--url", required=True)
     cap.add_argument("--title", default="Fixture")
     cap.add_argument("--text", required=True)
+    worker = sub.add_parser("media-worker")
+    worker.add_argument("--once", action="store_true")
+    worker.add_argument("--loop", action="store_true")
+    worker.add_argument("--interval", type=float, default=30.0)
+    worker.add_argument("--limit", type=int, default=25)
+    cache = sub.add_parser("media-cache")
+    cache_sub = cache.add_subparsers(dest="cache_command", required=True)
+    purge = cache_sub.add_parser("purge")
+    purge.add_argument("--domain")
+    purge.add_argument("--document-id")
+    purge.add_argument("--snapshot-id")
+    purge.add_argument("--older-than")
+    purge.add_argument("--max-bytes-to-purge", type=int)
+    purge.add_argument("--dry-run", action="store_true")
+    purge.add_argument("--execute", action="store_true")
+    purge.add_argument("--rehydrate", action="store_true")
+    rehydrate = cache_sub.add_parser("rehydrate")
+    rehydrate.add_argument("--domain")
+    rehydrate.add_argument("--document-id")
+    rehydrate.add_argument("--snapshot-id")
+    rehydrate.add_argument("--limit", type=int, default=100)
     args = parser.parse_args(argv)
 
     cfg = load_config(
@@ -117,6 +141,35 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "forget":
         print(json.dumps(_request("POST", f"{base}/forget", token=cfg.api_token, body={"domain": args.domain, "url": args.url}), indent=2))
         return 0
+    if args.command == "media-worker":
+        init_db(cfg)
+        if args.loop and not args.once:
+            run_media_worker_loop(cfg, interval_seconds=args.interval, limit=args.limit)
+            return 0
+        with connect(cfg.db_path) as conn:
+            print(json.dumps(run_media_worker_once(conn, cfg, limit=args.limit), indent=2))
+        return 0
+    if args.command == "media-cache":
+        init_db(cfg)
+        if args.cache_command == "purge":
+            body = {
+                "domain": args.domain,
+                "document_id": args.document_id,
+                "snapshot_id": args.snapshot_id,
+                "older_than": args.older_than,
+                "max_bytes_to_purge": args.max_bytes_to_purge,
+                "dry_run": not args.execute,
+                "rehydrate": args.rehydrate,
+            }
+            with connect(cfg.db_path) as conn:
+                print(json.dumps(purge_media_cache(conn, cfg, body), indent=2))
+            return 0
+        if args.cache_command == "rehydrate":
+            body = {"domain": args.domain, "document_id": args.document_id, "snapshot_id": args.snapshot_id, "dry_run": False, "rehydrate": True, "rehydrate_only": True}
+            with connect(cfg.db_path) as conn:
+                purge_media_cache(conn, cfg, body)
+                print(json.dumps(run_media_worker_once(conn, cfg, limit=args.limit), indent=2))
+            return 0
     if args.command == "capture-fixture":
         print(json.dumps(_request("POST", f"{base}/capture", token=cfg.api_token, body={"url": args.url, "title": args.title, "text": args.text}), indent=2))
         return 0

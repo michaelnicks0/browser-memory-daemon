@@ -23,11 +23,16 @@ class RuntimeConfig:
     max_payload_bytes: int = 2_000_000
     max_media_payload_bytes: int = 40_000_000
     max_media_artifact_bytes: int = 25_000_000
+    max_media_bytes_per_snapshot: int = 100_000_000
+    max_media_bytes_per_domain: int = 2_000_000_000
+    max_media_cache_bytes: int = 50_000_000_000
+    media_mime_allowlist: tuple[str, ...] = ("image/", "video/mp4", "video/webm", "video/ogg", "video/quicktime")
+    media_min_priority_to_store: int = 0
     max_media_artifacts_per_capture: int = 50
     max_media_fetches_per_capture: int = 12
     max_media_fetches_per_call: int = 100
     media_fetch_timeout_seconds: float = 12.0
-    media_fetch_on_capture: bool = True
+    media_fetch_on_capture: bool = False
     raw_html_enabled: bool = False
 
     @property
@@ -55,6 +60,34 @@ class RuntimeConfig:
             path.mkdir(parents=True, exist_ok=True)
         if self.raw_html_enabled:
             self.raw_html_root.mkdir(parents=True, exist_ok=True)
+
+
+def _env_int(name: str, default: int) -> int:
+    raw = os.environ.get(name)
+    if raw is None or raw == "":
+        return default
+    return int(raw)
+
+
+def _env_float(name: str, default: float) -> float:
+    raw = os.environ.get(name)
+    if raw is None or raw == "":
+        return default
+    return float(raw)
+
+
+def _env_bool(name: str, default: bool) -> bool:
+    raw = os.environ.get(name)
+    if raw is None or raw == "":
+        return default
+    return str(raw).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_tuple(name: str, default: tuple[str, ...]) -> tuple[str, ...]:
+    raw = os.environ.get(name)
+    if raw is None or raw == "":
+        return default
+    return tuple(item.strip().lower() for item in raw.split(",") if item.strip())
 
 
 def load_config(
@@ -91,6 +124,19 @@ def load_config(
         config_root=config_root,
         data_root=data_root,
         state_root=state_root,
+        max_payload_bytes=_env_int("BMD_MAX_PAYLOAD_BYTES", RuntimeConfig.max_payload_bytes),
+        max_media_payload_bytes=_env_int("BMD_MAX_MEDIA_PAYLOAD_BYTES", RuntimeConfig.max_media_payload_bytes),
+        max_media_artifact_bytes=_env_int("BMD_MAX_MEDIA_ARTIFACT_BYTES", RuntimeConfig.max_media_artifact_bytes),
+        max_media_bytes_per_snapshot=_env_int("BMD_MAX_MEDIA_BYTES_PER_SNAPSHOT", RuntimeConfig.max_media_bytes_per_snapshot),
+        max_media_bytes_per_domain=_env_int("BMD_MAX_MEDIA_BYTES_PER_DOMAIN", RuntimeConfig.max_media_bytes_per_domain),
+        max_media_cache_bytes=_env_int("BMD_MAX_MEDIA_CACHE_BYTES", RuntimeConfig.max_media_cache_bytes),
+        media_mime_allowlist=_env_tuple("BMD_MEDIA_MIME_ALLOWLIST", RuntimeConfig.media_mime_allowlist),
+        media_min_priority_to_store=_env_int("BMD_MEDIA_MIN_PRIORITY_TO_STORE", RuntimeConfig.media_min_priority_to_store),
+        max_media_artifacts_per_capture=_env_int("BMD_MAX_MEDIA_ARTIFACTS_PER_CAPTURE", RuntimeConfig.max_media_artifacts_per_capture),
+        max_media_fetches_per_capture=_env_int("BMD_MAX_MEDIA_FETCHES_PER_CAPTURE", RuntimeConfig.max_media_fetches_per_capture),
+        max_media_fetches_per_call=_env_int("BMD_MAX_MEDIA_FETCHES_PER_CALL", RuntimeConfig.max_media_fetches_per_call),
+        media_fetch_timeout_seconds=_env_float("BMD_MEDIA_FETCH_TIMEOUT_SECONDS", RuntimeConfig.media_fetch_timeout_seconds),
+        media_fetch_on_capture=_env_bool("BMD_MEDIA_FETCH_ON_CAPTURE", RuntimeConfig.media_fetch_on_capture),
     )
     cfg.ensure_dirs()
     return cfg

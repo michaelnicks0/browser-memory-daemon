@@ -1,4 +1,4 @@
-try { importScripts('shared.js', 'extractor.js'); } catch (_) {}
+try { importScripts('shared.js', 'extractor.js', 'media_queue.js'); } catch (_) {}
 
 const DEFAULTS = {
   daemonUrl: 'http://127.0.0.1:8765',
@@ -114,16 +114,6 @@ async function postVisitEvent(payload, config) {
   return response.json();
 }
 
-function arrayBufferToBase64(buffer) {
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  const chunkSize = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-  }
-  return btoa(binary);
-}
-
 function mediaFetchSupported(sourceUrl) {
   try {
     const url = new URL(sourceUrl);
@@ -146,66 +136,206 @@ async function postMediaArtifact(payload, config) {
   return body;
 }
 
-async function buildMediaArtifactPayload(ref, capturePayload, captureResult) {
-  const sourceUrl = String(ref.source_url || ref.sourceUrl || ref.src || '');
-  const basePayload = {
-    document_id: captureResult.document_id,
-    snapshot_id: captureResult.snapshot_id,
-    visit_id: capturePayload.visit_id || captureResult.visit_id,
-    page_url: capturePayload.url,
-    media_type: ref.media_type || ref.mediaType || ref.type,
-    role: ref.role || 'content',
-    source_url: sourceUrl,
-    alt_text: ref.alt_text || ref.altText || ref.alt || '',
-    title: ref.title || '',
-    mime_type: ref.mime_type || ref.mimeType || '',
-    width: ref.width,
-    height: ref.height,
-    duration_seconds: ref.duration_seconds || ref.durationSeconds || ref.duration,
-    metadata: ref.metadata || {}
-  };
-  if (!mediaFetchSupported(sourceUrl)) {
-    return { ...basePayload, capture_status: 'skipped', status_reason: 'unsupported-media-url-scheme' };
-  }
-  const response = await fetch(sourceUrl, { credentials: 'include', redirect: 'follow' });
-  if (!response.ok) {
-    return { ...basePayload, capture_status: 'failed', status_reason: `fetch-status-${response.status}` };
-  }
-  const contentLength = Number(response.headers.get('content-length') || 0);
-  if (contentLength > MAX_MEDIA_ARTIFACT_BYTES) {
-    return { ...basePayload, capture_status: 'skipped', status_reason: 'media-too-large' };
-  }
-  const buffer = await response.arrayBuffer();
-  if (buffer.byteLength > MAX_MEDIA_ARTIFACT_BYTES) {
-    return { ...basePayload, capture_status: 'skipped', status_reason: 'media-too-large' };
-  }
+function mediaQueueApi() {
+  const api = globalThis.BrowserMemoryMediaQueue;
+  if (!api) throw new Error('media queue unavailable');
+  return api;
+}
+
+function mediaBackoffMs(attempts) {
+  return Math.min(60 * 60 * 1000, 30_000 * (2 ** Math.max(0, Number(attempts || 1) - 1)));
+}
+
+function mediaTaskFromArtifact(artifact, fallbackRef, capturePayload, captureResult) {
+  const ref = fallbackRef || {};
+  const sourceUrl = String(artifact.source_url || ref.source_url || ref.sourceUrl || ref.src || '');
+  const metadata = artifact.metadata || ref.metadata || {};
   return {
-    ...basePayload,
-    mime_type: basePayload.mime_type || response.headers.get('content-type') || '',
-    byte_size: buffer.byteLength,
-    content_base64: arrayBufferToBase64(buffer)
+    artifact_id: artifact.artifact_id || artifact.artifactId,
+    document_id: artifact.document_id || captureResult.document_id,
+    snapshot_id: artifact.snapshot_id || captureResult.snapshot_id,
+    visit_id: artifact.visit_id || capturePayload.visit_id || captureResult.visit_id,
+    page_url: artifact.page_url || capturePayload.url,
+    source_url: sourceUrl,
+    media_type: artifact.media_type || ref.media_type || ref.mediaType || ref.type,
+    role: artifact.role || ref.role || 'content',
+    mime_type: artifact.mime_type || ref.mime_type || ref.mimeType || '',
+    width: artifact.width || ref.width,
+    height: artifact.height || ref.height,
+    duration_seconds: artifact.duration_seconds || ref.duration_seconds || ref.durationSeconds || ref.duration,
+    priority: Number(metadata.priority || artifact.priority || ref.priority || 50),
+    metadata,
+    status: 'pending-fetch'
   };
 }
 
-async function uploadMediaArtifacts(capturePayload, captureResult, config) {
+async function queueMediaArtifacts(capturePayload, captureResult) {
   const refs = Array.isArray(capturePayload.media_artifacts) ? capturePayload.media_artifacts.slice(0, MAX_MEDIA_ARTIFACTS_PER_CAPTURE) : [];
-  if (!refs.length || !captureResult || !captureResult.snapshot_id || !captureResult.document_id) return { attempted: 0, stored: 0 };
-  const results = [];
-  for (const ref of refs) {
-    try {
-      const mediaPayload = await buildMediaArtifactPayload(ref, capturePayload, captureResult);
-      results.push(await postMediaArtifact(mediaPayload, config));
-    } catch (error) {
-      results.push({ ok: false, error: String(error.message || error), media_type: ref.media_type || ref.mediaType || ref.type, source_url: ref.source_url || ref.sourceUrl || ref.src || '' });
+  const artifacts = Array.isArray(captureResult.media_artifacts) ? captureResult.media_artifacts : [];
+  if (!refs.length || !artifacts.length) return { queued: 0 };
+  const api = mediaQueueApi();
+  let queued = 0;
+  for (let i = 0; i < artifacts.length; i += 1) {
+    const task = mediaTaskFromArtifact(artifacts[i], refs[i], capturePayload, captureResult);
+    if (!task.artifact_id || !task.source_url) continue;
+    await api.putMediaTask(task);
+    queued += 1;
+  }
+  return { queued };
+}
+
+function baseMediaStatusPayload(task, captureStatus, statusReason) {
+  return {
+    artifact_id: task.artifact_id,
+    document_id: task.document_id,
+    snapshot_id: task.snapshot_id,
+    visit_id: task.visit_id,
+    page_url: task.page_url,
+    media_type: task.media_type,
+    role: task.role || 'content',
+    source_url: task.source_url,
+    mime_type: task.mime_type || '',
+    width: task.width,
+    height: task.height,
+    duration_seconds: task.duration_seconds,
+    metadata: task.metadata || {},
+    capture_status: captureStatus,
+    status_reason: statusReason || ''
+  };
+}
+
+function inferMimeForTask(task, fetchedMime = '') {
+  const explicit = String(fetchedMime || task.mime_type || '').split(';', 1)[0].trim().toLowerCase();
+  if (explicit && explicit !== 'application/octet-stream') return explicit;
+  let suffix = '';
+  try {
+    suffix = new URL(task.source_url || '').pathname.toLowerCase().split('.').pop() || '';
+  } catch (_) {}
+  const bySuffix = {
+    png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', svg: 'image/svg+xml', avif: 'image/avif',
+    mp4: 'video/mp4', webm: 'video/webm', mov: 'video/quicktime'
+  };
+  if (bySuffix[suffix]) return bySuffix[suffix];
+  if (task.media_type === 'image') return 'image/*';
+  if (task.media_type === 'video') return 'video/*';
+  return '';
+}
+
+async function putMediaArtifactBlob(task, blobRecord, config) {
+  const base = normalizeDaemonUrl(config.daemonUrl);
+  const metadata = blobRecord.metadata || {};
+  const headers = {
+    authorization: `Bearer ${config.apiToken}`,
+    'x-bmd-document-id': task.document_id || '',
+    'x-bmd-snapshot-id': task.snapshot_id || '',
+    'x-bmd-source-url': task.source_url || ''
+  };
+  const uploadMime = inferMimeForTask(task, metadata.mime_type);
+  if (uploadMime) headers['content-type'] = uploadMime;
+  const response = await fetch(`${base}/media-artifacts/${encodeURIComponent(task.artifact_id)}/blob`, {
+    method: 'PUT',
+    headers,
+    body: blobRecord.blob,
+    targetAddressSpace: 'loopback'
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(`media blob upload failed: ${response.status} ${JSON.stringify(body)}`);
+  return body;
+}
+
+async function fetchMediaForTask(task) {
+  if (!mediaFetchSupported(task.source_url)) {
+    return { skipped: true, reason: 'unsupported-media-url-scheme' };
+  }
+  const response = await fetch(task.source_url, { credentials: 'include', redirect: 'follow', cache: 'no-store' });
+  if (!response.ok) {
+    return { failed: true, reason: `fetch-status-${response.status}` };
+  }
+  const contentLength = Number(response.headers.get('content-length') || 0);
+  if (contentLength > MAX_MEDIA_ARTIFACT_BYTES) {
+    return { skipped: true, reason: 'media-too-large' };
+  }
+  const buffer = await response.arrayBuffer();
+  if (buffer.byteLength > MAX_MEDIA_ARTIFACT_BYTES) {
+    return { skipped: true, reason: 'media-too-large' };
+  }
+  return { blob: buffer, mime_type: response.headers.get('content-type') || task.mime_type || '' };
+}
+
+async function processMediaTask(task, config) {
+  const api = mediaQueueApi();
+  let blobRecord = await api.getFetchedBlob(task.artifact_id);
+  if (!blobRecord) {
+    await api.markMediaTask(task.artifact_id, { status: 'fetching', last_error: '' });
+    const fetched = await fetchMediaForTask(task);
+    if (fetched.skipped) {
+      await postMediaArtifact(baseMediaStatusPayload(task, 'skipped', fetched.reason), config);
+      await api.deleteMediaTask(task.artifact_id);
+      return { artifact_id: task.artifact_id, skipped: true, reason: fetched.reason };
     }
+    if (fetched.failed) {
+      throw new Error(fetched.reason);
+    }
+    blobRecord = await api.putFetchedBlob(task.artifact_id, fetched.blob, { mime_type: fetched.mime_type, byte_size: fetched.blob.byteLength });
+    await api.markMediaTask(task.artifact_id, { status: 'pending-upload', last_error: '' });
   }
-  const failed = results.filter((item) => item && item.ok === false);
-  if (failed.length) {
-    await chrome.storage.local.set({ lastMediaArtifactError: { at: nowIso(), failed: failed.slice(0, 5) } });
+  await api.markMediaTask(task.artifact_id, { status: 'uploading', last_error: '' });
+  const uploaded = await putMediaArtifactBlob(task, blobRecord, config);
+  if (uploaded.stored || ['skipped', 'failed', 'expired'].includes(uploaded.capture_status)) {
+    await api.deleteMediaTask(task.artifact_id);
   } else {
-    await chrome.storage.local.remove('lastMediaArtifactError');
+    const attempts = Number(task.attempts || 0) + 1;
+    await api.markMediaTask(task.artifact_id, { status: 'retrying', attempts, last_error: uploaded.status_reason || uploaded.capture_status || 'not-stored', next_attempt_at: new Date(Date.now() + mediaBackoffMs(attempts)).toISOString() });
   }
-  return { attempted: refs.length, stored: results.filter((item) => item && item.stored).length, results };
+  return uploaded;
+}
+
+let mediaDrainInFlight = false;
+
+async function drainMediaQueue(options = {}) {
+  if (mediaDrainInFlight) return { skipped: true, reason: 'already-running' };
+  mediaDrainInFlight = true;
+  const started = Date.now();
+  const budgetMs = options.budgetMs || 25_000;
+  const limit = options.limit || 10;
+  const config = await getConfig();
+  const api = mediaQueueApi();
+  const results = [];
+  try {
+    if (config.capturePaused || !config.apiToken) return { skipped: true, reason: config.capturePaused ? 'paused' : 'missing-token' };
+    const tasks = await api.getDueMediaTasks(limit, nowIso());
+    for (const task of tasks) {
+      if (Date.now() - started > budgetMs) break;
+      try {
+        results.push(await processMediaTask(task, config));
+      } catch (error) {
+        const attempts = Number(task.attempts || 0) + 1;
+        const maxAttempts = Number(task.max_attempts || 5);
+        const terminal = attempts >= maxAttempts;
+        const nextAttempt = terminal ? null : new Date(Date.now() + mediaBackoffMs(attempts)).toISOString();
+        await api.markMediaTask(task.artifact_id, {
+          status: terminal ? 'failed' : 'retrying',
+          attempts,
+          next_attempt_at: nextAttempt,
+          last_error: String(error.message || error)
+        });
+        if (terminal) {
+          await postMediaArtifact(baseMediaStatusPayload(task, 'failed', String(error.message || error).slice(0, 160)), config).catch(() => null);
+        }
+        results.push({ artifact_id: task.artifact_id, ok: false, error: String(error.message || error), terminal });
+      }
+    }
+    const counts = await api.countMediaTasksByStatus();
+    await chrome.storage.local.set({ lastMediaQueueDrain: { at: nowIso(), results: results.slice(0, 20), counts } });
+    return { ok: true, processed: results.length, results, counts };
+  } finally {
+    mediaDrainInFlight = false;
+  }
+}
+
+function scheduleMediaDrain() {
+  if (chrome.alarms?.create) chrome.alarms.create('bmd-media-drain', { periodInMinutes: 1 });
+  drainMediaQueue().catch((error) => chrome.storage.local.set({ lastMediaArtifactError: { at: nowIso(), error: String(error.message || error) } }));
 }
 
 async function drainQueue() {
@@ -217,13 +347,29 @@ async function drainQueue() {
   while (queue.length) {
     const item = queue[0];
     try {
-      const captureResult = await postOne(item.payload, config);
+      let captureResult = item.capture_result || item.captureResult || null;
+      if (!captureResult) {
+        captureResult = await postOne(item.payload, config);
+        item.capture_result = captureResult;
+        queue[0] = item;
+        await saveQueue(queue);
+      }
       delivered.push(captureResult);
-      uploadMediaArtifacts(item.payload, captureResult, config).catch((error) => {
-        chrome.storage.local.set({ lastMediaArtifactError: { at: nowIso(), error: String(error.message || error) } });
-      });
+      if (!item.media_enqueued && !item.mediaEnqueued) {
+        try {
+          await queueMediaArtifacts(item.payload, captureResult);
+          item.media_enqueued = true;
+          queue[0] = item;
+          await saveQueue(queue);
+        } catch (error) {
+          await chrome.storage.local.set({ lastMediaArtifactError: { at: nowIso(), error: String(error.message || error), phase: 'queue-media' } });
+          await saveQueue(queue);
+          return { ok: false, delivered, remaining: queue.length, error: String(error.message || error), phase: 'queue-media' };
+        }
+      }
       queue.shift();
       await saveQueue(queue);
+      scheduleMediaDrain();
     } catch (error) {
       await saveQueue(queue);
       return { ok: false, delivered, remaining: queue.length, error: String(error.message || error) };
@@ -471,5 +617,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
-chrome.runtime.onStartup?.addListener(() => { drainAllQueues(); });
-chrome.runtime.onInstalled?.addListener(() => { drainAllQueues(); });
+chrome.runtime.onStartup?.addListener(() => { drainAllQueues(); scheduleMediaDrain(); });
+chrome.runtime.onInstalled?.addListener(() => { drainAllQueues(); scheduleMediaDrain(); });
+chrome.alarms?.onAlarm?.addListener((alarm) => {
+  if (alarm && alarm.name === 'bmd-media-drain') scheduleMediaDrain();
+});
+chrome.alarms?.create?.('bmd-media-drain', { periodInMinutes: 1 });

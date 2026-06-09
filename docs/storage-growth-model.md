@@ -8,7 +8,7 @@
 
 ## TL;DR
 
-The current implementation is **text-only plus SQLite/FTS**, so growth is manageable.
+The implementation is **text-first** with optional bounded media blobs. Text/FTS growth remains manageable; media is intentionally cache-like and now has explicit size gates plus purge/rehydrate controls.
 
 Using Operator's recent Chrome History baseline and the daemon's current storage multiplier, the most realistic planning range is:
 
@@ -21,7 +21,7 @@ Using Operator's recent Chrome History baseline and the daemon's current storage
 | Very heavy / dynamic pages | 500 snapshots/day, p90 text size | ~23.7 GB/year |
 | Extreme | 1000 snapshots/day, p90 text size | ~47.4 GB/year |
 
-Practical expectation: **5–15 GB/year** for current text-only exact recall, with heavy/dynamic browsing pushing above that. This is not a disk-space crisis on a workstation, but it is enough to justify a storage monitor, periodic `VACUUM`/compaction, and later schema optimization.
+Practical expectation for **text/FTS** remains **5–15 GB/year** under normal-heavy browsing. Media blobs are separate from this estimate: defaults cap individual artifacts at 25 MB, per-snapshot media at 100 MB, per-domain media at 2 GB, and total media cache at 50 GB. Use `media-cache purge` when media cache pressure matters.
 
 ---
 
@@ -32,7 +32,7 @@ Practical expectation: **5–15 GB/year** for current text-only exact recall, wi
 | Live daemon DB | Current row counts, SQLite page stats, FTS/table sizes, clean-text blob sizes | `~/.local/share/browser-memory-daemon/browser-memory.sqlite3` |
 | Live daemon blob tree | Clean text files under `blobs/clean-text/` | File sizes only; no content dumped. |
 | Chrome History copy | 1/3/7/14/30/90 day visit and unique-URL aggregates | Copied locked DB to temp; aggregate counts only; no URLs/domains written here. |
-| Current code behavior | Text-only extraction, chunking, FTS5 duplication, lifecycle metadata | No screenshots, no full HTML, no assets, no embeddings yet. |
+| Current code behavior | Text-first extraction, chunking, FTS5 duplication, lifecycle metadata, bounded media refs/blobs | Media blobs are cache-managed; no screenshots, full HTML, embeddings yet. |
 
 ---
 
@@ -201,7 +201,7 @@ These would change the model completely:
 |---|---|
 | Full HTML snapshots | Could be 5–50x current text-only storage depending on pages. |
 | Screenshots | Easily hundreds of KB to multiple MB per page. |
-| Images/assets/video cache | Unbounded; can become tens/hundreds of GB quickly. |
+| Images/assets/video cache | Now implemented as a bounded, purgeable cache. Defaults still allow large growth under media-heavy browsing, but per-artifact/snapshot/domain/global gates prevent unbounded accumulation. |
 
 Recommendation: keep the daemon **text-first** unless a specific future feature needs richer capture.
 

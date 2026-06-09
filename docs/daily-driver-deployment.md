@@ -9,9 +9,12 @@
 
 ```text
 Windows Chrome unpacked extension
-  → http://127.0.0.1:8765/capture + /visit-events
-  → WSL systemd --user service
+  → http://127.0.0.1:8765/capture + /visit-events + media blob PUT
+  → WSL systemd --user services
+     - browser-memory-daemon.service
+     - browser-memory-media-worker.service
   → ~/.local/share/browser-memory-daemon/browser-memory.sqlite3
+  → ~/.local/share/browser-memory-daemon/blobs/{clean-text,media}/
 ```
 
 The daemon is persistent in WSL. Chrome still requires **Load unpacked** / **Reload** through Chrome's UI because branded Chrome rejects direct profile JSON extension transplants.
@@ -26,9 +29,11 @@ The daemon is persistent in WSL. Chrome still requires **Load unpacked** / **Rel
 | Windows extension copy | `C:\Users\user\AppData\Local\browser-memory-daemon\extension\` |
 | WSL token file | `~/.config/browser-memory-daemon/token` |
 | WSL service env | `~/.config/browser-memory-daemon/env` |
-| systemd user unit | `~/.config/systemd/user/browser-memory-daemon.service` |
+| systemd daemon unit | `~/.config/systemd/user/browser-memory-daemon.service` |
+| systemd media worker unit | `~/.config/systemd/user/browser-memory-media-worker.service` |
 | SQLite DB | `~/.local/share/browser-memory-daemon/browser-memory.sqlite3` |
 | Clean-text blobs | `~/.local/share/browser-memory-daemon/blobs/clean-text/` |
+| Media blobs | `~/.local/share/browser-memory-daemon/blobs/media/` |
 | Audit log | `~/.local/state/browser-memory-daemon/audit.jsonl` |
 
 ---
@@ -47,7 +52,7 @@ The installer:
 3. copies it to the Windows-local extension directory;
 4. creates or reuses the daemon token;
 5. writes protected WSL env with `BMD_POLICY_MODE`;
-6. writes/enables/restarts the `systemd --user` service;
+6. writes/enables/restarts the `systemd --user` daemon and media-worker services;
 7. preconfigures the Windows extension copy with token and policy mode;
 8. verifies WSL and Windows loopback health.
 
@@ -81,7 +86,9 @@ Direct `Preferences` / `Secure Preferences` JSON transplant was tested and rejec
 
 ```bash
 systemctl --user status browser-memory-daemon.service
+systemctl --user status browser-memory-media-worker.service
 journalctl --user -u browser-memory-daemon.service -n 50 --no-pager
+journalctl --user -u browser-memory-media-worker.service -n 50 --no-pager
 PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
   --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
   health
@@ -167,13 +174,13 @@ PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
 Pause capture from the extension popup, or stop the daemon:
 
 ```bash
-systemctl --user stop browser-memory-daemon.service
+systemctl --user stop browser-memory-daemon.service browser-memory-media-worker.service
 ```
 
 Disable autostart:
 
 ```bash
-systemctl --user disable --now browser-memory-daemon.service
+systemctl --user disable --now browser-memory-daemon.service browser-memory-media-worker.service
 ```
 
 Remove the Chrome extension from `chrome://extensions` if needed.

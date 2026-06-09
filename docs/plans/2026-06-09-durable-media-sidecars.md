@@ -8,7 +8,7 @@
 >
 > **Tech Stack:** Chrome MV3 extension, IndexedDB, `chrome.alarms`, WSL Python HTTP daemon, SQLite, filesystem blobs, real Chrome e2e.
 >
-> **Status:** 📋 Plan ready; not implemented.
+> **Status:** ✅ Implemented; retained as design rationale and task trace.
 
 ---
 

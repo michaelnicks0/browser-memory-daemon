@@ -19,8 +19,7 @@
 | Understand policy/security tradeoffs | [`security-model.md`](security-model.md) |
 | Check what is implemented vs pending | [`STATUS.md`](STATUS.md) |
 | Model storage growth | [`storage-growth-model.md`](storage-growth-model.md) |
-| Understand image/video artifact storage | [`media-artifacts.md`](media-artifacts.md) |
-| Implement durable lazy media sidecars | [`plans/2026-06-09-durable-media-sidecars.md`](plans/2026-06-09-durable-media-sidecars.md) |
+| Understand durable lazy media sidecars | [`media-artifacts.md`](media-artifacts.md), [`plans/2026-06-09-durable-media-sidecars.md`](plans/2026-06-09-durable-media-sidecars.md) |
 | Run verification gates | [`TESTS.md`](TESTS.md), [`test-plan.md`](test-plan.md) |
 
 ---
@@ -33,6 +32,7 @@
 | HTTP API and UI serving | `daemon/src/browser_memory_daemon/app.py`, `ui/` |
 | Ingest/storage/search/forget | `ingest.py`, `schema.sql`, `search.py`, `forget.py` |
 | Capture policy modes | `policy.py`, `policy_store.py`, `extension/src/extractor.js`, `service_worker.js` |
+| Media sidecars | `daemon/src/browser_memory_daemon/media.py`, `media_worker.py`, `extension/src/media_queue.js`, `service_worker.js` |
 | Chrome extension extraction/bridge | `extension/src/extractor.js`, `content_script.js`, `service_worker.js` |
 | Real browser verification | `scripts/real-chrome-e2e.mjs`, `scripts/run-real-chrome-e2e.sh` |
 | Daily-driver install | `scripts/install-daily-driver.sh`, Chrome Load-unpacked UI |

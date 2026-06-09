@@ -16,9 +16,10 @@ This implementation follows the plan from:
 
 ```text
 Windows Chrome extension
-  → service-worker-owned authenticated localhost HTTP
-  → WSL daemon policy mode
-  → SQLite + FTS5 + text blobs under WSL runtime paths
+  → fast /capture sidecar: text + media manifest refs
+  → browser lazy media sidecar: credentialed fetch + raw blob upload
+  → WSL daemon policy mode + durable public media worker
+  → SQLite + FTS5 + text/media blobs under WSL runtime paths
   → CLI / local UI / search / timeline / detail / forget / doctor
 ```
 
@@ -115,8 +116,9 @@ http://127.0.0.1:8765/ui
 - Delayed SPA capture and History API hooks.
 - Tab lifecycle events, dwell seconds, and max-scroll metadata.
 - Local web UI and MV3 extension popup/options controls.
+- Image/video media refs, durable browser IndexedDB media queue, raw blob upload, public daemon media worker, purge/rehydrate cache controls.
 - Real Windows Chrome for Testing e2e harness.
-- Daily-driver install helper for WSL systemd service and Windows unpacked extension artifact.
+- Daily-driver install helper for WSL daemon/media-worker systemd services and Windows unpacked extension artifact.
 
 ---
 

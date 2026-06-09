@@ -122,6 +122,23 @@ CREATE TABLE IF NOT EXISTS media_artifacts (
   FOREIGN KEY(visit_id) REFERENCES visits(id) ON DELETE SET NULL
 );
 
+CREATE TABLE IF NOT EXISTS media_fetch_tasks (
+  id TEXT PRIMARY KEY,
+  artifact_id TEXT NOT NULL,
+  worker_kind TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  priority INTEGER NOT NULL DEFAULT 50,
+  attempts INTEGER NOT NULL DEFAULT 0,
+  max_attempts INTEGER NOT NULL DEFAULT 5,
+  next_attempt_at TEXT,
+  lease_owner TEXT,
+  lease_until TEXT,
+  last_error TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY(artifact_id) REFERENCES media_artifacts(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS privacy_rules (
   id TEXT PRIMARY KEY,
   rule_type TEXT NOT NULL,
@@ -195,5 +212,7 @@ CREATE INDEX IF NOT EXISTS idx_media_artifacts_document_id ON media_artifacts(do
 CREATE INDEX IF NOT EXISTS idx_media_artifacts_snapshot_id ON media_artifacts(snapshot_id);
 CREATE INDEX IF NOT EXISTS idx_media_artifacts_content_sha256 ON media_artifacts(content_sha256);
 CREATE INDEX IF NOT EXISTS idx_media_artifacts_capture_status ON media_artifacts(capture_status);
+CREATE INDEX IF NOT EXISTS idx_media_fetch_tasks_status_next ON media_fetch_tasks(status, next_attempt_at, priority);
+CREATE INDEX IF NOT EXISTS idx_media_fetch_tasks_artifact ON media_fetch_tasks(artifact_id);
 CREATE INDEX IF NOT EXISTS idx_chunks_document_id ON chunks(document_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
