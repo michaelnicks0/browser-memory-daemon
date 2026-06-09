@@ -60,7 +60,7 @@ function renderCaptureList(items, {target, empty = 'No captures.'}) {
   target.innerHTML = items.map((item) => `
     <article class="item">
       <h3>${escapeHtml(item.title || '(untitled)')}</h3>
-      <div class="meta">${escapeHtml(item.domain)} · ${escapeHtml(item.captured_at)} · ${escapeHtml(item.browser_profile || '')}</div>
+      <div class="meta">${escapeHtml(item.domain)} · ${escapeHtml(item.captured_at)} · ${escapeHtml(item.browser_profile || '')} · media=${escapeHtml(item.media_artifact_count || 0)}</div>
       <p class="snippet">${escapeHtml(item.snippet || '')}</p>
       <div class="actions">
         ${item.document_id ? `<button class="secondary" data-doc="${escapeHtml(item.document_id)}">Document</button>` : ''}
@@ -82,7 +82,7 @@ function renderSearchResults(results) {
   els.results.innerHTML = results.map((item) => `
     <article class="item">
       <h3>${escapeHtml(item.title || '(untitled)')}</h3>
-      <div class="meta">${escapeHtml(item.domain)} · ${escapeHtml(item.captured_at)} · score ${Number(item.score || 0).toFixed(3)}</div>
+      <div class="meta">${escapeHtml(item.domain)} · ${escapeHtml(item.captured_at)} · score ${Number(item.score || 0).toFixed(3)} · media=${escapeHtml(item.media_artifact_count || 0)}</div>
       <p class="snippet">${escapeHtml(item.snippet || '')}</p>
       <div class="actions">
         <button class="secondary" data-doc="${escapeHtml(item.document_id)}">Document</button>
@@ -91,6 +91,18 @@ function renderSearchResults(results) {
       </div>
       <div class="meta">${escapeHtml(item.url)}</div>
     </article>
+  `).join('');
+}
+
+function renderMediaArtifacts(items = []) {
+  if (!items.length) return '<span class="muted">No media artifacts.</span>';
+  return items.map((item) => `
+    <div class="media-item">
+      <strong>${escapeHtml(item.media_type)}:${escapeHtml(item.role || 'content')}</strong>
+      <span class="meta">${escapeHtml(item.capture_status)} · ${escapeHtml(item.mime_type || '')} · ${escapeHtml(item.byte_size || 0)} bytes · ${escapeHtml(item.width || '')}×${escapeHtml(item.height || '')}</span>
+      ${item.has_file ? `<button class="secondary" data-media="${escapeHtml(item.id)}">Open media</button>` : ''}
+      <div class="meta">${escapeHtml(item.source_url)}</div>
+    </div>
   `).join('');
 }
 
@@ -110,6 +122,8 @@ function renderDocument(payload) {
       <pre class="code">${escapeHtml(JSON.stringify(payload.visits, null, 2))}</pre>
       <h3>Visit lifecycle events</h3>
       <pre class="code">${escapeHtml(JSON.stringify(payload.visit_events || [], null, 2))}</pre>
+      <h3>Media artifacts</h3>
+      <div class="list compact">${renderMediaArtifacts(payload.media_artifacts || [])}</div>
       <h3>Chunk snippets</h3>
       <div class="list compact">${payload.chunks.map((chunk) => `<p class="snippet">${escapeHtml(chunk.snippet)}</p>`).join('')}</div>
     </article>
@@ -125,6 +139,8 @@ function renderSnapshot(payload) {
       <h3>${escapeHtml(doc.title || '(untitled snapshot)')}</h3>
       <div class="meta">${escapeHtml(doc.domain || '')} · ${escapeHtml(snap.captured_at)} · ${escapeHtml(snap.extraction_method)}</div>
       <div class="meta">privacy=${escapeHtml(snap.privacy_class)} · redactions=${escapeHtml(snap.redaction_count)} · truncated=${escapeHtml(payload.text_truncated)}</div>
+      <h3>Media artifacts</h3>
+      <div class="list compact">${renderMediaArtifacts(payload.media_artifacts || [])}</div>
       <pre class="code">${escapeHtml(payload.text)}</pre>
     </article>
   `;
@@ -192,11 +208,24 @@ async function blockDomain(domain) {
 }
 
 async function forgetDomain(domain) {
-  const ok = confirm(`Forget all stored browser memory for ${domain}? This deletes matching rows, FTS entries, and clean-text blobs.`);
+  const ok = confirm(`Forget all stored browser memory for ${domain}? This deletes matching rows, FTS entries, clean-text blobs, and media blobs.`);
   if (!ok) return;
   const payload = await api('/forget', {method: 'POST', body: JSON.stringify({domain})});
   els.results.innerHTML = `<pre class="code">${escapeHtml(JSON.stringify(payload, null, 2))}</pre>`;
   await refreshRecent();
+}
+
+async function openMediaArtifact(artifactId) {
+  const response = await fetch(`/media-artifacts/${encodeURIComponent(artifactId)}`, {
+    headers: {authorization: `Bearer ${state.token}`},
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `media fetch failed: ${response.status}`);
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank', 'noopener');
 }
 
 async function handleDelegatedClick(event) {
@@ -213,6 +242,8 @@ async function handleDelegatedClick(event) {
       await forgetDomain(button.dataset.forgetDomain);
     } else if (button.dataset.blockDomain) {
       await blockDomain(button.dataset.blockDomain);
+    } else if (button.dataset.media) {
+      await openMediaArtifact(button.dataset.media);
     } else if (button.dataset.deleteRule) {
       await api(`/policy/rules/${encodeURIComponent(button.dataset.deleteRule)}`, {method: 'DELETE'});
       await loadRules();

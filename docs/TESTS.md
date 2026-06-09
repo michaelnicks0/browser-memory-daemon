@@ -25,7 +25,7 @@ git diff --check -- .
 | Test file/script | Covers |
 |---|---|
 | `daemon/tests/unit/test_policy.py` | Policy-mode decisions and redaction helpers. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | Ingest, redaction/non-redaction, FTS, dedupe, forget, schema. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | Ingest, redaction/non-redaction, FTS, dedupe, media artifact refs/blobs, forget, schema. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | Lifecycle events, dwell updates, duplicate/overlap protection. |
 | `daemon/tests/e2e/test_http_api.py` | HTTP capture/search/forget/auth behavior. |
 | `daemon/tests/e2e/test_admin_api.py` | UI asset serving and admin/read/policy endpoints. |

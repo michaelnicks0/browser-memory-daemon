@@ -12,6 +12,8 @@ const DEFAULTS = {
 
 const MAX_CAPTURE_QUEUE = 100;
 const MAX_VISIT_EVENT_QUEUE = 200;
+const MAX_MEDIA_ARTIFACTS_PER_CAPTURE = 50;
+const MAX_MEDIA_ARTIFACT_BYTES = 25_000_000;
 
 function nowIso() {
   return new Date().toISOString();
@@ -112,6 +114,100 @@ async function postVisitEvent(payload, config) {
   return response.json();
 }
 
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
+function mediaFetchSupported(sourceUrl) {
+  try {
+    const url = new URL(sourceUrl);
+    return ['http:', 'https:', 'data:'].includes(url.protocol);
+  } catch (_) {
+    return false;
+  }
+}
+
+async function postMediaArtifact(payload, config) {
+  const base = normalizeDaemonUrl(config.daemonUrl);
+  const response = await fetch(`${base}/media-artifacts`, {
+    method: 'POST',
+    headers: authHeaders(config.apiToken),
+    body: JSON.stringify(payload),
+    targetAddressSpace: 'loopback'
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(`media artifact failed: ${response.status} ${JSON.stringify(body)}`);
+  return body;
+}
+
+async function buildMediaArtifactPayload(ref, capturePayload, captureResult) {
+  const sourceUrl = String(ref.source_url || ref.sourceUrl || ref.src || '');
+  const basePayload = {
+    document_id: captureResult.document_id,
+    snapshot_id: captureResult.snapshot_id,
+    visit_id: capturePayload.visit_id || captureResult.visit_id,
+    page_url: capturePayload.url,
+    media_type: ref.media_type || ref.mediaType || ref.type,
+    role: ref.role || 'content',
+    source_url: sourceUrl,
+    alt_text: ref.alt_text || ref.altText || ref.alt || '',
+    title: ref.title || '',
+    mime_type: ref.mime_type || ref.mimeType || '',
+    width: ref.width,
+    height: ref.height,
+    duration_seconds: ref.duration_seconds || ref.durationSeconds || ref.duration,
+    metadata: ref.metadata || {}
+  };
+  if (!mediaFetchSupported(sourceUrl)) {
+    return { ...basePayload, capture_status: 'skipped', status_reason: 'unsupported-media-url-scheme' };
+  }
+  const response = await fetch(sourceUrl, { credentials: 'include', redirect: 'follow' });
+  if (!response.ok) {
+    return { ...basePayload, capture_status: 'failed', status_reason: `fetch-status-${response.status}` };
+  }
+  const contentLength = Number(response.headers.get('content-length') || 0);
+  if (contentLength > MAX_MEDIA_ARTIFACT_BYTES) {
+    return { ...basePayload, capture_status: 'skipped', status_reason: 'media-too-large' };
+  }
+  const buffer = await response.arrayBuffer();
+  if (buffer.byteLength > MAX_MEDIA_ARTIFACT_BYTES) {
+    return { ...basePayload, capture_status: 'skipped', status_reason: 'media-too-large' };
+  }
+  return {
+    ...basePayload,
+    mime_type: basePayload.mime_type || response.headers.get('content-type') || '',
+    byte_size: buffer.byteLength,
+    content_base64: arrayBufferToBase64(buffer)
+  };
+}
+
+async function uploadMediaArtifacts(capturePayload, captureResult, config) {
+  const refs = Array.isArray(capturePayload.media_artifacts) ? capturePayload.media_artifacts.slice(0, MAX_MEDIA_ARTIFACTS_PER_CAPTURE) : [];
+  if (!refs.length || !captureResult || !captureResult.snapshot_id || !captureResult.document_id) return { attempted: 0, stored: 0 };
+  const results = [];
+  for (const ref of refs) {
+    try {
+      const mediaPayload = await buildMediaArtifactPayload(ref, capturePayload, captureResult);
+      results.push(await postMediaArtifact(mediaPayload, config));
+    } catch (error) {
+      results.push({ ok: false, error: String(error.message || error), media_type: ref.media_type || ref.mediaType || ref.type, source_url: ref.source_url || ref.sourceUrl || ref.src || '' });
+    }
+  }
+  const failed = results.filter((item) => item && item.ok === false);
+  if (failed.length) {
+    await chrome.storage.local.set({ lastMediaArtifactError: { at: nowIso(), failed: failed.slice(0, 5) } });
+  } else {
+    await chrome.storage.local.remove('lastMediaArtifactError');
+  }
+  return { attempted: refs.length, stored: results.filter((item) => item && item.stored).length, results };
+}
+
 async function drainQueue() {
   const config = await getConfig();
   if (config.capturePaused) return { skipped: true, reason: 'paused' };
@@ -121,7 +217,11 @@ async function drainQueue() {
   while (queue.length) {
     const item = queue[0];
     try {
-      delivered.push(await postOne(item.payload, config));
+      const captureResult = await postOne(item.payload, config);
+      delivered.push(captureResult);
+      uploadMediaArtifacts(item.payload, captureResult, config).catch((error) => {
+        chrome.storage.local.set({ lastMediaArtifactError: { at: nowIso(), error: String(error.message || error) } });
+      });
       queue.shift();
       await saveQueue(queue);
     } catch (error) {

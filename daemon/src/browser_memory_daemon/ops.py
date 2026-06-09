@@ -7,6 +7,7 @@ from typing import Any
 
 from . import __version__
 from .config import RuntimeConfig
+from .media import media_artifacts_for_document, media_artifacts_for_snapshot
 
 
 def _clamp_limit(limit: int | str | None, *, default: int = 25, maximum: int = 100) -> int:
@@ -50,7 +51,8 @@ def recent_captures(conn: sqlite3.Connection, *, limit: int | str | None = 25) -
           snapshots.id AS snapshot_id,
           snapshots.privacy_class,
           snapshots.redaction_count,
-          chunks.text AS first_chunk
+          chunks.text AS first_chunk,
+          (SELECT COUNT(*) FROM media_artifacts m WHERE m.snapshot_id = snapshots.id) AS media_artifact_count
         FROM visits
         JOIN documents ON documents.id = visits.document_id
         LEFT JOIN snapshots ON snapshots.id = (
@@ -103,7 +105,8 @@ def timeline(conn: sqlite3.Connection, *, day: str | None = None, after: str | N
           snapshots.id AS snapshot_id,
           snapshots.privacy_class,
           snapshots.redaction_count,
-          chunks.text AS first_chunk
+          chunks.text AS first_chunk,
+          (SELECT COUNT(*) FROM media_artifacts m WHERE m.snapshot_id = snapshots.id) AS media_artifact_count
         FROM visits
         JOIN documents ON documents.id = visits.document_id
         LEFT JOIN snapshots ON snapshots.id = (
@@ -180,6 +183,7 @@ def document_detail(conn: sqlite3.Connection, document_id: str) -> dict[str, Any
         "visits": [dict(row) for row in visits],
         "visit_events": [dict(row) for row in visit_events],
         "snapshots": [_snapshot_summary(row) for row in snapshots],
+        "media_artifacts": media_artifacts_for_document(conn, document_id),
         "chunks": [
             {
                 "id": row["id"],
@@ -217,6 +221,7 @@ def snapshot_detail(conn: sqlite3.Connection, snapshot_id: str, *, max_text_char
         "document": dict(document) if document else None,
         "text": text[:max_text_chars],
         "text_truncated": truncated,
+        "media_artifacts": media_artifacts_for_snapshot(conn, snapshot_id),
         "chunks": [
             {"id": row["id"], "chunk_index": row["chunk_index"], "title": row["title"], "url": row["url"], "snippet": _snippet(row["text"])}
             for row in chunks
@@ -233,6 +238,7 @@ def doctor(config: RuntimeConfig, conn: sqlite3.Connection) -> dict[str, Any]:
         "snapshots",
         "chunks",
         "chunks_fts",
+        "media_artifacts",
         "privacy_rules",
         "audit_events",
         "deletion_receipts",
@@ -251,6 +257,13 @@ def doctor(config: RuntimeConfig, conn: sqlite3.Connection) -> dict[str, Any]:
             if path.is_file():
                 storage_files += 1
                 storage_bytes += path.stat().st_size
+    media_files = 0
+    media_bytes = 0
+    if config.media_root.exists():
+        for path in config.media_root.rglob("*"):
+            if path.is_file():
+                media_files += 1
+                media_bytes += path.stat().st_size
     return {
         "ok": integrity == "ok" and missing_fts == 0,
         "version": __version__,
@@ -261,9 +274,15 @@ def doctor(config: RuntimeConfig, conn: sqlite3.Connection) -> dict[str, Any]:
             "state_root": str(config.state_root),
             "db_path": str(config.db_path),
             "clean_text_root": str(config.clean_text_root),
+            "media_root": str(config.media_root),
         },
         "database": {"exists": config.db_path.exists(), "integrity_check": integrity, "counts": counts, "chunks_missing_fts": missing_fts},
-        "storage": {"clean_text_files": storage_files, "clean_text_bytes": storage_bytes},
+        "storage": {
+            "clean_text_files": storage_files,
+            "clean_text_bytes": storage_bytes,
+            "media_files": media_files,
+            "media_bytes": media_bytes,
+        },
     }
 
 
@@ -283,6 +302,7 @@ def _capture_row(row: sqlite3.Row) -> dict[str, Any]:
         "dwell_seconds": row["dwell_seconds"],
         "privacy_class": row["privacy_class"],
         "redaction_count": row["redaction_count"],
+        "media_artifact_count": row["media_artifact_count"],
         "snippet": _snippet(row["first_chunk"]),
     }
 

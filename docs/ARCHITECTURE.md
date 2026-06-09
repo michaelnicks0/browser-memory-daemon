@@ -54,10 +54,10 @@ The system shall enable Operator to reconstruct recently viewed web content by c
 | Service worker | Auth, queues, injection, lifecycle state, daemon POSTs. | Content scripts never call daemon directly. |
 | Daemon API | Auth, CORS, routing, UI asset serving. | `/health` public loopback; memory APIs tokened. |
 | Policy engine | Mode-specific allow/block/redact decisions. | `all`, `recall`, `balanced`, `strict`. |
-| Ingest pipeline | Normalize, store visits/documents/snapshots/chunks/FTS. | `all` bypasses redaction. |
+| Ingest pipeline | Normalize, store visits/documents/snapshots/chunks/FTS plus related media artifact refs/blobs. | `all` bypasses redaction. |
 | Lifecycle pipeline | Store metadata-only visit events and update dwell. | Uses policy mode for URL redaction/filtering. |
 | Ops/read model | Search, recent, timeline, detail, doctor. | Captured text remains untrusted evidence. |
-| Deletion pipeline | Domain/URL forget and receipt creation. | Removes DB rows, FTS rows, blobs, lifecycle rows. |
+| Deletion pipeline | Domain/URL forget and receipt creation. | Removes DB rows, FTS rows, text/media blobs, lifecycle rows. |
 
 ---
 

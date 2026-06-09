@@ -21,6 +21,9 @@ class RuntimeConfig:
     data_root: Path = Path.home() / ".local" / "share" / APP_NAME
     state_root: Path = Path.home() / ".local" / "state" / APP_NAME
     max_payload_bytes: int = 2_000_000
+    max_media_payload_bytes: int = 40_000_000
+    max_media_artifact_bytes: int = 25_000_000
+    max_media_artifacts_per_capture: int = 50
     raw_html_enabled: bool = False
 
     @property
@@ -36,11 +39,15 @@ class RuntimeConfig:
         return self.data_root / "blobs" / "raw-html"
 
     @property
+    def media_root(self) -> Path:
+        return self.data_root / "blobs" / "media"
+
+    @property
     def audit_log_path(self) -> Path:
         return self.state_root / "audit.jsonl"
 
     def ensure_dirs(self) -> None:
-        for path in [self.config_root, self.data_root, self.state_root, self.clean_text_root]:
+        for path in [self.config_root, self.data_root, self.state_root, self.clean_text_root, self.media_root]:
             path.mkdir(parents=True, exist_ok=True)
         if self.raw_html_enabled:
             self.raw_html_root.mkdir(parents=True, exist_ok=True)

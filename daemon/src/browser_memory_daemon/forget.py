@@ -38,10 +38,31 @@ def forget(conn: sqlite3.Connection, *, domain: str | None = None, url: str | No
     else:
         document_ids = _document_ids_for_url(conn, url or "")
         scope = {"url": normalize_url(redact_url(url or "")[0])}
-    counts = {"documents": 0, "visits": 0, "visit_events": 0, "snapshots": 0, "chunks": 0, "blobs": 0, "fts": 0, "embeddings": 0, "redactions": 0, "feedback_events": 0}
+    counts = {
+        "documents": 0,
+        "visits": 0,
+        "visit_events": 0,
+        "snapshots": 0,
+        "chunks": 0,
+        "blobs": 0,
+        "media_artifacts": 0,
+        "media_blobs": 0,
+        "fts": 0,
+        "embeddings": 0,
+        "redactions": 0,
+        "feedback_events": 0,
+    }
     with conn:
         for document_id in document_ids:
             snapshot_rows = conn.execute("SELECT id, cleaned_text_path FROM snapshots WHERE document_id = ?", (document_id,)).fetchall()
+            media_rows = conn.execute("SELECT id, file_path FROM media_artifacts WHERE document_id = ?", (document_id,)).fetchall()
+            for media in media_rows:
+                if media["file_path"]:
+                    path = Path(media["file_path"])
+                    if path.exists():
+                        path.unlink()
+                        counts["media_blobs"] += 1
+            counts["media_artifacts"] += conn.execute("DELETE FROM media_artifacts WHERE document_id = ?", (document_id,)).rowcount
             chunk_rows = conn.execute("SELECT id FROM chunks WHERE document_id = ?", (document_id,)).fetchall()
             for chunk in chunk_rows:
                 counts["embeddings"] += conn.execute("DELETE FROM embeddings WHERE chunk_id = ?", (chunk["id"],)).rowcount

@@ -12,9 +12,10 @@
 |---|---|---|
 | Windows Chrome extension | ✅ MV3 extension with service-worker-owned injection/transport. | `extension/src/`, extension unit tests, real Chrome e2e. |
 | WSL daemon | ✅ Loopback HTTP daemon with bearer auth. | `app.py`, HTTP e2e tests. |
-| SQLite/FTS storage | ✅ Documents/visits/snapshots/chunks/FTS/audit/deletion receipts. | `schema.sql`, integration tests. |
-| Exact search | ✅ FTS5 exact search with snippets/source metadata. | `search.py`, `/search`, tests. |
-| Forget/delete | ✅ URL/domain forget with receipts and blob/FTS cleanup. | `forget.py`, tests. |
+| SQLite/FTS/media storage | ✅ Documents/visits/snapshots/chunks/FTS/media/audit/deletion receipts. | `schema.sql`, integration/e2e tests. |
+| Exact search | ✅ FTS5 exact search with snippets/source metadata and media artifact counts. | `search.py`, `/search`, tests. |
+| Forget/delete | ✅ URL/domain forget with receipts and text/media blob + FTS cleanup. | `forget.py`, tests. |
+| Media artifacts | ✅ Image/video references and fetchable binaries stored beside snapshots; no OCR/media indexing. | `media.py`, `/media-artifacts`, real Chrome e2e. |
 | Local UI | ✅ Search/recent/timeline/detail/doctor/policy/delete panels. | `ui/`, admin API tests. |
 | CLI | ✅ serve/health/search/recent/timeline/detail/policy/forget/capture-fixture. | `cli.py`, CLI e2e. |
 | Dedupe/versioning | ✅ URL normalization + text-hash snapshots. | ingest tests. |

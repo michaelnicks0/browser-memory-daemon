@@ -94,6 +94,34 @@ CREATE VIRTUAL TABLE IF NOT EXISTS chunks_fts USING fts5(
   text
 );
 
+CREATE TABLE IF NOT EXISTS media_artifacts (
+  id TEXT PRIMARY KEY,
+  document_id TEXT NOT NULL,
+  snapshot_id TEXT NOT NULL,
+  visit_id TEXT,
+  media_type TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'content',
+  source_url TEXT NOT NULL,
+  normalized_source_url TEXT NOT NULL,
+  page_url TEXT NOT NULL,
+  alt_text TEXT,
+  title TEXT,
+  mime_type TEXT,
+  width INTEGER,
+  height INTEGER,
+  duration_seconds REAL,
+  byte_size INTEGER,
+  content_sha256 TEXT,
+  file_path TEXT,
+  capture_status TEXT NOT NULL DEFAULT 'referenced',
+  status_reason TEXT,
+  metadata_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE,
+  FOREIGN KEY(snapshot_id) REFERENCES snapshots(id) ON DELETE CASCADE,
+  FOREIGN KEY(visit_id) REFERENCES visits(id) ON DELETE SET NULL
+);
+
 CREATE TABLE IF NOT EXISTS privacy_rules (
   id TEXT PRIMARY KEY,
   rule_type TEXT NOT NULL,
@@ -163,5 +191,9 @@ CREATE INDEX IF NOT EXISTS idx_visit_events_document_id ON visit_events(document
 CREATE INDEX IF NOT EXISTS idx_visit_events_normalized_url ON visit_events(normalized_url);
 CREATE INDEX IF NOT EXISTS idx_visit_events_event_ended_at ON visit_events(event_ended_at);
 CREATE INDEX IF NOT EXISTS idx_snapshots_document_id ON snapshots(document_id);
+CREATE INDEX IF NOT EXISTS idx_media_artifacts_document_id ON media_artifacts(document_id);
+CREATE INDEX IF NOT EXISTS idx_media_artifacts_snapshot_id ON media_artifacts(snapshot_id);
+CREATE INDEX IF NOT EXISTS idx_media_artifacts_content_sha256 ON media_artifacts(content_sha256);
+CREATE INDEX IF NOT EXISTS idx_media_artifacts_capture_status ON media_artifacts(capture_status);
 CREATE INDEX IF NOT EXISTS idx_chunks_document_id ON chunks(document_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);

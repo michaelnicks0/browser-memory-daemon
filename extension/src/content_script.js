@@ -37,12 +37,16 @@
 
   function captureKey(payload) {
     const text = String(payload.text || '');
+    const media = Array.isArray(payload.media_artifacts) ? payload.media_artifacts : [];
+    const mediaKey = media.map((item) => [item.media_type, item.role, item.source_url, item.width, item.height].join(':')).slice(0, 20).join('|');
     return [
       payload.url || '',
       payload.title || '',
       text.length,
       text.slice(0, 256),
-      text.slice(-256)
+      text.slice(-256),
+      media.length,
+      mediaKey
     ].join('\n');
   }
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from typing import Any
 import uuid
 from urllib.parse import urlsplit
 
@@ -37,6 +38,7 @@ class CapturePayload:
     extraction_method: str = "dom-visible-text-v1"
     content_type: str = "text/html"
     is_incognito: bool = False
+    media_artifacts: list[dict[str, Any]] = field(default_factory=list)
 
     @classmethod
     def from_dict(cls, data: dict, *, max_text_chars: int = 1_000_000, allow_any_url: bool = False) -> "CapturePayload":
@@ -59,6 +61,9 @@ class CapturePayload:
             dwell = int(dwell)
             if dwell < 0:
                 raise ValueError("dwell_seconds must be non-negative")
+        media_artifacts = data.get("media_artifacts") if "media_artifacts" in data else data.get("mediaArtifacts")
+        if not isinstance(media_artifacts, list):
+            media_artifacts = []
         return cls(
             url=url,
             text=text,
@@ -74,4 +79,5 @@ class CapturePayload:
             extraction_method=str(data.get("extraction_method") or data.get("extractionMethod") or "dom-visible-text-v1"),
             content_type=str(data.get("content_type") or data.get("contentType") or "text/html"),
             is_incognito=bool(data.get("is_incognito") or data.get("incognito") or False),
+            media_artifacts=[item for item in media_artifacts if isinstance(item, dict)],
         )

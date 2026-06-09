@@ -2,6 +2,7 @@ from browser_memory_daemon.config import load_config
 from browser_memory_daemon.db import connect, init_db
 from browser_memory_daemon.forget import forget
 from browser_memory_daemon.ingest import ingest_capture
+from browser_memory_daemon.media import media_artifacts_for_snapshot, store_media_artifact
 from browser_memory_daemon.models import CapturePayload
 from browser_memory_daemon.search import search_memory
 
@@ -115,6 +116,62 @@ def test_all_mode_stores_without_redaction_and_accepts_file_urls(tmp_path):
         assert fake_secret in visit["url"]
 
 
+def test_media_artifacts_are_related_to_snapshot_not_fts_and_deleted_by_forget(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    payload = CapturePayload.from_dict(
+        {
+            "url": "https://example.com/media-page",
+            "title": "Media Page",
+            "text": "Readable article body without media alt needles.",
+            "media_artifacts": [
+                {
+                    "media_type": "image",
+                    "role": "content",
+                    "source_url": "https://example.com/assets/hero.png",
+                    "alt_text": "MEDIA_ALT_NEEDLE should not be full-text indexed",
+                    "mime_type": "image/png",
+                    "width": 640,
+                    "height": 360,
+                }
+            ],
+        },
+        allow_any_url=True,
+    )
+    with connect(cfg.db_path) as conn:
+        result = ingest_capture(conn, cfg, payload)
+        assert result["media_ref_count"] == 1
+        assert search_memory(conn, "MEDIA_ALT_NEEDLE", limit=5) == []
+        media = media_artifacts_for_snapshot(conn, result["snapshot_id"])
+        assert len(media) == 1
+        assert media[0]["capture_status"] == "referenced"
+        stored = store_media_artifact(
+            conn,
+            cfg,
+            {
+                "document_id": result["document_id"],
+                "snapshot_id": result["snapshot_id"],
+                "visit_id": result["visit_id"],
+                "page_url": "https://example.com/media-page",
+                "media_type": "image",
+                "role": "content",
+                "source_url": "https://example.com/assets/hero.png",
+                "mime_type": "image/png",
+                "content_base64": "iVBORw0KGgo=",
+            },
+        )
+        assert stored["stored"] is True
+        file_rows = conn.execute("SELECT file_path, byte_size FROM media_artifacts").fetchall()
+        assert len(file_rows) == 1
+        assert file_rows[0]["byte_size"] == 8
+        media_path = cfg.media_root / f"{stored['artifact_id']}.png"
+        assert media_path.exists()
+        receipt = forget(conn, domain="example.com")
+        assert receipt["counts"]["media_artifacts"] == 1
+        assert receipt["counts"]["media_blobs"] == 1
+        assert not media_path.exists()
+
+
 def test_forget_domain_includes_subdomains(tmp_path):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="strict")
     init_db(cfg)
@@ -222,7 +279,7 @@ def test_schema_has_planned_core_tables(tmp_path):
     init_db(cfg)
     with connect(cfg.db_path) as conn:
         tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type IN ('table','virtual table')")}
-    for expected in {"jobs", "embeddings", "redactions", "feedback_events", "deletion_receipts", "visit_events"}:
+    for expected in {"jobs", "embeddings", "redactions", "feedback_events", "deletion_receipts", "visit_events", "media_artifacts"}:
         assert expected in tables
 
 

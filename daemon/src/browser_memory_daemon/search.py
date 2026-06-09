@@ -25,7 +25,8 @@ def search_memory(conn: sqlite3.Connection, query: str, *, limit: int = 10) -> l
           snippet(chunks_fts, 5, '[', ']', '…', 24) AS snippet,
           bm25(chunks_fts) AS score,
           documents.domain,
-          snapshots.captured_at
+          snapshots.captured_at,
+          (SELECT COUNT(*) FROM media_artifacts m WHERE m.snapshot_id = chunks_fts.snapshot_id) AS media_artifact_count
         FROM chunks_fts
         JOIN documents ON documents.id = chunks_fts.document_id
         JOIN snapshots ON snapshots.id = chunks_fts.snapshot_id

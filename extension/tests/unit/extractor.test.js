@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { shouldSkipElement, shouldBlockUrl, extractTextFromTree, extractPageFromDocument, collapseWhitespace } = require('../../src/extractor.js');
+const { shouldSkipElement, shouldBlockUrl, extractTextFromTree, extractMediaFromDocument, extractPageFromDocument, collapseWhitespace } = require('../../src/extractor.js');
 
 function textNode(text) {
   return { nodeType: 3, textContent: text };
@@ -132,6 +132,49 @@ test('real document extraction uses strict skip traversal', () => {
   assert.doesNotMatch(payload.text, /hidden text/);
   assert.doesNotMatch(payload.text, /aria hidden text/);
   assert.doesNotMatch(payload.text, /style hidden text/);
+});
+
+test('real document extraction records image and video artifacts without adding media text', () => {
+  const image = {
+    tagName: 'IMG',
+    currentSrc: '/hero.png',
+    alt: 'Hero image',
+    title: 'Hero title',
+    naturalWidth: 640,
+    naturalHeight: 360,
+    getAttribute(name) { return name === 'src' ? '/hero.png' : null; }
+  };
+  const poster = 'data:image/png;base64,aGVsbG8=';
+  const video = {
+    tagName: 'VIDEO',
+    currentSrc: '/clip.webm',
+    poster,
+    title: 'Clip title',
+    videoWidth: 1280,
+    videoHeight: 720,
+    duration: 12.5,
+    getAttribute(name) { return name === 'poster' ? poster : null; },
+    querySelector() { return { src: '/clip.webm', type: 'video/webm', getAttribute(name) { return name === 'type' ? 'video/webm' : null; } }; }
+  };
+  const doc = {
+    title: 'Media Doc',
+    location: { href: 'https://example.com/read' },
+    querySelector() { return null; },
+    querySelectorAll(selector) {
+      if (selector === 'img, picture source[srcset]') return [image];
+      if (selector === 'video') return [video];
+      return [];
+    },
+    body: elem('BODY', [elem('P', [textNode('Visible article text')])])
+  };
+  const media = extractMediaFromDocument(doc);
+  assert.equal(media.length, 3);
+  assert.deepEqual(media.map((item) => `${item.media_type}:${item.role}`).sort(), ['image:content', 'image:poster', 'video:content']);
+  assert.equal(media.find((item) => item.role === 'content' && item.media_type === 'image').source_url, 'https://example.com/hero.png');
+  const payload = extractPageFromDocument(doc, { policyMode: 'all' });
+  assert.equal(payload.media_artifacts.length, 3);
+  assert.match(payload.text, /Visible article text/);
+  assert.doesNotMatch(payload.text, /Hero image/);
 });
 
 test('collapses whitespace', () => {

@@ -11,6 +11,7 @@ from .db import audit, connect, init_db
 from .forget import forget
 from .ingest import ingest_capture
 from .lifecycle import record_visit_event
+from .media import media_artifact, store_media_artifact
 from .models import CapturePayload
 from .ops import doctor, document_detail, recent_captures, snapshot_detail, timeline
 from .policy import POLICY_MODE_ALL, evaluate_capture
@@ -54,6 +55,17 @@ def _text_response(handler: BaseHTTPRequestHandler, status: int, body: bytes, *,
     handler.send_header("Content-Type", content_type)
     handler.send_header("Content-Length", str(len(body)))
     handler.send_header("X-Content-Type-Options", "nosniff")
+    handler.end_headers()
+    handler.wfile.write(body)
+
+
+def _binary_response(handler: BaseHTTPRequestHandler, status: int, body: bytes, *, content_type: str, filename: str | None = None) -> None:
+    handler.send_response(status)
+    handler.send_header("Content-Type", content_type or "application/octet-stream")
+    handler.send_header("Content-Length", str(len(body)))
+    handler.send_header("X-Content-Type-Options", "nosniff")
+    if filename:
+        handler.send_header("Content-Disposition", f'inline; filename="{filename}"')
     handler.end_headers()
     handler.wfile.write(body)
 
@@ -191,6 +203,25 @@ def make_handler(config: RuntimeConfig):
                         conn.commit()
                     _json_response(self, 200, result)
                     return
+                if parsed.path.startswith("/media-artifacts/"):
+                    artifact_id = unquote(parsed.path.removeprefix("/media-artifacts/"))
+                    init_db(config)
+                    with connect(config.db_path) as conn:
+                        artifact = media_artifact(conn, artifact_id)
+                        audit(conn, "media.detail", {"artifact_id": artifact_id})
+                        conn.commit()
+                    path = Path(artifact.get("file_path") or "")
+                    if not artifact.get("has_file") or not path.exists():
+                        _json_response(self, 404, {"error": "media artifact file not stored", "artifact": {k: v for k, v in artifact.items() if k != "file_path"}})
+                        return
+                    _binary_response(
+                        self,
+                        200,
+                        path.read_bytes(),
+                        content_type=artifact.get("mime_type") or "application/octet-stream",
+                        filename=path.name,
+                    )
+                    return
                 if parsed.path == "/doctor":
                     init_db(config)
                     with connect(config.db_path) as conn:
@@ -238,10 +269,37 @@ def make_handler(config: RuntimeConfig):
                 return
             parsed = urlparse(self.path)
             try:
-                data = _read_json(self, config.max_payload_bytes)
+                max_bytes = config.max_media_payload_bytes if parsed.path == "/media-artifacts" else config.max_payload_bytes
+                data = _read_json(self, max_bytes)
             except Exception as exc:
                 _json_response(self, 400, {"error": str(exc)})
                 return
+            if parsed.path == "/media-artifacts":
+                try:
+                    init_db(config)
+                    with connect(config.db_path) as conn:
+                        result = store_media_artifact(conn, config, data)
+                        audit(
+                            conn,
+                            "media.stored" if result["stored"] else "media.metadata",
+                            {
+                                "artifact_id": result["artifact_id"],
+                                "document_id": result["document_id"],
+                                "snapshot_id": result["snapshot_id"],
+                                "media_type": result["media_type"],
+                                "capture_status": result["capture_status"],
+                                "byte_size": result["byte_size"],
+                            },
+                        )
+                        conn.commit()
+                    _json_response(self, 201 if result["stored"] else 200, result)
+                    return
+                except KeyError as exc:
+                    _json_response(self, 404, {"error": str(exc).strip("'")})
+                    return
+                except Exception as exc:
+                    _json_response(self, 400, {"error": str(exc)})
+                    return
             if parsed.path == "/visit-events":
                 url = str(data.get("url") or "")
                 decision = evaluate_capture(

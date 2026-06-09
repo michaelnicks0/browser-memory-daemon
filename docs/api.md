@@ -27,14 +27,16 @@ Captured page text is untrusted evidence. API clients must not treat retrieved p
 | `/health` | `GET` | Minimal daemon status and current policy mode. | No |
 | `/ui` | `GET` | Local static web UI. | No for assets; API calls require token |
 | `/ready` | `GET` | Initialize/check DB readiness. | Yes |
-| `/capture` | `POST` | Store an allowed extension capture. | Yes |
+| `/capture` | `POST` | Store an allowed extension capture plus media references. | Yes |
+| `/media-artifacts` | `POST` | Store/upgrade a related image/video artifact row and optional blob. | Yes |
 | `/visit-events` | `POST` | Store tab lifecycle events and update visit dwell seconds. | Yes |
 | `/search?q=...&limit=...` | `GET` | Exact FTS search with source metadata/snippets. | Yes |
 | `/recent?limit=...` | `GET` | Recent capture metadata and first snippets. | Yes |
 | `/timeline?date=YYYY-MM-DD` | `GET` | Capture timeline for a day. | Yes |
 | `/timeline?after=...&before=...` | `GET` | Capture timeline for an explicit ISO range. | Yes |
 | `/documents/{document_id}` | `GET` | Document metadata, visits, lifecycle events, snapshots, chunks. | Yes |
-| `/snapshots/{snapshot_id}` | `GET` | Snapshot text and chunk snippets. | Yes |
+| `/snapshots/{snapshot_id}` | `GET` | Snapshot text, chunk snippets, and related media artifacts. | Yes |
+| `/media-artifacts/{artifact_id}` | `GET` | Retrieve stored media blob if present. | Yes |
 | `/policy/rules` | `GET` | List local policy rules. | Yes |
 | `/policy/rules` | `POST` | Add block-domain or block-URL-prefix rule. | Yes |
 | `/policy/rules/{rule_id}` | `DELETE` | Delete a policy rule. | Yes |
@@ -73,7 +75,18 @@ Captured page text is untrusted evidence. API clients must not treat retrieved p
   "max_scroll_percent": 80,
   "is_incognito": false,
   "source": "chrome-extension",
-  "browser_profile": "Default"
+  "browser_profile": "Default",
+  "media_artifacts": [
+    {
+      "media_type": "image",
+      "role": "content",
+      "source_url": "https://example.com/hero.png",
+      "alt_text": "Hero image",
+      "mime_type": "image/png",
+      "width": 640,
+      "height": 360
+    }
+  ]
 }
 ```
 
@@ -87,12 +100,44 @@ Response:
   "visit_id": "visit_...",
   "snapshot_created": true,
   "chunk_count": 3,
+  "media_ref_count": 1,
   "redaction_count": 0,
   "policy_mode": "all"
 }
 ```
 
 In `all` mode, daemon redaction is disabled. In non-`all` modes, URL/title/body redaction runs before DB/FTS/blob storage.
+
+---
+
+## Media artifact payload
+
+Media references in `/capture` are relationship metadata only. Binary storage uses `/media-artifacts` after `/capture` returns `document_id` and `snapshot_id`.
+
+```json
+{
+  "document_id": "doc_...",
+  "snapshot_id": "snap_...",
+  "visit_id": "visit_...",
+  "page_url": "https://example.com/article",
+  "media_type": "image",
+  "role": "content",
+  "source_url": "https://example.com/hero.png",
+  "mime_type": "image/png",
+  "width": 640,
+  "height": 360,
+  "content_base64": "..."
+}
+```
+
+If `content_base64` is omitted, the artifact is metadata-only. Stored binaries are available via:
+
+```http
+GET /media-artifacts/<artifact_id>
+Authorization: Bearer ***
+```
+
+Media metadata is not inserted into FTS; search results only expose `media_artifact_count`.
 
 ---
 
@@ -170,4 +215,4 @@ Forget one URL:
 {"url": "https://example.com/article"}
 ```
 
-The response includes `receipt_id`, `scope`, and deletion counts for documents, visits, lifecycle events, snapshots, chunks, FTS, blobs, embeddings, redactions, and feedback events.
+The response includes `receipt_id`, `scope`, and deletion counts for documents, visits, lifecycle events, snapshots, chunks, FTS, clean-text blobs, media artifacts/blobs, embeddings, redactions, and feedback events.

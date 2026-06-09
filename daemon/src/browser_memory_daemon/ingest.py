@@ -6,6 +6,7 @@ import sqlite3
 from .config import RuntimeConfig
 from .db import audit
 from .models import CapturePayload
+from .media import parse_media_refs, record_media_references
 from .normalize import domain_from_url, normalize_url
 from .policy import POLICY_MODE_ALL, redact_text, redact_url
 
@@ -74,6 +75,7 @@ def ingest_capture(conn: sqlite3.Connection, config: RuntimeConfig, payload: Cap
     snapshot_id = stable_id("snap", f"{document_id}:{digest}")
     clean_path = config.clean_text_root / f"{snapshot_id}.txt"
     chunks = chunk_text(stored_text)
+    media_refs = parse_media_refs(payload.media_artifacts, max_refs=config.max_media_artifacts_per_capture)
 
     with conn:
         conn.execute(
@@ -147,6 +149,15 @@ def ingest_capture(conn: sqlite3.Connection, config: RuntimeConfig, payload: Cap
                     "INSERT INTO chunks_fts(chunk_id, document_id, snapshot_id, title, url, text) VALUES (?, ?, ?, ?, ?, ?)",
                     (chunk_id, document_id, snapshot_id, safe_title, safe_url, chunk),
                 )
+        media_ref_count = record_media_references(
+            conn,
+            config,
+            document_id=document_id,
+            snapshot_id=snapshot_id,
+            visit_id=payload.visit_id,
+            page_url=safe_url,
+            refs=media_refs,
+        )
         audit(
             conn,
             "capture.stored",
@@ -156,6 +167,7 @@ def ingest_capture(conn: sqlite3.Connection, config: RuntimeConfig, payload: Cap
                 "visit_id": payload.visit_id,
                 "snapshot_created": not snapshot_exists,
                 "chunk_count": 0 if snapshot_exists else len(chunks),
+                "media_ref_count": media_ref_count,
                 "redaction_count": redaction_count,
                 "redaction_classes": redaction_classes,
                 "domain": domain,
@@ -169,6 +181,7 @@ def ingest_capture(conn: sqlite3.Connection, config: RuntimeConfig, payload: Cap
         "visit_id": payload.visit_id,
         "snapshot_created": not snapshot_exists,
         "chunk_count": 0 if snapshot_exists else len(chunks),
+        "media_ref_count": media_ref_count,
         "redaction_count": redaction_count,
         "policy_mode": config.policy_mode,
     }

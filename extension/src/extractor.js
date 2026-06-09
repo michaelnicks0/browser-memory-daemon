@@ -5,6 +5,8 @@ const SENSITIVE_URL_WORDS = new Set(['account', 'accounts', 'admin', 'auth', 'ba
 const BLOCKED_DOMAIN_SUFFIXES = new Set(['accounts.google.com', 'bankofamerica.com', 'capitalone.com', 'chase.com', 'mail.google.com', 'outlook.live.com', 'outlook.office.com', 'paypal.com', 'wellsfargo.com']);
 const BALANCED_QUERY_KEYS = new Set(['access_token', 'api_key', 'password', 'refresh_token', 'session', 'sessionid', 'sid', 'token']);
 const STRICT_QUERY_KEYS = new Set(['access_token', 'api_key', 'auth', 'code', 'key', 'magic', 'password', 'refresh_token', 'session', 'sessionid', 'sid', 'state', 'token']);
+const MAX_MEDIA_REFS = 50;
+const MAX_DATA_URL_REF_CHARS = 1_000_000;
 
 function normalizePolicyMode(policyMode) {
   const mode = String(policyMode || 'all').toLowerCase();
@@ -158,6 +160,94 @@ function metadataFromDocument(doc) {
   };
 }
 
+function absoluteMediaUrl(value, doc) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  if (raw.startsWith('data:') && raw.length > MAX_DATA_URL_REF_CHARS) return '';
+  try {
+    return new URL(raw, doc.location?.href || undefined).href;
+  } catch (_) {
+    return raw;
+  }
+}
+
+function mediaDimensions(element) {
+  const width = Number(element.naturalWidth || element.videoWidth || element.width || element.clientWidth || 0);
+  const height = Number(element.naturalHeight || element.videoHeight || element.height || element.clientHeight || 0);
+  return { width: Number.isFinite(width) ? Math.max(0, Math.round(width)) : 0, height: Number.isFinite(height) ? Math.max(0, Math.round(height)) : 0 };
+}
+
+function isLikelyTrackingMedia(element) {
+  const { width, height } = mediaDimensions(element);
+  return width > 0 && height > 0 && width <= 1 && height <= 1;
+}
+
+function pushMediaRef(refs, seen, ref) {
+  if (!ref || !ref.source_url || refs.length >= MAX_MEDIA_REFS) return;
+  const key = [ref.media_type, ref.role || 'content', ref.source_url].join('|');
+  if (seen.has(key)) return;
+  seen.add(key);
+  refs.push(ref);
+}
+
+function extractMediaFromDocument(doc) {
+  const refs = [];
+  const seen = new Set();
+  const images = Array.from(doc.querySelectorAll?.('img, picture source[srcset]') || []);
+  for (const image of images) {
+    if (isHiddenNode(image) || isLikelyTrackingMedia(image)) continue;
+    const source = image.currentSrc || image.src || image.srcset?.split(',')[0]?.trim()?.split(/\s+/)[0] || image.getAttribute?.('src') || image.getAttribute?.('srcset')?.split(',')[0]?.trim()?.split(/\s+/)[0] || '';
+    const sourceUrl = absoluteMediaUrl(source, doc);
+    if (!sourceUrl) continue;
+    const dims = mediaDimensions(image);
+    pushMediaRef(refs, seen, {
+      media_type: 'image',
+      role: 'content',
+      source_url: sourceUrl,
+      alt_text: image.alt || image.getAttribute?.('alt') || '',
+      title: image.title || image.getAttribute?.('title') || '',
+      mime_type: image.type || image.getAttribute?.('type') || '',
+      width: dims.width,
+      height: dims.height,
+      metadata: { tag: String(image.tagName || '').toLowerCase() }
+    });
+  }
+  const videos = Array.from(doc.querySelectorAll?.('video') || []);
+  for (const video of videos) {
+    if (isHiddenNode(video)) continue;
+    const dims = mediaDimensions(video);
+    const poster = absoluteMediaUrl(video.poster || video.getAttribute?.('poster') || '', doc);
+    if (poster) {
+      pushMediaRef(refs, seen, {
+        media_type: 'image',
+        role: 'poster',
+        source_url: poster,
+        alt_text: video.getAttribute?.('aria-label') || '',
+        title: video.title || video.getAttribute?.('title') || '',
+        width: dims.width,
+        height: dims.height,
+        metadata: { tag: 'video', source: 'poster' }
+      });
+    }
+    const source = video.currentSrc || video.src || video.querySelector?.('source[src]')?.src || video.querySelector?.('source[src]')?.getAttribute?.('src') || '';
+    const sourceUrl = absoluteMediaUrl(source, doc);
+    if (!sourceUrl) continue;
+    pushMediaRef(refs, seen, {
+      media_type: 'video',
+      role: 'content',
+      source_url: sourceUrl,
+      alt_text: video.getAttribute?.('aria-label') || '',
+      title: video.title || video.getAttribute?.('title') || '',
+      mime_type: video.querySelector?.('source[src]')?.type || video.querySelector?.('source[src]')?.getAttribute?.('type') || '',
+      width: dims.width,
+      height: dims.height,
+      duration_seconds: Number.isFinite(video.duration) ? video.duration : undefined,
+      metadata: { tag: 'video' }
+    });
+  }
+  return refs;
+}
+
 function extractPageFromDocument(doc, options = {}) {
   const mode = normalizePolicyMode(options.policyMode);
   const metadata = metadataFromDocument(doc);
@@ -168,15 +258,17 @@ function extractPageFromDocument(doc, options = {}) {
     ...metadata,
     extraction_method: mode === 'all' ? 'dom-all-text-v1' : metadata.extraction_method,
     policy_mode: mode,
-    text: extractTextFromDomNode(doc.body, { policyMode: mode })
+    text: extractTextFromDomNode(doc.body, { policyMode: mode }),
+    media_artifacts: extractMediaFromDocument(doc)
   };
 }
 
 globalThis.extractPageFromDocument = extractPageFromDocument;
+globalThis.extractMediaFromDocument = extractMediaFromDocument;
 globalThis.shouldBlockBrowserMemoryUrl = shouldBlockUrl;
 globalThis.normalizeBrowserMemoryPolicyMode = normalizePolicyMode;
 
 if (typeof module !== 'undefined') {
-  module.exports = { shouldSkipElement, shouldBlockUrl, isPrivateHost, extractTextFromTree, extractTextFromDomNode, collapseWhitespace, metadataFromDocument, extractPageFromDocument, normalizePolicyMode };
+  module.exports = { shouldSkipElement, shouldBlockUrl, isPrivateHost, extractTextFromTree, extractTextFromDomNode, collapseWhitespace, metadataFromDocument, extractMediaFromDocument, extractPageFromDocument, normalizePolicyMode };
 }
 })();
