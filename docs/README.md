@@ -18,6 +18,7 @@
 | Install/refresh daily Chrome | [`daily-driver-deployment.md`](daily-driver-deployment.md) |
 | Understand policy/security tradeoffs | [`security-model.md`](security-model.md) |
 | Check what is implemented vs pending | [`STATUS.md`](STATUS.md) |
+| Model storage growth | [`storage-growth-model.md`](storage-growth-model.md) |
 | Run verification gates | [`TESTS.md`](TESTS.md), [`test-plan.md`](test-plan.md) |
 
 ---
