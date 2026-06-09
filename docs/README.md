@@ -20,6 +20,7 @@
 | Check what is implemented vs pending | [`STATUS.md`](STATUS.md) |
 | Model storage growth | [`storage-growth-model.md`](storage-growth-model.md) |
 | Understand image/video artifact storage | [`media-artifacts.md`](media-artifacts.md) |
+| Implement durable lazy media sidecars | [`plans/2026-06-09-durable-media-sidecars.md`](plans/2026-06-09-durable-media-sidecars.md) |
 | Run verification gates | [`TESTS.md`](TESTS.md), [`test-plan.md`](test-plan.md) |
 
 ---
