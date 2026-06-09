@@ -132,6 +132,8 @@ After loading/reloading the extension in Chrome:
 
 Expected result: the page appears with URL/title/snippet metadata.
 
+If the daemon is healthy but a harmless test page does not appear in search and no `capture.*` audit rows are written, check the Chrome extension popup. `Toggle pause` persists `capturePaused` in `chrome.storage.local`, so reloading the unpacked extension does **not** automatically resume capture.
+
 Verified daily-driver smoke on Local workstation:
 
 - allowed page on `lvh.me` captured and searched successfully;
