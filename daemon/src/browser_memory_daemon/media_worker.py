@@ -28,6 +28,27 @@ def _backoff_seconds(attempts: int) -> int:
     return min(3600, 30 * (2 ** max(0, attempts - 1)))
 
 
+def mark_already_stored_tasks_succeeded(conn: sqlite3.Connection, *, worker_kind: str = "daemon-public") -> int:
+    """Close stale work items when the artifact row already has durable bytes."""
+    cursor = conn.execute(
+        """
+        UPDATE media_fetch_tasks
+        SET status = 'succeeded', lease_owner = NULL, lease_until = NULL, last_error = NULL,
+            updated_at = ?
+        WHERE worker_kind = ?
+          AND status IN ('pending', 'retrying', 'leased')
+          AND artifact_id IN (
+            SELECT id
+            FROM media_artifacts
+            WHERE capture_status = 'stored'
+              AND COALESCE(file_path, '') != ''
+          )
+        """,
+        (utc_now(), worker_kind),
+    )
+    return int(cursor.rowcount or 0)
+
+
 def claim_media_fetch_tasks(
     conn: sqlite3.Connection,
     *,
@@ -92,6 +113,7 @@ def run_once(
 ) -> dict[str, Any]:
     worker_id = worker_id or f"media-worker-{uuid.uuid4()}"
     with conn:
+        already_stored = mark_already_stored_tasks_succeeded(conn, worker_kind=worker_kind)
         rows = claim_media_fetch_tasks(conn, worker_id=worker_id, worker_kind=worker_kind, limit=limit)
     results: list[dict[str, Any]] = []
     for row in rows:
@@ -137,13 +159,14 @@ def run_once(
     summary = {
         "worker_id": worker_id,
         "worker_kind": worker_kind,
+        "already_stored": already_stored,
         "attempted": len(results),
         "stored": sum(1 for item in results if item.get("stored")),
         "failed": sum(1 for item in results if item.get("capture_status") == "failed"),
         "skipped": sum(1 for item in results if item.get("capture_status") == "skipped"),
         "results": results,
     }
-    audit(conn, "media.worker.run_once", {k: summary[k] for k in ("worker_id", "worker_kind", "attempted", "stored", "failed", "skipped")})
+    audit(conn, "media.worker.run_once", {k: summary[k] for k in ("worker_id", "worker_kind", "already_stored", "attempted", "stored", "failed", "skipped")})
     conn.commit()
     return summary
 

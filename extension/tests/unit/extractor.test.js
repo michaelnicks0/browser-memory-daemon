@@ -177,6 +177,29 @@ test('real document extraction records image and video artifacts without adding 
   assert.doesNotMatch(payload.text, /Hero image/);
 });
 
+test('image extraction ignores empty-src document URL fallbacks', () => {
+  const pageUrl = 'https://www.youtube.com/watch?v=abc123';
+  const image = {
+    tagName: 'IMG',
+    currentSrc: pageUrl,
+    src: pageUrl,
+    alt: 'Fallback image',
+    naturalWidth: 640,
+    naturalHeight: 360,
+    getAttribute(name) { return name === 'src' ? '' : null; }
+  };
+  const doc = {
+    title: 'Fallback Doc',
+    location: { href: pageUrl },
+    querySelectorAll(selector) {
+      if (selector === 'img, picture source[srcset]') return [image];
+      if (selector === 'video') return [];
+      return [];
+    }
+  };
+  assert.deepEqual(extractMediaFromDocument(doc), []);
+});
+
 test('collapses whitespace', () => {
   assert.equal(collapseWhitespace(' a\n\t b   c '), 'a b c');
 });

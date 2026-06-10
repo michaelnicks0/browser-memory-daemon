@@ -52,6 +52,35 @@ def test_media_worker_tasks_are_seeded_when_existing_unresolved_refs_have_no_tas
         assert task["status"] == "pending"
 
 
+def test_media_worker_marks_pending_task_succeeded_when_artifact_already_stored(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    payload = CapturePayload.from_dict(
+        {
+            "url": "https://example.com/already-stored-task",
+            "title": "Already Stored Task",
+            "text": "Readable already stored task body.",
+            "media_artifacts": [{"media_type": "image", "source_url": "data:image/png;base64,iVBORw0KGgo=", "mime_type": "image/png"}],
+        },
+        allow_any_url=True,
+    )
+    with connect(cfg.db_path) as conn:
+        ingest_capture(conn, cfg, payload)
+        assert run_once(conn, cfg, worker_id="test-worker", limit=10)["stored"] == 1
+        conn.execute(
+            "UPDATE media_fetch_tasks SET status = 'pending', last_error = 'stale lease', lease_owner = 'old-worker', lease_until = '2099-01-01T00:00:00Z'"
+        )
+        conn.commit()
+        summary = run_once(conn, cfg, worker_id="test-worker", limit=10)
+        task = conn.execute("SELECT status, last_error, lease_owner, lease_until FROM media_fetch_tasks").fetchone()
+        assert summary["attempted"] == 0
+        assert summary["already_stored"] == 1
+        assert task["status"] == "succeeded"
+        assert task["last_error"] is None
+        assert task["lease_owner"] is None
+        assert task["lease_until"] is None
+
+
 def test_media_worker_rehydrates_purged_cache_when_source_still_fetchable(tmp_path):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
     init_db(cfg)

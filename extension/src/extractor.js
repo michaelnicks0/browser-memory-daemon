@@ -171,6 +171,16 @@ function absoluteMediaUrl(value, doc) {
   }
 }
 
+function isDocumentUrlFallback(sourceUrl, doc) {
+  const pageUrl = String(doc.location?.href || '').trim();
+  if (!sourceUrl || !pageUrl) return false;
+  try {
+    return new URL(sourceUrl, pageUrl).href === new URL(pageUrl).href;
+  } catch (_) {
+    return String(sourceUrl).trim() === pageUrl;
+  }
+}
+
 function mediaDimensions(element) {
   const width = Number(element.naturalWidth || element.videoWidth || element.width || element.clientWidth || 0);
   const height = Number(element.naturalHeight || element.videoHeight || element.height || element.clientHeight || 0);
@@ -198,7 +208,7 @@ function extractMediaFromDocument(doc) {
     if (isHiddenNode(image) || isLikelyTrackingMedia(image)) continue;
     const source = image.currentSrc || image.src || image.srcset?.split(',')[0]?.trim()?.split(/\s+/)[0] || image.getAttribute?.('src') || image.getAttribute?.('srcset')?.split(',')[0]?.trim()?.split(/\s+/)[0] || '';
     const sourceUrl = absoluteMediaUrl(source, doc);
-    if (!sourceUrl) continue;
+    if (!sourceUrl || isDocumentUrlFallback(sourceUrl, doc)) continue;
     const dims = mediaDimensions(image);
     pushMediaRef(refs, seen, {
       media_type: 'image',
