@@ -62,7 +62,6 @@ cat > "$UNIT_FILE" <<EOF
 [Unit]
 Description=Browser Memory Daemon
 Documentation=file:$ROOT/README.md
-After=default.target
 
 [Service]
 Type=simple
