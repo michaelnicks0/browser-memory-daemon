@@ -1,3 +1,4 @@
+import base64
 from dataclasses import replace
 import io
 
@@ -7,7 +8,7 @@ from browser_memory_daemon.config import load_config
 from browser_memory_daemon.db import connect, init_db
 from browser_memory_daemon.forget import forget
 from browser_memory_daemon.ingest import ingest_capture
-from browser_memory_daemon.media import fetch_pending_media_artifacts, media_artifacts_for_snapshot, store_media_artifact, store_media_blob_stream
+from browser_memory_daemon.media import fetch_pending_media_artifacts, media_artifacts_for_snapshot, media_capture_status_for_fetch_reason, store_media_artifact, store_media_blob_stream
 from browser_memory_daemon.models import CapturePayload
 from browser_memory_daemon.search import search_memory
 
@@ -287,6 +288,39 @@ def test_fetch_pending_media_artifacts_stores_data_url_without_indexing_media_me
         assert media[0]["capture_status"] == "stored"
         assert media[0]["byte_size"] == 8
         assert media[0]["has_file"] is True
+
+
+def test_fetch_pending_media_artifacts_keeps_large_data_url_ref_intact(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    content = b"x" * 9000
+    data_url = "data:image/png;base64," + base64.b64encode(content).decode("ascii")
+    assert len(data_url) > 8192
+    payload = CapturePayload.from_dict(
+        {
+            "url": "https://example.com/large-data-media-page",
+            "title": "Large Data Media Page",
+            "text": "Readable body for a large inline data URL media ref.",
+            "media_artifacts": [{"media_type": "image", "role": "content", "source_url": data_url, "mime_type": "image/png"}],
+        },
+        allow_any_url=True,
+    )
+    with connect(cfg.db_path) as conn:
+        result = ingest_capture(conn, cfg, payload)
+        media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
+        assert media["source_url"] == data_url
+        fetched = fetch_pending_media_artifacts(conn, cfg, snapshot_id=result["snapshot_id"], limit=10)
+        assert fetched["stored"] == 1
+        media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
+        assert media["capture_status"] == "stored"
+        assert media["byte_size"] == len(content)
+
+
+def test_media_fetch_reason_classification_keeps_remote_errors_out_of_failed_bucket():
+    assert media_capture_status_for_fetch_reason("invalid-data-url-payload", source_url="data:image/png;base64,bad") == "skipped"
+    assert media_capture_status_for_fetch_reason("fetch-status-404", source_url="https://example.com/missing.png") == "expired"
+    assert media_capture_status_for_fetch_reason("fetch-status-429", source_url="https://example.com/rate.png") == "retrying"
+    assert media_capture_status_for_fetch_reason("Failed to fetch", source_url="https://example.com/flaky.png") == "retrying"
 
 
 def test_forget_domain_includes_subdomains(tmp_path):

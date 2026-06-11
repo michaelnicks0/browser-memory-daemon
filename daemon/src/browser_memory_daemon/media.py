@@ -35,8 +35,12 @@ MEDIA_CAPTURE_STATUSES = {
     "purged",
 }
 MEDIA_TASK_STATUSES = {"pending", "leased", "retrying", "succeeded", "failed", "skipped"}
+MAX_HTTP_MEDIA_SOURCE_URL_CHARS = 65_536
+MAX_DATA_MEDIA_SOURCE_URL_CHARS = 1_100_000
 PERMANENT_SKIP_REASONS = {
     "unsupported-media-url-scheme",
+    "invalid-data-url",
+    "invalid-data-url-payload",
     "media-too-large",
     "non-media-content-type",
     "disallowed-mime",
@@ -70,6 +74,17 @@ EXT_BY_MIME = {
 def _bounded_text(value: Any, *, max_chars: int = 2048) -> str:
     text = str(value or "").strip()
     return text[:max_chars]
+
+
+def _bounded_source_url(value: Any) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    if text.lower().startswith("data:"):
+        if len(text) > MAX_DATA_MEDIA_SOURCE_URL_CHARS:
+            raise ValueError("media data URL is too large")
+        return text
+    return text[:MAX_HTTP_MEDIA_SOURCE_URL_CHARS]
 
 
 def _safe_int(value: Any) -> int | None:
@@ -187,7 +202,7 @@ class MediaRef:
         role = str(data.get("role") or "content").lower().strip()
         if role not in MEDIA_ROLES:
             role = "content"
-        source_url = _bounded_text(data.get("source_url") or data.get("sourceUrl") or data.get("src") or data.get("current_src") or data.get("currentSrc"), max_chars=8192)
+        source_url = _bounded_source_url(data.get("source_url") or data.get("sourceUrl") or data.get("src") or data.get("current_src") or data.get("currentSrc"))
         if not source_url:
             raise ValueError("media source_url is required")
         return cls(
@@ -258,6 +273,23 @@ def _media_fetch_supported(source_url: str) -> bool:
         return urlsplit(source_url).scheme in {"http", "https", "data"}
     except Exception:
         return False
+
+
+def media_capture_status_for_fetch_reason(reason: str, *, source_url: str = "") -> str:
+    normalized = str(reason or "").strip()
+    lower = normalized.lower()
+    source_scheme = urlsplit(source_url or "").scheme.lower()
+    if normalized in PERMANENT_SKIP_REASONS:
+        return "skipped"
+    if source_scheme == "data" and lower in {"failed to fetch", "invalid-data-url", "invalid-data-url-payload"}:
+        return "skipped"
+    if lower.startswith(("fetch-status-401", "fetch-status-403", "fetch-status-404", "fetch-status-410")):
+        return "expired"
+    if lower.startswith(("fetch-status-429", "fetch-timeout", "fetch-error-")):
+        return "retrying"
+    if lower in {"empty-media-response", "failed to fetch"}:
+        return "retrying"
+    return "failed"
 
 
 def _metadata_priority(metadata: dict[str, Any] | None) -> int:
@@ -552,9 +584,28 @@ def fetch_and_store_media_artifact(conn: sqlite3.Connection, config: RuntimeConf
         timeout_seconds=config.media_fetch_timeout_seconds,
     )
     if reason:
-        return store_media_artifact(conn, config, _payload_from_media_row(value, capture_status="skipped" if reason in {"unsupported-media-url-scheme", "media-too-large", "non-media-content-type"} else "failed", status_reason=reason, mime_type=response_mime))
+        return store_media_artifact(
+            conn,
+            config,
+            _payload_from_media_row(
+                value,
+                capture_status=media_capture_status_for_fetch_reason(reason, source_url=value.get("source_url") or ""),
+                status_reason=reason,
+                mime_type=response_mime,
+            ),
+        )
     if not content:
-        return store_media_artifact(conn, config, _payload_from_media_row(value, capture_status="failed", status_reason="empty-media-response", mime_type=response_mime))
+        empty_reason = "empty-media-response"
+        return store_media_artifact(
+            conn,
+            config,
+            _payload_from_media_row(
+                value,
+                capture_status=media_capture_status_for_fetch_reason(empty_reason, source_url=value.get("source_url") or ""),
+                status_reason=empty_reason,
+                mime_type=response_mime,
+            ),
+        )
     return store_media_artifact(conn, config, _payload_from_media_row(value, capture_status="stored", content=content, mime_type=response_mime))
 
 
@@ -848,7 +899,7 @@ def store_media_artifact(conn: sqlite3.Connection, config: RuntimeConfig, data: 
         if status == "stored":
             mark_media_fetch_task(conn, artifact_id, worker_kind="daemon-public", status="succeeded")
             mark_media_fetch_task(conn, artifact_id, worker_kind="browser", status="succeeded")
-        elif status == "skipped":
+        elif status in {"skipped", "expired"}:
             mark_media_fetch_task(conn, artifact_id, worker_kind="daemon-public", status="skipped", error=reason)
     return {
         "stored": status == "stored",

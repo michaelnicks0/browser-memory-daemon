@@ -31,10 +31,12 @@ const hiddenNeedle = `BMD_REAL_CHROME_HIDDEN_${runId.replace(/[^A-Za-z0-9]/g, '_
 const blockedNeedle = `BMD_REAL_CHROME_BLOCKED_${runId.replace(/[^A-Za-z0-9]/g, '_')}`;
 const localNeedle = `BMD_REAL_CHROME_LOCAL_${runId.replace(/[^A-Za-z0-9]/g, '_')}`;
 const spaNeedle = `BMD_REAL_CHROME_SPA_${runId.replace(/[^A-Za-z0-9]/g, '_')}`;
+const blobVideoNeedle = `BMD_REAL_CHROME_BLOB_VIDEO_${runId.replace(/[^A-Za-z0-9]/g, '_')}`;
 
 const mediaImageUrl = `http://bmd-allowed.test:${pagePort}/media-image.png`;
 const cookieMediaUrl = `http://bmd-allowed.test:${pagePort}/cookie-media.png`;
 const allowedUrl = `http://bmd-allowed.test:${pagePort}/allowed`;
+const blobVideoUrl = `http://bmd-allowed.test:${pagePort}/blob-video`;
 const spaUrl = `http://bmd-allowed.test:${pagePort}/spa`;
 const blockedUrl = `http://bank.example.test:${pagePort}/blocked`;
 const localUrl = `http://127.0.0.1:${pagePort}/local`;
@@ -206,6 +208,24 @@ function startPageServer() {
         history.pushState({}, '', '/spa/route-two');
         document.getElementById('spa-content').textContent = 'Delayed SPA route proof ${spaNeedle} after history.pushState.';
       }, 500);
+    </script>
+  </body>
+</html>`);
+      return;
+    }
+    if (url.pathname === '/blob-video') {
+      res.end(`<!doctype html>
+<html>
+  <head><title>Blob Video Fixture</title></head>
+  <body>
+    <main>
+      <p>Blob video capture proof ${blobVideoNeedle} from a real Windows Chrome extension.</p>
+      <video id="blob-video" width="160" height="90" muted playsinline title="Synthetic blob video"></video>
+    </main>
+    <script>
+      const bytes = new Uint8Array([0,0,0,24,102,116,121,112,105,115,111,109,0,0,2,0,105,115,111,109,105,115,111,50,97,118,99,49,109,112,52,49]);
+      const blob = new Blob([bytes], {type: 'video/mp4'});
+      document.getElementById('blob-video').src = URL.createObjectURL(blob);
     </script>
   </body>
 </html>`);
@@ -625,6 +645,18 @@ async function waitForMediaArtifactStored(timeoutMs = 20000) {
   fail(`timed out waiting for stored media artifacts: ${JSON.stringify(media)}`);
 }
 
+async function waitForBlobVideoStored(timeoutMs = 20000) {
+  const started = Date.now();
+  let media = { rows: [], stored: 0, bytes: 0, tasks: {} };
+  while (Date.now() - started < timeoutMs) {
+    media = queryDbMediaState();
+    const row = media.rows.find((item) => item.media_type === 'video' && String(item.source_url || '').startsWith('blob:') && item.has_file && Number(item.file_size || 0) >= 16);
+    if (row) return { media, row };
+    await sleep(500);
+  }
+  fail(`timed out waiting for stored blob video artifact: ${JSON.stringify(media)}`);
+}
+
 function queryVisitTelemetry() {
   const dbPath = path.join(runtimeRoot, 'browser-memory.sqlite3');
   const script = `
@@ -685,6 +717,12 @@ async function runScenario() {
   if (cookieMediaRequests < 2) fail(`cookie media sidecar fetch was not proven; request count=${cookieMediaRequests}`);
   log(`allowed page media artifact stored count=${mediaState.stored} bytes=${mediaState.bytes} cookieRequests=${cookieMediaRequests}`);
 
+  await openPageAndWait(browserCdp, blobVideoUrl);
+  await triggerExtensionInjection(browserCdp, storageSessionId, blobVideoUrl);
+  const blobVideoResults = await waitForSearchHit(blobVideoNeedle, 20000);
+  const blobVideoState = await waitForBlobVideoStored();
+  log(`blob video stored artifact=${blobVideoState.row.id} bytes=${blobVideoState.row.file_size}`);
+
   const hiddenResults = await daemonSearch(hiddenNeedle);
   if (hiddenResults.length !== 0) fail(`hidden/editable/form text leaked into search: ${JSON.stringify(hiddenResults)}`);
   log('hidden/form/editable text absent from search');
@@ -742,8 +780,8 @@ async function runScenario() {
   log('extension capture, lifecycle, and media queues are empty');
 
   const counts = queryDbCounts();
-  const expectedDocuments = allMode ? 5 : 2;
-  const expectedSnapshots = allMode ? 5 : 2;
+  const expectedDocuments = allMode ? 6 : 3;
+  const expectedSnapshots = allMode ? 6 : 3;
   if (counts.documents !== expectedDocuments || counts.snapshots !== expectedSnapshots || counts.chunks < expectedSnapshots || counts.visit_events < 1) {
     fail(`unexpected DB counts after policy-mode scenarios: ${JSON.stringify({ policyMode, counts, expectedDocuments, expectedSnapshots })}`);
   }
@@ -754,10 +792,12 @@ async function runScenario() {
     policyMode,
     daemonUrl,
     allowedUrl,
+    blobVideoUrl,
     spaUrl,
     blockedUrl,
     localUrl,
     visibleNeedle,
+    blobVideoNeedle,
     hiddenNeedle,
     spaNeedle,
     blockedNeedle,
@@ -768,9 +808,11 @@ async function runScenario() {
     windowsWorkRoot,
     counts,
     mediaState,
+    blobVideoState,
     mediaQueueCounts,
     telemetry,
-    visibleResult: visibleResults[0]
+    visibleResult: visibleResults[0],
+    blobVideoResult: blobVideoResults[0]
   }, null, 2));
 }
 

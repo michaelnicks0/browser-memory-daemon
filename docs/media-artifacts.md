@@ -31,12 +31,13 @@ The Chrome content script extracts media references from:
 | `<picture><source srcset>` | `image:content` | Uses the first srcset candidate. |
 | `<video poster>` | `image:poster` | Poster image stored as an image artifact. |
 | `<video src>` / `<video><source src>` | `video:content` | Direct video source is stored if fetchable and under caps. |
+| Performance resource timing video entries | `video:content` | Preserved even when image refs fill the cap, so late-loaded direct video resources do not get crowded out by thumbnails. |
 
 Quality skips retained:
 
 - hidden media elements are skipped;
 - 1×1 tracking-pixel-like images are skipped;
-- at most 50 media refs per page capture are considered;
+- at most 50 media refs per page capture are stored, but discovered video refs are prioritized over images when the page exceeds the cap;
 - huge inline data URLs are not embedded in the `/capture` payload.
 
 ---
@@ -94,7 +95,9 @@ sequenceDiagram
   D->>DB: enqueue daemon-public media_fetch_tasks
   D-->>SW: document_id + snapshot_id + artifact IDs
   SW->>IDB: enqueue browser media tasks
-  SW-->>CS: capture complete
+  SW-->>CS: capture complete + artifact IDs
+  CS->>SW: optional inline blob/data media bytes from page context
+  SW->>D: PUT /media-artifacts/{artifact_id}/blob
 
   par Browser lazy sidecar
     IDB->>SW: due media task
@@ -115,7 +118,8 @@ Important properties:
 - `/capture` stores text/FTS and media reference rows without waiting on media bytes.
 - Credentialed media fetch happens inside Chrome; cookies are **not** exported to WSL.
 - WSL daemon media worker backfills public `http:`, `https:`, and `data:` refs.
-- If media cannot be fetched, the reference row remains with an explicit status/reason.
+- Content scripts opportunistically fetch `blob:`/inline media while the renderer page is alive and send bytes through the service worker; this is the only reliable path for transient browser blob URLs.
+- If media cannot be fetched, the reference row remains with an explicit classified status/reason. `failed` is reserved for unexpected/unclassified bugs; terminal remote conditions are normalized to `skipped`, `expired`, or `retrying`.
 - Browser queue tasks in `fetching` or `uploading` become due again after a stale processing window, so MV3 service-worker suspension does not strand them permanently.
 
 ---
@@ -252,8 +256,9 @@ Returns the stored binary with its MIME type if available. If the artifact has n
 | Browser lazy sidecar | Extension IndexedDB queue, `chrome.alarms`, fetch with `credentials: include`, raw `PUT` upload |
 | Daemon lazy sidecar | `browser-memory-media-worker.service`, public fetch only, no Chrome cookies |
 | Manual fetch-pending call limit | 100 artifacts |
-| Supported binary fetch schemes | `http:`, `https:`, `data:` |
-| Unsupported/hard schemes | `blob:`, browser-internal, opaque streaming, DRM |
+| Daemon-supported fetch schemes | `http:`, `https:`, `data:` |
+| Browser inline/blob upload schemes | `blob:` and `data:` when the content script can read bytes before page teardown |
+| Unsupported/hard schemes | browser-internal URLs, opaque streaming, DRM, media-source streams with no readable file/blob |
 
 Cache gates:
 
@@ -267,8 +272,9 @@ Cache gates:
 
 Video caveat:
 
-- Direct small video files can be stored.
-- Streaming video pages often expose HLS/DASH manifests, DRM blobs, or transient `blob:` URLs. Those usually remain metadata-only unless a later specialized capture path is added.
+- Direct small video files can be stored by the daemon or browser sidecar.
+- Small readable `blob:` videos can now be stored by the content script while the page is alive.
+- Streaming video pages often expose HLS/DASH manifests, DRM blobs, MSE media-source streams, or transient `blob:` URLs. If Chrome does not expose readable bytes to the content script, those remain references rather than skipped failures.
 
 ---
 
@@ -290,6 +296,7 @@ Real Chrome e2e verifies:
 - synthetic page text appears in FTS;
 - public and cookie-required image artifacts are extracted from DOM;
 - browser lazy sidecar fetches with Chrome cookie envelope using a no-store fetch path;
+- content-script inline upload stores a real Chrome `blob:` video fixture;
 - raw `PUT /media-artifacts/{id}/blob` stores local files;
 - stale `fetching`/`uploading` tasks are re-eligible instead of stranded;
 - extension capture/lifecycle/media queues drain empty;

@@ -177,7 +177,7 @@ async function queueMediaArtifacts(capturePayload, captureResult) {
   let queued = 0;
   for (let i = 0; i < artifacts.length; i += 1) {
     const task = mediaTaskFromArtifact(artifacts[i], refs[i], capturePayload, captureResult);
-    if (!task.artifact_id || !task.source_url) continue;
+    if (!task.artifact_id || !task.source_url || !mediaFetchSupported(task.source_url)) continue;
     await api.putMediaTask(task);
     queued += 1;
   }
@@ -241,6 +241,60 @@ async function putMediaArtifactBlob(task, blobRecord, config) {
   const body = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(`media blob upload failed: ${response.status} ${JSON.stringify(body)}`);
   return body;
+}
+
+async function blobFromBase64(contentBase64, mimeType = '') {
+  const clean = String(contentBase64 || '').replace(/\s+/g, '');
+  if (!clean) throw new Error('missing inline media content');
+  const response = await fetch(`data:${String(mimeType || 'application/octet-stream').split(';', 1)[0]};base64,${clean}`);
+  if (!response.ok) throw new Error('inline media decode failed');
+  return response.blob();
+}
+
+async function uploadInlineMediaBlob(upload, config) {
+  const task = {
+    artifact_id: upload.artifact_id || upload.artifactId,
+    document_id: upload.document_id || upload.documentId,
+    snapshot_id: upload.snapshot_id || upload.snapshotId,
+    visit_id: upload.visit_id || upload.visitId,
+    page_url: upload.page_url || upload.pageUrl || '',
+    source_url: upload.source_url || upload.sourceUrl || '',
+    media_type: upload.media_type || upload.mediaType || 'video',
+    role: upload.role || 'content',
+    mime_type: upload.mime_type || upload.mimeType || '',
+    width: upload.width,
+    height: upload.height,
+    duration_seconds: upload.duration_seconds || upload.durationSeconds,
+    metadata: upload.metadata || {}
+  };
+  if (!task.artifact_id) throw new Error('missing inline media artifact_id');
+  const byteSize = Number(upload.byte_size || upload.byteSize || 0);
+  if (byteSize > MAX_MEDIA_ARTIFACT_BYTES) {
+    await postMediaArtifact(baseMediaStatusPayload(task, 'skipped', 'media-too-large'), config);
+    return { artifact_id: task.artifact_id, skipped: true, reason: 'media-too-large' };
+  }
+  const blob = await blobFromBase64(upload.content_base64 || upload.contentBase64, task.mime_type);
+  if (blob.size > MAX_MEDIA_ARTIFACT_BYTES) {
+    await postMediaArtifact(baseMediaStatusPayload(task, 'skipped', 'media-too-large'), config);
+    return { artifact_id: task.artifact_id, skipped: true, reason: 'media-too-large' };
+  }
+  return putMediaArtifactBlob(task, { blob, metadata: { mime_type: task.mime_type, byte_size: blob.size } }, config);
+}
+
+async function uploadInlineMediaBlobs(uploads) {
+  const config = await getConfig();
+  if (config.capturePaused) return { skipped: true, reason: 'paused' };
+  if (!config.apiToken) return { skipped: true, reason: 'missing-token' };
+  const results = [];
+  for (const upload of Array.isArray(uploads) ? uploads : []) {
+    try {
+      results.push(await uploadInlineMediaBlob(upload, config));
+    } catch (error) {
+      results.push({ artifact_id: upload && (upload.artifact_id || upload.artifactId), ok: false, error: String(error.message || error) });
+    }
+  }
+  await chrome.storage.local.set({ lastInlineMediaUpload: { at: nowIso(), results: results.slice(0, 20) } });
+  return { ok: true, uploaded: results.filter((item) => item && item.stored).length, results };
 }
 
 async function fetchMediaForTask(task) {
@@ -609,7 +663,14 @@ chrome.tabs.onRemoved?.addListener((tabId) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (!message || message.type !== 'BMD_CAPTURE') return false;
+  if (!message || !message.type) return false;
+  if (message.type === 'BMD_MEDIA_BLOB_UPLOADS') {
+    uploadInlineMediaBlobs(message.uploads || [])
+      .then((result) => sendResponse({ ok: true, result }))
+      .catch((error) => sendResponse({ ok: false, error: String(error.message || error) }));
+    return true;
+  }
+  if (message.type !== 'BMD_CAPTURE') return false;
   decorateCapturePayload(message.payload || {}, sender)
     .then((payload) => enqueueCapture(payload))
     .then((result) => sendResponse({ ok: true, result }))

@@ -193,11 +193,67 @@ function isLikelyTrackingMedia(element) {
 }
 
 function pushMediaRef(refs, seen, ref) {
-  if (!ref || !ref.source_url || refs.length >= MAX_MEDIA_REFS) return;
+  if (!ref || !ref.source_url) return;
   const key = [ref.media_type, ref.role || 'content', ref.source_url].join('|');
   if (seen.has(key)) return;
+  if (refs.length >= MAX_MEDIA_REFS) {
+    if (ref.media_type !== 'video') return;
+    const replaceIndex = refs.findIndex((item) => item.media_type !== 'video');
+    if (replaceIndex < 0) return;
+    seen.delete([refs[replaceIndex].media_type, refs[replaceIndex].role || 'content', refs[replaceIndex].source_url].join('|'));
+    refs.splice(replaceIndex, 1);
+  }
   seen.add(key);
   refs.push(ref);
+}
+
+function inferMimeFromMediaUrl(sourceUrl) {
+  let path = '';
+  try { path = new URL(sourceUrl).pathname.toLowerCase(); } catch (_) { path = String(sourceUrl || '').toLowerCase(); }
+  if (path.endsWith('.mp4')) return 'video/mp4';
+  if (path.endsWith('.webm')) return 'video/webm';
+  if (path.endsWith('.mov')) return 'video/quicktime';
+  if (path.endsWith('.m4v')) return 'video/mp4';
+  return '';
+}
+
+function isLikelyVideoResourceUrl(sourceUrl) {
+  const value = String(sourceUrl || '');
+  if (!/^https?:\/\//i.test(value)) return false;
+  try {
+    const url = new URL(value);
+    const host = url.hostname.toLowerCase();
+    const path = url.pathname.toLowerCase();
+    if (/\.(mp4|webm|mov|m4v)(\?|$)/i.test(value)) return true;
+    if (host === 'video.twimg.com') return true;
+    if (host.endsWith('.googlevideo.com') && path.includes('videoplayback')) return true;
+    if (path.includes('/video/') || path.includes('/videos/')) return true;
+  } catch (_) {}
+  return false;
+}
+
+function extractPerformanceVideoRefs(doc) {
+  const perf = doc.defaultView?.performance || globalThis.performance;
+  if (!perf || typeof perf.getEntriesByType !== 'function') return [];
+  const entries = Array.from(perf.getEntriesByType('resource') || []);
+  const refs = [];
+  for (const entry of entries) {
+    const sourceUrl = absoluteMediaUrl(entry.name || '', doc);
+    if (!isLikelyVideoResourceUrl(sourceUrl)) continue;
+    refs.push({
+      media_type: 'video',
+      role: 'content',
+      source_url: sourceUrl,
+      mime_type: inferMimeFromMediaUrl(sourceUrl),
+      metadata: {
+        source: 'performance-resource',
+        initiator_type: entry.initiatorType || '',
+        transfer_size: Number.isFinite(entry.transferSize) ? entry.transferSize : undefined,
+        encoded_body_size: Number.isFinite(entry.encodedBodySize) ? entry.encodedBodySize : undefined
+      }
+    });
+  }
+  return refs;
 }
 
 function extractMediaFromDocument(doc) {
@@ -254,6 +310,9 @@ function extractMediaFromDocument(doc) {
       duration_seconds: Number.isFinite(video.duration) ? video.duration : undefined,
       metadata: { tag: 'video' }
     });
+  }
+  for (const ref of extractPerformanceVideoRefs(doc)) {
+    pushMediaRef(refs, seen, ref);
   }
   return refs;
 }

@@ -200,6 +200,39 @@ test('image extraction ignores empty-src document URL fallbacks', () => {
   assert.deepEqual(extractMediaFromDocument(doc), []);
 });
 
+test('performance video resources are preserved even when image refs fill the cap', () => {
+  const images = Array.from({ length: 60 }, (_, index) => ({
+    tagName: 'IMG',
+    currentSrc: `/image-${index}.png`,
+    naturalWidth: 640,
+    naturalHeight: 360,
+    getAttribute(name) { return name === 'src' ? `/image-${index}.png` : null; }
+  }));
+  const doc = {
+    title: 'Video Perf Doc',
+    location: { href: 'https://x.com/example/status/1' },
+    defaultView: {
+      performance: {
+        getEntriesByType(type) {
+          if (type !== 'resource') return [];
+          return [{ name: 'https://video.twimg.com/tweet_video/example.mp4', initiatorType: 'video', transferSize: 1234, encodedBodySize: 1234 }];
+        }
+      }
+    },
+    querySelectorAll(selector) {
+      if (selector === 'img, picture source[srcset]') return images;
+      if (selector === 'video') return [];
+      return [];
+    }
+  };
+  const media = extractMediaFromDocument(doc);
+  assert.equal(media.length, 50);
+  assert.equal(media.filter((item) => item.media_type === 'video').length, 1);
+  const video = media.find((item) => item.media_type === 'video');
+  assert.equal(video.source_url, 'https://video.twimg.com/tweet_video/example.mp4');
+  assert.equal(video.mime_type, 'video/mp4');
+});
+
 test('collapses whitespace', () => {
   assert.equal(collapseWhitespace(' a\n\t b   c '), 'a b c');
 });

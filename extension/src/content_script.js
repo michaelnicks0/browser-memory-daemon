@@ -12,6 +12,7 @@
 
   const DELAYED_CAPTURE_MS = [0, 1500, 5000];
   const DEFAULT_CAPTURE_CONFIG = { policyMode: 'all' };
+  const MAX_INLINE_BLOB_UPLOAD_BYTES = 25_000_000;
 
   function normalizePolicyMode(policyMode) {
     if (typeof globalThis.normalizeBrowserMemoryPolicyMode === 'function') {
@@ -59,6 +60,87 @@
     }));
   }
 
+  function latestCaptureResultFromResponse(response) {
+    const delivered = response?.result?.delivered;
+    if (Array.isArray(delivered) && delivered.length) return delivered[delivered.length - 1];
+    if (response?.result?.media_artifacts) return response.result;
+    return null;
+  }
+
+  function isBlobMediaRef(ref) {
+    return /^blob:/i.test(String(ref?.source_url || ref?.sourceUrl || ''));
+  }
+
+  async function blobToBase64(blob) {
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    let binary = '';
+    const chunkSize = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+    }
+    return btoa(binary);
+  }
+
+  async function buildBlobMediaUploads(payload, captureResult) {
+    const refs = Array.isArray(payload.media_artifacts) ? payload.media_artifacts : [];
+    const artifacts = Array.isArray(captureResult?.media_artifacts) ? captureResult.media_artifacts : [];
+    const uploads = [];
+    const failures = [];
+    for (let i = 0; i < Math.min(refs.length, artifacts.length); i += 1) {
+      const ref = refs[i];
+      const artifact = artifacts[i];
+      if (!isBlobMediaRef(ref) || !artifact?.artifact_id) continue;
+      const sourceUrl = String(ref.source_url || ref.sourceUrl || '');
+      const upload = {
+        artifact_id: artifact.artifact_id,
+        document_id: artifact.document_id || captureResult.document_id,
+        snapshot_id: artifact.snapshot_id || captureResult.snapshot_id,
+        visit_id: artifact.visit_id || captureResult.visit_id || payload.visit_id,
+        page_url: artifact.page_url || payload.url || '',
+        source_url: sourceUrl,
+        media_type: artifact.media_type || ref.media_type || 'video',
+        role: artifact.role || ref.role || 'content',
+        mime_type: artifact.mime_type || ref.mime_type || '',
+        width: artifact.width || ref.width,
+        height: artifact.height || ref.height,
+        duration_seconds: artifact.duration_seconds || ref.duration_seconds || ref.duration,
+        metadata: { ...(ref.metadata || {}), inline_blob_upload: true }
+      };
+      try {
+        const blobResponse = await fetch(sourceUrl);
+        if (!blobResponse.ok) throw new Error(`blob-fetch-status-${blobResponse.status}`);
+        const blob = await blobResponse.blob();
+        upload.mime_type = blob.type || upload.mime_type;
+        upload.byte_size = blob.size;
+        if (blob.size <= MAX_INLINE_BLOB_UPLOAD_BYTES) {
+          upload.content_base64 = await blobToBase64(blob);
+        }
+        uploads.push(upload);
+      } catch (error) {
+        failures.push({ artifact_id: artifact.artifact_id, source_url: sourceUrl, error: String(error && error.message || error) });
+      }
+    }
+    return { uploads, failures };
+  }
+
+  function sendBlobMediaUploads(uploads) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ type: 'BMD_MEDIA_BLOB_UPLOADS', uploads }, (response) => {
+        const lastError = chrome.runtime.lastError ? chrome.runtime.lastError.message : '';
+        resolve({ response, lastError });
+      });
+    });
+  }
+
+  async function uploadBlobMediaRefs(payload, response) {
+    const captureResult = latestCaptureResultFromResponse(response);
+    if (!captureResult) return { skipped: true, reason: 'missing-capture-result' };
+    const built = await buildBlobMediaUploads(payload, captureResult);
+    if (!built.uploads.length) return { skipped: true, reason: 'no-blob-media', failures: built.failures };
+    const uploadResult = await sendBlobMediaUploads(built.uploads);
+    return { ...uploadResult, failures: built.failures, attempted: built.uploads.length };
+  }
+
   function sendCapture(reason = 'scheduled') {
     if (globalThis.__BMD_CAPTURE_IN_PROGRESS) {
       globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'skipped', reason: 'capture-in-progress' };
@@ -98,6 +180,9 @@
         globalThis.__BMD_CAPTURE_IN_PROGRESS = false;
         if (!lastError && response && response.ok) {
           globalThis.__BMD_LAST_CAPTURE_KEY = key;
+          uploadBlobMediaRefs(payload, response)
+            .then((mediaUpload) => { globalThis.__BMD_LAST_MEDIA_UPLOAD_STATUS = { at: new Date().toISOString(), ...mediaUpload }; })
+            .catch((error) => { globalThis.__BMD_LAST_MEDIA_UPLOAD_STATUS = { at: new Date().toISOString(), error: String(error && error.message || error) }; });
         }
         globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'sent', ok: Boolean(response && response.ok), response, lastError, captureReason: reason, textLength, url: payload.url, policyMode };
       });
