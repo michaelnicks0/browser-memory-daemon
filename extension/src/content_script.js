@@ -22,6 +22,22 @@
     return ['all', 'recall', 'balanced', 'strict'].includes(mode) ? mode : 'all';
   }
 
+  function extensionErrorMessage(error) {
+    return String(error && error.message || error || '');
+  }
+
+  function isExtensionContextInvalidated(error) {
+    return /Extension context invalidated/i.test(extensionErrorMessage(error));
+  }
+
+  function safeRuntimeLastError() {
+    try {
+      return chrome.runtime.lastError ? chrome.runtime.lastError.message : '';
+    } catch (error) {
+      return extensionErrorMessage(error);
+    }
+  }
+
   function currentScrollPercent() {
     const element = document.documentElement || document.body;
     const scrollTop = globalThis.scrollY || element.scrollTop || 0;
@@ -55,9 +71,19 @@
     if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
       return Promise.resolve(DEFAULT_CAPTURE_CONFIG);
     }
-    return chrome.storage.local.get(DEFAULT_CAPTURE_CONFIG).then((cfg) => ({
-      policyMode: normalizePolicyMode(cfg.policyMode)
-    }));
+    try {
+      return Promise.resolve(chrome.storage.local.get(DEFAULT_CAPTURE_CONFIG))
+        .then((cfg) => ({
+          policyMode: normalizePolicyMode(cfg.policyMode)
+        }))
+        .catch((error) => {
+          if (isExtensionContextInvalidated(error)) return DEFAULT_CAPTURE_CONFIG;
+          throw error;
+        });
+    } catch (error) {
+      if (isExtensionContextInvalidated(error)) return Promise.resolve(DEFAULT_CAPTURE_CONFIG);
+      return Promise.reject(error);
+    }
   }
 
   function latestCaptureResultFromResponse(response) {
@@ -125,10 +151,14 @@
 
   function sendBlobMediaUploads(uploads) {
     return new Promise((resolve) => {
-      chrome.runtime.sendMessage({ type: 'BMD_MEDIA_BLOB_UPLOADS', uploads }, (response) => {
-        const lastError = chrome.runtime.lastError ? chrome.runtime.lastError.message : '';
-        resolve({ response, lastError });
-      });
+      try {
+        chrome.runtime.sendMessage({ type: 'BMD_MEDIA_BLOB_UPLOADS', uploads }, (response) => {
+          const lastError = safeRuntimeLastError();
+          resolve({ response, lastError });
+        });
+      } catch (error) {
+        resolve({ response: null, lastError: extensionErrorMessage(error) });
+      }
     });
   }
 
@@ -175,20 +205,25 @@
         return;
       }
       globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'sending', captureReason: reason, textLength, url: payload.url, policyMode };
-      chrome.runtime.sendMessage({ type: 'BMD_CAPTURE', payload: { ...payload, capture_reason: reason, policy_mode: policyMode } }, (response) => {
-        const lastError = chrome.runtime.lastError ? chrome.runtime.lastError.message : '';
+      try {
+        chrome.runtime.sendMessage({ type: 'BMD_CAPTURE', payload: { ...payload, capture_reason: reason, policy_mode: policyMode } }, (response) => {
+          const lastError = safeRuntimeLastError();
+          globalThis.__BMD_CAPTURE_IN_PROGRESS = false;
+          if (!lastError && response && response.ok) {
+            globalThis.__BMD_LAST_CAPTURE_KEY = key;
+            uploadBlobMediaRefs(payload, response)
+              .then((mediaUpload) => { globalThis.__BMD_LAST_MEDIA_UPLOAD_STATUS = { at: new Date().toISOString(), ...mediaUpload }; })
+              .catch((error) => { globalThis.__BMD_LAST_MEDIA_UPLOAD_STATUS = { at: new Date().toISOString(), error: extensionErrorMessage(error) }; });
+          }
+          globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'sent', ok: Boolean(response && response.ok), response, lastError, captureReason: reason, textLength, url: payload.url, policyMode };
+        });
+      } catch (error) {
         globalThis.__BMD_CAPTURE_IN_PROGRESS = false;
-        if (!lastError && response && response.ok) {
-          globalThis.__BMD_LAST_CAPTURE_KEY = key;
-          uploadBlobMediaRefs(payload, response)
-            .then((mediaUpload) => { globalThis.__BMD_LAST_MEDIA_UPLOAD_STATUS = { at: new Date().toISOString(), ...mediaUpload }; })
-            .catch((error) => { globalThis.__BMD_LAST_MEDIA_UPLOAD_STATUS = { at: new Date().toISOString(), error: String(error && error.message || error) }; });
-        }
-        globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'sent', ok: Boolean(response && response.ok), response, lastError, captureReason: reason, textLength, url: payload.url, policyMode };
-      });
+        globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'error', error: extensionErrorMessage(error), captureReason: reason, textLength, url: payload.url, policyMode };
+      }
     }).catch((error) => {
       globalThis.__BMD_CAPTURE_IN_PROGRESS = false;
-      globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'error', error: String(error && error.message || error), captureReason: reason };
+      globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'error', error: extensionErrorMessage(error), captureReason: reason };
     });
   }
 
