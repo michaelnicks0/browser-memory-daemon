@@ -10,7 +10,7 @@ import re
 import sqlite3
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.parse import unquote_to_bytes, urlsplit
+from urllib.parse import unquote_to_bytes, urljoin, urlsplit
 from urllib.request import Request, urlopen
 
 from .config import RuntimeConfig
@@ -68,6 +68,15 @@ EXT_BY_MIME = {
     "video/webm": ".webm",
     "video/ogg": ".ogv",
     "video/quicktime": ".mov",
+    "video/mp2t": ".ts",
+}
+
+HLS_MIME_TYPES = {
+    "application/x-mpegurl",
+    "application/vnd.apple.mpegurl",
+    "application/mpegurl",
+    "audio/mpegurl",
+    "audio/x-mpegurl",
 }
 
 
@@ -275,11 +284,13 @@ def _media_fetch_supported(source_url: str) -> bool:
         return False
 
 
-def media_capture_status_for_fetch_reason(reason: str, *, source_url: str = "") -> str:
+def media_capture_status_for_fetch_reason(reason: str, *, source_url: str = "", media_type: str = "") -> str:
     normalized = str(reason or "").strip()
     lower = normalized.lower()
     source_scheme = urlsplit(source_url or "").scheme.lower()
     if normalized in PERMANENT_SKIP_REASONS:
+        if lower == "non-media-content-type" and str(media_type or "").lower() == "video":
+            return "referenced"
         return "skipped"
     if source_scheme == "data" and lower in {"failed to fetch", "invalid-data-url", "invalid-data-url-payload"}:
         return "skipped"
@@ -287,6 +298,8 @@ def media_capture_status_for_fetch_reason(reason: str, *, source_url: str = "") 
         return "expired"
     if lower.startswith(("fetch-status-429", "fetch-timeout", "fetch-error-")):
         return "retrying"
+    if lower.startswith("hls-"):
+        return "referenced"
     if lower in {"empty-media-response", "failed to fetch"}:
         return "retrying"
     return "failed"
@@ -492,42 +505,249 @@ def _data_url_to_media(data_url: str, *, media_type: str, max_bytes: int) -> tup
     return content, mime, ""
 
 
+def _request_for_url(source_url: str, page_url: str, *, accept: str) -> Request:
+    parts = urlsplit(source_url)
+    return Request(
+        source_url,
+        headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149 Safari/537.36 BrowserMemoryDaemon/0.1",
+            "Referer": page_url or f"{parts.scheme}://{parts.netloc}/",
+            "Accept": accept,
+        },
+    )
+
+
+def _content_type_mime(value: str) -> str:
+    return str(value or "").split(";", 1)[0].strip().lower()
+
+
+def _is_hls_candidate(source_url: str, content_type: str) -> bool:
+    mime = _content_type_mime(content_type)
+    path = urlsplit(source_url or "").path.lower()
+    return mime in HLS_MIME_TYPES or path.endswith(".m3u8")
+
+
+def _looks_like_hls_playlist(content: bytes) -> bool:
+    return content.lstrip().startswith(b"#EXTM3U")
+
+
+def _read_http_response_limited(response: Any, *, max_bytes: int) -> tuple[bytes, str]:
+    try:
+        content_length = int(response.headers.get("content-length") or "0")
+    except ValueError:
+        content_length = 0
+    if content_length > max_bytes:
+        return b"", "media-too-large"
+    chunks: list[bytes] = []
+    total = 0
+    while True:
+        chunk = response.read(64 * 1024)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > max_bytes:
+            return b"", "media-too-large"
+        chunks.append(chunk)
+    return b"".join(chunks), ""
+
+
+def _parse_hls_attribute_list(value: str) -> dict[str, str]:
+    attrs: dict[str, str] = {}
+    current: list[str] = []
+    in_quotes = False
+    parts: list[str] = []
+    for char in value:
+        if char == '"':
+            in_quotes = not in_quotes
+            current.append(char)
+        elif char == "," and not in_quotes:
+            parts.append("".join(current))
+            current = []
+        else:
+            current.append(char)
+    if current:
+        parts.append("".join(current))
+    for part in parts:
+        key, sep, raw = part.partition("=")
+        if not sep:
+            continue
+        attrs[key.strip().upper()] = raw.strip().strip('"')
+    return attrs
+
+
+def _hls_variant_candidates(playlist_text: str, playlist_url: str) -> list[tuple[int, str]]:
+    lines = [line.strip() for line in playlist_text.splitlines()]
+    variants: list[tuple[int, str]] = []
+    for index, line in enumerate(lines):
+        if not line.startswith("#EXT-X-STREAM-INF:"):
+            continue
+        attrs = _parse_hls_attribute_list(line.split(":", 1)[1])
+        score = int(attrs.get("AVERAGE-BANDWIDTH") or attrs.get("BANDWIDTH") or "0")
+        for candidate in lines[index + 1 :]:
+            if not candidate or candidate.startswith("#"):
+                continue
+            variants.append((score, urljoin(playlist_url, candidate)))
+            break
+    return sorted(variants, key=lambda item: item[0] or 10**12)
+
+
+def _hls_map_uri(line: str) -> str:
+    attrs = _parse_hls_attribute_list(line.split(":", 1)[1] if ":" in line else "")
+    return attrs.get("URI", "")
+
+
+def _fetch_hls_asset(source_url: str, page_url: str, *, max_bytes: int, timeout_seconds: float) -> tuple[bytes, str]:
+    try:
+        with urlopen(
+            _request_for_url(source_url, page_url, accept="video/*,application/octet-stream,*/*;q=0.8"),
+            timeout=timeout_seconds,
+        ) as response:
+            return _read_http_response_limited(response, max_bytes=max_bytes)
+    except HTTPError as exc:
+        return b"", f"fetch-status-{exc.code}"
+    except TimeoutError:
+        return b"", "fetch-timeout"
+    except URLError as exc:
+        reason = getattr(exc, "reason", exc)
+        return b"", f"fetch-error-{str(reason)[:160]}"
+    except Exception as exc:
+        return b"", f"fetch-error-{str(exc)[:160]}"
+
+
+def _fetch_hls_playlist(source_url: str, page_url: str, *, timeout_seconds: float) -> tuple[str, str]:
+    try:
+        with urlopen(
+            _request_for_url(source_url, page_url, accept="application/vnd.apple.mpegurl,application/x-mpegURL,*/*;q=0.8"),
+            timeout=timeout_seconds,
+        ) as response:
+            content, reason = _read_http_response_limited(response, max_bytes=1_000_000)
+            if reason:
+                return "", reason
+            return content.decode("utf-8", "replace"), ""
+    except HTTPError as exc:
+        return "", f"fetch-status-{exc.code}"
+    except TimeoutError:
+        return "", "fetch-timeout"
+    except URLError as exc:
+        reason = getattr(exc, "reason", exc)
+        return "", f"fetch-error-{str(reason)[:160]}"
+    except Exception as exc:
+        return "", f"fetch-error-{str(exc)[:160]}"
+
+
+def _hls_playlist_to_media(
+    playlist_url: str,
+    page_url: str,
+    playlist_text: str,
+    *,
+    max_bytes: int,
+    timeout_seconds: float,
+    depth: int = 0,
+) -> tuple[bytes, str, str]:
+    if depth > 3:
+        return b"", "", "hls-depth-exceeded"
+    if not playlist_text.lstrip().startswith("#EXTM3U"):
+        return b"", "", "hls-invalid-playlist"
+    variants = _hls_variant_candidates(playlist_text, playlist_url)
+    if variants:
+        last_reason = "hls-no-video-variant"
+        for _, variant_url in variants:
+            variant_text, reason = _fetch_hls_playlist(variant_url, page_url, timeout_seconds=timeout_seconds)
+            if reason:
+                last_reason = reason
+                continue
+            content, mime, reason = _hls_playlist_to_media(
+                variant_url,
+                page_url,
+                variant_text,
+                max_bytes=max_bytes,
+                timeout_seconds=timeout_seconds,
+                depth=depth + 1,
+            )
+            if not reason:
+                return content, mime, ""
+            last_reason = reason
+        return b"", "", last_reason
+
+    path = urlsplit(playlist_url).path.lower()
+    if "/mp4a/" in path or "/audio" in path:
+        return b"", "", "hls-audio-rendition"
+
+    init_url = ""
+    segment_urls: list[str] = []
+    for line in (line.strip() for line in playlist_text.splitlines()):
+        if not line:
+            continue
+        if line.startswith("#EXT-X-MAP:"):
+            init_uri = _hls_map_uri(line)
+            if init_uri:
+                init_url = urljoin(playlist_url, init_uri)
+            continue
+        if line.startswith("#"):
+            continue
+        segment_urls.append(urljoin(playlist_url, line))
+
+    if not segment_urls:
+        return b"", "", "hls-empty-playlist"
+
+    content_parts: list[bytes] = []
+    total = 0
+    if init_url:
+        init_content, reason = _fetch_hls_asset(init_url, page_url, max_bytes=max_bytes, timeout_seconds=timeout_seconds)
+        if reason:
+            return b"", "", reason
+        content_parts.append(init_content)
+        total += len(init_content)
+
+    for segment_url in segment_urls:
+        segment, reason = _fetch_hls_asset(segment_url, page_url, max_bytes=max_bytes - total, timeout_seconds=timeout_seconds)
+        if reason:
+            return b"", "", reason
+        total += len(segment)
+        if total > max_bytes:
+            return b"", "", "media-too-large"
+        content_parts.append(segment)
+
+    if init_url or any(urlsplit(url).path.lower().endswith((".m4s", ".mp4")) for url in segment_urls):
+        return b"".join(content_parts), "video/mp4", ""
+    return b"".join(content_parts), "video/mp2t", ""
+
+
+def _fetch_hls_media_bytes(source_url: str, page_url: str, playlist_content: bytes, *, max_bytes: int, timeout_seconds: float) -> tuple[bytes, str, str]:
+    playlist_text = playlist_content.decode("utf-8", "replace")
+    return _hls_playlist_to_media(source_url, page_url, playlist_text, max_bytes=max_bytes, timeout_seconds=timeout_seconds)
+
+
 def _fetch_media_bytes(source_url: str, page_url: str, *, media_type: str, max_bytes: int, timeout_seconds: float) -> tuple[bytes, str, str]:
     parts = urlsplit(source_url)
     if parts.scheme == "data":
         return _data_url_to_media(source_url, media_type=media_type, max_bytes=max_bytes)
     if parts.scheme not in {"http", "https"}:
         return b"", "", "unsupported-media-url-scheme"
-    request = Request(
+    request = _request_for_url(
         source_url,
-        headers={
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149 Safari/537.36 BrowserMemoryDaemon/0.1",
-            "Referer": page_url or f"{parts.scheme}://{parts.netloc}/",
-            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,video/*,*/*;q=0.8",
-        },
+        page_url,
+        accept="image/avif,image/webp,image/apng,image/svg+xml,image/*,video/*,application/vnd.apple.mpegurl,application/x-mpegURL,*/*;q=0.8",
     )
     try:
         with urlopen(request, timeout=timeout_seconds) as response:
-            response_mime = _safe_response_mime(response.headers.get("content-type", ""), media_type=media_type)
-            if response.headers.get("content-type") and not response_mime:
+            raw_content_type = response.headers.get("content-type", "")
+            response_mime = _safe_response_mime(raw_content_type, media_type=media_type)
+            hls_candidate = media_type == "video" and _is_hls_candidate(source_url, raw_content_type)
+            if raw_content_type and not response_mime and not hls_candidate:
                 return b"", "", "non-media-content-type"
-            try:
-                content_length = int(response.headers.get("content-length") or "0")
-            except ValueError:
-                content_length = 0
-            if content_length > max_bytes:
-                return b"", response_mime, "media-too-large"
-            chunks: list[bytes] = []
-            total = 0
-            while True:
-                chunk = response.read(64 * 1024)
-                if not chunk:
-                    break
-                total += len(chunk)
-                if total > max_bytes:
-                    return b"", response_mime, "media-too-large"
-                chunks.append(chunk)
-            return b"".join(chunks), response_mime, ""
+            content, reason = _read_http_response_limited(response, max_bytes=max_bytes)
+            if reason:
+                return b"", response_mime, reason
+            if media_type == "video" and (hls_candidate or _looks_like_hls_playlist(content)):
+                return _fetch_hls_media_bytes(
+                    source_url,
+                    page_url,
+                    content,
+                    max_bytes=max_bytes,
+                    timeout_seconds=timeout_seconds,
+                )
+            return content, response_mime, ""
     except HTTPError as exc:
         return b"", "", f"fetch-status-{exc.code}"
     except TimeoutError:
@@ -589,7 +809,7 @@ def fetch_and_store_media_artifact(conn: sqlite3.Connection, config: RuntimeConf
             config,
             _payload_from_media_row(
                 value,
-                capture_status=media_capture_status_for_fetch_reason(reason, source_url=value.get("source_url") or ""),
+                capture_status=media_capture_status_for_fetch_reason(reason, source_url=value.get("source_url") or "", media_type=value.get("media_type") or ""),
                 status_reason=reason,
                 mime_type=response_mime,
             ),
@@ -601,7 +821,7 @@ def fetch_and_store_media_artifact(conn: sqlite3.Connection, config: RuntimeConf
             config,
             _payload_from_media_row(
                 value,
-                capture_status=media_capture_status_for_fetch_reason(empty_reason, source_url=value.get("source_url") or ""),
+                capture_status=media_capture_status_for_fetch_reason(empty_reason, source_url=value.get("source_url") or "", media_type=value.get("media_type") or ""),
                 status_reason=empty_reason,
                 mime_type=response_mime,
             ),
@@ -960,7 +1180,8 @@ def store_media_blob_stream(
     media_type = artifact.get("media_type") or ""
     mime_type = _safe_response_mime(raw_content_type or artifact.get("mime_type") or _infer_mime_from_url(artifact.get("source_url") or "", media_type), media_type=media_type)
     if raw_content_type and not mime_type:
-        return store_media_artifact(conn, config, _payload_from_media_row(artifact, capture_status="skipped", status_reason="non-media-content-type"))
+        capture_status = "referenced" if media_type == "video" else "skipped"
+        return store_media_artifact(conn, config, _payload_from_media_row(artifact, capture_status=capture_status, status_reason="non-media-content-type"))
     priority = _metadata_priority(json.loads(artifact.get("metadata_json") or "{}"))
     allowed, reason = media_storage_allowed(
         conn,

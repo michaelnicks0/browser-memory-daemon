@@ -117,6 +117,7 @@ async function postVisitEvent(payload, config) {
 function mediaFetchSupported(sourceUrl) {
   try {
     const url = new URL(sourceUrl);
+    if (url.pathname.toLowerCase().endsWith('.m3u8')) return false;
     return ['http:', 'https:', 'data:'].includes(url.protocol);
   } catch (_) {
     return false;

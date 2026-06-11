@@ -22,11 +22,11 @@ class RuntimeConfig:
     state_root: Path = Path.home() / ".local" / "state" / APP_NAME
     max_payload_bytes: int = 2_000_000
     max_media_payload_bytes: int = 40_000_000
-    max_media_artifact_bytes: int = 25_000_000
+    max_media_artifact_bytes: int = 100_000_000
     max_media_bytes_per_snapshot: int = 100_000_000
     max_media_bytes_per_domain: int = 2_000_000_000
     max_media_cache_bytes: int = 50_000_000_000
-    media_mime_allowlist: tuple[str, ...] = ("image/", "video/mp4", "video/webm", "video/ogg", "video/quicktime")
+    media_mime_allowlist: tuple[str, ...] = ("image/", "video/mp4", "video/webm", "video/ogg", "video/quicktime", "video/mp2t")
     media_min_priority_to_store: int = 0
     max_media_artifacts_per_capture: int = 50
     max_media_fetches_per_capture: int = 12

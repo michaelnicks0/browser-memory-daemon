@@ -1,8 +1,12 @@
+from contextlib import contextmanager
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import threading
+
 from browser_memory_daemon.config import load_config
 from browser_memory_daemon.db import connect, init_db
 from browser_memory_daemon.ingest import ingest_capture
 from browser_memory_daemon.media import media_artifacts_for_snapshot, purge_media_cache
-from browser_memory_daemon.media_worker import normalize_legacy_blob_video_skips, normalize_terminal_failed_artifacts, run_once
+from browser_memory_daemon.media_worker import normalize_hls_video_skips, normalize_legacy_blob_video_skips, normalize_terminal_failed_artifacts, run_once
 from browser_memory_daemon.models import CapturePayload
 
 
@@ -183,3 +187,138 @@ def test_media_worker_reclassifies_legacy_blob_video_skips_as_references(tmp_pat
         media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
         assert media["capture_status"] == "referenced"
         assert media["status_reason"] is None
+
+
+@contextmanager
+def hls_fixture_server():
+    init_bytes = b"\x00\x00\x00 ftypiso5"
+    seg1 = b"video-segment-one"
+    seg2 = b"video-segment-two"
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):  # noqa: N802
+            paths = {
+                "/master.m3u8": (
+                    "application/x-mpegURL",
+                    b"#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=200,RESOLUTION=320x180\n/variant.m3u8\n",
+                ),
+                "/variant.m3u8": (
+                    "application/vnd.apple.mpegurl",
+                    b"#EXTM3U\n#EXT-X-TARGETDURATION:4\n#EXT-X-MAP:URI=\"/init.mp4\"\n#EXTINF:1.0,\n/seg1.m4s\n#EXTINF:1.0,\n/seg2.m4s\n#EXT-X-ENDLIST\n",
+                ),
+                "/audio.m3u8": (
+                    "application/x-mpegURL",
+                    b"#EXTM3U\n#EXT-X-TARGETDURATION:4\n#EXTINF:1.0,\n/audio.m4s\n#EXT-X-ENDLIST\n",
+                ),
+                "/mp4a/audio.m3u8": (
+                    "application/x-mpegURL",
+                    b"#EXTM3U\n#EXT-X-TARGETDURATION:4\n#EXTINF:1.0,\n/audio.m4s\n#EXT-X-ENDLIST\n",
+                ),
+                "/init.mp4": ("video/mp4", init_bytes),
+                "/seg1.m4s": ("video/iso.segment", seg1),
+                "/seg2.m4s": ("video/iso.segment", seg2),
+                "/audio.m4s": ("audio/mp4", b"audio-only"),
+            }
+            if self.path not in paths:
+                self.send_response(404)
+                self.end_headers()
+                return
+            content_type, body = paths[self.path]
+            self.send_response(200)
+            self.send_header("Content-Type", content_type)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, format, *args):
+            return
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{server.server_port}", init_bytes + seg1 + seg2
+    finally:
+        server.shutdown()
+        thread.join(timeout=2)
+        server.server_close()
+
+
+def test_media_worker_stores_hls_master_playlist_as_video_mp4(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    with hls_fixture_server() as (base_url, expected_bytes):
+        payload = CapturePayload.from_dict(
+            {
+                "url": "https://example.com/hls-video",
+                "title": "HLS Video",
+                "text": "Readable worker HLS video body.",
+                "media_artifacts": [{"media_type": "video", "source_url": f"{base_url}/master.m3u8"}],
+            },
+            allow_any_url=True,
+        )
+        with connect(cfg.db_path) as conn:
+            result = ingest_capture(conn, cfg, payload)
+            summary = run_once(conn, cfg, worker_id="test-worker", limit=10)
+            assert summary["attempted"] == 1
+            assert summary["stored"] == 1
+            media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
+            assert media["capture_status"] == "stored"
+            assert media["mime_type"] == "video/mp4"
+            assert media["byte_size"] == len(expected_bytes)
+            assert media["has_file"] is True
+            file_row = conn.execute("SELECT file_path FROM media_artifacts WHERE id = ?", (media["id"],)).fetchone()
+            assert open(file_row["file_path"], "rb").read() == expected_bytes
+
+
+def test_media_worker_requeues_legacy_hls_video_skips(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    with hls_fixture_server() as (base_url, _expected_bytes):
+        payload = CapturePayload.from_dict(
+            {
+                "url": "https://example.com/hls-requeue",
+                "title": "HLS Requeue",
+                "text": "Readable worker HLS requeue body.",
+                "media_artifacts": [{"media_type": "video", "source_url": f"{base_url}/master.m3u8"}],
+            },
+            allow_any_url=True,
+        )
+        with connect(cfg.db_path) as conn:
+            result = ingest_capture(conn, cfg, payload)
+            media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
+            conn.execute(
+                "UPDATE media_artifacts SET capture_status = 'skipped', status_reason = 'non-media-content-type' WHERE id = ?",
+                (media["id"],),
+            )
+            conn.execute("UPDATE media_fetch_tasks SET status = 'skipped', last_error = 'non-media-content-type' WHERE artifact_id = ?", (media["id"],))
+            changed = normalize_hls_video_skips(conn)
+            assert changed == 1
+            summary = run_once(conn, cfg, worker_id="test-worker", limit=10)
+            assert summary["stored"] == 1
+            media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
+            assert media["capture_status"] == "stored"
+
+
+def test_media_worker_keeps_hls_audio_rendition_referenced_not_skipped(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    with hls_fixture_server() as (base_url, _expected_bytes):
+        payload = CapturePayload.from_dict(
+            {
+                "url": "https://example.com/hls-audio",
+                "title": "HLS Audio",
+                "text": "Readable worker HLS audio body.",
+                "media_artifacts": [{"media_type": "video", "source_url": f"{base_url}/mp4a/audio.m3u8"}],
+            },
+            allow_any_url=True,
+        )
+        with connect(cfg.db_path) as conn:
+            result = ingest_capture(conn, cfg, payload)
+            summary = run_once(conn, cfg, worker_id="test-worker", limit=10)
+            assert summary["stored"] == 0
+            media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
+            assert media["capture_status"] == "referenced"
+            assert media["status_reason"] == "hls-audio-rendition"
+            task = conn.execute("SELECT status FROM media_fetch_tasks WHERE artifact_id = ?", (media["id"],)).fetchone()
+            assert task["status"] == "skipped"

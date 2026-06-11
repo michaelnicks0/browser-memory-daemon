@@ -32,6 +32,7 @@ The Chrome content script extracts media references from:
 | `<video poster>` | `image:poster` | Poster image stored as an image artifact. |
 | `<video src>` / `<video><source src>` | `video:content` | Direct video source is stored if fetchable and under caps. |
 | Performance resource timing video entries | `video:content` | Preserved even when image refs fill the cap, so late-loaded direct video resources do not get crowded out by thumbnails. |
+| HLS `.m3u8` playlists | `video:content` | Browser sidecar leaves them for the daemon; the daemon resolves master/media playlists, concatenates init + segment bytes, and stores a best-effort local `video/mp4`/`video/mp2t` artifact. |
 
 Quality skips retained:
 
@@ -118,6 +119,7 @@ Important properties:
 - `/capture` stores text/FTS and media reference rows without waiting on media bytes.
 - Credentialed media fetch happens inside Chrome; cookies are **not** exported to WSL.
 - WSL daemon media worker backfills public `http:`, `https:`, and `data:` refs.
+- HLS `.m3u8` playlist URLs are daemon-owned, not browser-queue-owned: the worker follows master playlists to a variant playlist, downloads init/segment bytes within the artifact cap, and stores the assembled bytes as local video. Audio-only HLS renditions remain `referenced` with `hls-audio-rendition`.
 - Content scripts opportunistically fetch `blob:`/inline media while the renderer page is alive and send bytes through the service worker; this is the only reliable path for transient browser blob URLs.
 - If media cannot be fetched, the reference row remains with an explicit classified status/reason. `failed` is reserved for unexpected/unclassified bugs; terminal remote conditions are normalized to `skipped`, `expired`, or `retrying`.
 - Browser queue tasks in `fetching` or `uploading` become due again after a stale processing window, so MV3 service-worker suspension does not strand them permanently.
@@ -251,7 +253,7 @@ Returns the stored binary with its MIME type if available. If the artifact has n
 | Limit | Value / behavior |
 |---|---|
 | Media refs per capture | 50 |
-| Max binary artifact | 25 MB by default |
+| Max binary artifact | 100 MB by default |
 | Max media JSON upload | 40 MB |
 | Browser lazy sidecar | Extension IndexedDB queue, `chrome.alarms`, fetch with `credentials: include`, raw `PUT` upload |
 | Daemon lazy sidecar | `browser-memory-media-worker.service`, public fetch only, no Chrome cookies |
@@ -264,7 +266,7 @@ Cache gates:
 
 | Gate | Default |
 |---|---:|
-| Per artifact | 25 MB |
+| Per artifact | 100 MB |
 | Per snapshot | 100 MB |
 | Per domain | 2 GB |
 | Global media cache | 50 GB |
@@ -273,8 +275,9 @@ Cache gates:
 Video caveat:
 
 - Direct small video files can be stored by the daemon or browser sidecar.
+- HLS `.m3u8` playlists can be stored by the daemon as best-effort assembled segment bytes; audio-only HLS renditions are kept as references, not skipped.
 - Small readable `blob:` videos can now be stored by the content script while the page is alive.
-- Streaming video pages often expose HLS/DASH manifests, DRM blobs, MSE media-source streams, or transient `blob:` URLs. If Chrome does not expose readable bytes to the content script, those remain references rather than skipped failures.
+- Streaming video pages may still expose DASH/DRM/MSE media-source streams or transient `blob:` URLs. If Chrome does not expose readable bytes to the content script and the daemon cannot resolve a public HLS/direct URL, those remain references rather than skipped failures.
 
 ---
 

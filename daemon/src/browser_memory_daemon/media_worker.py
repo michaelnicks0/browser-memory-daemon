@@ -8,7 +8,7 @@ from typing import Any
 
 from .config import RuntimeConfig
 from .db import audit, connect, init_db
-from .media import fetch_and_store_media_artifact, media_capture_status_for_fetch_reason
+from .media import fetch_and_store_media_artifact, media_capture_status_for_fetch_reason, ensure_media_fetch_task
 
 
 def utc_now() -> str:
@@ -41,7 +41,7 @@ def normalize_terminal_failed_artifacts(conn: sqlite3.Connection, *, worker_kind
     """
     rows = conn.execute(
         """
-        SELECT id, source_url, status_reason
+        SELECT id, source_url, media_type, status_reason
         FROM media_artifacts
         WHERE capture_status = 'failed'
         """
@@ -50,7 +50,7 @@ def normalize_terminal_failed_artifacts(conn: sqlite3.Connection, *, worker_kind
     now_s = utc_now()
     for row in rows:
         reason = row["status_reason"] or ""
-        status = media_capture_status_for_fetch_reason(reason, source_url=row["source_url"] or "")
+        status = media_capture_status_for_fetch_reason(reason, source_url=row["source_url"] or "", media_type=row["media_type"] or "")
         if status == "failed":
             continue
         changed += 1
@@ -98,6 +98,55 @@ def normalize_legacy_blob_video_skips(conn: sqlite3.Connection) -> int:
           AND capture_status = 'skipped'
           AND status_reason = 'unsupported-media-url-scheme'
           AND source_url LIKE 'blob:%'
+        """
+    )
+    return int(cursor.rowcount or 0)
+
+
+def normalize_hls_video_skips(conn: sqlite3.Connection, *, worker_kind: str = "daemon-public") -> int:
+    """Requeue HLS playlists that were skipped as non-media content.
+
+    HLS manifests use `application/x-mpegURL`, which is not itself a `video/*`
+    MIME. Those rows are retrievable by the daemon HLS assembler, so old skipped
+    rows should become referenced work again.
+    """
+    rows = conn.execute(
+        """
+        SELECT id
+        FROM media_artifacts
+        WHERE media_type = 'video'
+          AND capture_status = 'skipped'
+          AND status_reason IN ('non-media-content-type', 'media-too-large')
+          AND lower(source_url) LIKE '%.m3u8%'
+        """
+    ).fetchall()
+    if not rows:
+        return 0
+    artifact_ids = [row["id"] for row in rows]
+    placeholders = ",".join("?" for _ in artifact_ids)
+    conn.execute(
+        f"UPDATE media_artifacts SET capture_status = 'referenced', status_reason = NULL WHERE id IN ({placeholders})",
+        artifact_ids,
+    )
+    for artifact_id in artifact_ids:
+        ensure_media_fetch_task(conn, artifact_id, worker_kind=worker_kind, force_reset=True)
+    return len(artifact_ids)
+
+
+def normalize_video_nonmedia_skips(conn: sqlite3.Connection) -> int:
+    """Reclassify non-playlist video non-media responses as references.
+
+    Signed player URLs can expire or return HTML/error bodies when replayed by
+    the browser-side fetch path. That is not an intentional skip decision; it is
+    a reference-only video surface unless a later direct/HLS/blob path appears.
+    """
+    cursor = conn.execute(
+        """
+        UPDATE media_artifacts
+        SET capture_status = 'referenced'
+        WHERE media_type = 'video'
+          AND capture_status = 'skipped'
+          AND status_reason = 'non-media-content-type'
         """
     )
     return int(cursor.rowcount or 0)
@@ -189,6 +238,8 @@ def run_once(
     worker_id = worker_id or f"media-worker-{uuid.uuid4()}"
     with conn:
         normalized_legacy_blob_videos = normalize_legacy_blob_video_skips(conn)
+        normalized_hls_videos = normalize_hls_video_skips(conn, worker_kind=worker_kind)
+        normalized_video_nonmedia = normalize_video_nonmedia_skips(conn)
         normalized_terminal = normalize_terminal_failed_artifacts(conn, worker_kind=worker_kind)
         already_stored = mark_already_stored_tasks_succeeded(conn, worker_kind=worker_kind)
         rows = claim_media_fetch_tasks(conn, worker_id=worker_id, worker_kind=worker_kind, limit=limit)
@@ -207,11 +258,11 @@ def run_once(
                         "UPDATE media_fetch_tasks SET status = 'succeeded', attempts = ?, lease_owner = NULL, lease_until = NULL, last_error = NULL, updated_at = ? WHERE id = ?",
                         (attempts, utc_now(), task_id),
                     )
-            elif status in {"skipped", "expired"}:
+            elif status in {"skipped", "expired", "referenced"}:
                 with conn:
                     conn.execute(
                         "UPDATE media_fetch_tasks SET status = 'skipped', attempts = ?, lease_owner = NULL, lease_until = NULL, last_error = ?, updated_at = ? WHERE id = ?",
-                        (attempts, str(result.get("status_reason") or result.get("reason") or "skipped")[:512], utc_now(), task_id),
+                        (attempts, str(result.get("status_reason") or result.get("reason") or status)[:512], utc_now(), task_id),
                     )
             else:
                 error = str(result.get("status_reason") or result.get("error") or "fetch failed")[:512]
@@ -237,6 +288,8 @@ def run_once(
         "worker_id": worker_id,
         "worker_kind": worker_kind,
         "normalized_legacy_blob_videos": normalized_legacy_blob_videos,
+        "normalized_hls_videos": normalized_hls_videos,
+        "normalized_video_nonmedia": normalized_video_nonmedia,
         "normalized_terminal": normalized_terminal,
         "already_stored": already_stored,
         "attempted": len(results),
@@ -245,7 +298,7 @@ def run_once(
         "skipped": sum(1 for item in results if item.get("capture_status") == "skipped"),
         "results": results,
     }
-    audit(conn, "media.worker.run_once", {k: summary[k] for k in ("worker_id", "worker_kind", "normalized_legacy_blob_videos", "normalized_terminal", "already_stored", "attempted", "stored", "failed", "skipped")})
+    audit(conn, "media.worker.run_once", {k: summary[k] for k in ("worker_id", "worker_kind", "normalized_legacy_blob_videos", "normalized_hls_videos", "normalized_video_nonmedia", "normalized_terminal", "already_stored", "attempted", "stored", "failed", "skipped")})
     conn.commit()
     return summary
 

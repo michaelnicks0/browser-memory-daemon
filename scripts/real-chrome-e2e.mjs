@@ -62,6 +62,19 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+async function rmWithRetry(target, options) {
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    try {
+      await rm(target, options);
+      return;
+    } catch (error) {
+      const retryable = ['EACCES', 'EPERM', 'ENOTEMPTY', 'EBUSY'].includes(error?.code);
+      if (!retryable || attempt === 5) throw error;
+      await sleep(250 * (attempt + 1));
+    }
+  }
+}
+
 async function pathExists(p) {
   try {
     await access(p, fsConstants.X_OK);
@@ -832,10 +845,10 @@ async function cleanup() {
   }
   await sleep(300);
   if (!keepArtifacts) {
-    if (removeProfileRoot) await rm(profileRoot, { recursive: true, force: true });
-    if (removeExtensionWorkRoot) await rm(extensionWorkRoot, { recursive: true, force: true });
-    if (!process.env.BMD_REAL_CHROME_WINDOWS_WORK_ROOT) await rm(windowsWorkRoot, { recursive: true, force: true });
-    await rm(runtimeRoot, { recursive: true, force: true });
+    if (removeProfileRoot) await rmWithRetry(profileRoot, { recursive: true, force: true });
+    if (removeExtensionWorkRoot) await rmWithRetry(extensionWorkRoot, { recursive: true, force: true });
+    if (!process.env.BMD_REAL_CHROME_WINDOWS_WORK_ROOT) await rmWithRetry(windowsWorkRoot, { recursive: true, force: true });
+    await rmWithRetry(runtimeRoot, { recursive: true, force: true });
   } else {
     log(`kept artifacts: runtimeRoot=${runtimeRoot} profileRoot=${profileRoot} extensionWorkRoot=${extensionWorkRoot}`);
   }
