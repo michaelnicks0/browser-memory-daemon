@@ -7,7 +7,7 @@ from browser_memory_daemon.config import load_config
 from browser_memory_daemon.db import connect, init_db
 from browser_memory_daemon.ingest import ingest_capture
 from browser_memory_daemon.media import media_artifacts_for_snapshot, purge_media_cache
-from browser_memory_daemon.media_worker import normalize_hls_video_skips, normalize_legacy_blob_video_skips, normalize_terminal_failed_artifacts, run_once
+from browser_memory_daemon.media_worker import normalize_hls_video_skips, normalize_legacy_blob_video_skips, normalize_snapshot_budget_skips, normalize_terminal_failed_artifacts, run_once
 from browser_memory_daemon.models import CapturePayload
 
 
@@ -301,6 +301,37 @@ def test_media_worker_requeues_legacy_hls_video_unsupported_skips(tmp_path):
             assert media["capture_status"] == "stored"
             stored_row = conn.execute("SELECT metadata_json FROM media_artifacts WHERE id = ?", (media["id"],)).fetchone()
             assert json.loads(stored_row["metadata_json"])["cdp_recorder"] is True
+
+
+def test_media_worker_requeues_snapshot_budget_skips_after_cap_raise(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    with hls_fixture_server() as (base_url, _expected_bytes):
+        payload = CapturePayload.from_dict(
+            {
+                "url": "https://example.com/snapshot-budget-requeue",
+                "title": "Snapshot Budget Requeue",
+                "text": "Readable worker snapshot budget requeue body.",
+                "media_artifacts": [{"media_type": "video", "source_url": f"{base_url}/master.m3u8"}],
+            },
+            allow_any_url=True,
+        )
+        with connect(cfg.db_path) as conn:
+            result = ingest_capture(conn, cfg, payload)
+            media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
+            conn.execute(
+                "UPDATE media_artifacts SET capture_status = 'skipped', status_reason = 'snapshot-media-budget' WHERE id = ?",
+                (media["id"],),
+            )
+            conn.execute("UPDATE media_fetch_tasks SET status = 'skipped', last_error = 'snapshot-media-budget' WHERE artifact_id = ?", (media["id"],))
+            changed = normalize_snapshot_budget_skips(conn)
+            assert changed == 1
+            task = conn.execute("SELECT status FROM media_fetch_tasks WHERE artifact_id = ?", (media["id"],)).fetchone()
+            assert task["status"] == "pending"
+            summary = run_once(conn, cfg, worker_id="test-worker", limit=10)
+            assert summary["stored"] == 1
+            media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
+            assert media["capture_status"] == "stored"
 
 
 def test_media_worker_keeps_hls_audio_rendition_referenced_not_skipped(tmp_path):

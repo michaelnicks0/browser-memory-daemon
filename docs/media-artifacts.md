@@ -270,7 +270,7 @@ Cache gates:
 | Gate | Default |
 |---|---:|
 | Per artifact | 100 MB |
-| Per snapshot | 100 MB |
+| Per snapshot | 1 GB |
 | Per domain | 2 GB |
 | Global media cache | 50 GB |
 | Minimum priority | 0 |

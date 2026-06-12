@@ -23,7 +23,7 @@ class RuntimeConfig:
     max_payload_bytes: int = 2_000_000
     max_media_payload_bytes: int = 40_000_000
     max_media_artifact_bytes: int = 100_000_000
-    max_media_bytes_per_snapshot: int = 100_000_000
+    max_media_bytes_per_snapshot: int = 1_000_000_000
     max_media_bytes_per_domain: int = 2_000_000_000
     max_media_cache_bytes: int = 50_000_000_000
     media_mime_allowlist: tuple[str, ...] = ("image/", "video/mp4", "video/webm", "video/ogg", "video/quicktime", "video/mp2t")
