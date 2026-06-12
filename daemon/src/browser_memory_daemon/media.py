@@ -779,6 +779,19 @@ def _payload_from_media_row(row: sqlite3.Row | dict[str, Any], *, capture_status
         "capture_status": capture_status,
         "status_reason": status_reason,
     }
+    metadata = value.get("metadata")
+    if not isinstance(metadata, dict):
+        raw_metadata = value.get("metadata_json")
+        if raw_metadata:
+            try:
+                parsed = json.loads(raw_metadata)
+                metadata = parsed if isinstance(parsed, dict) else {}
+            except Exception:
+                metadata = {}
+        else:
+            metadata = {}
+    if metadata:
+        payload["metadata"] = metadata
     if content:
         payload["content_base64"] = base64.b64encode(content).decode("ascii")
     return payload

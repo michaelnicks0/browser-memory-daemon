@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import json
 import threading
 
 from browser_memory_daemon.config import load_config
@@ -280,7 +281,7 @@ def test_media_worker_requeues_legacy_hls_video_unsupported_skips(tmp_path):
                 "url": "https://example.com/hls-requeue",
                 "title": "HLS Requeue",
                 "text": "Readable worker HLS requeue body.",
-                "media_artifacts": [{"media_type": "video", "source_url": f"{base_url}/master.m3u8"}],
+                "media_artifacts": [{"media_type": "video", "source_url": f"{base_url}/master.m3u8", "metadata": {"cdp_recorder": True}}],
             },
             allow_any_url=True,
         )
@@ -298,6 +299,8 @@ def test_media_worker_requeues_legacy_hls_video_unsupported_skips(tmp_path):
             assert summary["stored"] == 1
             media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
             assert media["capture_status"] == "stored"
+            stored_row = conn.execute("SELECT metadata_json FROM media_artifacts WHERE id = ?", (media["id"],)).fetchone()
+            assert json.loads(stored_row["metadata_json"])["cdp_recorder"] is True
 
 
 def test_media_worker_keeps_hls_audio_rendition_referenced_not_skipped(tmp_path):
