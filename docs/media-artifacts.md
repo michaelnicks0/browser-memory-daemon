@@ -2,7 +2,8 @@
 
 > **Audience:** Operator and future maintainers  
 > **Scope:** Store page images/videos as related artifacts next to text/FTS snapshots.  
-> **Status:** ✅ Implemented: fast text/manifest capture, durable browser lazy media queue, raw blob upload, daemon public worker, cache purge/rehydrate controls.
+> **Status:** ✅ Implemented: fast text/ref capture, browser lazy media queue, raw blob upload, CDP recorder, HLS/audio sidecars, daemon public worker, rolling cache gates, and purge/rehydrate controls.
+> **Architecture:** see [`ARCHITECTURE.md#durable-media-sidecar-architecture`](ARCHITECTURE.md#durable-media-sidecar-architecture) for the consolidated design rationale.
 
 ---
 

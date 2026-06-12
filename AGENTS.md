@@ -8,13 +8,12 @@ Guidance for AI coding agents working in this repo.
 
 - `docs/README.md` — canonical documentation index.
 - `docs/USER_GUIDE.md` — daily-driver operations and troubleshooting.
-- `docs/ARCHITECTURE.md` — architecture, ConOps, requirements trace.
+- `docs/ARCHITECTURE.md` — architecture, ConOps, requirements trace, and reconciled media-sidecar plan rationale.
 - `docs/DIAGRAMS.md` — Mermaid visual atlas.
 - `docs/CLI_UX_CONTRACT.md` — CLI contract.
 - `docs/api.md` — authenticated loopback API surface.
 - `docs/security-model.md` — policy/security posture.
 - `docs/TESTS.md` and `docs/test-plan.md` — verification gates and traceability.
-- `docs/media-sidecar-design-history.md` — reconciled historical media-sidecar implementation plan; current operational behavior lives in `docs/media-artifacts.md`.
 - `[removed-publication-dossier]` — local media sidecar hardening dossier and evidence trail.
 
 ---

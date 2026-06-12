@@ -4,7 +4,7 @@
 > **Default policy:** `all` — maximum personal recall, no URL policy filtering or daemon redaction.
 > **Scope:** Windows Chrome capture with WSL-resident storage/search/ops.
 
-Current operational docs are under [`docs/`](docs/). Historical design-plan content has been reconciled into the current docs, especially [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/media-artifacts.md`](docs/media-artifacts.md), and [`docs/media-sidecar-design-history.md`](docs/media-sidecar-design-history.md).
+Current operational docs are under [`docs/`](docs/). Historical design-plan content has been reconciled into the current docs, especially [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and [`docs/media-artifacts.md`](docs/media-artifacts.md).
 
 ---
 
@@ -14,6 +14,7 @@ Current operational docs are under [`docs/`](docs/). Historical design-plan cont
 Windows Chrome extension
   → fast /capture sidecar: text + media manifest refs
   → browser lazy media sidecar: credentialed fetch + raw blob upload
+  → CDP/HLS media sidecar: X/Twitter video manifests + segment backfill
   → WSL daemon policy mode + durable public media worker
   → SQLite + FTS5 + text/media blobs under WSL runtime paths
   → CLI / local UI / search / timeline / detail / forget / doctor

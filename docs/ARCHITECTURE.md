@@ -54,13 +54,15 @@ The system shall enable Operator to reconstruct recently viewed web content by c
 | Chrome manifest | Permission envelope and extension entrypoints. | Uses `<all_urls>` so `all` mode is meaningful. |
 | Extractor | Traverse DOM and build capture payload. | Policy-aware; all modes skip hidden/form/editable/script/style/no-script DOM text. |
 | Content script | Schedule initial/delayed/SPA captures and scroll tracking. | Reads `policyMode` from extension storage. |
-| Service worker | Auth, queues, injection, lifecycle state, fast `/capture`, browser lazy media queue/drain, daemon POST/PUTs. | Text capture does not wait on media bytes. |
+| Service worker | Auth, queues, injection, lifecycle state, fast `/capture`, browser lazy media queue/drain, daemon POST/PUTs, CDP recorder orchestration. | Text capture does not wait on media bytes. |
 | Extension media queue | Durable IndexedDB queue for credentialed media fetch/upload. | Stores fetched blobs until raw upload succeeds. |
+| CDP recorder | Domain-gated Chrome DevTools Protocol recorder for X/Twitter media network responses. | Captures `video.twimg.com` HLS manifests/segments before they collapse into opaque `blob:` player refs. |
 | Daemon API | Auth, CORS, routing, UI asset serving, raw media blob upload, cache controls. | `/health` public loopback; memory APIs tokened. |
 | Policy engine | Mode-specific allow/block/redact decisions. | `all`, `recall`, `balanced`, `strict`. |
 | Ingest pipeline | Normalize, store visits/documents/snapshots/chunks/FTS plus related media artifact refs/blobs. | `all` bypasses redaction. |
 | Lifecycle pipeline | Store metadata-only visit events and update dwell. | Uses policy mode for URL redaction/filtering. |
-| Daemon media worker | Durable public-media backfill with leases/backoff/retry. | Does not receive or export Chrome cookies. |
+| Daemon media worker | Durable public-media backfill with leases/backoff/retry and HLS/audio sidecar assembly. | Does not receive or export Chrome cookies. |
+| Media cache manager | Applies size gates, manual purge/rehydrate, and oldest-first domain/global rolling eviction. | Blob bytes are disposable; text, refs, hashes, and provenance remain durable. |
 | Ops/read model | Search, recent, timeline, detail, doctor. | Captured text remains untrusted evidence. |
 | Deletion pipeline | Domain/URL forget and receipt creation. | Removes DB rows, FTS rows, text/media blobs, lifecycle rows. |
 
@@ -76,6 +78,7 @@ flowchart LR
     CS[Content script]
     SW[MV3 service worker]
     IDB[(Extension IndexedDB media queue)]
+    CDP[CDP recorder]
     Popup[Popup/options]
   end
 
@@ -84,6 +87,7 @@ flowchart LR
     Policy[Policy mode engine]
     Ingest[Ingest + normalization]
     MediaWorker[Media worker]
+    Cache[Media cache manager]
     DB[(SQLite + FTS5)]
     Blobs[Clean text + media blobs]
     UI[Local UI]
@@ -91,17 +95,133 @@ flowchart LR
 
   Page --> Extractor --> CS --> SW
   SW --> IDB
+  SW --> CDP
   Popup --> SW
   SW -- Bearer /capture + /visit-events + raw media PUT --> API
+  CDP -- video.twimg.com manifests/segments --> API
   API --> Policy
   Policy --> Ingest
   Ingest --> DB
   Ingest --> Blobs
   IDB -- credentialed media fetch/upload --> API
-  MediaWorker -- public fetch tasks --> DB
+  MediaWorker -- public fetch/HLS tasks --> DB
   MediaWorker --> Blobs
+  API --> Cache
+  Cache --> DB
+  Cache --> Blobs
   UI --> API
 ```
+
+---
+
+## Durable media sidecar architecture
+
+The media lane is built around one invariant:
+
+```text
+fast text sidecar owns recall correctness
+lazy media sidecars own byte completeness
+media blobs are a bounded disposable cache
+text/FTS/media refs remain authoritative
+```
+
+`/capture` stores page text, FTS chunks, visits/snapshots, and media reference rows first. Binary media work is explicitly asynchronous so slow videos, signed URLs, or worker suspension cannot break text recall.
+
+### Media lanes
+
+| Lane | Purpose | Current files |
+|---|---|---|
+| Fast capture | Store text, FTS, visits/snapshots, and media refs immediately. | `extension/src/content_script.js`, `extension/src/service_worker.js`, `daemon/src/browser_memory_daemon/ingest.py`, `media.py` |
+| Browser lazy sidecar | Fetch credentialed media inside Chrome and upload raw blobs. | `extension/src/media_queue.js`, `service_worker.js` |
+| Inline/blob upload | Let the content script read transient `blob:` / `data:` bytes while page context is alive. | `extension/src/content_script.js`, `service_worker.js` |
+| CDP recorder | Capture X/Twitter `video.twimg.com` HLS manifests/segments before only opaque `blob:` player URLs remain. | `extension/src/cdp_recorder.js`, `service_worker.js` |
+| Daemon lazy sidecar | Public unauthenticated backfill with leases, backoff, HLS assembly, and status classification. | `daemon/src/browser_memory_daemon/media_worker.py`, `media.py` |
+| Cache management | Purge/rehydrate controls plus oldest-first rolling eviction for domain/global caps. | `media.py`, `cli.py`, `/media-artifacts/*` |
+
+```mermaid
+flowchart LR
+  Page[Chrome page] --> CS[Content script]
+  CS -->|text + media refs| SW[Service worker]
+  SW -->|POST /capture| D[WSL daemon]
+  D --> DB[(SQLite + FTS)]
+  D --> Refs[media_artifacts refs]
+
+  SW -->|artifact jobs| IDB[(Extension IndexedDB queue)]
+  IDB --> BrowserLane[Browser lazy sidecar]
+  BrowserLane -->|fetch with Chrome cookies| Web[Media URL]
+  BrowserLane -->|raw PUT blob| D
+
+  CS -->|readable blob/data bytes| Inline[Inline blob upload]
+  Inline --> SW
+  SW -->|domain-gated chrome.debugger| CDP[CDP recorder]
+  CDP -->|X/Twitter HLS manifests/segments| D
+
+  Worker[Daemon media worker] -->|leased public tasks| DB
+  Worker -->|public fetch / HLS assembly| Web
+  Worker -->|store/classify| D
+
+  D --> Blobs[(blobs/media cache)]
+  Blobs --> Cache[Rolling cache eviction]
+  Cache -->|oldest domain/global blobs| Purged[purged refs keep provenance]
+```
+
+### Requirements resolved by the current media design
+
+| Requirement | Current implementation status |
+|---|---|
+| Text/FTS must not wait on media bytes. | `/capture` stores refs and returns artifact IDs before lazy binary work. |
+| Every discovered media candidate should produce a durable row. | Implemented subject to the per-capture ref cap; video refs are prioritized over lower-priority images. |
+| Browser media work must survive service-worker suspension. | IndexedDB tasks/blobs plus stale-task requeue. |
+| Credentialed media fetch must stay inside Chrome. | Browser lazy sidecar uses Chrome's credential envelope; WSL daemon never receives Chrome cookies. |
+| Raw binary upload should avoid base64 inflation. | Primary path is `PUT /media-artifacts/{artifact_id}/blob`; JSON/base64 is compatibility-only. |
+| Daemon public backfill should use durable leases/backoff. | `media_fetch_tasks` stores leases, attempts, retry time, worker kind, and terminal status. |
+| X/Twitter video should be recoverable when the DOM only exposes `blob:` player URLs. | Domain-gated CDP recorder captures `video.twimg.com` manifests/segments and tags related rows with `cdp_recorder=true`. |
+| HLS audio/video should be stored when technically feasible. | Worker resolves master/media playlists, assembles segments under caps, and stores audio-only renditions as `audio/*` sidecars while preserving video provenance. |
+| Blob video refs should not remain ambiguous. | Same-document or same-snapshot CDP-covered refs become `covered-by-cdp-recorder`; residual unreadable refs become `opaque-browser-blob`. |
+| Media blobs must be bounded and disposable. | Per-artifact/snapshot/domain/global gates plus manual purge/rehydrate and oldest-first rolling eviction. |
+| Purged blobs should be rehydratable when remote URLs still work. | Cache purge can reset eligible daemon-public tasks to `pending` for best-effort refetch. |
+
+### Media state and cache semantics
+
+| State/reason | Meaning |
+|---|---|
+| `referenced` | Durable ref exists; bytes are absent by design, not a failure. |
+| `metadata-only` | CDP/browser/compat path recorded a row without local bytes yet. |
+| `stored` | Local blob exists under `blobs/media/`. |
+| `retrying` | Transient fetch condition with future retry. |
+| `skipped` | Classified terminal non-storage condition, such as over-size, unsupported MIME, or policy gate. |
+| `expired` | Remote signed/dated media disappeared before fetch. |
+| `purged` | Blob bytes were intentionally removed while ref/hash/provenance stayed durable. |
+| `failed` | Reserved for unexpected/unclassified bugs; normal remote/cache outcomes should not land here. |
+
+Current default media gates come from `RuntimeConfig`:
+
+| Gate | Default |
+|---|---:|
+| Max artifact bytes | 250 MB |
+| Per-snapshot media bytes | 1 GB |
+| Per-domain media bytes | 10 GB |
+| Global media cache bytes | 100 GB |
+| Media refs per capture | 50 |
+| Daemon public fetches per capture | 12 |
+| Manual `/fetch-pending` API call limit | 100 |
+| Worker service interval / batch | 30 seconds / 25 items |
+
+Domain/global gates are rolling caches. When a new blob would exceed either cap, the daemon evicts the oldest stored blobs in that scope first and preserves rows as:
+
+```text
+capture_status = purged
+status_reason  = cache-evicted:domain-oldest
+# or
+status_reason  = cache-evicted:global-oldest
+```
+
+### Explicit media non-goals
+
+- OCR or media-derived text indexing.
+- DRM/EME capture.
+- General DASH/MSE capture when Chrome exposes no readable blob, direct URL, or public HLS manifest.
+- Always-on screenshots for every page.
 
 ---
 
