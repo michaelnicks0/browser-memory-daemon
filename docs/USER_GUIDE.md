@@ -189,6 +189,8 @@ Options page controls:
 | API token | Token copied from WSL config during install. |
 | Policy mode | `all`, `recall`, `balanced`, or `strict`. |
 | Pause capture | Same pause state as popup. |
+| Enable CDP media recorder | Domain-gated `chrome.debugger` recorder for X/Twitter video manifests/segments. |
+| CDP recorder domains | Comma-separated page domains that may attach CDP recorder; default `x.com,twitter.com`. |
 
 ---
 

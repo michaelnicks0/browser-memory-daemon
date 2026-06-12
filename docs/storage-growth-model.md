@@ -245,9 +245,9 @@ Do **not** start by deleting pages or filtering domains if the product goal is e
   - documents / visits / snapshots / chunks / events;
   - daily growth slope;
   - top domains by snapshot count and text bytes.
-- Add a local warning threshold only:
+- Add local warning thresholds for durable text/DB growth:
   - warn at 10 GB, 25 GB, 50 GB;
-  - never auto-delete.
+  - do not auto-delete text/FTS memories. Media blobs are already a rolling cache under the configured domain/global media caps.
 
 ### Medium term
 

@@ -106,6 +106,7 @@ sequenceDiagram
 flowchart TB
   Capture["/capture result with artifact IDs"] --> BrowserQueue[(Chrome IndexedDB media queue)]
   Capture --> DaemonTasks[(SQLite media_fetch_tasks)]
+  Capture --> CDP["CDP recorder<br/>x.com/twitter.com only"]
 
   BrowserQueue --> BrowserFetch["Browser lazy sidecar<br/>fetch(credentials: include)"]
   BrowserFetch --> BrowserBlob[(IndexedDB fetched blob)]
@@ -113,10 +114,17 @@ flowchart TB
   RawPut --> MediaBlobs[(blobs/media)]
   RawPut --> ArtifactStored["media_artifacts.status = stored"]
 
+  CDP --> CdpRows["video.twimg.com<br/>manifests/segments"]
+  CdpRows --> RawPut
+  CdpRows --> DaemonTasks
+
   DaemonTasks --> Lease["daemon media worker lease"]
-  Lease --> PublicFetch["public fetch<br/>no Chrome cookies"]
+  Lease --> PublicFetch["public fetch / HLS assembly<br/>no Chrome cookies"]
   PublicFetch --> MediaBlobs
-  PublicFetch --> Terminal["stored / skipped / failed / purged"]
+  PublicFetch --> Terminal["stored / referenced / skipped / expired"]
+
+  MediaBlobs --> Rolling["domain/global rolling cache<br/>oldest blob eviction"]
+  Rolling --> Purged["purged rows keep refs/metadata"]
 ```
 
 This is the core durability split: text/FTS capture completes first; media bytes are best-effort sidecars with explicit states and cache controls.

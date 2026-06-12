@@ -19,7 +19,7 @@
 | Understand policy/security tradeoffs | [`security-model.md`](security-model.md) |
 | Check what is implemented vs pending | [`STATUS.md`](STATUS.md) |
 | Model storage growth | [`storage-growth-model.md`](storage-growth-model.md) |
-| Understand durable lazy media sidecars | [`media-artifacts.md`](media-artifacts.md), [`plans/2026-06-09-durable-media-sidecars.md`](plans/2026-06-09-durable-media-sidecars.md), [`../[removed-publication-dossier]`](../[removed-publication-dossier]) |
+| Understand durable lazy media sidecars | [`media-artifacts.md`](media-artifacts.md), [`media-sidecar-design-history.md`](media-sidecar-design-history.md), [`../[removed-publication-dossier]`](../[removed-publication-dossier]) |
 | Run verification gates | [`TESTS.md`](TESTS.md), [`test-plan.md`](test-plan.md) |
 
 ---

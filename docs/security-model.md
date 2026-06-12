@@ -70,7 +70,7 @@ In `recall`, `balanced`, and `strict`, redaction runs before DB/FTS/blob storage
 
 ## Current controls
 
-- API token required for `/capture`, `/visit-events`, `/search`, `/ready`, `/recent`, `/timeline`, `/documents/{id}`, `/snapshots/{id}`, `/policy/*`, `/doctor`, and `/forget`.
+- API token required for `/capture`, `/visit-events`, `/media-artifacts/*`, `/search`, `/ready`, `/recent`, `/timeline`, `/documents/{id}`, `/snapshots/{id}`, `/policy/*`, `/doctor`, and `/forget`.
 - `/health` exposes minimal daemon status plus `policy_mode`.
 - Daily-driver install stores the daemon API token in protected WSL config files and injects it into the Windows-local extension artifact; the token is never committed.
 - Token rotation is supported:

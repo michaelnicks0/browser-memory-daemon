@@ -34,7 +34,8 @@ git diff --check -- .
 | `extension/tests/unit/extractor.test.js` | DOM extraction and URL policy modes. |
 | `extension/tests/unit/queue.test.js` | Queue/helper behavior. |
 | `extension/tests/unit/media_queue.test.js` | IndexedDB-compatible durable media queue semantics and retry timing. |
-| `scripts/real-chrome-e2e.mjs` | Real Windows Chrome for Testing extension/daemon path, including public + cookie-required media blobs. |
+| `extension/tests/unit/cdp_recorder.test.js` | CDP recorder domain gates, X/Twitter media response recognition, metadata payloads, artifact IDs, and byte-estimation helpers. |
+| `scripts/real-chrome-e2e.mjs` | Real Windows Chrome for Testing extension/daemon path, including public + cookie-required media blobs and synthetic `blob:` video storage. |
 | `scripts/secret-scan.sh` | Secret-shaped content scan over repo. |
 
 ---

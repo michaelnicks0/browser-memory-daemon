@@ -4,11 +4,7 @@
 > **Default policy:** `all` — maximum personal recall, no URL policy filtering or daemon redaction.
 > **Scope:** Windows Chrome capture with WSL-resident storage/search/ops.
 
-This implementation follows the plan from:
-
-```text
-~/repos/research/browser-memory-daemon-architecture/chrome-windows-wsl-implementation-plan.md
-```
+Current operational docs are under [`docs/`](docs/). Historical design-plan content has been reconciled into the current docs, especially [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/media-artifacts.md`](docs/media-artifacts.md), and [`docs/media-sidecar-design-history.md`](docs/media-sidecar-design-history.md).
 
 ---
 
@@ -116,7 +112,7 @@ http://127.0.0.1:8765/ui
 - Delayed SPA capture and History API hooks.
 - Tab lifecycle events, dwell seconds, and max-scroll metadata.
 - Local web UI and MV3 extension popup/options controls.
-- Image/video media refs, durable browser IndexedDB media queue, raw blob upload, public daemon media worker, purge/rehydrate cache controls.
+- Image/video media refs, durable browser IndexedDB media queue, raw blob upload, X/Twitter CDP recorder, HLS/audio sidecar storage, public daemon media worker, rolling media cache gates, purge/rehydrate controls.
 - Real Windows Chrome for Testing e2e harness.
 - Daily-driver install helper for WSL daemon/media-worker systemd services and Windows unpacked extension artifact.
 

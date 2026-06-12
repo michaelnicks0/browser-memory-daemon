@@ -14,8 +14,8 @@ Guidance for AI coding agents working in this repo.
 - `docs/api.md` — authenticated loopback API surface.
 - `docs/security-model.md` — policy/security posture.
 - `docs/TESTS.md` and `docs/test-plan.md` — verification gates and traceability.
+- `docs/media-sidecar-design-history.md` — reconciled historical media-sidecar implementation plan; current operational behavior lives in `docs/media-artifacts.md`.
 - `[removed-publication-dossier]` — local media sidecar hardening dossier and evidence trail.
-- Source plan: `~/repos/research/browser-memory-daemon-architecture/chrome-windows-wsl-implementation-plan.md`.
 
 ---
 

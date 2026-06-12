@@ -177,6 +177,8 @@ GET /media-artifacts/queue-status?limit=50
 Authorization: Bearer ***
 ```
 
+The response includes artifact/task status counts, stored-byte totals, recent non-stored artifacts, and live cache gates (`max_media_artifact_bytes`, `max_media_bytes_per_snapshot`, `max_media_bytes_per_domain`, `max_media_cache_bytes`, MIME allowlist, priority floor, and cache pressure).
+
 Purge local media blob cache without deleting text/FTS/ref rows:
 
 ```http

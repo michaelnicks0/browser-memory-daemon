@@ -67,7 +67,7 @@ Key fields:
 | `mime_type` | Response or DOM MIME type. |
 | `width`, `height`, `duration_seconds` | DOM metadata. |
 | `capture_status` | `referenced`, `metadata-only`, `queued`, `fetching`, `fetched`, `uploading`, `stored`, `retrying`, `failed`, `skipped`, `expired`, or `purged`. |
-| `status_reason` | Terminal or diagnostic reason, e.g. `media-too-large`, `fetch-status-403`, `cache-purged:domain:x.com`. |
+| `status_reason` | Terminal or diagnostic reason, e.g. `media-too-large`, `fetch-status-403`, `cache-purged:domain:x.com`, `cache-evicted:domain-oldest`, `covered-by-cdp-recorder`, `opaque-browser-blob`. |
 | `file_path` | Local blob path when binary is currently stored. |
 | `content_sha256`, `byte_size` | Blob provenance retained even after cache purge. |
 

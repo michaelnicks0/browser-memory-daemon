@@ -46,8 +46,8 @@ Global defaults:
 | `forget [--domain DOMAIN] [--url URL]` | Delete memory by domain or URL. | Pretty JSON deletion receipt. |
 | `capture-fixture --url URL --title TITLE --text TEXT` | Synthetic capture through HTTP API. | Pretty JSON ingest result. |
 | `media-worker [--once|--loop] [--limit N] [--interval SEC]` | Run daemon public-media worker manually or as service. | Pretty JSON for `--once`; long-running loop for `--loop`. |
-| `media-cache purge [--domain DOMAIN] [--dry-run|--execute] [--rehydrate]` | Dry-run/execute media blob cache purge without deleting text/FTS/ref rows. | Pretty JSON purge summary. |
-| `media-cache rehydrate [--domain DOMAIN] [--limit N]` | Queue/refetch purged public media refs. | Pretty JSON worker summary. |
+| `media-cache purge [--domain DOMAIN] [--document-id ID] [--snapshot-id ID] [--older-than ISO] [--max-bytes-to-purge N] [--dry-run|--execute] [--rehydrate]` | Dry-run/execute media blob cache purge without deleting text/FTS/ref rows. | Pretty JSON purge summary. |
+| `media-cache rehydrate [--domain DOMAIN] [--document-id ID] [--snapshot-id ID] [--limit N]` | Queue/refetch purged public media refs. | Pretty JSON worker summary. |
 
 ---
 
