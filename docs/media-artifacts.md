@@ -256,7 +256,7 @@ Returns the stored binary with its MIME type if available. If the artifact has n
 | Limit | Value / behavior |
 |---|---|
 | Media refs per capture | 50 |
-| Max binary artifact | 100 MB by default |
+| Max binary artifact | 250 MB by default |
 | Max media JSON upload | 40 MB |
 | Browser lazy sidecar | Extension IndexedDB queue, `chrome.alarms`, fetch with `credentials: include`, raw `PUT` upload |
 | Daemon lazy sidecar | `browser-memory-media-worker.service`, public fetch only, no Chrome cookies |
@@ -269,16 +269,18 @@ Cache gates:
 
 | Gate | Default |
 |---|---:|
-| Per artifact | 100 MB |
+| Per artifact | 250 MB |
 | Per snapshot | 1 GB |
-| Per domain | 2 GB |
-| Global media cache | 50 GB |
+| Per domain | 10 GB |
+| Global media cache | 100 GB |
 | Minimum priority | 0 |
+
+Cache gates are enforced before byte storage. Per-domain and global cache gates are rolling: when a new artifact would exceed either budget, the daemon evicts the oldest stored blobs in that scope first (`cache-evicted:domain-oldest` or `cache-evicted:global-oldest`) while preserving text, refs, hashes, byte history, and DB rows.
 
 Video caveat:
 
 - Direct small video files can be stored by the daemon or browser sidecar.
-- HLS `.m3u8` playlists can be stored by the daemon as best-effort assembled segment bytes; audio-only HLS renditions are kept as references, not skipped.
+- HLS `.m3u8` playlists can be stored by the daemon as best-effort assembled segment bytes; audio-only HLS renditions are stored as `audio/*` sidecars while retaining video provenance.
 - Small readable `blob:` videos can now be stored by the content script while the page is alive.
 - Streaming video pages may still expose DASH/DRM/MSE media-source streams or transient `blob:` URLs. If Chrome does not expose readable bytes to the content script and the daemon cannot resolve a public HLS/direct URL, those remain references rather than skipped failures.
 

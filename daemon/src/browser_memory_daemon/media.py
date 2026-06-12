@@ -364,6 +364,98 @@ def _stored_media_bytes(conn: sqlite3.Connection, where_sql: str = "", params: t
     return int(row["n"] if row else 0)
 
 
+def _evict_oldest_media_rows(conn: sqlite3.Connection, config: RuntimeConfig, rows: list[sqlite3.Row], *, bytes_to_free: int, reason: str) -> dict[str, int]:
+    media_root = config.media_root.resolve()
+    freed_bytes = 0
+    evicted = 0
+    missing_files = 0
+    skipped_paths = 0
+    for row in rows:
+        if bytes_to_free > 0 and freed_bytes >= bytes_to_free:
+            break
+        raw_path = row["file_path"] or ""
+        if not raw_path:
+            continue
+        path = Path(raw_path)
+        try:
+            resolved = path.resolve()
+            if not resolved.is_relative_to(media_root):
+                skipped_paths += 1
+                continue
+        except Exception:
+            skipped_paths += 1
+            continue
+        size = int(row["byte_size"] or 0)
+        if resolved.exists():
+            if size <= 0:
+                try:
+                    size = int(resolved.stat().st_size)
+                except OSError:
+                    size = 0
+            resolved.unlink()
+            evicted += 1
+        else:
+            missing_files += 1
+            evicted += 1
+        freed_bytes += max(0, size)
+        conn.execute(
+            """
+            UPDATE media_artifacts
+            SET file_path = '', capture_status = 'purged', status_reason = ?
+            WHERE id = ?
+            """,
+            (reason, row["id"]),
+        )
+    return {"evicted": evicted, "missing_files": missing_files, "skipped_paths": skipped_paths, "bytes": freed_bytes}
+
+
+def _evict_oldest_media_to_fit(
+    conn: sqlite3.Connection,
+    config: RuntimeConfig,
+    *,
+    candidate_bytes: int,
+    max_bytes: int,
+    reason: str,
+    domain: str | None = None,
+) -> dict[str, int]:
+    if max_bytes <= 0 or candidate_bytes <= 0:
+        return {"evicted": 0, "missing_files": 0, "skipped_paths": 0, "bytes": 0, "current": 0, "remaining": 0}
+    join_sql = ""
+    where = ["m.capture_status = 'stored'", "COALESCE(m.file_path, '') != ''"]
+    params: list[Any] = []
+    if domain:
+        join_sql = "JOIN documents d ON d.id = m.document_id"
+        where.append("d.domain = ?")
+        params.append(domain)
+    current_row = conn.execute(
+        f"""
+        SELECT COALESCE(SUM(m.byte_size), 0) AS n
+        FROM media_artifacts m
+        {join_sql}
+        WHERE {' AND '.join(where)}
+        """,
+        params,
+    ).fetchone()
+    current = int(current_row["n"] if current_row else 0)
+    overflow = current + int(candidate_bytes) - int(max_bytes)
+    if overflow <= 0:
+        return {"evicted": 0, "missing_files": 0, "skipped_paths": 0, "bytes": 0, "current": current, "remaining": current}
+    rows = conn.execute(
+        f"""
+        SELECT m.id, m.file_path, m.byte_size, m.created_at
+        FROM media_artifacts m
+        {join_sql}
+        WHERE {' AND '.join(where)}
+        ORDER BY m.created_at ASC, m.id
+        """,
+        params,
+    ).fetchall()
+    result = _evict_oldest_media_rows(conn, config, rows, bytes_to_free=overflow, reason=reason)
+    result["current"] = current
+    result["remaining"] = max(0, current - int(result["bytes"]))
+    return result
+
+
 def media_storage_allowed(
     conn: sqlite3.Connection,
     config: RuntimeConfig,
@@ -388,22 +480,26 @@ def media_storage_allowed(
     if config.max_media_bytes_per_domain > 0:
         doc = conn.execute("SELECT domain FROM documents WHERE id = ?", (document_id,)).fetchone()
         if doc and doc["domain"]:
-            current = conn.execute(
-                """
-                SELECT COALESCE(SUM(m.byte_size), 0) AS n
-                FROM media_artifacts m
-                JOIN documents d ON d.id = m.document_id
-                WHERE m.capture_status = 'stored'
-                  AND COALESCE(m.file_path, '') != ''
-                  AND d.domain = ?
-                """,
-                (doc["domain"],),
-            ).fetchone()["n"]
-            if int(current or 0) + candidate_bytes > config.max_media_bytes_per_domain:
+            domain = str(doc["domain"])
+            eviction = _evict_oldest_media_to_fit(
+                conn,
+                config,
+                candidate_bytes=candidate_bytes,
+                max_bytes=config.max_media_bytes_per_domain,
+                reason="cache-evicted:domain-oldest",
+                domain=domain,
+            )
+            if int(eviction.get("remaining") or 0) + candidate_bytes > config.max_media_bytes_per_domain:
                 return False, "domain-media-budget"
     if config.max_media_cache_bytes > 0:
-        current = _stored_media_bytes(conn)
-        if current + candidate_bytes > config.max_media_cache_bytes:
+        eviction = _evict_oldest_media_to_fit(
+            conn,
+            config,
+            candidate_bytes=candidate_bytes,
+            max_bytes=config.max_media_cache_bytes,
+            reason="cache-evicted:global-oldest",
+        )
+        if int(eviction.get("remaining") or 0) + candidate_bytes > config.max_media_cache_bytes:
             return False, "media-cache-budget"
     return True, ""
 

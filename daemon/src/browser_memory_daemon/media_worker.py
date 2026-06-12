@@ -235,6 +235,38 @@ def normalize_snapshot_budget_skips(conn: sqlite3.Connection, *, worker_kind: st
     return len(artifact_ids)
 
 
+def normalize_storage_budget_skips(conn: sqlite3.Connection, *, worker_kind: str = "daemon-public") -> int:
+    """Requeue artifacts skipped by earlier domain/global cache byte caps.
+
+    Domain and global caps are now larger and rolling-evicted, so public refs
+    previously skipped by these gates deserve one fresh worker attempt. Blob refs
+    stay browser-owned and are not requeued here.
+    """
+    rows = conn.execute(
+        """
+        SELECT id
+        FROM media_artifacts
+        WHERE capture_status = 'skipped'
+          AND status_reason IN ('domain-media-budget', 'media-cache-budget')
+          AND (
+            lower(source_url) GLOB 'http*'
+            OR lower(source_url) LIKE 'data:%'
+          )
+        """
+    ).fetchall()
+    if not rows:
+        return 0
+    artifact_ids = [row["id"] for row in rows]
+    placeholders = ",".join("?" for _ in artifact_ids)
+    conn.execute(
+        f"UPDATE media_artifacts SET capture_status = 'referenced', status_reason = NULL WHERE id IN ({placeholders})",
+        artifact_ids,
+    )
+    for artifact_id in artifact_ids:
+        ensure_media_fetch_task(conn, artifact_id, worker_kind=worker_kind, force_reset=True)
+    return len(artifact_ids)
+
+
 def normalize_cdp_covered_blob_video_refs(conn: sqlite3.Connection) -> int:
     """Label blob video refs covered by nearby CDP media bytes.
 
@@ -386,6 +418,7 @@ def run_once(
         normalized_cdp_hls_manifests = normalize_cdp_hls_manifest_refs(conn, worker_kind=worker_kind)
         normalized_video_nonmedia = normalize_video_nonmedia_skips(conn)
         normalized_snapshot_budget = normalize_snapshot_budget_skips(conn, worker_kind=worker_kind)
+        normalized_storage_budget = normalize_storage_budget_skips(conn, worker_kind=worker_kind)
         normalized_cdp_blob_coverage = normalize_cdp_covered_blob_video_refs(conn)
         normalized_opaque_blob_videos = normalize_opaque_blob_video_refs(conn)
         normalized_terminal = normalize_terminal_failed_artifacts(conn, worker_kind=worker_kind)
@@ -441,6 +474,7 @@ def run_once(
         "normalized_cdp_hls_manifests": normalized_cdp_hls_manifests,
         "normalized_video_nonmedia": normalized_video_nonmedia,
         "normalized_snapshot_budget": normalized_snapshot_budget,
+        "normalized_storage_budget": normalized_storage_budget,
         "normalized_cdp_blob_coverage": normalized_cdp_blob_coverage,
         "normalized_opaque_blob_videos": normalized_opaque_blob_videos,
         "normalized_terminal": normalized_terminal,
@@ -451,7 +485,7 @@ def run_once(
         "skipped": sum(1 for item in results if item.get("capture_status") == "skipped"),
         "results": results,
     }
-    audit(conn, "media.worker.run_once", {k: summary[k] for k in ("worker_id", "worker_kind", "normalized_legacy_blob_videos", "normalized_hls_videos", "normalized_hls_audio", "normalized_cdp_hls_manifests", "normalized_video_nonmedia", "normalized_snapshot_budget", "normalized_cdp_blob_coverage", "normalized_opaque_blob_videos", "normalized_terminal", "already_stored", "attempted", "stored", "failed", "skipped")})
+    audit(conn, "media.worker.run_once", {k: summary[k] for k in ("worker_id", "worker_kind", "normalized_legacy_blob_videos", "normalized_hls_videos", "normalized_hls_audio", "normalized_cdp_hls_manifests", "normalized_video_nonmedia", "normalized_snapshot_budget", "normalized_storage_budget", "normalized_cdp_blob_coverage", "normalized_opaque_blob_videos", "normalized_terminal", "already_stored", "attempted", "stored", "failed", "skipped")})
     conn.commit()
     return summary
 

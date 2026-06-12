@@ -218,6 +218,49 @@ def test_media_artifact_size_gate_skips_oversized_blob(tmp_path):
         assert media["has_file"] is False
 
 
+def test_media_global_cache_rolls_oldest_blob_when_limit_would_be_exceeded(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    cfg = replace(cfg, max_media_artifact_bytes=20, max_media_bytes_per_domain=0, max_media_cache_bytes=12)
+    init_db(cfg)
+    with connect(cfg.db_path) as conn:
+        old_result = ingest_capture(conn, cfg, CapturePayload.from_dict({"url": "https://old.example/media", "title": "Old", "text": "Readable old media body.", "media_artifacts": [{"media_type": "image", "source_url": "https://old.example/old.png", "mime_type": "image/png"}]}, allow_any_url=True))
+        old = store_media_artifact(conn, cfg, {"document_id": old_result["document_id"], "snapshot_id": old_result["snapshot_id"], "visit_id": old_result["visit_id"], "page_url": "https://old.example/media", "media_type": "image", "source_url": "https://old.example/old.png", "mime_type": "image/png", "content_base64": base64.b64encode(b"oldbytes").decode("ascii")})
+        old_path = cfg.media_root / f"{old['artifact_id']}.png"
+        assert old_path.exists()
+        conn.execute("UPDATE media_artifacts SET created_at = '2026-01-01 00:00:00' WHERE id = ?", (old["artifact_id"],))
+
+        new_result = ingest_capture(conn, cfg, CapturePayload.from_dict({"url": "https://new.example/media", "title": "New", "text": "Readable new media body.", "media_artifacts": [{"media_type": "image", "source_url": "https://new.example/new.png", "mime_type": "image/png"}]}, allow_any_url=True))
+        new = store_media_artifact(conn, cfg, {"document_id": new_result["document_id"], "snapshot_id": new_result["snapshot_id"], "visit_id": new_result["visit_id"], "page_url": "https://new.example/media", "media_type": "image", "source_url": "https://new.example/new.png", "mime_type": "image/png", "content_base64": base64.b64encode(b"newbytes").decode("ascii")})
+
+        assert new["stored"] is True
+        assert not old_path.exists()
+        rows = {row["id"]: dict(row) for row in conn.execute("SELECT id, capture_status, status_reason, file_path FROM media_artifacts")}
+        assert rows[old["artifact_id"]]["capture_status"] == "purged"
+        assert rows[old["artifact_id"]]["status_reason"] == "cache-evicted:global-oldest"
+        assert rows[new["artifact_id"]]["capture_status"] == "stored"
+
+
+def test_media_domain_cache_rolls_oldest_blob_when_domain_limit_would_be_exceeded(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    cfg = replace(cfg, max_media_artifact_bytes=20, max_media_bytes_per_domain=12, max_media_cache_bytes=0)
+    init_db(cfg)
+    with connect(cfg.db_path) as conn:
+        old_result = ingest_capture(conn, cfg, CapturePayload.from_dict({"url": "https://x.example/old", "title": "Old", "text": "Readable old domain media body.", "media_artifacts": [{"media_type": "image", "source_url": "https://x.example/old.png", "mime_type": "image/png"}]}, allow_any_url=True))
+        old = store_media_artifact(conn, cfg, {"document_id": old_result["document_id"], "snapshot_id": old_result["snapshot_id"], "visit_id": old_result["visit_id"], "page_url": "https://x.example/old", "media_type": "image", "source_url": "https://x.example/old.png", "mime_type": "image/png", "content_base64": base64.b64encode(b"oldbytes").decode("ascii")})
+        old_path = cfg.media_root / f"{old['artifact_id']}.png"
+        conn.execute("UPDATE media_artifacts SET created_at = '2026-01-01 00:00:00' WHERE id = ?", (old["artifact_id"],))
+
+        new_result = ingest_capture(conn, cfg, CapturePayload.from_dict({"url": "https://x.example/new", "title": "New", "text": "Readable new domain media body.", "media_artifacts": [{"media_type": "image", "source_url": "https://x.example/new.png", "mime_type": "image/png"}]}, allow_any_url=True))
+        new = store_media_artifact(conn, cfg, {"document_id": new_result["document_id"], "snapshot_id": new_result["snapshot_id"], "visit_id": new_result["visit_id"], "page_url": "https://x.example/new", "media_type": "image", "source_url": "https://x.example/new.png", "mime_type": "image/png", "content_base64": base64.b64encode(b"newbytes").decode("ascii")})
+
+        assert new["stored"] is True
+        assert not old_path.exists()
+        rows = {row["id"]: dict(row) for row in conn.execute("SELECT id, capture_status, status_reason FROM media_artifacts")}
+        assert rows[old["artifact_id"]]["capture_status"] == "purged"
+        assert rows[old["artifact_id"]]["status_reason"] == "cache-evicted:domain-oldest"
+        assert rows[new["artifact_id"]]["capture_status"] == "stored"
+
+
 def test_raw_blob_upload_rejects_truncated_body_and_infers_mime_from_url(tmp_path):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
     init_db(cfg)

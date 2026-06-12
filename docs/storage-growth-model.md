@@ -21,7 +21,7 @@ Using Operator's recent Chrome History baseline and the daemon's current storage
 | Very heavy / dynamic pages | 500 snapshots/day, p90 text size | ~23.7 GB/year |
 | Extreme | 1000 snapshots/day, p90 text size | ~47.4 GB/year |
 
-Practical expectation for **text/FTS** remains **5–15 GB/year** under normal-heavy browsing. Media blobs are separate from this estimate: defaults cap individual artifacts at 100 MB, per-snapshot media at 1 GB, per-domain media at 2 GB, and total media cache at 50 GB. Use `media-cache purge` when media cache pressure matters.
+Practical expectation for **text/FTS** remains **5–15 GB/year** under normal-heavy browsing. Media blobs are separate from this estimate: defaults cap individual artifacts at 250 MB, per-snapshot media at 1 GB, per-domain media at 10 GB, and total media cache at 100 GB. Domain/global media budgets are rolling caches: oldest blobs are evicted first while refs/text remain.
 
 ---
 

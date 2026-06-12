@@ -16,7 +16,7 @@ const DEFAULTS = {
 const MAX_CAPTURE_QUEUE = 100;
 const MAX_VISIT_EVENT_QUEUE = 200;
 const MAX_MEDIA_ARTIFACTS_PER_CAPTURE = 50;
-const MAX_MEDIA_ARTIFACT_BYTES = 100_000_000;
+const MAX_MEDIA_ARTIFACT_BYTES = 250_000_000;
 
 function nowIso() {
   return new Date().toISOString();
