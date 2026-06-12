@@ -271,7 +271,7 @@ def test_media_worker_stores_hls_master_playlist_as_video_mp4(tmp_path):
             assert open(file_row["file_path"], "rb").read() == expected_bytes
 
 
-def test_media_worker_requeues_legacy_hls_video_skips(tmp_path):
+def test_media_worker_requeues_legacy_hls_video_unsupported_skips(tmp_path):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
     init_db(cfg)
     with hls_fixture_server() as (base_url, _expected_bytes):
@@ -288,10 +288,10 @@ def test_media_worker_requeues_legacy_hls_video_skips(tmp_path):
             result = ingest_capture(conn, cfg, payload)
             media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
             conn.execute(
-                "UPDATE media_artifacts SET capture_status = 'skipped', status_reason = 'non-media-content-type' WHERE id = ?",
+                "UPDATE media_artifacts SET capture_status = 'skipped', status_reason = 'unsupported-media-url-scheme' WHERE id = ?",
                 (media["id"],),
             )
-            conn.execute("UPDATE media_fetch_tasks SET status = 'skipped', last_error = 'non-media-content-type' WHERE artifact_id = ?", (media["id"],))
+            conn.execute("UPDATE media_fetch_tasks SET status = 'skipped', last_error = 'unsupported-media-url-scheme' WHERE artifact_id = ?", (media["id"],))
             changed = normalize_hls_video_skips(conn)
             assert changed == 1
             summary = run_once(conn, cfg, worker_id="test-worker", limit=10)

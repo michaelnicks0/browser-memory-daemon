@@ -1,4 +1,4 @@
-const DEFAULTS = { daemonUrl: 'http://127.0.0.1:8765', apiToken: '', capturePaused: false, policyMode: 'all' };
+const DEFAULTS = { daemonUrl: 'http://127.0.0.1:8765', apiToken: '', capturePaused: false, policyMode: 'all', cdpRecorderEnabled: true, cdpRecorderDomains: ['x.com', 'twitter.com'], lastCdpRecorderStatus: null, lastCdpRecorderError: null };
 let currentDomain = '';
 
 function setStatus(value) {
@@ -19,7 +19,7 @@ async function loadCurrentDomain() {
   }
   document.getElementById('domain').textContent = currentDomain || 'No http(s) tab selected.';
   const cfg = await config();
-  document.getElementById('mode').textContent = `mode=${cfg.policyMode || 'all'} paused=${Boolean(cfg.capturePaused)}`;
+  document.getElementById('mode').textContent = `mode=${cfg.policyMode || 'all'} paused=${Boolean(cfg.capturePaused)} cdp=${cfg.cdpRecorderEnabled !== false}`;
 }
 
 async function config() {
@@ -36,7 +36,17 @@ async function togglePause() {
 async function health() {
   const cfg = await config();
   const response = await fetch(`${normalizeDaemonUrl(cfg.daemonUrl)}/health`, { targetAddressSpace: 'loopback' });
-  setStatus({ extension: { policyMode: cfg.policyMode || 'all', capturePaused: Boolean(cfg.capturePaused) }, daemon: await response.json() });
+  setStatus({
+    extension: {
+      policyMode: cfg.policyMode || 'all',
+      capturePaused: Boolean(cfg.capturePaused),
+      cdpRecorderEnabled: cfg.cdpRecorderEnabled !== false,
+      cdpRecorderDomains: cfg.cdpRecorderDomains,
+      lastCdpRecorderStatus: cfg.lastCdpRecorderStatus || null,
+      lastCdpRecorderError: cfg.lastCdpRecorderError || null
+    },
+    daemon: await response.json()
+  });
 }
 
 async function daemonRequest(path, body) {

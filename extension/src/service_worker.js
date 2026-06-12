@@ -1,10 +1,13 @@
-try { importScripts('shared.js', 'extractor.js', 'media_queue.js'); } catch (_) {}
+try { importScripts('shared.js', 'extractor.js', 'media_queue.js', 'cdp_recorder.js'); } catch (_) {}
 
 const DEFAULTS = {
   daemonUrl: 'http://127.0.0.1:8765',
   apiToken: '',
   capturePaused: false,
   policyMode: 'all',
+  cdpRecorderEnabled: true,
+  cdpRecorderDomains: ['x.com', 'twitter.com'],
+  cdpRecorderMediaHosts: ['video.twimg.com'],
   captureQueue: [],
   visitEventQueue: [],
   tabVisitState: {}
@@ -13,7 +16,7 @@ const DEFAULTS = {
 const MAX_CAPTURE_QUEUE = 100;
 const MAX_VISIT_EVENT_QUEUE = 200;
 const MAX_MEDIA_ARTIFACTS_PER_CAPTURE = 50;
-const MAX_MEDIA_ARTIFACT_BYTES = 25_000_000;
+const MAX_MEDIA_ARTIFACT_BYTES = 100_000_000;
 
 function nowIso() {
   return new Date().toISOString();
@@ -134,6 +137,19 @@ async function postMediaArtifact(payload, config) {
   });
   const body = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(`media artifact failed: ${response.status} ${JSON.stringify(body)}`);
+  return body;
+}
+
+async function fetchPendingMediaArtifacts(scope, config) {
+  const base = normalizeDaemonUrl(config.daemonUrl);
+  const response = await fetch(`${base}/media-artifacts/fetch-pending`, {
+    method: 'POST',
+    headers: authHeaders(config.apiToken),
+    body: JSON.stringify(scope || {}),
+    targetAddressSpace: 'loopback'
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(`media fetch-pending failed: ${response.status} ${JSON.stringify(body)}`);
   return body;
 }
 
@@ -393,6 +409,203 @@ function scheduleMediaDrain() {
   drainMediaQueue().catch((error) => chrome.storage.local.set({ lastMediaArtifactError: { at: nowIso(), error: String(error.message || error) } }));
 }
 
+const cdpCaptureContextByTab = new Map();
+const cdpRecorderByTab = new Map();
+
+function cdpApi() {
+  return globalThis.BrowserMemoryCdpRecorder || null;
+}
+
+function cdpTarget(tabId) {
+  return { tabId };
+}
+
+function cdpCommand(tabId, method, params = {}) {
+  return new Promise((resolve, reject) => {
+    try {
+      chrome.debugger.sendCommand(cdpTarget(tabId), method, params, (result) => {
+        const lastError = chrome.runtime.lastError;
+        if (lastError) reject(new Error(lastError.message));
+        else resolve(result || {});
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+function cdpAttach(tabId) {
+  return new Promise((resolve, reject) => {
+    try {
+      chrome.debugger.attach(cdpTarget(tabId), '1.3', () => {
+        const lastError = chrome.runtime.lastError;
+        if (lastError) reject(new Error(lastError.message));
+        else resolve();
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+function cdpDetach(tabId) {
+  return new Promise((resolve) => {
+    try {
+      chrome.debugger.detach(cdpTarget(tabId), () => resolve());
+    } catch (_) {
+      resolve();
+    }
+  });
+}
+
+function latestDeliveredCaptureResult(result) {
+  const delivered = Array.isArray(result?.delivered) ? result.delivered : [];
+  if (delivered.length) return delivered[delivered.length - 1];
+  const capturesDelivered = Array.isArray(result?.captures?.delivered) ? result.captures.delivered : [];
+  if (capturesDelivered.length) return capturesDelivered[capturesDelivered.length - 1];
+  if (result?.document_id && result?.snapshot_id) return result;
+  return null;
+}
+
+function rememberCdpCaptureContext(sender, payload, result) {
+  const tabId = sender?.tab?.id;
+  const captureResult = latestDeliveredCaptureResult(result);
+  if (typeof tabId !== 'number' || !captureResult?.document_id || !captureResult?.snapshot_id) return;
+  cdpCaptureContextByTab.set(tabId, {
+    document_id: captureResult.document_id,
+    snapshot_id: captureResult.snapshot_id,
+    visit_id: captureResult.visit_id || payload.visit_id || '',
+    page_url: payload.url || sender.tab.url || '',
+    title: payload.title || '',
+    captured_at: nowIso()
+  });
+}
+
+function trimCdpSeenSet(state) {
+  if (!state || state.seen.size <= 500) return;
+  state.seen = new Set(Array.from(state.seen).slice(-300));
+}
+
+async function ensureCdpRecorder(tabId, tabUrl) {
+  const api = cdpApi();
+  if (!api || !chrome.debugger?.attach || typeof tabId !== 'number') return { skipped: true, reason: 'cdp-unavailable' };
+  const config = await getConfig();
+  const domains = api.normalizeDomains(config.cdpRecorderDomains, api.DEFAULT_CDP_RECORDER_DOMAINS);
+  const mediaHosts = api.normalizeDomains(config.cdpRecorderMediaHosts, api.DEFAULT_CDP_MEDIA_HOSTS);
+  if (config.capturePaused || !config.apiToken || !config.cdpRecorderEnabled || !api.shouldRecordTabUrl(tabUrl, domains)) {
+    if (cdpRecorderByTab.has(tabId)) {
+      await cdpDetach(tabId);
+      cdpRecorderByTab.delete(tabId);
+    }
+    return { skipped: true, reason: 'cdp-not-enabled-for-tab' };
+  }
+  let state = cdpRecorderByTab.get(tabId);
+  if (state?.attached) {
+    state.page_url = tabUrl || state.page_url;
+    state.mediaHosts = mediaHosts;
+    return { ok: true, attached: true, existing: true };
+  }
+  try {
+    await cdpAttach(tabId);
+    await cdpCommand(tabId, 'Network.enable', {
+      maxTotalBufferSize: MAX_MEDIA_ARTIFACT_BYTES * 2,
+      maxResourceBufferSize: MAX_MEDIA_ARTIFACT_BYTES
+    });
+    state = { attached: true, page_url: tabUrl || '', mediaHosts, requests: new Map(), seen: new Set(), attached_at: nowIso(), last_manifest_backfill_at: 0 };
+    cdpRecorderByTab.set(tabId, state);
+    await chrome.storage.local.set({ lastCdpRecorderStatus: { at: nowIso(), tabId, attached: true, page_url: state.page_url } });
+    return { ok: true, attached: true };
+  } catch (error) {
+    await chrome.storage.local.set({ lastCdpRecorderError: { at: nowIso(), tabId, error: String(error.message || error), phase: 'attach' } });
+    return { ok: false, error: String(error.message || error) };
+  }
+}
+
+async function recordCdpMediaBody(tabId, requestId, candidate, encodedDataLength = 0) {
+  const api = cdpApi();
+  const state = cdpRecorderByTab.get(tabId);
+  const context = cdpCaptureContextByTab.get(tabId);
+  if (!api || !state || !context) return { skipped: true, reason: 'missing-cdp-context' };
+  if (state.seen.has(candidate.source_url)) return { skipped: true, reason: 'duplicate-cdp-url' };
+  state.seen.add(candidate.source_url);
+  trimCdpSeenSet(state);
+  const config = await getConfig();
+  if (config.capturePaused || !config.apiToken) return { skipped: true, reason: config.capturePaused ? 'paused' : 'missing-token' };
+  const metadata = await postMediaArtifact(api.cdpMediaArtifactPayload(context, candidate), config);
+  if (candidate.is_manifest) {
+    const now = Date.now();
+    if (now - Number(state.last_manifest_backfill_at || 0) > 10_000) {
+      state.last_manifest_backfill_at = now;
+      fetchPendingMediaArtifacts({ domain: 'video.twimg.com', document_id: context.document_id, snapshot_id: context.snapshot_id, limit: 5 }, config)
+        .catch((error) => chrome.storage.local.set({ lastCdpRecorderError: { at: nowIso(), tabId, error: String(error.message || error), phase: 'manifest-backfill' } }));
+    }
+    return { artifact_id: metadata.artifact_id, referenced: true, manifest: true };
+  }
+  const safeLength = Number(encodedDataLength || candidate.encoded_data_length || 0);
+  if (safeLength > MAX_MEDIA_ARTIFACT_BYTES) {
+    await postMediaArtifact(api.cdpMediaArtifactPayload(context, candidate, { capture_status: 'referenced', status_reason: 'cdp-media-too-large' }), config);
+    return { artifact_id: metadata.artifact_id, referenced: true, reason: 'cdp-media-too-large' };
+  }
+  const body = await cdpCommand(tabId, 'Network.getResponseBody', { requestId });
+  if (body.base64Encoded && api.approxBase64Bytes(body.body) > MAX_MEDIA_ARTIFACT_BYTES) {
+    await postMediaArtifact(api.cdpMediaArtifactPayload(context, candidate, { capture_status: 'referenced', status_reason: 'cdp-media-too-large' }), config);
+    return { artifact_id: metadata.artifact_id, referenced: true, reason: 'cdp-media-too-large' };
+  }
+  const blob = api.cdpBodyToBlob(body, candidate.mime_type || 'video/mp4');
+  if (blob.size > MAX_MEDIA_ARTIFACT_BYTES) {
+    await postMediaArtifact(api.cdpMediaArtifactPayload(context, candidate, { capture_status: 'referenced', status_reason: 'cdp-media-too-large' }), config);
+    return { artifact_id: metadata.artifact_id, referenced: true, reason: 'cdp-media-too-large' };
+  }
+  const task = {
+    artifact_id: metadata.artifact_id,
+    document_id: context.document_id,
+    snapshot_id: context.snapshot_id,
+    visit_id: context.visit_id || '',
+    page_url: context.page_url || '',
+    source_url: candidate.source_url,
+    media_type: 'video',
+    role: candidate.role || 'cdp-segment',
+    mime_type: candidate.mime_type || 'video/mp4',
+    metadata: { cdp_recorder: true }
+  };
+  return putMediaArtifactBlob(task, { blob, metadata: { mime_type: task.mime_type, byte_size: blob.size, cdp_recorder: true } }, config);
+}
+
+function handleCdpResponseReceived(source, params) {
+  const tabId = source?.tabId;
+  const state = cdpRecorderByTab.get(tabId);
+  const api = cdpApi();
+  if (!state || !api || !params?.requestId) return;
+  const candidate = api.cdpMediaCandidate(params.response || {}, params.type || '', state.mediaHosts || api.DEFAULT_CDP_MEDIA_HOSTS);
+  if (!candidate || state.seen.has(candidate.source_url)) return;
+  state.requests.set(params.requestId, candidate);
+}
+
+function handleCdpLoadingFinished(source, params) {
+  const tabId = source?.tabId;
+  const state = cdpRecorderByTab.get(tabId);
+  if (!state || !params?.requestId) return;
+  const candidate = state.requests.get(params.requestId);
+  if (!candidate) return;
+  state.requests.delete(params.requestId);
+  recordCdpMediaBody(tabId, params.requestId, candidate, params.encodedDataLength)
+    .then((result) => chrome.storage.local.set({ lastCdpRecorderStatus: { at: nowIso(), tabId, result } }))
+    .catch((error) => chrome.storage.local.set({ lastCdpRecorderError: { at: nowIso(), tabId, error: String(error.message || error), phase: 'record-body', source_url: candidate.source_url } }));
+}
+
+chrome.debugger?.onEvent?.addListener((source, method, params) => {
+  if (method === 'Network.responseReceived') handleCdpResponseReceived(source, params || {});
+  else if (method === 'Network.loadingFinished') handleCdpLoadingFinished(source, params || {});
+  else if (method === 'Network.loadingFailed') cdpRecorderByTab.get(source?.tabId)?.requests?.delete(params?.requestId);
+});
+
+chrome.debugger?.onDetach?.addListener((source, reason) => {
+  if (typeof source?.tabId === 'number') {
+    cdpRecorderByTab.delete(source.tabId);
+    chrome.storage.local.set({ lastCdpRecorderStatus: { at: nowIso(), tabId: source.tabId, detached: true, reason } });
+  }
+});
+
 async function drainQueue() {
   const config = await getConfig();
   if (config.capturePaused) return { skipped: true, reason: 'paused' };
@@ -613,6 +826,7 @@ async function maybeInjectCapture(tabId, tabUrl) {
   const config = await getConfig();
   if (config.capturePaused || !config.apiToken) return { skipped: true, reason: config.capturePaused ? 'paused' : 'missing-token' };
   if (!isTrackableUrl(tabUrl, config.policyMode)) return { skipped: true, reason: 'blocked-url' };
+  ensureCdpRecorder(tabId, tabUrl).catch((error) => chrome.storage.local.set({ lastCdpRecorderError: { at: nowIso(), tabId, error: String(error.message || error), phase: 'ensure' } }));
   if (injectedTabs.get(tabId) === tabUrl) return { skipped: true, reason: 'already-injected' };
   try {
     await chrome.scripting.executeScript({
@@ -660,8 +874,23 @@ chrome.windows.onFocusChanged?.addListener((windowId) => {
 
 chrome.tabs.onRemoved?.addListener((tabId) => {
   injectedTabs.delete(tabId);
+  cdpCaptureContextByTab.delete(tabId);
+  if (cdpRecorderByTab.has(tabId)) {
+    cdpDetach(tabId).finally(() => cdpRecorderByTab.delete(tabId));
+  }
   finishTabVisit(tabId, 'tab-closed', { remove: true });
 });
+
+function bootstrapActiveTabs() {
+  chrome.tabs.query?.({ active: true }, (tabs) => {
+    if (chrome.runtime.lastError || !Array.isArray(tabs)) return;
+    for (const tab of tabs) {
+      if (typeof tab.id !== 'number' || !tab.url) continue;
+      markTabActive(tab.id, tab.url);
+      maybeInjectCapture(tab.id, tab.url);
+    }
+  });
+}
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (!message || !message.type) return false;
@@ -673,14 +902,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   if (message.type !== 'BMD_CAPTURE') return false;
   decorateCapturePayload(message.payload || {}, sender)
-    .then((payload) => enqueueCapture(payload))
+    .then((payload) => enqueueCapture(payload).then((result) => {
+      rememberCdpCaptureContext(sender, payload, result);
+      return result;
+    }))
     .then((result) => sendResponse({ ok: true, result }))
     .catch((error) => sendResponse({ ok: false, error: String(error.message || error) }));
   return true;
 });
 
-chrome.runtime.onStartup?.addListener(() => { drainAllQueues(); scheduleMediaDrain(); });
-chrome.runtime.onInstalled?.addListener(() => { drainAllQueues(); scheduleMediaDrain(); });
+chrome.runtime.onStartup?.addListener(() => { drainAllQueues(); scheduleMediaDrain(); bootstrapActiveTabs(); });
+chrome.runtime.onInstalled?.addListener(() => { drainAllQueues(); scheduleMediaDrain(); bootstrapActiveTabs(); });
 chrome.alarms?.onAlarm?.addListener((alarm) => {
   if (alarm && alarm.name === 'bmd-media-drain') scheduleMediaDrain();
 });

@@ -1121,6 +1121,8 @@ def store_media_artifact(conn: sqlite3.Connection, config: RuntimeConfig, data: 
             mark_media_fetch_task(conn, artifact_id, worker_kind="browser", status="succeeded")
         elif status in {"skipped", "expired"}:
             mark_media_fetch_task(conn, artifact_id, worker_kind="daemon-public", status="skipped", error=reason)
+        elif status in {"referenced", "metadata-only", "queued", "retrying"} and _media_fetch_supported(source_url):
+            ensure_media_fetch_task(conn, artifact_id, worker_kind="daemon-public", priority=priority)
     return {
         "stored": status == "stored",
         "artifact_id": artifact_id,

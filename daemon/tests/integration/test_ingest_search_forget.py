@@ -256,6 +256,45 @@ def test_raw_blob_upload_rejects_truncated_body_and_infers_mime_from_url(tmp_pat
         assert media["byte_size"] == 8
 
 
+def test_posted_cdp_metadata_enqueues_daemon_fetch_task(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    payload = CapturePayload.from_dict(
+        {
+            "url": "https://x.com/home",
+            "title": "X Home",
+            "text": "Readable X body for CDP metadata.",
+        },
+        allow_any_url=True,
+    )
+    with connect(cfg.db_path) as conn:
+        result = ingest_capture(conn, cfg, payload)
+        posted = store_media_artifact(
+            conn,
+            cfg,
+            {
+                "artifact_id": "media_cdp_test_segment",
+                "document_id": result["document_id"],
+                "snapshot_id": result["snapshot_id"],
+                "visit_id": result["visit_id"],
+                "page_url": "https://x.com/home",
+                "media_type": "video",
+                "role": "cdp-segment",
+                "source_url": "https://video.twimg.com/amplify_video/1/vid/avc1/0/3000/1920x1080/seg.m4s",
+                "mime_type": "video/mp4",
+                "capture_status": "referenced",
+                "metadata": {"cdp_recorder": True},
+            },
+        )
+        assert posted["stored"] is False
+        task = conn.execute(
+            "SELECT artifact_id, worker_kind, status FROM media_fetch_tasks WHERE artifact_id = ?",
+            ("media_cdp_test_segment",),
+        ).fetchone()
+        assert task["worker_kind"] == "daemon-public"
+        assert task["status"] == "pending"
+
+
 def test_fetch_pending_media_artifacts_stores_data_url_without_indexing_media_metadata(tmp_path):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
     init_db(cfg)

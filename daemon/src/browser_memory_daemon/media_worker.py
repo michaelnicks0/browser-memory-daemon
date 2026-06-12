@@ -116,7 +116,7 @@ def normalize_hls_video_skips(conn: sqlite3.Connection, *, worker_kind: str = "d
         FROM media_artifacts
         WHERE media_type = 'video'
           AND capture_status = 'skipped'
-          AND status_reason IN ('non-media-content-type', 'media-too-large')
+          AND status_reason IN ('non-media-content-type', 'media-too-large', 'unsupported-media-url-scheme')
           AND lower(source_url) LIKE '%.m3u8%'
         """
     ).fetchall()
