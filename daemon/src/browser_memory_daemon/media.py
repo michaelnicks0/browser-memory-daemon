@@ -69,6 +69,11 @@ EXT_BY_MIME = {
     "video/ogg": ".ogv",
     "video/quicktime": ".mov",
     "video/mp2t": ".ts",
+    "audio/mp4": ".m4a",
+    "audio/aac": ".aac",
+    "audio/mpeg": ".mp3",
+    "audio/ogg": ".oga",
+    "audio/webm": ".weba",
 }
 
 HLS_MIME_TYPES = {
@@ -122,7 +127,9 @@ def _sanitize_mime(value: Any, *, media_type: str = "") -> str:
         return ""
     if media_type == "image" and not mime.startswith("image/"):
         return ""
-    if media_type == "video" and not mime.startswith("video/"):
+    if media_type == "video" and not (mime.startswith("video/") or mime.startswith("audio/")):
+        return ""
+    if media_type == "audio" and not mime.startswith("audio/"):
         return ""
     return mime[:128]
 
@@ -140,6 +147,11 @@ def _infer_mime_from_url(source_url: str, media_type: str) -> str:
         ".mp4": "video/mp4",
         ".webm": "video/webm",
         ".mov": "video/quicktime",
+        ".m4s": "video/mp4",
+        ".ts": "video/mp2t",
+        ".m4a": "audio/mp4",
+        ".aac": "audio/aac",
+        ".mp3": "audio/mpeg",
     }
     if suffix in by_suffix:
         return _sanitize_mime(by_suffix[suffix], media_type=media_type)
@@ -156,6 +168,8 @@ def _file_extension(mime_type: str, source_url: str) -> str:
         return ".img"
     if mime_type.startswith("video/"):
         return ".video"
+    if mime_type.startswith("audio/"):
+        return ".audio"
     return ".bin"
 
 
@@ -332,7 +346,9 @@ def _mime_allowed(config: RuntimeConfig, mime_type: str, media_type: str) -> boo
         return True
     if media_type == "image" and not mime.startswith("image/"):
         return False
-    if media_type == "video" and not mime.startswith("video/"):
+    if media_type == "video" and not (mime.startswith("video/") or mime.startswith("audio/")):
+        return False
+    if media_type == "audio" and not mime.startswith("audio/"):
         return False
     allowlist = tuple(item.lower().strip() for item in config.media_mime_allowlist if item.strip())
     if not allowlist:
@@ -670,8 +686,7 @@ def _hls_playlist_to_media(
         return b"", "", last_reason
 
     path = urlsplit(playlist_url).path.lower()
-    if "/mp4a/" in path or "/audio" in path:
-        return b"", "", "hls-audio-rendition"
+    is_audio_rendition = "/mp4a/" in path or "/audio" in path
 
     init_url = ""
     segment_urls: list[str] = []
@@ -708,9 +723,17 @@ def _hls_playlist_to_media(
             return b"", "", "media-too-large"
         content_parts.append(segment)
 
-    if init_url or any(urlsplit(url).path.lower().endswith((".m4s", ".mp4")) for url in segment_urls):
-        return b"".join(content_parts), "video/mp4", ""
-    return b"".join(content_parts), "video/mp2t", ""
+    joined = b"".join(content_parts)
+    segment_paths = [urlsplit(url).path.lower() for url in segment_urls]
+    if is_audio_rendition:
+        if any(path.endswith(".aac") for path in segment_paths):
+            return joined, "audio/aac", ""
+        if any(path.endswith(".mp3") for path in segment_paths):
+            return joined, "audio/mpeg", ""
+        return joined, "audio/mp4", ""
+    if init_url or any(path.endswith((".m4s", ".mp4")) for path in segment_paths):
+        return joined, "video/mp4", ""
+    return joined, "video/mp2t", ""
 
 
 def _fetch_hls_media_bytes(source_url: str, page_url: str, playlist_content: bytes, *, max_bytes: int, timeout_seconds: float) -> tuple[bytes, str, str]:

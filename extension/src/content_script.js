@@ -12,7 +12,7 @@
 
   const DELAYED_CAPTURE_MS = [0, 1500, 5000];
   const DEFAULT_CAPTURE_CONFIG = { policyMode: 'all' };
-  const MAX_INLINE_BLOB_UPLOAD_BYTES = 25_000_000;
+  const MAX_INLINE_BLOB_UPLOAD_BYTES = 100_000_000;
 
   function normalizePolicyMode(policyMode) {
     if (typeof globalThis.normalizeBrowserMemoryPolicyMode === 'function') {

@@ -1,13 +1,14 @@
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import base64
 import json
 import threading
 
 from browser_memory_daemon.config import load_config
 from browser_memory_daemon.db import connect, init_db
 from browser_memory_daemon.ingest import ingest_capture
-from browser_memory_daemon.media import media_artifacts_for_snapshot, purge_media_cache
-from browser_memory_daemon.media_worker import normalize_hls_video_skips, normalize_legacy_blob_video_skips, normalize_snapshot_budget_skips, normalize_terminal_failed_artifacts, run_once
+from browser_memory_daemon.media import media_artifacts_for_snapshot, purge_media_cache, store_media_artifact
+from browser_memory_daemon.media_worker import normalize_cdp_covered_blob_video_refs, normalize_cdp_hls_manifest_refs, normalize_hls_audio_renditions, normalize_hls_video_skips, normalize_legacy_blob_video_skips, normalize_opaque_blob_video_refs, normalize_snapshot_budget_skips, normalize_terminal_failed_artifacts, run_once
 from browser_memory_daemon.models import CapturePayload
 
 
@@ -334,7 +335,7 @@ def test_media_worker_requeues_snapshot_budget_skips_after_cap_raise(tmp_path):
             assert media["capture_status"] == "stored"
 
 
-def test_media_worker_keeps_hls_audio_rendition_referenced_not_skipped(tmp_path):
+def test_media_worker_stores_hls_audio_rendition_sidecar(tmp_path):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
     init_db(cfg)
     with hls_fixture_server() as (base_url, _expected_bytes):
@@ -350,9 +351,154 @@ def test_media_worker_keeps_hls_audio_rendition_referenced_not_skipped(tmp_path)
         with connect(cfg.db_path) as conn:
             result = ingest_capture(conn, cfg, payload)
             summary = run_once(conn, cfg, worker_id="test-worker", limit=10)
-            assert summary["stored"] == 0
+            assert summary["stored"] == 1
             media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
-            assert media["capture_status"] == "referenced"
-            assert media["status_reason"] == "hls-audio-rendition"
+            assert media["capture_status"] == "stored"
+            assert media["status_reason"] in {None, ""}
+            assert media["mime_type"] == "audio/mp4"
+            stored_row = conn.execute("SELECT file_path FROM media_artifacts WHERE id = ?", (media["id"],)).fetchone()
+            assert stored_row["file_path"].endswith(".m4a")
             task = conn.execute("SELECT status FROM media_fetch_tasks WHERE artifact_id = ?", (media["id"],)).fetchone()
-            assert task["status"] == "skipped"
+            assert task["status"] == "succeeded"
+
+
+def test_media_worker_requeues_legacy_hls_audio_rendition_refs(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    with hls_fixture_server() as (base_url, _expected_bytes):
+        payload = CapturePayload.from_dict(
+            {
+                "url": "https://example.com/hls-audio-legacy",
+                "title": "HLS Audio Legacy",
+                "text": "Readable worker HLS audio legacy body.",
+                "media_artifacts": [{"media_type": "video", "source_url": f"{base_url}/mp4a/audio.m3u8"}],
+            },
+            allow_any_url=True,
+        )
+        with connect(cfg.db_path) as conn:
+            result = ingest_capture(conn, cfg, payload)
+            media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
+            conn.execute(
+                "UPDATE media_artifacts SET capture_status = 'referenced', status_reason = 'hls-audio-rendition' WHERE id = ?",
+                (media["id"],),
+            )
+            conn.execute(
+                "UPDATE media_fetch_tasks SET status = 'skipped', last_error = 'hls-audio-rendition' WHERE artifact_id = ?",
+                (media["id"],),
+            )
+            assert normalize_hls_audio_renditions(conn) == 1
+            task = conn.execute("SELECT status FROM media_fetch_tasks WHERE artifact_id = ?", (media["id"],)).fetchone()
+            assert task["status"] == "pending"
+
+
+def test_media_worker_requeues_cdp_hls_manifest_refs(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    with hls_fixture_server() as (base_url, _expected_bytes):
+        payload = CapturePayload.from_dict(
+            {
+                "url": "https://x.com/home",
+                "title": "X Home",
+                "text": "Readable X page with CDP manifest.",
+                "media_artifacts": [],
+            },
+            allow_any_url=True,
+        )
+        with connect(cfg.db_path) as conn:
+            result = ingest_capture(conn, cfg, payload)
+            store_media_artifact(
+                conn,
+                cfg,
+                {
+                    "artifact_id": "media_cdp_manifest_ref",
+                    "document_id": result["document_id"],
+                    "snapshot_id": result["snapshot_id"],
+                    "visit_id": result["visit_id"],
+                    "page_url": "https://x.com/home",
+                    "source_url": f"{base_url}/master.m3u8",
+                    "media_type": "video",
+                    "role": "content",
+                    "mime_type": "video/mp4",
+                    "metadata": {"cdp_recorder": True},
+                    "capture_status": "referenced",
+                },
+            )
+            conn.execute(
+                "UPDATE media_fetch_tasks SET status = 'skipped', last_error = 'skipped' WHERE artifact_id = ?",
+                ("media_cdp_manifest_ref",),
+            )
+            assert normalize_cdp_hls_manifest_refs(conn) == 1
+            task = conn.execute("SELECT status FROM media_fetch_tasks WHERE artifact_id = ?", ("media_cdp_manifest_ref",)).fetchone()
+            assert task["status"] == "pending"
+
+
+def test_media_worker_marks_blob_video_refs_covered_by_cdp_bytes(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    payload = CapturePayload.from_dict(
+        {
+            "url": "https://x.com/home",
+            "title": "X Home",
+            "text": "Readable X page with blob video.",
+            "media_artifacts": [{"media_type": "video", "source_url": "blob:https://x.com/video-123"}],
+        },
+        allow_any_url=True,
+    )
+    with connect(cfg.db_path) as conn:
+        result = ingest_capture(conn, cfg, payload)
+        followup = CapturePayload.from_dict(
+            {
+                "url": "https://x.com/home",
+                "title": "X Home",
+                "text": "Readable X page with nearby CDP bytes.",
+                "media_artifacts": [],
+            },
+            allow_any_url=True,
+        )
+        result2 = ingest_capture(conn, cfg, followup)
+        assert result2["document_id"] == result["document_id"]
+        blob_media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
+        stored = store_media_artifact(
+            conn,
+            cfg,
+            {
+                "artifact_id": "media_cdp_test_segment",
+                "document_id": result["document_id"],
+                "snapshot_id": result2["snapshot_id"],
+                "visit_id": result["visit_id"],
+                "page_url": "https://x.com/home",
+                "source_url": "https://video.twimg.com/ext_tw_video/segment.m4s",
+                "media_type": "video",
+                "role": "content",
+                "mime_type": "video/mp4",
+                "metadata": {"cdp_recorder": True},
+                "capture_status": "stored",
+                "content_base64": base64.b64encode(b"fake-mp4-segment").decode("ascii"),
+            },
+        )
+        assert stored["stored"] is True
+        assert normalize_cdp_covered_blob_video_refs(conn) == 1
+        row = conn.execute("SELECT capture_status, status_reason FROM media_artifacts WHERE id = ?", (blob_media["id"],)).fetchone()
+        assert row["capture_status"] == "referenced"
+        assert row["status_reason"] == "covered-by-cdp-recorder"
+
+
+def test_media_worker_classifies_uncovered_blob_video_refs_as_opaque(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    payload = CapturePayload.from_dict(
+        {
+            "url": "https://x.com/home",
+            "title": "X Home",
+            "text": "Readable X page with opaque blob video.",
+            "media_artifacts": [{"media_type": "video", "source_url": "blob:https://x.com/uncovered-video"}],
+        },
+        allow_any_url=True,
+    )
+    with connect(cfg.db_path) as conn:
+        result = ingest_capture(conn, cfg, payload)
+        media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
+        assert normalize_opaque_blob_video_refs(conn) == 1
+        row = conn.execute("SELECT capture_status, status_reason FROM media_artifacts WHERE id = ?", (media["id"],)).fetchone()
+        assert row["capture_status"] == "referenced"
+        assert row["status_reason"] == "opaque-browser-blob"

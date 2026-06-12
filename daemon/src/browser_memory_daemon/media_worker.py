@@ -133,6 +133,59 @@ def normalize_hls_video_skips(conn: sqlite3.Connection, *, worker_kind: str = "d
     return len(artifact_ids)
 
 
+def normalize_hls_audio_renditions(conn: sqlite3.Connection, *, worker_kind: str = "daemon-public") -> int:
+    """Requeue legacy HLS audio-only renditions now that they are storable.
+
+    Earlier builds kept `/mp4a/` HLS playlists as `referenced:hls-audio-rendition`.
+    They are useful sidecars for reconstructed X video and can now be stored as
+    audio MIME blobs while retaining `media_type='video'` provenance.
+    """
+    rows = conn.execute(
+        """
+        SELECT id
+        FROM media_artifacts
+        WHERE media_type = 'video'
+          AND capture_status = 'referenced'
+          AND status_reason = 'hls-audio-rendition'
+          AND lower(source_url) LIKE '%.m3u8%'
+        """
+    ).fetchall()
+    if not rows:
+        return 0
+    artifact_ids = [row["id"] for row in rows]
+    placeholders = ",".join("?" for _ in artifact_ids)
+    conn.execute(
+        f"UPDATE media_artifacts SET status_reason = NULL WHERE id IN ({placeholders})",
+        artifact_ids,
+    )
+    for artifact_id in artifact_ids:
+        ensure_media_fetch_task(conn, artifact_id, worker_kind=worker_kind, force_reset=True)
+    return len(artifact_ids)
+
+
+def normalize_cdp_hls_manifest_refs(conn: sqlite3.Connection, *, worker_kind: str = "daemon-public") -> int:
+    """Requeue CDP-observed HLS manifests that are still reference-only."""
+    rows = conn.execute(
+        """
+        SELECT id
+        FROM media_artifacts
+        WHERE media_type = 'video'
+          AND capture_status = 'referenced'
+          AND (status_reason IS NULL OR status_reason = '')
+          AND lower(source_url) LIKE '%.m3u8%'
+          AND (
+            id LIKE 'media_cdp_%'
+            OR json_extract(metadata_json, '$.cdp_recorder') = 1
+          )
+        """
+    ).fetchall()
+    if not rows:
+        return 0
+    for row in rows:
+        ensure_media_fetch_task(conn, row["id"], worker_kind=worker_kind, force_reset=True)
+    return len(rows)
+
+
 def normalize_video_nonmedia_skips(conn: sqlite3.Connection) -> int:
     """Reclassify non-playlist video non-media responses as references.
 
@@ -180,6 +233,66 @@ def normalize_snapshot_budget_skips(conn: sqlite3.Connection, *, worker_kind: st
     for artifact_id in artifact_ids:
         ensure_media_fetch_task(conn, artifact_id, worker_kind=worker_kind, force_reset=True)
     return len(artifact_ids)
+
+
+def normalize_cdp_covered_blob_video_refs(conn: sqlite3.Connection) -> int:
+    """Label blob video refs covered by nearby CDP media bytes.
+
+    X often leaves a `blob:` URL in the DOM while the CDP recorder stores the
+    underlying `video.twimg.com` HLS/segment media. These blob refs should stay
+    as references for provenance, but they are no longer unresolved gaps when the
+    same snapshot or same document/time window has stored CDP media.
+    """
+    cursor = conn.execute(
+        """
+        UPDATE media_artifacts
+        SET status_reason = 'covered-by-cdp-recorder'
+        WHERE media_type = 'video'
+          AND capture_status = 'referenced'
+          AND (status_reason IS NULL OR status_reason = '')
+          AND source_url LIKE 'blob:%'
+          AND EXISTS (
+            SELECT 1
+            FROM media_artifacts cdp
+            WHERE cdp.media_type = 'video'
+              AND cdp.capture_status = 'stored'
+              AND COALESCE(cdp.file_path, '') != ''
+              AND (
+                cdp.id LIKE 'media_cdp_%'
+                OR json_extract(cdp.metadata_json, '$.cdp_recorder') = 1
+              )
+              AND (
+                cdp.snapshot_id = media_artifacts.snapshot_id
+                OR (
+                  cdp.document_id = media_artifacts.document_id
+                  AND ABS(strftime('%s', cdp.created_at) - strftime('%s', media_artifacts.created_at)) <= 300
+                )
+              )
+          )
+        """
+    )
+    return int(cursor.rowcount or 0)
+
+
+def normalize_opaque_blob_video_refs(conn: sqlite3.Connection) -> int:
+    """Classify remaining blob video references as opaque browser blobs.
+
+    A `blob:` URL cannot be replayed from the daemon after capture. If the row
+    was not covered by nearby CDP bytes and the content-script inline upload did
+    not store it while the page context was alive, keep it as `referenced` but
+    make the residual reason explicit.
+    """
+    cursor = conn.execute(
+        """
+        UPDATE media_artifacts
+        SET status_reason = 'opaque-browser-blob'
+        WHERE media_type = 'video'
+          AND capture_status = 'referenced'
+          AND (status_reason IS NULL OR status_reason = '')
+          AND source_url LIKE 'blob:%'
+        """
+    )
+    return int(cursor.rowcount or 0)
 
 
 def mark_already_stored_tasks_succeeded(conn: sqlite3.Connection, *, worker_kind: str = "daemon-public") -> int:
@@ -269,8 +382,12 @@ def run_once(
     with conn:
         normalized_legacy_blob_videos = normalize_legacy_blob_video_skips(conn)
         normalized_hls_videos = normalize_hls_video_skips(conn, worker_kind=worker_kind)
+        normalized_hls_audio = normalize_hls_audio_renditions(conn, worker_kind=worker_kind)
+        normalized_cdp_hls_manifests = normalize_cdp_hls_manifest_refs(conn, worker_kind=worker_kind)
         normalized_video_nonmedia = normalize_video_nonmedia_skips(conn)
         normalized_snapshot_budget = normalize_snapshot_budget_skips(conn, worker_kind=worker_kind)
+        normalized_cdp_blob_coverage = normalize_cdp_covered_blob_video_refs(conn)
+        normalized_opaque_blob_videos = normalize_opaque_blob_video_refs(conn)
         normalized_terminal = normalize_terminal_failed_artifacts(conn, worker_kind=worker_kind)
         already_stored = mark_already_stored_tasks_succeeded(conn, worker_kind=worker_kind)
         rows = claim_media_fetch_tasks(conn, worker_id=worker_id, worker_kind=worker_kind, limit=limit)
@@ -320,8 +437,12 @@ def run_once(
         "worker_kind": worker_kind,
         "normalized_legacy_blob_videos": normalized_legacy_blob_videos,
         "normalized_hls_videos": normalized_hls_videos,
+        "normalized_hls_audio": normalized_hls_audio,
+        "normalized_cdp_hls_manifests": normalized_cdp_hls_manifests,
         "normalized_video_nonmedia": normalized_video_nonmedia,
         "normalized_snapshot_budget": normalized_snapshot_budget,
+        "normalized_cdp_blob_coverage": normalized_cdp_blob_coverage,
+        "normalized_opaque_blob_videos": normalized_opaque_blob_videos,
         "normalized_terminal": normalized_terminal,
         "already_stored": already_stored,
         "attempted": len(results),
@@ -330,7 +451,7 @@ def run_once(
         "skipped": sum(1 for item in results if item.get("capture_status") == "skipped"),
         "results": results,
     }
-    audit(conn, "media.worker.run_once", {k: summary[k] for k in ("worker_id", "worker_kind", "normalized_legacy_blob_videos", "normalized_hls_videos", "normalized_video_nonmedia", "normalized_snapshot_budget", "normalized_terminal", "already_stored", "attempted", "stored", "failed", "skipped")})
+    audit(conn, "media.worker.run_once", {k: summary[k] for k in ("worker_id", "worker_kind", "normalized_legacy_blob_videos", "normalized_hls_videos", "normalized_hls_audio", "normalized_cdp_hls_manifests", "normalized_video_nonmedia", "normalized_snapshot_budget", "normalized_cdp_blob_coverage", "normalized_opaque_blob_videos", "normalized_terminal", "already_stored", "attempted", "stored", "failed", "skipped")})
     conn.commit()
     return summary
 

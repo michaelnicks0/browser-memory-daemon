@@ -26,7 +26,7 @@ class RuntimeConfig:
     max_media_bytes_per_snapshot: int = 1_000_000_000
     max_media_bytes_per_domain: int = 2_000_000_000
     max_media_cache_bytes: int = 50_000_000_000
-    media_mime_allowlist: tuple[str, ...] = ("image/", "video/mp4", "video/webm", "video/ogg", "video/quicktime", "video/mp2t")
+    media_mime_allowlist: tuple[str, ...] = ("image/", "video/mp4", "video/webm", "video/ogg", "video/quicktime", "video/mp2t", "audio/mp4", "audio/aac", "audio/mpeg", "audio/ogg", "audio/webm")
     media_min_priority_to_store: int = 0
     max_media_artifacts_per_capture: int = 50
     max_media_fetches_per_capture: int = 12
