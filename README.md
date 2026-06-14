@@ -29,6 +29,7 @@ Start with:
 - [`docs/README.md`](docs/README.md) — documentation reading path.
 - [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) — operator guide.
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system architecture and requirements trace.
+- [`docs/architecture/adr/README.md`](docs/architecture/adr/README.md) — architecture decision records for change-by-change design rationale.
 - [`docs/architecture/c4-diagrams.md`](docs/architecture/c4-diagrams.md) — generated C4 diagram atlas.
 - [`docs/DIAGRAMS.md`](docs/DIAGRAMS.md) — behavioral Mermaid diagrams for non-C4 mechanics.
 - [`docs/CLI_UX_CONTRACT.md`](docs/CLI_UX_CONTRACT.md) — CLI contract.
