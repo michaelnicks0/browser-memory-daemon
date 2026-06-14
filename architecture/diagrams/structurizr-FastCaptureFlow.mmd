@@ -29,6 +29,7 @@ graph LR
     5-. "<div>3. POSTs /capture with<br />visible text, metadata, and<br />media refs</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</div>" .->14
     14-. "<div>4. Stores document, visit,<br />snapshot, chunks, FTS, media<br />refs, and tasks</div><div style='font-size: 70%'>[sqlite3]</div>" .->27
     14-. "<div>5. Writes clean-text snapshot<br />blob</div><div style='font-size: 70%'>[Filesystem]</div>" .->28
-    5-. "<div>6. Queues browser-side media<br />tasks for later fetch/upload</div><div style='font-size: 70%'>[chrome.storage.local + IndexedDB]</div>" .->13
+    14-. "<div>6. Returns<br />document/snapshot/artifact<br />IDs before lazy media bytes</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</div>" .->5
+    5-. "<div>7. Queues browser-side media<br />tasks for later fetch/upload</div><div style='font-size: 70%'>[chrome.storage.local + IndexedDB]</div>" .->13
 
   end

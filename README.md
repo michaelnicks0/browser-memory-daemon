@@ -29,7 +29,8 @@ Start with:
 - [`docs/README.md`](docs/README.md) — documentation reading path.
 - [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) — operator guide.
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system architecture and requirements trace.
-- [`docs/DIAGRAMS.md`](docs/DIAGRAMS.md) — Mermaid visual atlas.
+- [`architecture/c4-diagrams.md`](architecture/c4-diagrams.md) — generated C4 diagram atlas.
+- [`docs/DIAGRAMS.md`](docs/DIAGRAMS.md) — behavioral Mermaid diagrams for non-C4 mechanics.
 - [`docs/CLI_UX_CONTRACT.md`](docs/CLI_UX_CONTRACT.md) — CLI contract.
 - [`docs/api.md`](docs/api.md) — HTTP API.
 - [`docs/security-model.md`](docs/security-model.md) — policy/security model.

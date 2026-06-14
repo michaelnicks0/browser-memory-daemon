@@ -8,8 +8,8 @@ This directory contains the C4 model-as-code for the Browser Memory Daemon repo.
 - Per-view Markdown diagrams: [`diagrams/markdown/`](diagrams/markdown/)
 - Lightweight text exports: [`diagrams/*.mmd`](diagrams/) after Mermaid export
 - Visual-review exports: [`diagrams/*.png`](diagrams/), [`diagrams/*.svg`](diagrams/), and Graphviz renders under [`diagrams/dot-rendered/`](diagrams/dot-rendered/)
-- Existing narrative architecture: [`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md)
-- Existing Mermaid visual atlas: [`../docs/DIAGRAMS.md`](../docs/DIAGRAMS.md)
+- Narrative architecture: [`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md)
+- Behavioral Mermaid diagrams for non-C4 mechanics: [`../docs/DIAGRAMS.md`](../docs/DIAGRAMS.md)
 
 ## Scope
 
@@ -24,6 +24,13 @@ Windows Chrome MV3 extension
 
 The system boundary is **Browser Memory Daemon**, including the owned Chrome extension, WSL daemon, WSL media worker, local UI, CLI, database, and blob stores. Windows Chrome and web/media origins are modeled as external systems.
 
+## Diagram ownership
+
+- `workspace.dsl` is the canonical C4 source for systems, containers, components, deployment, and major scenario flows.
+- `c4-diagrams.md` is the generated all-views C4 atlas and preferred architecture diagram entrypoint.
+- `../docs/DIAGRAMS.md` keeps hand-authored Mermaid diagrams for non-C4 mechanics: policy ladders, redaction branches, state machines, identity formulas, endpoint maps, media cache/status semantics, and delete cascades.
+- Do not duplicate broad topology in `docs/DIAGRAMS.md`; add missing architecture topology to this C4 model instead.
+
 ## Views
 
 | View key | C4 level | Purpose |
@@ -33,7 +40,7 @@ The system boundary is **Browser Memory Daemon**, including the owned Chrome ext
 | `BrowserMediaContainers` | C2 Container | Browser-side media path: extension browser storage, daemon media APIs, SQLite artifact rows, media cache, and web/media origins. |
 | `DaemonMediaWorkerContainers` | C2 Container | Daemon-public media worker path: worker, SQLite tasks, media cache, and public web/media origins. |
 | `OpsContainers` | C2 Container | Operator surfaces and stores: local UI, CLI, daemon, SQLite/FTS, text blobs, and media cache. |
-| `ExtensionCaptureComponents` | C3 Component | MV3 extension capture internals: manifest, extractor, content script, service worker, daemon delivery, and browser queue. |
+| `ExtensionCaptureComponents` | C3 Component | MV3 extension capture internals: manifest, extractor, content script, service worker, popup/options controls, daemon delivery, and browser queue. |
 | `ExtensionMediaComponents` | C3 Component | MV3 extension media internals: service worker, media queue adapter, CDP recorder, Chrome APIs, browser queue, and daemon upload. |
 | `DaemonPolicyComponents` | C3 Component | WSL daemon policy internals: router/auth, static policy engine, and persistent block rules. |
 | `DaemonIngestComponents` | C3 Component | WSL daemon ingest internals: router, ingest pipeline, SQLite/FTS rows, and text blobs. |
@@ -42,7 +49,7 @@ The system boundary is **Browser Memory Daemon**, including the owned Chrome ext
 | `DaemonReadComponents` | C3 Component | WSL daemon read internals: router, search/read model, SQLite/FTS, text blobs, and media cache. |
 | `DaemonForgetComponents` | C3 Component | WSL daemon deletion internals: router, forget pipeline, SQLite receipts, text blobs, and media cache. |
 | `DaemonDoctorComponents` | C3 Component | WSL daemon diagnostics internals: router, doctor/audit, SQLite checks, and storage counts. |
-| `FastCaptureFlow` | Dynamic | Fast text/ref capture path that stores FTS recall before lazy media bytes. |
+| `FastCaptureFlow` | Dynamic | Fast text/ref capture path that stores FTS recall, returns IDs, and queues lazy media work before media bytes arrive. |
 | `CredentialedMediaSidecarFlow` | Dynamic | Browser-side media fetch/upload path that keeps Chrome cookies inside Chrome. |
 | `DaemonPublicMediaWorkerFlow` | Dynamic | Public no-cookie daemon media backfill path. |
 | `DailyDriverDeployment` | Deployment | Local workstation daily-driver topology: Windows Chrome, WSL systemd user services, and WSL XDG data paths. |

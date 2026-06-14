@@ -51,7 +51,7 @@ workspace "Browser Memory Daemon" "C4 architecture model for the local-first Win
                 tags "Data Store"
             }
 
-            mediaBlobCache = container "Media Blob Cache" "Bounded and disposable filesystem cache for stored image/video/audio blobs with purge and rehydrate semantics." "WSL filesystem" {
+            mediaBlobCache = container "Media Blob Cache" "Bounded and disposable filesystem cache for stored image/video/audio blobs with purge/rehydrate semantics that preserve media refs, hashes, status reasons, and provenance when bytes are absent or purged." "WSL filesystem" {
                 tags "Data Store"
             }
 
@@ -66,7 +66,7 @@ workspace "Browser Memory Daemon" "C4 architecture model for the local-first Win
         chromeExtension -> windowsChrome "Uses tab, scripting, storage, alarms, debugger, and runtime APIs from" "Chrome extension APIs"
         chromeExtension -> webSites "Extracts DOM refs and fetches queued credentialed media from" "DOM; fetch(credentials: include)"
         chromeExtension -> extensionBrowserStorage "Queues captures, lifecycle events, media tasks, and blobs in" "chrome.storage.local + IndexedDB"
-        chromeExtension -> wslLoopbackDaemon "Posts captures, events, media metadata, and raw blobs to" "Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765"
+        chromeExtension -> wslLoopbackDaemon "Posts /capture, /visit-events, media metadata, and raw blob uploads to" "Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765"
 
         localWebUi -> wslLoopbackDaemon "Calls authenticated read, admin, media, and forget APIs on" "HTTP/JSON"
         cli -> wslLoopbackDaemon "Calls health, read, admin, capture-fixture, and forget APIs on" "HTTP/JSON"
@@ -83,7 +83,7 @@ workspace "Browser Memory Daemon" "C4 architecture model for the local-first Win
         contentScript -> extractor "Builds capture payloads with"
         contentScript -> serviceWorker "Sends captures and inline blobs to" "chrome.runtime.sendMessage"
         serviceWorker -> extensionBrowserStorage "Queues captures in chrome.storage.local and media tasks/blobs in IndexedDB"
-        serviceWorker -> wslLoopbackDaemon "Delivers captures, events, metadata, and raw blobs to" "Bearer HTTP/JSON; raw HTTP PUT"
+        serviceWorker -> wslLoopbackDaemon "Delivers /capture, /visit-events, media metadata, and raw blobs to" "Bearer HTTP/JSON; raw HTTP PUT"
         serviceWorker -> browserMediaQueue "Persists and drains media work through"
         browserMediaQueue -> extensionBrowserStorage "Reads and writes media tasks/blobs in" "IndexedDB"
         serviceWorker -> cdpRecorder "Detects CDP media candidates with"
@@ -197,6 +197,7 @@ workspace "Browser Memory Daemon" "C4 architecture model for the local-first Win
             include extractor
             include contentScript
             include serviceWorker
+            include popupOptions
             include extensionBrowserStorage
             include wslLoopbackDaemon
             include windowsChrome
@@ -276,6 +277,7 @@ workspace "Browser Memory Daemon" "C4 architecture model for the local-first Win
             chromeExtension -> wslLoopbackDaemon "POSTs /capture with visible text, metadata, and media refs"
             wslLoopbackDaemon -> sqliteDatabase "Stores document, visit, snapshot, chunks, FTS, media refs, and tasks"
             wslLoopbackDaemon -> cleanTextBlobStore "Writes clean-text snapshot blob"
+            wslLoopbackDaemon -> chromeExtension "Returns document/snapshot/artifact IDs before lazy media bytes"
             chromeExtension -> extensionBrowserStorage "Queues browser-side media tasks for later fetch/upload"
             autoLayout lr
         }
@@ -286,7 +288,7 @@ workspace "Browser Memory Daemon" "C4 architecture model for the local-first Win
             chromeExtension -> extensionBrowserStorage "Persists fetched blob until upload succeeds"
             chromeExtension -> wslLoopbackDaemon "PUTs raw blob to /media-artifacts/{id}/blob"
             wslLoopbackDaemon -> mediaBlobCache "Writes blob if MIME and cache gates allow"
-            wslLoopbackDaemon -> sqliteDatabase "Updates artifact status, hash, byte size, and task state"
+            wslLoopbackDaemon -> sqliteDatabase "Updates artifact status=stored, hash, byte size, and task state"
             autoLayout lr
         }
 
@@ -294,7 +296,7 @@ workspace "Browser Memory Daemon" "C4 architecture model for the local-first Win
             mediaWorker -> sqliteDatabase "Claims due daemon-public media_fetch_tasks"
             mediaWorker -> webSites "Fetches public media or HLS assets without Chrome cookies"
             mediaWorker -> mediaBlobCache "Writes fetched or assembled blob when gates allow"
-            mediaWorker -> sqliteDatabase "Marks task succeeded, retrying, skipped, expired, or failed"
+            mediaWorker -> sqliteDatabase "Marks task/artifact stored, retrying, skipped, expired, or failed with reason"
             autoLayout lr
         }
 

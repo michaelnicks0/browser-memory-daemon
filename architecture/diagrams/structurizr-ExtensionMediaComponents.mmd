@@ -28,7 +28,7 @@ graph TB
     end
 
     9-. "<div>Queues captures in<br />chrome.storage.local and<br />media tasks/blobs in<br />IndexedDB</div><div style='font-size: 70%'></div>" .->13
-    9-. "<div>Delivers captures, events,<br />metadata, and raw blobs to</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT]</div>" .->14
+    9-. "<div>Delivers /capture,<br />/visit-events, media<br />metadata, and raw blobs to</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT]</div>" .->14
     9-. "<div>Persists and drains media<br />work through</div><div style='font-size: 70%'></div>" .->10
     10-. "<div>Reads and writes media<br />tasks/blobs in</div><div style='font-size: 70%'>[IndexedDB]</div>" .->13
     9-. "<div>Detects CDP media candidates<br />with</div><div style='font-size: 70%'></div>" .->11

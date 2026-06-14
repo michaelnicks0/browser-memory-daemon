@@ -68,49 +68,20 @@ The system shall enable Operator to reconstruct recently viewed web content by c
 
 ---
 
-## Data flow
+## Architecture diagrams
 
-```mermaid
-flowchart LR
-  subgraph Windows[Windows Chrome]
-    Page[Web page DOM]
-    Extractor[Extractor]
-    CS[Content script]
-    SW[MV3 service worker]
-    IDB[(Extension IndexedDB media queue)]
-    CDP[CDP recorder]
-    Popup[Popup/options]
-  end
+The canonical C4 model lives in [`../architecture/workspace.dsl`](../architecture/workspace.dsl). Use the generated single-file atlas at [`../architecture/c4-diagrams.md`](../architecture/c4-diagrams.md) for architecture topology.
 
-  subgraph WSL[WSL daemon]
-    API[Loopback HTTP API]
-    Policy[Policy mode engine]
-    Ingest[Ingest + normalization]
-    MediaWorker[Media worker]
-    Cache[Media cache manager]
-    DB[(SQLite + FTS5)]
-    Blobs[Clean text + media blobs]
-    UI[Local UI]
-  end
+| Question | C4 view |
+|---|---|
+| What is the system boundary? | `SystemContext` |
+| How does fast capture move from Chrome to WSL storage? | `CaptureContainers`, `ExtensionCaptureComponents`, `DaemonIngestComponents`, `FastCaptureFlow` |
+| How do browser-side media sidecars work at architecture level? | `BrowserMediaContainers`, `ExtensionMediaComponents`, `CredentialedMediaSidecarFlow` |
+| How does daemon-public media backfill work? | `DaemonMediaWorkerContainers`, `DaemonMediaComponents`, `DaemonPublicMediaWorkerFlow` |
+| How do read/search/forget/doctor operations reach storage? | `OpsContainers`, `DaemonReadComponents`, `DaemonForgetComponents`, `DaemonDoctorComponents` |
+| What runs where on the daily-driver workstation? | `DailyDriverDeployment` |
 
-  Page --> Extractor --> CS --> SW
-  SW --> IDB
-  SW --> CDP
-  Popup --> SW
-  SW -- Bearer /capture + /visit-events + raw media PUT --> API
-  CDP -- video.twimg.com manifests/segments --> API
-  API --> Policy
-  Policy --> Ingest
-  Ingest --> DB
-  Ingest --> Blobs
-  IDB -- credentialed media fetch/upload --> API
-  MediaWorker -- public fetch/HLS tasks --> DB
-  MediaWorker --> Blobs
-  API --> Cache
-  Cache --> DB
-  Cache --> Blobs
-  UI --> API
-```
+Hand-authored Mermaid diagrams for behavior that C4 intentionally omits — policy ladders, redaction branches, state machines, dedupe formulas, endpoint maps, media status/cache semantics, and delete cascades — live in [`DIAGRAMS.md`](DIAGRAMS.md).
 
 ---
 
@@ -138,32 +109,15 @@ text/FTS/media refs remain authoritative
 | Daemon lazy sidecar | Public unauthenticated backfill with leases, backoff, HLS assembly, and status classification. | `daemon/src/browser_memory_daemon/media_worker.py`, `media.py` |
 | Cache management | Purge/rehydrate controls plus oldest-first rolling eviction for domain/global caps. | `media.py`, `cli.py`, `/media-artifacts/*` |
 
-```mermaid
-flowchart LR
-  Page[Chrome page] --> CS[Content script]
-  CS -->|text + media refs| SW[Service worker]
-  SW -->|POST /capture| D[WSL daemon]
-  D --> DB[(SQLite + FTS)]
-  D --> Refs[media_artifacts refs]
+### Visual references
 
-  SW -->|artifact jobs| IDB[(Extension IndexedDB queue)]
-  IDB --> BrowserLane[Browser lazy sidecar]
-  BrowserLane -->|fetch with Chrome cookies| Web[Media URL]
-  BrowserLane -->|raw PUT blob| D
-
-  CS -->|readable blob/data bytes| Inline[Inline blob upload]
-  Inline --> SW
-  SW -->|domain-gated chrome.debugger| CDP[CDP recorder]
-  CDP -->|X/Twitter HLS manifests/segments| D
-
-  Worker[Daemon media worker] -->|leased public tasks| DB
-  Worker -->|public fetch / HLS assembly| Web
-  Worker -->|store/classify| D
-
-  D --> Blobs[(blobs/media cache)]
-  Blobs --> Cache[Rolling cache eviction]
-  Cache -->|oldest domain/global blobs| Purged[purged refs keep provenance]
-```
+| Need | Diagram/doc |
+|---|---|
+| Architecture-level media topology | [`../architecture/c4-diagrams.md`](../architecture/c4-diagrams.md): `BrowserMediaContainers`, `ExtensionMediaComponents`, `DaemonMediaWorkerContainers`, `DaemonMediaComponents` |
+| Browser credentialed sidecar scenario | [`../architecture/c4-diagrams.md`](../architecture/c4-diagrams.md): `CredentialedMediaSidecarFlow` |
+| Daemon-public worker scenario | [`../architecture/c4-diagrams.md`](../architecture/c4-diagrams.md): `DaemonPublicMediaWorkerFlow` |
+| Parallel browser/daemon sidecar sequence, status reasons, HLS/CDP details | [`media-artifacts.md`](media-artifacts.md#capture-flow) |
+| Cache/status behavior and provenance-preserving purge | [`DIAGRAMS.md`](DIAGRAMS.md#4-durable-media-sidecars-and-cache-outcomes) |
 
 ### Requirements resolved by the current media design
 

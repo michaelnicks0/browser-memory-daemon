@@ -19,32 +19,32 @@
 <!-- 13 -->
 <g id="13" class="node">
 <title>13</title>
-<path fill="#2f95c8" stroke="#20688c" d="M1491.5,-743.72C1491.5,-762.01 1389.98,-776.88 1265,-776.88 1140.02,-776.88 1038.5,-762.01 1038.5,-743.72 1038.5,-743.72 1038.5,-445.28 1038.5,-445.28 1038.5,-426.99 1140.02,-412.12 1265,-412.12 1389.98,-412.12 1491.5,-426.99 1491.5,-445.28 1491.5,-445.28 1491.5,-743.72 1491.5,-743.72"/>
-<path fill="none" stroke="#20688c" d="M1491.5,-743.72C1491.5,-725.42 1389.98,-710.56 1265,-710.56 1140.02,-710.56 1038.5,-725.42 1038.5,-743.72"/>
-<text text-anchor="start" x="1123" y="-678.8" font-family="Arial" font-size="34.00" fill="#ffffff">Extension Browser</text>
-<text text-anchor="start" x="1205.5" y="-644.8" font-family="Arial" font-size="34.00" fill="#ffffff">Storage</text>
-<text text-anchor="start" x="1067.5" y="-622.8" font-family="Arial" font-size="19.00" fill="#ffffff">[Container: chrome.storage.local + IndexedDB]</text>
-<text text-anchor="start" x="1132.5" y="-585.8" font-family="Arial" font-size="24.00" fill="#ffffff">Browser&#45;side storage for</text>
-<text text-anchor="start" x="1120.5" y="-561.8" font-family="Arial" font-size="24.00" fill="#ffffff">capture and visit queues in</text>
-<text text-anchor="start" x="1126.5" y="-537.8" font-family="Arial" font-size="24.00" fill="#ffffff">chrome.storage.local plus</text>
-<text text-anchor="start" x="1132.5" y="-513.8" font-family="Arial" font-size="24.00" fill="#ffffff">durable media tasks and</text>
-<text text-anchor="start" x="1113.5" y="-489.8" font-family="Arial" font-size="24.00" fill="#ffffff">fetched blobs in IndexedDB.</text>
+<path fill="#2f95c8" stroke="#20688c" d="M1491.5,-1167.72C1491.5,-1186.01 1389.98,-1200.88 1265,-1200.88 1140.02,-1200.88 1038.5,-1186.01 1038.5,-1167.72 1038.5,-1167.72 1038.5,-869.28 1038.5,-869.28 1038.5,-850.99 1140.02,-836.12 1265,-836.12 1389.98,-836.12 1491.5,-850.99 1491.5,-869.28 1491.5,-869.28 1491.5,-1167.72 1491.5,-1167.72"/>
+<path fill="none" stroke="#20688c" d="M1491.5,-1167.72C1491.5,-1149.42 1389.98,-1134.56 1265,-1134.56 1140.02,-1134.56 1038.5,-1149.42 1038.5,-1167.72"/>
+<text text-anchor="start" x="1123" y="-1102.8" font-family="Arial" font-size="34.00" fill="#ffffff">Extension Browser</text>
+<text text-anchor="start" x="1205.5" y="-1068.8" font-family="Arial" font-size="34.00" fill="#ffffff">Storage</text>
+<text text-anchor="start" x="1067.5" y="-1046.8" font-family="Arial" font-size="19.00" fill="#ffffff">[Container: chrome.storage.local + IndexedDB]</text>
+<text text-anchor="start" x="1132.5" y="-1009.8" font-family="Arial" font-size="24.00" fill="#ffffff">Browser&#45;side storage for</text>
+<text text-anchor="start" x="1120.5" y="-985.8" font-family="Arial" font-size="24.00" fill="#ffffff">capture and visit queues in</text>
+<text text-anchor="start" x="1126.5" y="-961.8" font-family="Arial" font-size="24.00" fill="#ffffff">chrome.storage.local plus</text>
+<text text-anchor="start" x="1132.5" y="-937.8" font-family="Arial" font-size="24.00" fill="#ffffff">durable media tasks and</text>
+<text text-anchor="start" x="1113.5" y="-913.8" font-family="Arial" font-size="24.00" fill="#ffffff">fetched blobs in IndexedDB.</text>
 </g>
 <!-- 14 -->
 <g id="14" class="node">
 <title>14</title>
-<polygon fill="#438dd5" stroke="#2e6295" points="1496,-1186 1034,-1186 1034,-849 1496,-849 1496,-1186"/>
-<text text-anchor="start" x="1100.5" y="-1137.8" font-family="Arial" font-size="34.00" fill="#ffffff">WSL Loopback HTTP</text>
-<text text-anchor="start" x="1200.5" y="-1103.8" font-family="Arial" font-size="34.00" fill="#ffffff">Daemon</text>
-<text text-anchor="start" x="1063" y="-1081.8" font-family="Arial" font-size="19.00" fill="#ffffff">[Container: Python 3.11, ThreadingHTTPServer]</text>
-<text text-anchor="start" x="1104" y="-1044.8" font-family="Arial" font-size="24.00" fill="#ffffff">Authenticated loopback HTTP</text>
-<text text-anchor="start" x="1129" y="-1020.8" font-family="Arial" font-size="24.00" fill="#ffffff">API that handles capture,</text>
-<text text-anchor="start" x="1125.5" y="-996.8" font-family="Arial" font-size="24.00" fill="#ffffff">visit events, media artifact</text>
-<text text-anchor="start" x="1128.5" y="-972.8" font-family="Arial" font-size="24.00" fill="#ffffff">upload/fetch/purge, exact</text>
-<text text-anchor="start" x="1225" y="-948.8" font-family="Arial" font-size="24.00" fill="#ffffff">search,</text>
-<text text-anchor="start" x="1116" y="-924.8" font-family="Arial" font-size="24.00" fill="#ffffff">recent/timeline/detail, policy</text>
-<text text-anchor="start" x="1134" y="-900.8" font-family="Arial" font-size="24.00" fill="#ffffff">rules, doctor, forget, and</text>
-<text text-anchor="start" x="1175.5" y="-876.8" font-family="Arial" font-size="24.00" fill="#ffffff">static UI serving.</text>
+<polygon fill="#438dd5" stroke="#2e6295" points="1496,-764 1034,-764 1034,-427 1496,-427 1496,-764"/>
+<text text-anchor="start" x="1100.5" y="-715.8" font-family="Arial" font-size="34.00" fill="#ffffff">WSL Loopback HTTP</text>
+<text text-anchor="start" x="1200.5" y="-681.8" font-family="Arial" font-size="34.00" fill="#ffffff">Daemon</text>
+<text text-anchor="start" x="1063" y="-659.8" font-family="Arial" font-size="19.00" fill="#ffffff">[Container: Python 3.11, ThreadingHTTPServer]</text>
+<text text-anchor="start" x="1104" y="-622.8" font-family="Arial" font-size="24.00" fill="#ffffff">Authenticated loopback HTTP</text>
+<text text-anchor="start" x="1129" y="-598.8" font-family="Arial" font-size="24.00" fill="#ffffff">API that handles capture,</text>
+<text text-anchor="start" x="1125.5" y="-574.8" font-family="Arial" font-size="24.00" fill="#ffffff">visit events, media artifact</text>
+<text text-anchor="start" x="1128.5" y="-550.8" font-family="Arial" font-size="24.00" fill="#ffffff">upload/fetch/purge, exact</text>
+<text text-anchor="start" x="1225" y="-526.8" font-family="Arial" font-size="24.00" fill="#ffffff">search,</text>
+<text text-anchor="start" x="1116" y="-502.8" font-family="Arial" font-size="24.00" fill="#ffffff">recent/timeline/detail, policy</text>
+<text text-anchor="start" x="1134" y="-478.8" font-family="Arial" font-size="24.00" fill="#ffffff">rules, doctor, forget, and</text>
+<text text-anchor="start" x="1175.5" y="-454.8" font-family="Arial" font-size="24.00" fill="#ffffff">static UI serving.</text>
 </g>
 <!-- 27 -->
 <g id="27" class="node">
@@ -66,13 +66,13 @@
 <!-- 14&#45;&gt;27 -->
 <g id="43" class="edge">
 <title>14&#45;&gt;27</title>
-<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1496.25,-907.61C1613.18,-851.8 1753.31,-784.91 1863.03,-732.55"/>
-<polygon fill="#444444" stroke="#444444" points="1864.69,-735.63 1872.21,-728.16 1861.68,-729.31 1864.69,-735.63"/>
-<polygon fill="white" stroke="transparent" points="1532,-885.5 1532,-984.5 1812,-984.5 1812,-885.5 1532,-885.5"/>
-<text text-anchor="start" x="1536" y="-961.8" font-family="Arial" font-size="24.00" fill="#444444">4. Stores document, visit,</text>
-<text text-anchor="start" x="1544.5" y="-937.8" font-family="Arial" font-size="24.00" fill="#444444">snapshot, chunks, FTS,</text>
-<text text-anchor="start" x="1556.5" y="-913.8" font-family="Arial" font-size="24.00" fill="#444444">media refs, and tasks</text>
-<text text-anchor="start" x="1638.5" y="-893.8" font-family="Arial" font-size="19.00" fill="#444444">[sqlite3]</text>
+<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1496.25,-609.94C1612.82,-617.25 1752.47,-626 1862.04,-632.87"/>
+<polygon fill="#444444" stroke="#444444" points="1862.01,-636.38 1872.21,-633.51 1862.45,-629.39 1862.01,-636.38"/>
+<polygon fill="white" stroke="transparent" points="1532,-628.5 1532,-727.5 1812,-727.5 1812,-628.5 1532,-628.5"/>
+<text text-anchor="start" x="1536" y="-704.8" font-family="Arial" font-size="24.00" fill="#444444">4. Stores document, visit,</text>
+<text text-anchor="start" x="1544.5" y="-680.8" font-family="Arial" font-size="24.00" fill="#444444">snapshot, chunks, FTS,</text>
+<text text-anchor="start" x="1556.5" y="-656.8" font-family="Arial" font-size="24.00" fill="#444444">media refs, and tasks</text>
+<text text-anchor="start" x="1638.5" y="-636.8" font-family="Arial" font-size="19.00" fill="#444444">[sqlite3]</text>
 </g>
 <!-- 28 -->
 <g id="28" class="node">
@@ -88,48 +88,60 @@
 <!-- 14&#45;&gt;28 -->
 <g id="44" class="edge">
 <title>14&#45;&gt;28</title>
-<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1496.25,-1034.29C1604.31,-1042.18 1732.19,-1051.5 1837.57,-1059.19"/>
-<polygon fill="#444444" stroke="#444444" points="1837.47,-1062.69 1847.69,-1059.93 1837.98,-1055.71 1837.47,-1062.69"/>
-<polygon fill="white" stroke="transparent" points="1564,-1055.5 1564,-1130.5 1780,-1130.5 1780,-1055.5 1564,-1055.5"/>
-<text text-anchor="start" x="1568" y="-1107.8" font-family="Arial" font-size="24.00" fill="#444444">5. Writes clean&#45;text</text>
-<text text-anchor="start" x="1596.5" y="-1083.8" font-family="Arial" font-size="24.00" fill="#444444">snapshot blob</text>
-<text text-anchor="start" x="1620.5" y="-1063.8" font-family="Arial" font-size="19.00" fill="#444444">[Filesystem]</text>
+<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1496.25,-736.63C1608.14,-805.21 1741.29,-886.82 1848.69,-952.65"/>
+<polygon fill="#444444" stroke="#444444" points="1847.01,-955.72 1857.36,-957.96 1850.67,-949.75 1847.01,-955.72"/>
+<polygon fill="white" stroke="transparent" points="1564,-919.5 1564,-994.5 1780,-994.5 1780,-919.5 1564,-919.5"/>
+<text text-anchor="start" x="1568" y="-971.8" font-family="Arial" font-size="24.00" fill="#444444">5. Writes clean&#45;text</text>
+<text text-anchor="start" x="1596.5" y="-947.8" font-family="Arial" font-size="24.00" fill="#444444">snapshot blob</text>
+<text text-anchor="start" x="1620.5" y="-927.8" font-family="Arial" font-size="19.00" fill="#444444">[Filesystem]</text>
 </g>
 <!-- 5 -->
 <g id="5" class="node">
 <title>5</title>
-<polygon fill="#438dd5" stroke="#2e6295" points="467,-734 33,-734 33,-455 467,-455 467,-734"/>
-<text text-anchor="start" x="70" y="-685.8" font-family="Arial" font-size="34.00" fill="#ffffff">Chrome MV3 Extension</text>
-<text text-anchor="start" x="62" y="-663.8" font-family="Arial" font-size="19.00" fill="#ffffff">[Container: JavaScript, Chrome Manifest V3]</text>
-<text text-anchor="start" x="107" y="-626.8" font-family="Arial" font-size="24.00" fill="#ffffff">Captures visible page text,</text>
-<text text-anchor="start" x="132.5" y="-602.8" font-family="Arial" font-size="24.00" fill="#ffffff">media references, tab</text>
-<text text-anchor="start" x="141" y="-578.8" font-family="Arial" font-size="24.00" fill="#ffffff">lifecycle events, and</text>
-<text text-anchor="start" x="84" y="-554.8" font-family="Arial" font-size="24.00" fill="#ffffff">browser&#45;side media bytes from</text>
-<text text-anchor="start" x="79" y="-530.8" font-family="Arial" font-size="24.00" fill="#ffffff">Windows Chrome; queues work</text>
-<text text-anchor="start" x="91" y="-506.8" font-family="Arial" font-size="24.00" fill="#ffffff">durably and posts to the WSL</text>
-<text text-anchor="start" x="202.5" y="-482.8" font-family="Arial" font-size="24.00" fill="#ffffff">daemon.</text>
+<polygon fill="#438dd5" stroke="#2e6295" points="467,-746 33,-746 33,-467 467,-467 467,-746"/>
+<text text-anchor="start" x="70" y="-697.8" font-family="Arial" font-size="34.00" fill="#ffffff">Chrome MV3 Extension</text>
+<text text-anchor="start" x="62" y="-675.8" font-family="Arial" font-size="19.00" fill="#ffffff">[Container: JavaScript, Chrome Manifest V3]</text>
+<text text-anchor="start" x="107" y="-638.8" font-family="Arial" font-size="24.00" fill="#ffffff">Captures visible page text,</text>
+<text text-anchor="start" x="132.5" y="-614.8" font-family="Arial" font-size="24.00" fill="#ffffff">media references, tab</text>
+<text text-anchor="start" x="141" y="-590.8" font-family="Arial" font-size="24.00" fill="#ffffff">lifecycle events, and</text>
+<text text-anchor="start" x="84" y="-566.8" font-family="Arial" font-size="24.00" fill="#ffffff">browser&#45;side media bytes from</text>
+<text text-anchor="start" x="79" y="-542.8" font-family="Arial" font-size="24.00" fill="#ffffff">Windows Chrome; queues work</text>
+<text text-anchor="start" x="91" y="-518.8" font-family="Arial" font-size="24.00" fill="#ffffff">durably and posts to the WSL</text>
+<text text-anchor="start" x="202.5" y="-494.8" font-family="Arial" font-size="24.00" fill="#ffffff">daemon.</text>
+</g>
+<!-- 14&#45;&gt;5 -->
+<g id="38" class="edge">
+<title>14&#45;&gt;5</title>
+<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1033.96,-635.94C1021.82,-637.33 1009.78,-638.53 998,-639.5 778.74,-657.51 722.53,-653.81 503,-639.5 494.61,-638.95 486.08,-638.31 477.47,-637.57"/>
+<polygon fill="#444444" stroke="#444444" points="477.6,-634.07 467.33,-636.68 476.98,-641.04 477.6,-634.07"/>
+<polygon fill="white" stroke="transparent" points="503,-651.5 503,-774.5 998,-774.5 998,-651.5 503,-651.5"/>
+<text text-anchor="start" x="695" y="-751.8" font-family="Arial" font-size="24.00" fill="#444444">6. Returns</text>
+<text text-anchor="start" x="605" y="-727.8" font-family="Arial" font-size="24.00" fill="#444444">document/snapshot/artifact</text>
+<text text-anchor="start" x="633.5" y="-703.8" font-family="Arial" font-size="24.00" fill="#444444">IDs before lazy media</text>
+<text text-anchor="start" x="722" y="-679.8" font-family="Arial" font-size="24.00" fill="#444444">bytes</text>
+<text text-anchor="start" x="507.5" y="-659.8" font-family="Arial" font-size="19.00" fill="#444444">[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</text>
 </g>
 <!-- 5&#45;&gt;13 -->
 <g id="37" class="edge">
 <title>5&#45;&gt;13</title>
-<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M467.07,-594.5C631.86,-594.5 858.6,-594.5 1028.11,-594.5"/>
-<polygon fill="#444444" stroke="#444444" points="1028.17,-598 1038.17,-594.5 1028.17,-591 1028.17,-598"/>
-<polygon fill="white" stroke="transparent" points="595,-594.5 595,-693.5 906,-693.5 906,-594.5 595,-594.5"/>
-<text text-anchor="start" x="622" y="-670.8" font-family="Arial" font-size="24.00" fill="#444444">6. Queues browser&#45;side</text>
-<text text-anchor="start" x="641.5" y="-646.8" font-family="Arial" font-size="24.00" fill="#444444">media tasks for later</text>
-<text text-anchor="start" x="684.5" y="-622.8" font-family="Arial" font-size="24.00" fill="#444444">fetch/upload</text>
-<text text-anchor="start" x="599.5" y="-602.8" font-family="Arial" font-size="19.00" fill="#444444">[chrome.storage.local + IndexedDB]</text>
+<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M423.95,-746C449.58,-763.12 476.35,-779.22 503,-792.5 670.18,-875.8 873.63,-934.24 1028.09,-970.8"/>
+<polygon fill="#444444" stroke="#444444" points="1027.65,-974.29 1038.19,-973.17 1029.26,-967.48 1027.65,-974.29"/>
+<polygon fill="white" stroke="transparent" points="595,-959.5 595,-1058.5 906,-1058.5 906,-959.5 595,-959.5"/>
+<text text-anchor="start" x="622" y="-1035.8" font-family="Arial" font-size="24.00" fill="#444444">7. Queues browser&#45;side</text>
+<text text-anchor="start" x="641.5" y="-1011.8" font-family="Arial" font-size="24.00" fill="#444444">media tasks for later</text>
+<text text-anchor="start" x="684.5" y="-987.8" font-family="Arial" font-size="24.00" fill="#444444">fetch/upload</text>
+<text text-anchor="start" x="599.5" y="-967.8" font-family="Arial" font-size="19.00" fill="#444444">[chrome.storage.local + IndexedDB]</text>
 </g>
 <!-- 5&#45;&gt;14 -->
 <g id="38" class="edge">
 <title>5&#45;&gt;14</title>
-<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M467.17,-695.76C479.27,-701.14 491.27,-706.42 503,-711.5 676.12,-786.43 873.86,-865.76 1024.37,-924.86"/>
-<polygon fill="#444444" stroke="#444444" points="1023.18,-928.15 1033.76,-928.55 1025.73,-921.64 1023.18,-928.15"/>
-<polygon fill="white" stroke="transparent" points="503,-911.5 503,-1010.5 998,-1010.5 998,-911.5 503,-911.5"/>
-<text text-anchor="start" x="628" y="-987.8" font-family="Arial" font-size="24.00" fill="#444444">3. POSTs /capture with</text>
-<text text-anchor="start" x="633.5" y="-963.8" font-family="Arial" font-size="24.00" fill="#444444">visible text, metadata,</text>
-<text text-anchor="start" x="670.5" y="-939.8" font-family="Arial" font-size="24.00" fill="#444444">and media refs</text>
-<text text-anchor="start" x="507.5" y="-919.8" font-family="Arial" font-size="19.00" fill="#444444">[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</text>
+<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M467.17,-533.23C479.21,-530.61 491.21,-528.33 503,-526.5 720.41,-492.82 779.77,-498.66 998,-526.5 1006.42,-527.57 1014.95,-528.83 1023.54,-530.24"/>
+<polygon fill="#444444" stroke="#444444" points="1023.2,-533.74 1033.65,-531.97 1024.38,-526.84 1023.2,-533.74"/>
+<polygon fill="white" stroke="transparent" points="503,-526.5 503,-625.5 998,-625.5 998,-526.5 503,-526.5"/>
+<text text-anchor="start" x="628" y="-602.8" font-family="Arial" font-size="24.00" fill="#444444">3. POSTs /capture with</text>
+<text text-anchor="start" x="633.5" y="-578.8" font-family="Arial" font-size="24.00" fill="#444444">visible text, metadata,</text>
+<text text-anchor="start" x="670.5" y="-554.8" font-family="Arial" font-size="24.00" fill="#444444">and media refs</text>
+<text text-anchor="start" x="507.5" y="-534.8" font-family="Arial" font-size="19.00" fill="#444444">[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</text>
 </g>
 <!-- 2 -->
 <g id="2" class="node">
@@ -146,13 +158,13 @@
 <!-- 5&#45;&gt;2 -->
 <g id="35" class="edge">
 <title>5&#45;&gt;2</title>
-<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M467.17,-493.24C479.27,-487.86 491.27,-482.58 503,-477.5 691,-396.12 908.03,-309.57 1062.09,-249.36"/>
-<polygon fill="#444444" stroke="#444444" points="1063.64,-252.51 1071.68,-245.61 1061.09,-245.99 1063.64,-252.51"/>
-<polygon fill="white" stroke="transparent" points="605.5,-477.5 605.5,-576.5 895.5,-576.5 895.5,-477.5 605.5,-477.5"/>
-<text text-anchor="start" x="609.5" y="-553.8" font-family="Arial" font-size="24.00" fill="#444444">2. Runs content script and</text>
-<text text-anchor="start" x="637.5" y="-529.8" font-family="Arial" font-size="24.00" fill="#444444">service worker inside</text>
-<text text-anchor="start" x="698.5" y="-505.8" font-family="Arial" font-size="24.00" fill="#444444">active tab</text>
-<text text-anchor="start" x="645.5" y="-485.8" font-family="Arial" font-size="19.00" fill="#444444">[Chrome extension APIs]</text>
+<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M388.2,-466.8C423.37,-436.67 462.72,-407.35 503,-385.5 599.19,-333.32 870.86,-263.1 1062.05,-217.57"/>
+<polygon fill="#444444" stroke="#444444" points="1063.03,-220.94 1071.95,-215.22 1061.41,-214.13 1063.03,-220.94"/>
+<polygon fill="white" stroke="transparent" points="605.5,-385.5 605.5,-484.5 895.5,-484.5 895.5,-385.5 605.5,-385.5"/>
+<text text-anchor="start" x="609.5" y="-461.8" font-family="Arial" font-size="24.00" fill="#444444">2. Runs content script and</text>
+<text text-anchor="start" x="637.5" y="-437.8" font-family="Arial" font-size="24.00" fill="#444444">service worker inside</text>
+<text text-anchor="start" x="698.5" y="-413.8" font-family="Arial" font-size="24.00" fill="#444444">active tab</text>
+<text text-anchor="start" x="645.5" y="-393.8" font-family="Arial" font-size="19.00" fill="#444444">[Chrome extension APIs]</text>
 </g>
 <!-- 1 -->
 <g id="1" class="node">

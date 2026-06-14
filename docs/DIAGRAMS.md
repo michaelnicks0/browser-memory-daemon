@@ -1,137 +1,121 @@
-# Browser Memory Daemon Diagrams — Visual Atlas
+# Browser Memory Daemon Behavioral Diagrams
 
 > **Audience:** maintainers and future agents.
-> **Format:** Mermaid diagrams embedded in Markdown.
-> **Scope:** current Windows Chrome + WSL implementation.
+> **Purpose:** preserve hand-authored Mermaid diagrams for behavior that should not be forced into C4.
+> **Architecture atlas:** [`../architecture/c4-diagrams.md`](../architecture/c4-diagrams.md).
+> **C4 source of truth:** [`../architecture/workspace.dsl`](../architecture/workspace.dsl).
 
 ---
 
-## 1. System context
+## Diagram ownership
 
-```mermaid
-flowchart TB
-  Operator[Operator] --> Chrome[Windows Chrome]
-  Chrome --> Extension[Browser Memory MV3 extension]
-  Extension -->|Bearer HTTP over localhost| Daemon[WSL browser-memory daemon]
-  Daemon --> SQLite[(SQLite + FTS5)]
-  Daemon --> MediaWorker[Media worker]
-  MediaWorker --> SQLite
-  Daemon --> Blobs[Clean text + media blobs]
-  MediaWorker --> Blobs
-  Daemon --> UI[Local UI]
-  Daemon --> CLI[CLI]
-  UI --> Operator
-  CLI --> Operator
-```
+C4 owns the architecture topology: systems, containers, components, deployment, and major scenario views. This file keeps lower-level behavior that C4 intentionally omits or only summarizes.
 
-This is a local-first single-operator system. The browser surface is Windows Chrome; durable data and search live in WSL.
+| Need | Canonical home |
+|---|---|
+| System context, container topology, component topology, deployment | [`../architecture/c4-diagrams.md`](../architecture/c4-diagrams.md) |
+| Exact endpoint/message names, redaction branches, state machines, algorithms, cache/status semantics, delete cascades | This file and the relevant feature docs |
+| Durable media sidecar protocol details | [`media-artifacts.md`](media-artifacts.md) plus the media diagrams below |
+| Policy/security posture | [`security-model.md`](security-model.md) plus the policy ladder below |
+| HTTP payload shapes and route index | [`api.md`](api.md) plus the endpoint maps below |
+
+Topological diagrams previously in this atlas were folded into C4. The diagrams below remain because they carry behavior/state/API semantics not cleanly represented by C4.
 
 ---
 
-## 2. Extension runtime boundary
+## 1. Extension protocol boundary
 
 ```mermaid
 flowchart LR
-  Page[Page DOM] --> Extractor[extractor.js]
-  Extractor --> Content[content_script.js]
-  Content -->|chrome.runtime.sendMessage| ServiceWorker[service_worker.js]
-  ServiceWorker -->|fast fetch /capture| DaemonCapture[POST /capture]
-  ServiceWorker -->|fetch /visit-events| DaemonVisit[POST /visit-events]
-  ServiceWorker -->|credentialed media fetch + raw PUT| DaemonMedia["PUT /media-artifacts/id/blob"]
-  ServiceWorker --> IDB[(IndexedDB media queue)]
-  Popup[popup.js] --> ServiceWorker
-  Options[options.js] --> Storage[(chrome.storage.local)]
+  Page["Chrome page DOM"] --> Extractor["extractor.js"]
+  Extractor --> Content["content_script.js"]
+  Content -->|"BMD_CAPTURE + inline blob messages"| ServiceWorker["service_worker.js"]
+  ServiceWorker -->|"POST /capture<br/>Bearer JSON"| DaemonCapture["WSL daemon /capture"]
+  ServiceWorker -->|"POST /visit-events<br/>metadata only"| DaemonVisit["WSL daemon /visit-events"]
+  ServiceWorker -->|"PUT /media-artifacts/{id}/blob<br/>raw bytes"| DaemonMedia["WSL media blob upload"]
+  ServiceWorker --> IDB[("IndexedDB media task/blob queue")]
+  Popup["popup.js"] -->|"runtime messages"| ServiceWorker
+  Options["options.js"] --> Storage[("chrome.storage.local")]
   Storage --> Content
   Storage --> ServiceWorker
 ```
 
-Content scripts extract and message; they do not call the daemon directly. The service worker owns auth, queues, tab state, and daemon transport.
+C4 shows the extension, service worker, browser storage, and daemon containers/components. This diagram keeps protocol names, endpoint names, and popup/options/storage wiring in one place.
 
 ---
 
-## 3. Policy mode ladder
+## 2. Policy mode ladder
 
 ```mermaid
 flowchart TD
-  Mode{policy_mode}
-  Mode --> All["all"]
-  Mode --> Recall["recall"]
-  Mode --> Balanced["balanced"]
-  Mode --> Strict["strict"]
-
-  All --> AllOutcome["Capture all URL surfaces Chrome allows<br/>No daemon redaction<br/>Skip hidden/form/editable/script/style/no-script DOM text<br/>Ignore block rules"]
-  Recall --> RecallOutcome["Capture most http(s)<br/>Block internal/non-web/incognito<br/>Redact"]
-  Balanced --> BalancedOutcome["Recall + private-host/known-risk blocks<br/>Redact"]
-  Strict --> StrictOutcome["Legacy broad keyword blocks<br/>Redact"]
+  Mode{"policy_mode"}
+  Mode --> All["all<br/>Capture Chrome-allowed URL surfaces<br/>No daemon redaction<br/>Skip hidden/form/editable/script/style/no-script DOM text<br/>Ignore local block rules"]
+  Mode --> Recall["recall<br/>Block internal/non-web/incognito<br/>Redact URL/title/body before storage"]
+  Mode --> Balanced["balanced<br/>Recall + private-host / known-risk blocks<br/>Redact URL/title/body before storage"]
+  Mode --> Strict["strict<br/>Legacy broad keyword blocks<br/>Redact URL/title/body before storage"]
 ```
 
-The operator can start at `all` and move upward only if recall completeness becomes less important than filtering.
+Operator posture: start at `all` for maximum recall; move upward only when filtering becomes more important than recall completeness.
 
 ---
 
-## 4. Capture ingest pipeline
+## 3. Capture ingest and redaction branch
 
 ```mermaid
-sequenceDiagram
-  participant Page as Chrome page
-  participant CS as Content script
-  participant SW as Service worker
-  participant API as WSL API
-  participant Ingest as Ingest pipeline
-  participant DB as SQLite/FTS
-
-  Page->>CS: DOM text + URL + title + media refs
-  CS->>SW: BMD_CAPTURE payload
-  SW->>API: POST /capture + bearer token
-  API->>API: evaluate policy mode
-  API->>Ingest: CapturePayload
-  Ingest->>Ingest: normalize URL + text hash
-  alt policy_mode = all
-    Ingest->>DB: store original URL/title/text
-  else non-all mode
-    Ingest->>Ingest: redact URL/title/text
-    Ingest->>DB: store redacted URL/title/text
-  end
-  DB-->>API: document/snapshot/chunk IDs + media artifact IDs
-  API-->>SW: stored result
+flowchart TD
+  Page["Chrome page DOM"] --> Extract["Content script extracts<br/>URL + title + text + media refs"]
+  Extract -->|"BMD_CAPTURE"| SW["Service worker"]
+  SW -->|"POST /capture + bearer token"| API["WSL API"]
+  API --> Policy["Policy engine<br/>mode + local rules"]
+  Policy --> Decision{"policy_mode"}
+  Decision -->|"all"| All["Store original URL/title/text<br/>no daemon redaction"]
+  Decision -->|"recall / balanced / strict"| Redact["Redact URL/title/body<br/>before persistence"]
+  All --> Store["Ingest pipeline<br/>normalize URL + text hash<br/>write visits/documents/snapshots/chunks/FTS"]
+  Redact --> Store
+  Store --> TextBlobs["Write clean-text snapshot blob"]
+  Store --> MediaRefs["Store media refs<br/>enqueue daemon-public tasks"]
+  Store --> Response["Return document/snapshot/chunk IDs<br/>+ media artifact IDs"]
+  Response --> Queue["Queue browser media work<br/>in IndexedDB"]
 ```
 
-`all` bypasses redaction. Other modes redact before DB/FTS/blob storage. Media binary fetch is intentionally outside this fast path.
+Text/FTS recall completes before media bytes. Media sidecars are best-effort and asynchronous.
 
 ---
 
-## 5. Durable media sidecars
+## 4. Durable media sidecars and cache outcomes
 
 ```mermaid
 flowchart TB
-  Capture["/capture result with artifact IDs"] --> BrowserQueue[(Chrome IndexedDB media queue)]
-  Capture --> DaemonTasks[(SQLite media_fetch_tasks)]
-  Capture --> CDP["CDP recorder<br/>x.com/twitter.com only"]
+  CaptureResult["/capture response<br/>document/snapshot/artifact IDs"] --> BrowserQueue[("Chrome IndexedDB media queue")]
+  CaptureResult --> DaemonTasks[("SQLite media_fetch_tasks")]
+  CaptureResult --> CDP["CDP recorder<br/>x.com/twitter.com tabs<br/>video.twimg.com Network events"]
 
   BrowserQueue --> BrowserFetch["Browser lazy sidecar<br/>fetch(credentials: include)"]
-  BrowserFetch --> BrowserBlob[(IndexedDB fetched blob)]
+  BrowserFetch --> BrowserBlob[("IndexedDB fetched blob")]
   BrowserBlob --> RawPut["PUT /media-artifacts/{id}/blob"]
-  RawPut --> MediaBlobs[(blobs/media)]
-  RawPut --> ArtifactStored["media_artifacts.status = stored"]
+  RawPut --> MediaBlobs[("blobs/media")]
+  RawPut --> Stored["media_artifacts.status = stored<br/>hash + byte_size recorded"]
+  Stored --> BrowserDone["delete completed IndexedDB task"]
 
-  CDP --> CdpRows["video.twimg.com<br/>manifests/segments"]
+  CDP --> CdpRows["cdp_recorder=true rows<br/>manifests/segments or response bodies"]
   CdpRows --> RawPut
   CdpRows --> DaemonTasks
+  CdpRows --> Covered["same-page blob refs may become<br/>covered-by-cdp-recorder"]
 
   DaemonTasks --> Lease["daemon media worker lease"]
   Lease --> PublicFetch["public fetch / HLS assembly<br/>no Chrome cookies"]
   PublicFetch --> MediaBlobs
-  PublicFetch --> Terminal["stored / referenced / skipped / expired"]
+  PublicFetch --> Classified["referenced / metadata-only / retrying<br/>stored / skipped / expired / failed"]
 
   MediaBlobs --> Rolling["domain/global rolling cache<br/>oldest blob eviction"]
-  Rolling --> Purged["purged rows keep refs/metadata"]
+  Rolling --> Purged["status = purged<br/>refs/hash/provenance remain"]
 ```
 
-This is the core durability split: text/FTS capture completes first; media bytes are best-effort sidecars with explicit states and cache controls.
+The media cache is bounded and disposable. Text, FTS rows, media refs, hashes, status reasons, and provenance remain authoritative when bytes are absent or purged.
 
 ---
 
-## 6. Dedupe and versioning
+## 5. Dedupe and versioning
 
 ```mermaid
 flowchart TD
@@ -139,71 +123,76 @@ flowchart TD
   Normalize --> DocID["document_id = hash(normalized URL)"]
   Capture --> TextHash["text_hash = hash(stored text)"]
   DocID --> SnapshotID["snapshot_id = hash(document_id + text_hash)"]
+  TextHash --> SnapshotID
   SnapshotID --> Exists{"snapshot exists?"}
-  Exists -->|yes| VisitOnly["Insert/update visit only"]
-  Exists -->|no| NewSnapshot["Create snapshot + chunks + FTS rows"]
+  Exists -->|"yes"| VisitOnly["Insert/update visit only"]
+  Exists -->|"no"| NewSnapshot["Create snapshot + chunks + FTS rows"]
 ```
 
 Repeated unchanged captures add visits without duplicating text. Changed text at the same normalized URL creates another snapshot under the same document.
 
 ---
 
-## 7. Lifecycle telemetry
-
-```mermaid
-stateDiagram-v2
-  [*] --> Active: tab active + URL trackable
-  Active --> Inactive: tab deactivated / window blurred
-  Active --> Closed: tab closed
-  Active --> Navigated: navigation-away / SPA route
-  Inactive --> Active: tab active again
-  Closed --> [*]
-  Navigated --> Active: new URL state
-```
-
-Lifecycle events carry URL, timestamps, active seconds, and max-scroll percent. Body text only flows through `/capture`.
-
----
-
-## 8. Local read model
+## 6. Lifecycle telemetry
 
 ```mermaid
 flowchart LR
-  Search["GET /search"] --> FTS[(chunks_fts)]
-  Recent["GET /recent"] --> DB[(SQLite)]
+  Start(("start")) --> Active["Active"]
+  Active --> Deactivate["tab deactivated<br/>window blurred"] --> Inactive["Inactive"]
+  Inactive --> Reactivate["tab active again"] --> Active
+  Active --> Close["tab closed"] --> Closed["Closed"] --> End(("end"))
+  Active --> Navigate["navigation-away<br/>SPA route"] --> Navigated["Navigated"]
+  Navigated --> NewURL["new URL state"] --> Active
+```
+
+Lifecycle events carry URL, timestamps, active seconds, and max-scroll percent. `/visit-events` is metadata-only; body text only flows through `/capture`.
+
+---
+
+## 7. Local read endpoint map
+
+```mermaid
+flowchart LR
+  Search["GET /search"] --> FTS[("chunks_fts")]
+  Recent["GET /recent"] --> DB[("SQLite")]
   Timeline["GET /timeline"] --> DB
   Detail["GET /documents/{id}"] --> DB
   Snapshot["GET /snapshots/{id}"] --> DB
+  Media["GET /media-artifacts/{id}"] --> MediaBlobs[("blobs/media")]
   UI["Local UI"] --> Search
   UI --> Recent
   UI --> Timeline
   UI --> Detail
-  CLI[CLI] --> Search
+  UI --> Snapshot
+  UI --> Media
+  CLI["CLI"] --> Search
   CLI --> Recent
   CLI --> Timeline
   CLI --> Detail
 ```
 
-The read model is exact-search-first. Semantic search and agent/MCP tools are later lanes.
+The read model is exact-search-first. Semantic search and agent/MCP tools are later lanes, not current runtime architecture.
 
 ---
 
-## 9. Forget/delete cascade
+## 8. Forget/delete cascade
 
 ```mermaid
 flowchart TD
-  Scope{Forget scope}
-  Scope --> Domain[domain]
-  Scope --> URL[url]
-  Domain --> Match[Find matching documents/visits]
+  Scope{"Forget scope"}
+  Scope --> Domain["domain"]
+  Scope --> URL["url"]
+  Domain --> Match["Find matching documents/visits"]
   URL --> Match
-  Match --> DeleteEvents[Delete visit_events]
-  Match --> DeleteFTS[Delete chunks_fts]
-  Match --> DeleteChunks[Delete chunks]
-  Match --> DeleteSnapshots[Delete snapshots + blobs]
-  Match --> DeleteVisits[Delete visits]
-  Match --> DeleteDocs[Delete documents]
-  DeleteDocs --> Receipt[deletion_receipts]
+  Match --> DeleteEvents["Delete visit_events"]
+  Match --> DeleteFTS["Delete chunks_fts"]
+  Match --> DeleteChunks["Delete chunks"]
+  Match --> DeleteSnapshots["Delete snapshots + text blobs"]
+  Match --> DeleteMedia["Delete media_artifacts + media blobs"]
+  Match --> DeleteVisits["Delete visits"]
+  Match --> DeleteDocs["Delete documents"]
+  DeleteDocs --> Receipt["deletion_receipts + counts"]
+  DeleteMedia --> Receipt
 ```
 
 Forget returns counts so the operator can verify which stores were affected.
@@ -212,15 +201,13 @@ Forget returns counts so the operator can verify which stores were affected.
 
 ## Provenance
 
-These diagrams trace to current implementation files:
-
-| Diagram | Source files |
+| Diagram | Primary source files/docs |
 |---|---|
-| System/context | `README.md`, `config.py`, `app.py` |
-| Extension boundary | `manifest.json`, `extractor.js`, `content_script.js`, `service_worker.js` |
-| Policy ladder | `policy.py`, `extractor.js`, `options.js`, `install-daily-driver.sh` |
-| Ingest pipeline | `models.py`, `ingest.py`, `schema.sql`, `media.py` |
-| Media sidecars | `service_worker.js`, `media_queue.js`, `media.py`, `media_worker.py`, `schema.sql` |
-| Lifecycle | `service_worker.js`, `lifecycle.py`, `schema.sql` |
-| Read model | `search.py`, `ops.py`, `ui/`, `cli.py` |
-| Forget/delete | `forget.py`, `schema.sql` |
+| Extension protocol boundary | `manifest.json`, `extension/src/extractor.js`, `content_script.js`, `service_worker.js`, `popup.js`, `options.js`, `media_queue.js` |
+| Policy mode ladder | `docs/security-model.md`, `daemon/src/browser_memory_daemon/policy.py`, `policy_store.py`, `extension/src/extractor.js` |
+| Capture ingest and redaction branch | `docs/api.md`, `daemon/src/browser_memory_daemon/app.py`, `ingest.py`, `policy.py`, `schema.sql`, `extension/src/service_worker.js` |
+| Durable media sidecars and cache outcomes | `docs/media-artifacts.md`, `daemon/src/browser_memory_daemon/media.py`, `media_worker.py`, `schema.sql`, `extension/src/media_queue.js`, `cdp_recorder.js`, `service_worker.js` |
+| Dedupe and versioning | `daemon/src/browser_memory_daemon/ingest.py`, `schema.sql`, ingest tests |
+| Lifecycle telemetry | `docs/api.md`, `daemon/src/browser_memory_daemon/lifecycle.py`, `schema.sql`, `extension/src/service_worker.js` |
+| Local read endpoint map | `docs/api.md`, `daemon/src/browser_memory_daemon/search.py`, `ops.py`, `ui/`, `cli.py` |
+| Forget/delete cascade | `docs/api.md`, `daemon/src/browser_memory_daemon/forget.py`, `schema.sql`, forget tests |

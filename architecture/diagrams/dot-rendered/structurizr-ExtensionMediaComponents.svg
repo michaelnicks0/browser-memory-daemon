@@ -166,10 +166,11 @@
 <title>9&#45;&gt;14</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1117.09,-1200.17C1213.04,-1162.69 1317.02,-1103.5 1376,-1012.38 1487.01,-840.86 1559.47,-752.17 1479,-564.38 1472.95,-550.26 1465.48,-536.62 1456.98,-523.53"/>
 <polygon fill="#444444" stroke="#444444" points="1459.73,-521.36 1451.25,-515.01 1453.93,-525.26 1459.73,-521.36"/>
-<polygon fill="white" stroke="transparent" points="1513,-842.38 1513,-917.38 1835,-917.38 1835,-842.38 1513,-842.38"/>
-<text text-anchor="start" x="1534.5" y="-894.67" font-family="Arial" font-size="24.00" fill="#444444">Delivers captures, events,</text>
-<text text-anchor="start" x="1527.5" y="-870.67" font-family="Arial" font-size="24.00" fill="#444444">metadata, and raw blobs to</text>
-<text text-anchor="start" x="1517" y="-850.67" font-family="Arial" font-size="19.00" fill="#444444">[Bearer HTTP/JSON; raw HTTP PUT]</text>
+<polygon fill="white" stroke="transparent" points="1513,-830.38 1513,-929.38 1835,-929.38 1835,-830.38 1513,-830.38"/>
+<text text-anchor="start" x="1579.5" y="-906.67" font-family="Arial" font-size="24.00" fill="#444444">Delivers /capture,</text>
+<text text-anchor="start" x="1570" y="-882.67" font-family="Arial" font-size="24.00" fill="#444444">/visit&#45;events, media</text>
+<text text-anchor="start" x="1527.5" y="-858.67" font-family="Arial" font-size="24.00" fill="#444444">metadata, and raw blobs to</text>
+<text text-anchor="start" x="1517" y="-838.67" font-family="Arial" font-size="19.00" fill="#444444">[Bearer HTTP/JSON; raw HTTP PUT]</text>
 </g>
 </g>
 </svg>
