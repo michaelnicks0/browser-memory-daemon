@@ -9,6 +9,24 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | ADR | Status | Decision |
 |---|---|---|
 | [ADR-0001](0001-use-repo-local-architecture-decision-records.md) | accepted | Use repo-local Markdown ADRs for architecture-significant changes. |
+| [ADR-0002](0002-keep-browser-memory-local-across-windows-chrome-and-wsl.md) | accepted | Keep browser memory local across Windows Chrome and the WSL daemon. |
+| [ADR-0003](0003-use-all-policy-mode-as-daily-driver-default.md) | accepted | Use `all` policy mode as the daily-driver default. |
+| [ADR-0004](0004-use-text-first-sqlite-fts5-and-blob-storage.md) | accepted | Use text-first SQLite/FTS5 and WSL-local blob storage. |
+| [ADR-0005](0005-use-durable-lazy-media-sidecars-with-bounded-cache.md) | accepted | Use durable lazy media sidecars with a bounded disposable cache. |
+| [ADR-0006](0006-use-forget-cascade-with-deletion-receipts.md) | accepted | Use forget/delete cascades with deletion receipts. |
+| [ADR-0007](0007-use-real-chrome-e2e-as-verification-authority.md) | accepted | Use real Chrome / Chrome for Testing e2e as the verification authority. |
+| [ADR-0008](0008-use-c4-structurizr-as-canonical-architecture-model.md) | accepted | Use C4/Structurizr under `docs/architecture/` as the canonical architecture model. |
+
+## Backfilled decision history
+
+ADR-0002 through ADR-0008 are historical backfills recorded on 2026-06-14 from repo docs, code, tests, and git history. They did not introduce new runtime behavior; they document already-accepted architecture decisions so future changes can cite, comply with, or supersede them.
+
+Backfill verification run on 2026-06-14:
+
+- ADR lint and repo Markdown fence check passed.
+- `git diff --check -- .` passed.
+- `./scripts/secret-scan.sh` passed.
+- `BMD_SKIP_REAL_CHROME_E2E=1 ./scripts/run-e2e.sh` passed using a temporary Python 3.11 shim because the host `python3` is Python 3.8 while this repo declares `requires-python = ">=3.11"`.
 
 ## When to create or supersede an ADR
 

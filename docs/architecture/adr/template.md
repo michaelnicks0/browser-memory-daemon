@@ -2,8 +2,10 @@
 id: ADR-0000
 status: proposed
 date: YYYY-MM-DD
+decision_date: YYYY-MM-DD  # optional; use for backfilled historical decisions
 decider: Operator
 scope: repo
+backfilled: false
 supersedes: []
 superseded_by: []
 related: []
