@@ -1,0 +1,35 @@
+digraph {
+  compound=true
+  graph [fontname="Arial", rankdir=LR, ranksep=1.0, nodesep=1.0]
+  node [fontname="Arial", shape=box, margin="0.4,0.3"]
+  edge [fontname="Arial"]
+  label=<<br /><font point-size="34">Component View: Browser Memory Daemon - WSL Loopback HTTP Daemon</font>>
+
+  subgraph cluster_4 {
+    margin=25
+    label=<<font point-size="24"><br />Browser Memory Daemon</font><br /><font point-size="19">[Software System]</font>>
+    labelloc=b
+    color="#444444"
+    fontcolor="#444444"
+    fillcolor="#444444"
+
+    subgraph cluster_14 {
+      margin=25
+      label=<<font point-size="24"><br />WSL Loopback HTTP Daemon</font><br /><font point-size="19">[Container: Python 3.11, ThreadingHTTPServer]</font>>
+      labelloc=b
+      color="#444444"
+      fontcolor="#444444"
+      fillcolor="#444444"
+
+      15 [id=15,shape=rect, label=<<font point-size="34">HTTP Request Router</font><br /><font point-size="19">[Component: Python http.server]</font><br /><br /><font point-size="24">Routes loopback API requests,<br />serves UI assets, enforces<br />bearer auth for memory/admin<br />APIs, and applies CORS for<br />allowed origins.</font>>, style=filled, color="#5d82a8", fillcolor="#85bbf0", fontcolor="#000000"]
+      16 [id=16,shape=rect, label=<<font point-size="34">Policy Engine</font><br /><font point-size="19">[Component: Python]</font><br /><br /><font point-size="24">Evaluates<br />all/recall/balanced/strict<br />capture mode decisions and<br />redacts URL/title/body text<br />outside all mode.</font>>, style=filled, color="#5d82a8", fillcolor="#85bbf0", fontcolor="#000000"]
+      17 [id=17,shape=rect, label=<<font point-size="34">Policy Store</font><br /><font point-size="19">[Component: Python + SQLite]</font><br /><br /><font point-size="24">Persists and evaluates local<br />block-domain and URL-prefix<br />rules for non-all modes.</font>>, style=filled, color="#5d82a8", fillcolor="#85bbf0", fontcolor="#000000"]
+    }
+
+  }
+
+  15 -> 16 [id=61, label=<<font point-size="24">Gets capture decisions<br />from</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+  15 -> 17 [id=62, label=<<font point-size="24">Manages policy rules<br />through</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+  16 -> 17 [id=69, label=<<font point-size="24">Combines static mode with<br />rules from</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+
+}

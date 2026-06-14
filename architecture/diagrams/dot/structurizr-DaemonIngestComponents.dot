@@ -1,0 +1,36 @@
+digraph {
+  compound=true
+  graph [fontname="Arial", rankdir=LR, ranksep=1.0, nodesep=1.0]
+  node [fontname="Arial", shape=box, margin="0.4,0.3"]
+  edge [fontname="Arial"]
+  label=<<br /><font point-size="34">Component View: Browser Memory Daemon - WSL Loopback HTTP Daemon</font>>
+
+  subgraph cluster_4 {
+    margin=25
+    label=<<font point-size="24"><br />Browser Memory Daemon</font><br /><font point-size="19">[Software System]</font>>
+    labelloc=b
+    color="#444444"
+    fontcolor="#444444"
+    fillcolor="#444444"
+
+    subgraph cluster_14 {
+      margin=25
+      label=<<font point-size="24"><br />WSL Loopback HTTP Daemon</font><br /><font point-size="19">[Container: Python 3.11, ThreadingHTTPServer]</font>>
+      labelloc=b
+      color="#444444"
+      fontcolor="#444444"
+      fillcolor="#444444"
+
+      15 [id=15,shape=rect, label=<<font point-size="34">HTTP Request Router</font><br /><font point-size="19">[Component: Python http.server]</font><br /><br /><font point-size="24">Routes loopback API requests,<br />serves UI assets, enforces<br />bearer auth for memory/admin<br />APIs, and applies CORS for<br />allowed origins.</font>>, style=filled, color="#5d82a8", fillcolor="#85bbf0", fontcolor="#000000"]
+      18 [id=18,shape=rect, label=<<font point-size="34">Ingest Pipeline</font><br /><font point-size="19">[Component: Python + sqlite3]</font><br /><br /><font point-size="24">Normalizes URLs, computes<br />document/snapshot IDs, stores<br />visits/snapshots/chunks/FTS<br />rows, writes clean text blobs,<br />and records media references.</font>>, style=filled, color="#5d82a8", fillcolor="#85bbf0", fontcolor="#000000"]
+    }
+
+    27 [id=27,shape=cylinder, label=<<font point-size="34">SQLite + FTS5<br />Database</font><br /><font point-size="19">[Container: SQLite with FTS5]</font><br /><br /><font point-size="24">Durable relational and<br />full-text store for sources,<br />documents, visits, visit<br />events, snapshots, chunks,<br />chunks_fts, media artifacts,<br />media fetch tasks, policy<br />rules, audit events, and<br />deletion receipts.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+    28 [id=28,shape=cylinder, label=<<font point-size="34">Clean Text Blob Store</font><br /><font point-size="19">[Container: WSL filesystem]</font><br /><br /><font point-size="24">Filesystem store for snapshot<br />text blobs under WSL XDG data<br />paths.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+  }
+
+  15 -> 18 [id=63, label=<<font point-size="24">Routes accepted captures<br />to</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+  18 -> 27 [id=70, label=<<font point-size="24">Writes capture rows and<br />FTS to</font><br /><font point-size="19">[sqlite3]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+  18 -> 28 [id=71, label=<<font point-size="24">Writes text snapshots to</font><br /><font point-size="19">[Filesystem]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+
+}

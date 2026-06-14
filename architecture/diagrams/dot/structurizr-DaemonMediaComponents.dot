@@ -1,0 +1,36 @@
+digraph {
+  compound=true
+  graph [fontname="Arial", rankdir=LR, ranksep=1.0, nodesep=1.0]
+  node [fontname="Arial", shape=box, margin="0.4,0.3"]
+  edge [fontname="Arial"]
+  label=<<br /><font point-size="34">Component View: Browser Memory Daemon - WSL Loopback HTTP Daemon</font>>
+
+  subgraph cluster_4 {
+    margin=25
+    label=<<font point-size="24"><br />Browser Memory Daemon</font><br /><font point-size="19">[Software System]</font>>
+    labelloc=b
+    color="#444444"
+    fontcolor="#444444"
+    fillcolor="#444444"
+
+    subgraph cluster_14 {
+      margin=25
+      label=<<font point-size="24"><br />WSL Loopback HTTP Daemon</font><br /><font point-size="19">[Container: Python 3.11, ThreadingHTTPServer]</font>>
+      labelloc=b
+      color="#444444"
+      fontcolor="#444444"
+      fillcolor="#444444"
+
+      15 [id=15,shape=rect, label=<<font point-size="34">HTTP Request Router</font><br /><font point-size="19">[Component: Python http.server]</font><br /><br /><font point-size="24">Routes loopback API requests,<br />serves UI assets, enforces<br />bearer auth for memory/admin<br />APIs, and applies CORS for<br />allowed origins.</font>>, style=filled, color="#5d82a8", fillcolor="#85bbf0", fontcolor="#000000"]
+      20 [id=20,shape=rect, label=<<font point-size="34">Media Artifact<br />Manager</font><br /><font point-size="19">[Component: Python + sqlite3 + filesystem]</font><br /><br /><font point-size="24">Records media references,<br />validates blob uploads,<br />enforces MIME/size/cache<br />gates, writes blobs<br />atomically, queues public<br />fetch tasks, and purges or<br />rehydrates cache entries.</font>>, style=filled, color="#5d82a8", fillcolor="#85bbf0", fontcolor="#000000"]
+    }
+
+    27 [id=27,shape=cylinder, label=<<font point-size="34">SQLite + FTS5<br />Database</font><br /><font point-size="19">[Container: SQLite with FTS5]</font><br /><br /><font point-size="24">Durable relational and<br />full-text store for sources,<br />documents, visits, visit<br />events, snapshots, chunks,<br />chunks_fts, media artifacts,<br />media fetch tasks, policy<br />rules, audit events, and<br />deletion receipts.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+    29 [id=29,shape=cylinder, label=<<font point-size="34">Media Blob Cache</font><br /><font point-size="19">[Container: WSL filesystem]</font><br /><br /><font point-size="24">Bounded and disposable<br />filesystem cache for stored<br />image/video/audio blobs with<br />purge and rehydrate semantics.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+  }
+
+  15 -> 20 [id=65, label=<<font point-size="24">Routes media requests to</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+  20 -> 27 [id=74, label=<<font point-size="24">Updates media rows and<br />tasks in</font><br /><font point-size="19">[sqlite3]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+  20 -> 29 [id=75, label=<<font point-size="24">Writes, serves, evicts,<br />and purges blobs in</font><br /><font point-size="19">[Filesystem]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+
+}

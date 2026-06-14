@@ -1,0 +1,41 @@
+digraph {
+  compound=true
+  graph [fontname="Arial", rankdir=LR, ranksep=1.0, nodesep=1.0]
+  node [fontname="Arial", shape=box, margin="0.4,0.3"]
+  edge [fontname="Arial"]
+  label=<<br /><font point-size="34">Component View: Browser Memory Daemon - Chrome MV3 Extension</font>>
+
+  2 [id=2,shape=rect, label=<<font point-size="34">Windows Chrome</font><br /><font point-size="19">[Software System]</font><br /><br /><font point-size="24">The Windows Chrome runtime<br />that loads web pages, hosts<br />the MV3 extension, runs the<br />local UI in a tab, and exposes<br />Chrome extension APIs.</font>>, style=filled, color="#6b6b6b", fillcolor="#999999", fontcolor="#ffffff"]
+
+  subgraph cluster_4 {
+    margin=25
+    label=<<font point-size="24"><br />Browser Memory Daemon</font><br /><font point-size="19">[Software System]</font>>
+    labelloc=b
+    color="#444444"
+    fontcolor="#444444"
+    fillcolor="#444444"
+
+    subgraph cluster_5 {
+      margin=25
+      label=<<font point-size="24"><br />Chrome MV3 Extension</font><br /><font point-size="19">[Container: JavaScript, Chrome Manifest V3]</font>>
+      labelloc=b
+      color="#444444"
+      fontcolor="#444444"
+      fillcolor="#444444"
+
+      6 [id=6,shape=rect, label=<<font point-size="34">Manifest and<br />Permission Envelope</font><br /><font point-size="19">[Component: manifest.json]</font><br /><br /><font point-size="24">Declares MV3 permissions, host<br />permissions, service worker,<br />popup, and options<br />entrypoints.</font>>, style=filled, color="#5d82a8", fillcolor="#85bbf0", fontcolor="#000000"]
+      7 [id=7,shape=rect, label=<<font point-size="34">Extractor</font><br /><font point-size="19">[Component: JavaScript]</font><br /><br /><font point-size="24">Traverses visible DOM text and<br />discovers image/video<br />references while applying the<br />selected policy mode.</font>>, style=filled, color="#5d82a8", fillcolor="#85bbf0", fontcolor="#000000"]
+      8 [id=8,shape=rect, label=<<font point-size="34">Content Script</font><br /><font point-size="19">[Component: JavaScript content script]</font><br /><br /><font point-size="24">Schedules initial, delayed,<br />and SPA captures; tracks<br />scroll; sends capture and<br />inline blob upload messages to<br />the service worker.</font>>, style=filled, color="#5d82a8", fillcolor="#85bbf0", fontcolor="#000000"]
+      9 [id=9,shape=rect, label=<<font point-size="34">Service Worker</font><br /><font point-size="19">[Component: JavaScript MV3 service worker]</font><br /><br /><font point-size="24">Owns daemon transport, bearer<br />token use, capture and visit<br />queues, lifecycle state, media<br />queue draining, and CDP<br />recorder orchestration.</font>>, style=filled, color="#5d82a8", fillcolor="#85bbf0", fontcolor="#000000"]
+    }
+
+    13 [id=13,shape=cylinder, label=<<font point-size="34">Extension Browser<br />Storage</font><br /><font point-size="19">[Container: chrome.storage.local + IndexedDB]</font><br /><br /><font point-size="24">Browser-side storage for<br />capture and visit queues in<br />chrome.storage.local plus<br />durable media tasks and<br />fetched blobs in IndexedDB.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+    14 [id=14,shape=rect, label=<<font point-size="34">WSL Loopback HTTP<br />Daemon</font><br /><font point-size="19">[Container: Python 3.11, ThreadingHTTPServer]</font><br /><br /><font point-size="24">Authenticated loopback HTTP<br />API that handles capture,<br />visit events, media artifact<br />upload/fetch/purge, exact<br />search,<br />recent/timeline/detail, policy<br />rules, doctor, forget, and<br />static UI serving.</font>>, style=filled, color="#2e6295", fillcolor="#438dd5", fontcolor="#ffffff"]
+  }
+
+  8 -> 7 [id=49, label=<<font point-size="24">Builds capture payloads<br />with</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+  8 -> 9 [id=50, label=<<font point-size="24">Sends captures and inline<br />blobs to</font><br /><font point-size="19">[chrome.runtime.sendMessage]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+  9 -> 13 [id=51, label=<<font point-size="24">Queues captures in<br />chrome.storage.local and<br />media tasks/blobs in<br />IndexedDB</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+  9 -> 14 [id=52, label=<<font point-size="24">Delivers captures, events,<br />metadata, and raw blobs to</font><br /><font point-size="19">[Bearer HTTP/JSON; raw HTTP PUT]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+
+}

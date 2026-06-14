@@ -1,0 +1,34 @@
+digraph {
+  compound=true
+  graph [fontname="Arial", rankdir=TB, ranksep=1.0, nodesep=1.0]
+  node [fontname="Arial", shape=box, margin="0.4,0.3"]
+  edge [fontname="Arial"]
+  label=<<br /><font point-size="34">Container View: Browser Memory Daemon</font>>
+
+  2 [id=2,shape=rect, label=<<font point-size="34">Windows Chrome</font><br /><font point-size="19">[Software System]</font><br /><br /><font point-size="24">The Windows Chrome runtime<br />that loads web pages, hosts<br />the MV3 extension, runs the<br />local UI in a tab, and exposes<br />Chrome extension APIs.</font>>, style=filled, color="#6b6b6b", fillcolor="#999999", fontcolor="#ffffff"]
+  3 [id=3,shape=rect, label=<<font point-size="34">Web Sites and Media<br />Origins</font><br /><font point-size="19">[Software System]</font><br /><br /><font point-size="24">External web pages,<br />image/video URLs, and media<br />CDNs that Chrome loads or that<br />sidecars fetch as page-related<br />media.</font>>, style=filled, color="#6b6b6b", fillcolor="#999999", fontcolor="#ffffff"]
+
+  subgraph cluster_4 {
+    margin=25
+    label=<<font point-size="24"><br />Browser Memory Daemon</font><br /><font point-size="19">[Software System]</font>>
+    labelloc=b
+    color="#444444"
+    fontcolor="#444444"
+    fillcolor="#444444"
+
+    13 [id=13,shape=cylinder, label=<<font point-size="34">Extension Browser<br />Storage</font><br /><font point-size="19">[Container: chrome.storage.local + IndexedDB]</font><br /><br /><font point-size="24">Browser-side storage for<br />capture and visit queues in<br />chrome.storage.local plus<br />durable media tasks and<br />fetched blobs in IndexedDB.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+    14 [id=14,shape=rect, label=<<font point-size="34">WSL Loopback HTTP<br />Daemon</font><br /><font point-size="19">[Container: Python 3.11, ThreadingHTTPServer]</font><br /><br /><font point-size="24">Authenticated loopback HTTP<br />API that handles capture,<br />visit events, media artifact<br />upload/fetch/purge, exact<br />search,<br />recent/timeline/detail, policy<br />rules, doctor, forget, and<br />static UI serving.</font>>, style=filled, color="#2e6295", fillcolor="#438dd5", fontcolor="#ffffff"]
+    27 [id=27,shape=cylinder, label=<<font point-size="34">SQLite + FTS5<br />Database</font><br /><font point-size="19">[Container: SQLite with FTS5]</font><br /><br /><font point-size="24">Durable relational and<br />full-text store for sources,<br />documents, visits, visit<br />events, snapshots, chunks,<br />chunks_fts, media artifacts,<br />media fetch tasks, policy<br />rules, audit events, and<br />deletion receipts.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+    28 [id=28,shape=cylinder, label=<<font point-size="34">Clean Text Blob Store</font><br /><font point-size="19">[Container: WSL filesystem]</font><br /><br /><font point-size="24">Filesystem store for snapshot<br />text blobs under WSL XDG data<br />paths.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+    5 [id=5,shape=rect, label=<<font point-size="34">Chrome MV3 Extension</font><br /><font point-size="19">[Container: JavaScript, Chrome Manifest V3]</font><br /><br /><font point-size="24">Captures visible page text,<br />media references, tab<br />lifecycle events, and<br />browser-side media bytes from<br />Windows Chrome; queues work<br />durably and posts to the WSL<br />daemon.</font>>, style=filled, color="#2e6295", fillcolor="#438dd5", fontcolor="#ffffff"]
+  }
+
+  2 -> 3 [id=32, label=<<font point-size="24">Loads pages and media from</font><br /><font point-size="19">[HTTPS]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+  5 -> 2 [id=35, label=<<font point-size="24">Uses tab, scripting,<br />storage, alarms, debugger,<br />and runtime APIs from</font><br /><font point-size="19">[Chrome extension APIs]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+  5 -> 3 [id=36, label=<<font point-size="24">Extracts DOM refs and<br />fetches queued<br />credentialed media from</font><br /><font point-size="19">[DOM; fetch(credentials: include)]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+  5 -> 13 [id=37, label=<<font point-size="24">Queues captures, lifecycle<br />events, media tasks, and<br />blobs in</font><br /><font point-size="19">[chrome.storage.local + IndexedDB]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+  5 -> 14 [id=38, label=<<font point-size="24">Posts captures, events,<br />media metadata, and raw<br />blobs to</font><br /><font point-size="19">[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+  14 -> 27 [id=43, label=<<font point-size="24">Reads and writes metadata,<br />FTS, tasks, audit, and<br />receipts in</font><br /><font point-size="19">[sqlite3]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+  14 -> 28 [id=44, label=<<font point-size="24">Reads and writes text<br />snapshots in</font><br /><font point-size="19">[Filesystem]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+
+}
