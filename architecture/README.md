@@ -3,6 +3,8 @@
 This directory contains the C4 model-as-code for the Browser Memory Daemon repo.
 
 - Canonical source: [`workspace.dsl`](workspace.dsl)
+- Markdown diagram entrypoint: [`diagrams/README.md`](diagrams/README.md)
+- Per-view Markdown diagrams: [`diagrams/markdown/`](diagrams/markdown/)
 - Lightweight text exports: [`diagrams/*.mmd`](diagrams/) after Mermaid export
 - Visual-review exports: [`diagrams/*.png`](diagrams/), [`diagrams/*.svg`](diagrams/), and Graphviz renders under [`diagrams/dot-rendered/`](diagrams/dot-rendered/)
 - Existing narrative architecture: [`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md)
@@ -65,6 +67,11 @@ for f in architecture/diagrams/*.mmd; do
   npx --yes @mermaid-js/mermaid-cli -c /tmp/bmd-mermaid-config.json -i "$f" -o "${f%.mmd}.png" -b transparent
 done
 
+python3 /home/user/.hermes/skills/software-development/c4-structurizr-architecture/scripts/structurizr-diagrams-to-markdown.py \
+  --diagrams-dir architecture/diagrams \
+  --workspace architecture/workspace.dsl \
+  --title "Browser Memory Daemon Architecture Diagrams"
+
 # Graphviz/DOT exports for stakeholder-readable relationship-label placement.
 rm -rf architecture/diagrams/dot architecture/diagrams/dot-rendered
 mkdir -p architecture/diagrams/dot architecture/diagrams/dot-rendered
@@ -77,7 +84,7 @@ for file in architecture/diagrams/dot/*.dot; do
 done
 ```
 
-The Mermaid, DOT, SVG, and PNG exports are derived artifacts. Refresh them from `workspace.dsl`; do not treat them as the source of truth. The `JAVA_TOOL_OPTIONS` setting keeps Structurizr CLI export headless-friendly under WSL. For visual review, prefer `diagrams/dot-rendered/*.svg`/`*.png` when Mermaid label routing is cramped.
+The Mermaid, DOT, SVG, PNG, and Markdown exports are derived artifacts. Refresh them from `workspace.dsl`; do not treat them as the source of truth. Use `diagrams/README.md` and `diagrams/markdown/*.md` as the Markdown-first human reading surface. The `JAVA_TOOL_OPTIONS` setting keeps Structurizr CLI export headless-friendly under WSL. For visual review, prefer `diagrams/dot-rendered/*.svg`/`*.png` when Mermaid label routing is cramped.
 
 ## Source grounding
 

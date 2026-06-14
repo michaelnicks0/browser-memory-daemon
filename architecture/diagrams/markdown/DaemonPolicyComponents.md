@@ -1,0 +1,46 @@
+# Daemon Policy Components
+
+> Generated Markdown wrapper for C4 view `DaemonPolicyComponents`. Canonical model: [`workspace.dsl`](../../workspace.dsl).
+
+<!-- Generated from Structurizr Mermaid export; refresh from architecture/workspace.dsl. -->
+
+```mermaid
+graph LR
+  linkStyle default fill:#ffffff
+
+  subgraph diagram ["Component View: Browser Memory Daemon - WSL Loopback HTTP Daemon"]
+    style diagram fill:#ffffff,stroke:#ffffff
+
+    subgraph 4 ["Browser Memory Daemon"]
+      style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
+
+      subgraph 14 ["WSL Loopback HTTP Daemon"]
+        style 14 fill:#ffffff,stroke:#2e6295,color:#2e6295
+
+        15["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server]</div><div style='font-size: 80%; margin-top:10px'>Routes loopback API requests,<br />serves UI assets, enforces<br />bearer auth for memory/admin<br />APIs, and applies CORS for<br />allowed origins.</div>"]
+        style 15 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        16["<div style='font-weight: bold'>Policy Engine</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Evaluates<br />all/recall/balanced/strict<br />capture mode decisions and<br />redacts URL/title/body text<br />outside all mode.</div>"]
+        style 16 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        17["<div style='font-weight: bold'>Policy Store</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + SQLite]</div><div style='font-size: 80%; margin-top:10px'>Persists and evaluates local<br />block-domain and URL-prefix<br />rules for non-all modes.</div>"]
+        style 17 fill:#85bbf0,stroke:#5d82a8,color:#000000
+      end
+
+    end
+
+    15-. "<div>Gets capture decisions from</div><div style='font-size: 70%'></div>" .->16
+    15-. "<div>Manages policy rules through</div><div style='font-size: 70%'></div>" .->17
+    16-. "<div>Combines static mode with<br />rules from</div><div style='font-size: 70%'></div>" .->17
+
+  end
+```
+
+## Derived artifacts
+
+| Artifact | Link |
+|---|---|
+| Mermaid source | [`structurizr-DaemonPolicyComponents.mmd`](../structurizr-DaemonPolicyComponents.mmd) |
+| Mermaid SVG | [`structurizr-DaemonPolicyComponents.svg`](../structurizr-DaemonPolicyComponents.svg) |
+| Mermaid PNG | [`structurizr-DaemonPolicyComponents.png`](../structurizr-DaemonPolicyComponents.png) |
+| DOT source | [`structurizr-DaemonPolicyComponents.dot`](../dot/structurizr-DaemonPolicyComponents.dot) |
+| Graphviz SVG | [`structurizr-DaemonPolicyComponents.svg`](../dot-rendered/structurizr-DaemonPolicyComponents.svg) |
+| Graphviz PNG | [`structurizr-DaemonPolicyComponents.png`](../dot-rendered/structurizr-DaemonPolicyComponents.png) |
