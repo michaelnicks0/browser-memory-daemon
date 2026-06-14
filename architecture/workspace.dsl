@@ -156,7 +156,6 @@ workspace "Browser Memory Daemon" "C4 architecture model for the local-first Win
 
         container browserMemoryDaemon "CaptureContainers" {
             include windowsChrome
-            include webSites
             include chromeExtension
             include extensionBrowserStorage
             include wslLoopbackDaemon
@@ -288,7 +287,6 @@ workspace "Browser Memory Daemon" "C4 architecture model for the local-first Win
             chromeExtension -> wslLoopbackDaemon "PUTs raw blob to /media-artifacts/{id}/blob"
             wslLoopbackDaemon -> mediaBlobCache "Writes blob if MIME and cache gates allow"
             wslLoopbackDaemon -> sqliteDatabase "Updates artifact status, hash, byte size, and task state"
-            chromeExtension -> extensionBrowserStorage "Deletes completed media task and fetched blob"
             autoLayout lr
         }
 
@@ -302,6 +300,8 @@ workspace "Browser Memory Daemon" "C4 architecture model for the local-first Win
 
         deployment browserMemoryDaemon "Daily-driver local" "DailyDriverDeployment" {
             include *
+            exclude extensionBrowserStorage
+            exclude cli
             exclude extensionCopy
             exclude tokenFile
             exclude auditLog

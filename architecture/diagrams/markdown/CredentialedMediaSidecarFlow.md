@@ -2,7 +2,16 @@
 
 > Generated Markdown wrapper for C4 view `CredentialedMediaSidecarFlow`. Canonical model: [`workspace.dsl`](../../workspace.dsl).
 
-<!-- Generated from Structurizr Mermaid export; refresh from architecture/workspace.dsl. -->
+<!-- Generated from Structurizr exports; refresh from architecture/workspace.dsl. -->
+
+## Diagram
+
+![Credentialed Media Sidecar Flow](../dot-rendered/structurizr-CredentialedMediaSidecarFlow.svg)
+
+_Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for text review._
+
+<details>
+<summary>Mermaid source</summary>
 
 ```mermaid
 graph LR
@@ -35,10 +44,11 @@ graph LR
     5-. "<div>4. PUTs raw blob to<br />/media-artifacts/{id}/blob</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</div>" .->14
     14-. "<div>5. Writes blob if MIME and<br />cache gates allow</div><div style='font-size: 70%'>[Filesystem]</div>" .->29
     14-. "<div>6. Updates artifact status,<br />hash, byte size, and task<br />state</div><div style='font-size: 70%'>[sqlite3]</div>" .->27
-    5-. "<div>7. Deletes completed media<br />task and fetched blob</div><div style='font-size: 70%'>[chrome.storage.local + IndexedDB]</div>" .->13
 
   end
 ```
+
+</details>
 
 ## Derived artifacts
 

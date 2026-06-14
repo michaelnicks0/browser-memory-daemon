@@ -2,7 +2,16 @@
 
 > Generated Markdown wrapper for C4 view `ExtensionMediaComponents`. Canonical model: [`workspace.dsl`](../../workspace.dsl).
 
-<!-- Generated from Structurizr Mermaid export; refresh from architecture/workspace.dsl. -->
+<!-- Generated from Structurizr exports; refresh from architecture/workspace.dsl. -->
+
+## Diagram
+
+![Extension Media Components](../dot-rendered/structurizr-ExtensionMediaComponents.svg)
+
+_Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for text review._
+
+<details>
+<summary>Mermaid source</summary>
 
 ```mermaid
 graph TB
@@ -44,6 +53,8 @@ graph TB
 
   end
 ```
+
+</details>
 
 ## Derived artifacts
 

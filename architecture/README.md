@@ -67,24 +67,28 @@ for f in architecture/diagrams/*.mmd; do
   npx --yes @mermaid-js/mermaid-cli -c /tmp/bmd-mermaid-config.json -i "$f" -o "${f%.mmd}.png" -b transparent
 done
 
-python3 /home/user/.hermes/skills/software-development/c4-structurizr-architecture/scripts/structurizr-diagrams-to-markdown.py \
-  --diagrams-dir architecture/diagrams \
-  --workspace architecture/workspace.dsl \
-  --title "Browser Memory Daemon Architecture Diagrams"
-
 # Graphviz/DOT exports for stakeholder-readable relationship-label placement.
 rm -rf architecture/diagrams/dot architecture/diagrams/dot-rendered
 mkdir -p architecture/diagrams/dot architecture/diagrams/dot-rendered
 JAVA_TOOL_OPTIONS='-Djava.awt.headless=true' \
   "$STRUCTURIZR_CLI" export -workspace architecture/workspace.dsl -format dot -output architecture/diagrams/dot
+python3 /home/user/.hermes/skills/software-development/c4-structurizr-architecture/scripts/graphviz-edge-label-backgrounds.py \
+  architecture/diagrams/dot
 for file in architecture/diagrams/dot/*.dot; do
   base=$(basename "$file" .dot)
   dot -Tsvg "$file" -o "architecture/diagrams/dot-rendered/$base.svg"
   dot -Tpng "$file" -o "architecture/diagrams/dot-rendered/$base.png"
 done
+
+# Markdown wrappers display the cleanest render first and keep Mermaid source collapsed.
+rm -rf architecture/diagrams/markdown architecture/diagrams/README.md
+python3 /home/user/.hermes/skills/software-development/c4-structurizr-architecture/scripts/structurizr-diagrams-to-markdown.py \
+  --diagrams-dir architecture/diagrams \
+  --workspace architecture/workspace.dsl \
+  --title "Browser Memory Daemon Architecture Diagrams"
 ```
 
-The Mermaid, DOT, SVG, PNG, and Markdown exports are derived artifacts. Refresh them from `workspace.dsl`; do not treat them as the source of truth. Use `diagrams/README.md` and `diagrams/markdown/*.md` as the Markdown-first human reading surface. The `JAVA_TOOL_OPTIONS` setting keeps Structurizr CLI export headless-friendly under WSL. For visual review, prefer `diagrams/dot-rendered/*.svg`/`*.png` when Mermaid label routing is cramped.
+The Mermaid, DOT, SVG, PNG, and Markdown exports are derived artifacts. Refresh them from `workspace.dsl`; do not treat them as the source of truth. Use `diagrams/README.md` and `diagrams/markdown/*.md` as the Markdown-first human reading surface; those pages embed Graphviz SVG renders with white-backed relationship labels when available and keep Mermaid source collapsed for text review. The `JAVA_TOOL_OPTIONS` setting keeps Structurizr CLI export headless-friendly under WSL.
 
 ## Source grounding
 
@@ -105,7 +109,7 @@ Primary source evidence used for this model:
 ## Assumptions and TBDs
 
 - Deployment view is limited to the documented **Daily-driver local** Local workstation topology. No separate staging/production topology is modeled.
-- Non-runtime deployment artifacts such as the Windows unpacked extension copy, protected token/env files, and audit log are modeled in the DSL but excluded from the rendered deployment view to keep the runtime topology legible.
+- Non-runtime deployment artifacts such as the Windows unpacked extension copy, protected token/env files, and audit log are modeled in the DSL but excluded from the rendered deployment view to keep the runtime topology legible. The WSL CLI and in-browser extension storage are also excluded from the deployment render because their relationships are covered in C2/C3 views and made the deployment topology unreadable.
 - Semantic/vector search, MCP/Hermes integration, native messaging transport, encrypted backup/restore, and multi-source importers are explicitly pending and are not modeled as current runtime containers.
 - Chrome extension manual Load unpacked/Reload is an operational step, not a runtime container.
 - Media blobs are modeled as a bounded disposable cache; text/FTS/media refs remain authoritative.

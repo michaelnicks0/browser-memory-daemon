@@ -30,9 +30,9 @@ digraph {
     29 [id=29,shape=cylinder, label=<<font point-size="34">Media Blob Cache</font><br /><font point-size="19">[Container: WSL filesystem]</font><br /><br /><font point-size="24">Bounded and disposable<br />filesystem cache for stored<br />image/video/audio blobs with<br />purge and rehydrate semantics.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
   }
 
-  15 -> 23 [id=68, label=<<font point-size="24">Routes health and audit<br />work to</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  23 -> 27 [id=82, label=<<font point-size="24">Checks integrity and<br />counts in</font><br /><font point-size="19">[sqlite3]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  23 -> 28 [id=83, label=<<font point-size="24">Counts text blob files in</font><br /><font point-size="19">[Filesystem]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  23 -> 29 [id=84, label=<<font point-size="24">Counts media blob files in</font><br /><font point-size="19">[Filesystem]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+  15 -> 23 [id=68, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Routes health and audit<br />work to</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  23 -> 27 [id=82, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Checks integrity and<br />counts in</font><br /><font point-size="19">[sqlite3]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  23 -> 28 [id=83, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Counts text blob files in</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  23 -> 29 [id=84, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Counts media blob files in</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
 
 }

@@ -33,9 +33,9 @@ digraph {
     14 [id=14,shape=rect, label=<<font point-size="34">WSL Loopback HTTP<br />Daemon</font><br /><font point-size="19">[Container: Python 3.11, ThreadingHTTPServer]</font><br /><br /><font point-size="24">Authenticated loopback HTTP<br />API that handles capture,<br />visit events, media artifact<br />upload/fetch/purge, exact<br />search,<br />recent/timeline/detail, policy<br />rules, doctor, forget, and<br />static UI serving.</font>>, style=filled, color="#2e6295", fillcolor="#438dd5", fontcolor="#ffffff"]
   }
 
-  8 -> 7 [id=49, label=<<font point-size="24">Builds capture payloads<br />with</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  8 -> 9 [id=50, label=<<font point-size="24">Sends captures and inline<br />blobs to</font><br /><font point-size="19">[chrome.runtime.sendMessage]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  9 -> 13 [id=51, label=<<font point-size="24">Queues captures in<br />chrome.storage.local and<br />media tasks/blobs in<br />IndexedDB</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  9 -> 14 [id=52, label=<<font point-size="24">Delivers captures, events,<br />metadata, and raw blobs to</font><br /><font point-size="19">[Bearer HTTP/JSON; raw HTTP PUT]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+  8 -> 7 [id=49, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Builds capture payloads<br />with</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  8 -> 9 [id=50, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Sends captures and inline<br />blobs to</font><br /><font point-size="19">[chrome.runtime.sendMessage]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  9 -> 13 [id=51, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Queues captures in<br />chrome.storage.local and<br />media tasks/blobs in<br />IndexedDB</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  9 -> 14 [id=52, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Delivers captures, events,<br />metadata, and raw blobs to</font><br /><font point-size="19">[Bearer HTTP/JSON; raw HTTP PUT]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
 
 }

@@ -30,9 +30,9 @@ digraph {
     29 [id=29,shape=cylinder, label=<<font point-size="34">Media Blob Cache</font><br /><font point-size="19">[Container: WSL filesystem]</font><br /><br /><font point-size="24">Bounded and disposable<br />filesystem cache for stored<br />image/video/audio blobs with<br />purge and rehydrate semantics.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
   }
 
-  15 -> 22 [id=67, label=<<font point-size="24">Routes forget requests to</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  22 -> 27 [id=79, label=<<font point-size="24">Deletes rows and records<br />receipts in</font><br /><font point-size="19">[sqlite3]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  22 -> 28 [id=80, label=<<font point-size="24">Deletes text blobs from</font><br /><font point-size="19">[Filesystem]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  22 -> 29 [id=81, label=<<font point-size="24">Deletes media blobs from</font><br /><font point-size="19">[Filesystem]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+  15 -> 22 [id=67, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Routes forget requests to</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  22 -> 27 [id=79, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Deletes rows and records<br />receipts in</font><br /><font point-size="19">[sqlite3]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  22 -> 28 [id=80, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Deletes text blobs from</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  22 -> 29 [id=81, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Deletes media blobs from</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
 
 }

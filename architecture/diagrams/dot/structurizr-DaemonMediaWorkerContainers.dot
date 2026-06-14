@@ -20,8 +20,8 @@ digraph {
     29 [id=29,shape=cylinder, label=<<font point-size="34">Media Blob Cache</font><br /><font point-size="19">[Container: WSL filesystem]</font><br /><br /><font point-size="24">Bounded and disposable<br />filesystem cache for stored<br />image/video/audio blobs with<br />purge and rehydrate semantics.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
   }
 
-  24 -> 27 [id=46, label=<<font point-size="24">Leases and updates media<br />tasks in</font><br /><font point-size="19">[sqlite3]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  24 -> 3 [id=47, label=<<font point-size="24">Fetches public media and<br />HLS from</font><br /><font point-size="19">[HTTP(S), data URLs]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  24 -> 29 [id=48, label=<<font point-size="24">Writes fetched media blobs<br />to</font><br /><font point-size="19">[Filesystem]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+  24 -> 27 [id=46, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Leases and updates media<br />tasks in</font><br /><font point-size="19">[sqlite3]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  24 -> 3 [id=47, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Fetches public media and<br />HLS from</font><br /><font point-size="19">[HTTP(S), data URLs]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  24 -> 29 [id=48, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Writes fetched media blobs<br />to</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
 
 }

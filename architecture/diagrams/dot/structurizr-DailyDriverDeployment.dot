@@ -30,7 +30,6 @@ digraph {
         fillcolor="#ffffff"
 
         88 [id=88,shape=rect, label=<<font point-size="34">Chrome MV3 Extension</font><br /><font point-size="19">[Container: JavaScript, Chrome Manifest V3]</font><br /><br /><font point-size="24">Captures visible page text,<br />media references, tab<br />lifecycle events, and<br />browser-side media bytes from<br />Windows Chrome; queues work<br />durably and posts to the WSL<br />daemon.</font>>, style=filled, color="#2e6295", fillcolor="#438dd5", fontcolor="#ffffff"]
-        89 [id=89,shape=cylinder, label=<<font point-size="34">Extension Browser<br />Storage</font><br /><font point-size="19">[Container: chrome.storage.local + IndexedDB]</font><br /><br /><font point-size="24">Browser-side storage for<br />capture and visit queues in<br />chrome.storage.local plus<br />durable media tasks and<br />fetched blobs in IndexedDB.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
         91 [id=91,shape=rect, label=<<font point-size="34">Local Web UI</font><br /><font point-size="19">[Container: HTML/CSS/JavaScript served by daemon]</font><br /><br /><font point-size="24">Static browser UI for exact<br />search, recent/timeline views,<br />document/snapshot detail,<br />media artifact opening, policy<br />rules, doctor, and<br />forget-domain operations.</font>>, style=filled, color="#2e6295", fillcolor="#438dd5", fontcolor="#ffffff"]
       }
 
@@ -77,23 +76,18 @@ digraph {
         fontcolor="#444444"
         fillcolor="#ffffff"
 
-        100 [id=100,shape=rect, label=<<font point-size="34">CLI</font><br /><font point-size="19">[Container: Python argparse]</font><br /><br /><font point-size="24">Command-line interface for<br />serving the daemon,<br />health/doctor/search/recent/timeline/detail,<br />policy/forget, capture<br />fixtures, media worker, and<br />media cache operations.</font>>, style=filled, color="#2e6295", fillcolor="#438dd5", fontcolor="#ffffff"]
       }
 
     }
 
   }
 
-  100 -> 95 [id=101, label=<<font point-size="24">Calls health, read, admin,<br />capture-fixture, and<br />forget APIs on</font><br /><font point-size="19">[HTTP/JSON]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  95 -> 103 [id=104, label=<<font point-size="24">Reads and writes metadata,<br />FTS, tasks, audit, and<br />receipts in</font><br /><font point-size="19">[sqlite3]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  98 -> 103 [id=105, label=<<font point-size="24">Leases and updates media<br />tasks in</font><br /><font point-size="19">[sqlite3]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  100 -> 103 [id=106, label=<<font point-size="24">Runs media-worker and<br />media-cache commands<br />against</font><br /><font point-size="19">[sqlite3]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  95 -> 107 [id=108, label=<<font point-size="24">Reads and writes text<br />snapshots in</font><br /><font point-size="19">[Filesystem]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  95 -> 109 [id=110, label=<<font point-size="24">Stores, serves, purges,<br />and rehydrates media blobs<br />in</font><br /><font point-size="19">[Filesystem]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  98 -> 109 [id=111, label=<<font point-size="24">Writes fetched media blobs<br />to</font><br /><font point-size="19">[Filesystem]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  100 -> 109 [id=112, label=<<font point-size="24">Purges and rehydrates<br />media blobs through</font><br /><font point-size="19">[Filesystem]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  88 -> 89 [id=90, label=<<font point-size="24">Queues captures, lifecycle<br />events, media tasks, and<br />blobs in</font><br /><font point-size="19">[chrome.storage.local + IndexedDB]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  88 -> 95 [id=96, label=<<font point-size="24">Posts captures, events,<br />media metadata, and raw<br />blobs to</font><br /><font point-size="19">[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  91 -> 95 [id=97, label=<<font point-size="24">Calls authenticated read,<br />admin, media, and forget<br />APIs on</font><br /><font point-size="19">[HTTP/JSON]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+  95 -> 103 [id=104, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Reads and writes metadata,<br />FTS, tasks, audit, and<br />receipts in</font><br /><font point-size="19">[sqlite3]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  98 -> 103 [id=105, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Leases and updates media<br />tasks in</font><br /><font point-size="19">[sqlite3]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  95 -> 107 [id=108, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Reads and writes text<br />snapshots in</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  95 -> 109 [id=110, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Stores, serves, purges,<br />and rehydrates media blobs<br />in</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  98 -> 109 [id=111, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Writes fetched media blobs<br />to</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  88 -> 95 [id=96, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Posts captures, events,<br />media metadata, and raw<br />blobs to</font><br /><font point-size="19">[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  91 -> 95 [id=97, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Calls authenticated read,<br />admin, media, and forget<br />APIs on</font><br /><font point-size="19">[HTTP/JSON]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
 
 }

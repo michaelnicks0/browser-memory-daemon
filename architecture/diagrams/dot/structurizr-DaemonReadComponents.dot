@@ -30,9 +30,9 @@ digraph {
     29 [id=29,shape=cylinder, label=<<font point-size="34">Media Blob Cache</font><br /><font point-size="19">[Container: WSL filesystem]</font><br /><br /><font point-size="24">Bounded and disposable<br />filesystem cache for stored<br />image/video/audio blobs with<br />purge and rehydrate semantics.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
   }
 
-  15 -> 21 [id=66, label=<<font point-size="24">Routes read requests to</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  21 -> 27 [id=76, label=<<font point-size="24">Reads metadata and FTS<br />from</font><br /><font point-size="19">[SQLite FTS5]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  21 -> 28 [id=77, label=<<font point-size="24">Reads full snapshot text<br />from</font><br /><font point-size="19">[Filesystem]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  21 -> 29 [id=78, label=<<font point-size="24">Checks and serves media<br />files from</font><br /><font point-size="19">[Filesystem]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+  15 -> 21 [id=66, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Routes read requests to</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  21 -> 27 [id=76, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Reads metadata and FTS<br />from</font><br /><font point-size="19">[SQLite FTS5]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  21 -> 28 [id=77, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Reads full snapshot text<br />from</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  21 -> 29 [id=78, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Checks and serves media<br />files from</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
 
 }
