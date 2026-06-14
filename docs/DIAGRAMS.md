@@ -2,8 +2,8 @@
 
 > **Audience:** maintainers and future agents.
 > **Purpose:** preserve hand-authored Mermaid diagrams for behavior that should not be forced into C4.
-> **Architecture atlas:** [`../architecture/c4-diagrams.md`](../architecture/c4-diagrams.md).
-> **C4 source of truth:** [`../architecture/workspace.dsl`](../architecture/workspace.dsl).
+> **Architecture atlas:** [`architecture/c4-diagrams.md`](architecture/c4-diagrams.md).
+> **C4 source of truth:** [`architecture/workspace.dsl`](architecture/workspace.dsl).
 
 ---
 
@@ -13,7 +13,7 @@ C4 owns the architecture topology: systems, containers, components, deployment, 
 
 | Need | Canonical home |
 |---|---|
-| System context, container topology, component topology, deployment | [`../architecture/c4-diagrams.md`](../architecture/c4-diagrams.md) |
+| System context, container topology, component topology, deployment | [`architecture/c4-diagrams.md`](architecture/c4-diagrams.md) |
 | Exact endpoint/message names, redaction branches, state machines, algorithms, cache/status semantics, delete cascades | This file and the relevant feature docs |
 | Durable media sidecar protocol details | [`media-artifacts.md`](media-artifacts.md) plus the media diagrams below |
 | Policy/security posture | [`security-model.md`](security-model.md) plus the policy ladder below |

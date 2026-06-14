@@ -70,7 +70,7 @@ The system shall enable Operator to reconstruct recently viewed web content by c
 
 ## Architecture diagrams
 
-The canonical C4 model lives in [`../architecture/workspace.dsl`](../architecture/workspace.dsl). Use the generated single-file atlas at [`../architecture/c4-diagrams.md`](../architecture/c4-diagrams.md) for architecture topology.
+The canonical C4 model lives in [`architecture/workspace.dsl`](architecture/workspace.dsl). Use the generated single-file atlas at [`architecture/c4-diagrams.md`](architecture/c4-diagrams.md) for architecture topology.
 
 | Question | C4 view |
 |---|---|
@@ -113,9 +113,9 @@ text/FTS/media refs remain authoritative
 
 | Need | Diagram/doc |
 |---|---|
-| Architecture-level media topology | [`../architecture/c4-diagrams.md`](../architecture/c4-diagrams.md): `BrowserMediaContainers`, `ExtensionMediaComponents`, `DaemonMediaWorkerContainers`, `DaemonMediaComponents` |
-| Browser credentialed sidecar scenario | [`../architecture/c4-diagrams.md`](../architecture/c4-diagrams.md): `CredentialedMediaSidecarFlow` |
-| Daemon-public worker scenario | [`../architecture/c4-diagrams.md`](../architecture/c4-diagrams.md): `DaemonPublicMediaWorkerFlow` |
+| Architecture-level media topology | [`architecture/c4-diagrams.md`](architecture/c4-diagrams.md): `BrowserMediaContainers`, `ExtensionMediaComponents`, `DaemonMediaWorkerContainers`, `DaemonMediaComponents` |
+| Browser credentialed sidecar scenario | [`architecture/c4-diagrams.md`](architecture/c4-diagrams.md): `CredentialedMediaSidecarFlow` |
+| Daemon-public worker scenario | [`architecture/c4-diagrams.md`](architecture/c4-diagrams.md): `DaemonPublicMediaWorkerFlow` |
 | Parallel browser/daemon sidecar sequence, status reasons, HLS/CDP details | [`media-artifacts.md`](media-artifacts.md#capture-flow) |
 | Cache/status behavior and provenance-preserving purge | [`DIAGRAMS.md`](DIAGRAMS.md#4-durable-media-sidecars-and-cache-outcomes) |
 

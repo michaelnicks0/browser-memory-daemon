@@ -2,7 +2,7 @@
 
 > Generated Markdown index for Structurizr-derived diagrams. Canonical model: [`workspace.dsl`](../workspace.dsl).
 
-<!-- Generated from architecture/diagrams/*.mmd; refresh from architecture/workspace.dsl. -->
+<!-- Generated from docs/architecture/diagrams/*.mmd; refresh from docs/architecture/workspace.dsl. -->
 
 | View | Markdown | Preferred render | Mermaid | Graphviz SVG | Graphviz PNG |
 |---|---|---|---|---|---|

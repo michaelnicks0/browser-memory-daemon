@@ -1,12 +1,12 @@
-# Credentialed Media Sidecar Flow
+# Browser Media Containers
 
-> Generated Markdown wrapper for C4 view `CredentialedMediaSidecarFlow`. Canonical model: [`workspace.dsl`](../../workspace.dsl).
+> Generated Markdown wrapper for C4 view `BrowserMediaContainers`. Canonical model: [`workspace.dsl`](../../workspace.dsl).
 
-<!-- Generated from Structurizr exports; refresh from architecture/workspace.dsl. -->
+<!-- Generated from Structurizr exports; refresh from docs/architecture/workspace.dsl. -->
 
 ## Diagram
 
-![Credentialed Media Sidecar Flow](../dot-rendered/structurizr-CredentialedMediaSidecarFlow.svg)
+![Browser Media Containers](../dot-rendered/structurizr-BrowserMediaContainers.svg)
 
 _Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for text review._
 
@@ -14,11 +14,14 @@ _Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for 
 <summary>Mermaid source</summary>
 
 ```mermaid
-graph LR
+graph TB
   linkStyle default fill:#ffffff
 
-  subgraph diagram ["Dynamic View: Browser Memory Daemon"]
+  subgraph diagram ["Container View: Browser Memory Daemon"]
     style diagram fill:#ffffff,stroke:#ffffff
+
+    3["<div style='font-weight: bold'>Web Sites and Media Origins</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>External web pages,<br />image/video URLs, and media<br />CDNs that Chrome loads or<br />that sidecars fetch as<br />page-related media.</div>"]
+    style 3 fill:#999999,stroke:#6b6b6b,color:#ffffff
 
     subgraph 4 ["Browser Memory Daemon"]
       style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
@@ -35,15 +38,11 @@ graph LR
       style 5 fill:#438dd5,stroke:#2e6295,color:#ffffff
     end
 
-    3["<div style='font-weight: bold'>Web Sites and Media Origins</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>External web pages,<br />image/video URLs, and media<br />CDNs that Chrome loads or<br />that sidecars fetch as<br />page-related media.</div>"]
-    style 3 fill:#999999,stroke:#6b6b6b,color:#ffffff
-
-    5-. "<div>1. Reads due media task</div><div style='font-size: 70%'>[chrome.storage.local + IndexedDB]</div>" .->13
-    5-. "<div>2. Fetches source URL with<br />Chrome cookie envelope</div><div style='font-size: 70%'>[DOM; fetch(credentials: include)]</div>" .->3
-    5-. "<div>3. Persists fetched blob<br />until upload succeeds</div><div style='font-size: 70%'>[chrome.storage.local + IndexedDB]</div>" .->13
-    5-. "<div>4. PUTs raw blob to<br />/media-artifacts/{id}/blob</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</div>" .->14
-    14-. "<div>5. Writes blob if MIME and<br />cache gates allow</div><div style='font-size: 70%'>[Filesystem]</div>" .->29
-    14-. "<div>6. Updates artifact<br />status=stored, hash, byte<br />size, and task state</div><div style='font-size: 70%'>[sqlite3]</div>" .->27
+    5-. "<div>Extracts DOM refs and fetches<br />queued credentialed media<br />from</div><div style='font-size: 70%'>[DOM; fetch(credentials: include)]</div>" .->3
+    5-. "<div>Queues captures, lifecycle<br />events, media tasks, and<br />blobs in</div><div style='font-size: 70%'>[chrome.storage.local + IndexedDB]</div>" .->13
+    5-. "<div>Posts /capture,<br />/visit-events, media<br />metadata, and raw blob<br />uploads to</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</div>" .->14
+    14-. "<div>Reads and writes metadata,<br />FTS, tasks, audit, and<br />receipts in</div><div style='font-size: 70%'>[sqlite3]</div>" .->27
+    14-. "<div>Stores, serves, purges, and<br />rehydrates media blobs in</div><div style='font-size: 70%'>[Filesystem]</div>" .->29
 
   end
 ```
@@ -54,9 +53,9 @@ graph LR
 
 | Artifact | Link |
 |---|---|
-| Mermaid source | [`structurizr-CredentialedMediaSidecarFlow.mmd`](../structurizr-CredentialedMediaSidecarFlow.mmd) |
-| Mermaid SVG | [`structurizr-CredentialedMediaSidecarFlow.svg`](../structurizr-CredentialedMediaSidecarFlow.svg) |
-| Mermaid PNG | [`structurizr-CredentialedMediaSidecarFlow.png`](../structurizr-CredentialedMediaSidecarFlow.png) |
-| DOT source | [`structurizr-CredentialedMediaSidecarFlow.dot`](../dot/structurizr-CredentialedMediaSidecarFlow.dot) |
-| Graphviz SVG | [`structurizr-CredentialedMediaSidecarFlow.svg`](../dot-rendered/structurizr-CredentialedMediaSidecarFlow.svg) |
-| Graphviz PNG | [`structurizr-CredentialedMediaSidecarFlow.png`](../dot-rendered/structurizr-CredentialedMediaSidecarFlow.png) |
+| Mermaid source | [`structurizr-BrowserMediaContainers.mmd`](../structurizr-BrowserMediaContainers.mmd) |
+| Mermaid SVG | [`structurizr-BrowserMediaContainers.svg`](../structurizr-BrowserMediaContainers.svg) |
+| Mermaid PNG | [`structurizr-BrowserMediaContainers.png`](../structurizr-BrowserMediaContainers.png) |
+| DOT source | [`structurizr-BrowserMediaContainers.dot`](../dot/structurizr-BrowserMediaContainers.dot) |
+| Graphviz SVG | [`structurizr-BrowserMediaContainers.svg`](../dot-rendered/structurizr-BrowserMediaContainers.svg) |
+| Graphviz PNG | [`structurizr-BrowserMediaContainers.png`](../dot-rendered/structurizr-BrowserMediaContainers.png) |

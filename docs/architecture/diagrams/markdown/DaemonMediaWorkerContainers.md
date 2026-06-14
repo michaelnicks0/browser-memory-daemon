@@ -2,7 +2,7 @@
 
 > Generated Markdown wrapper for C4 view `DaemonMediaWorkerContainers`. Canonical model: [`workspace.dsl`](../../workspace.dsl).
 
-<!-- Generated from Structurizr exports; refresh from architecture/workspace.dsl. -->
+<!-- Generated from Structurizr exports; refresh from docs/architecture/workspace.dsl. -->
 
 ## Diagram
 

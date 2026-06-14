@@ -8,8 +8,8 @@ This directory contains the C4 model-as-code for the Browser Memory Daemon repo.
 - Per-view Markdown diagrams: [`diagrams/markdown/`](diagrams/markdown/)
 - Lightweight text exports: [`diagrams/*.mmd`](diagrams/) after Mermaid export
 - Visual-review exports: [`diagrams/*.png`](diagrams/), [`diagrams/*.svg`](diagrams/), and Graphviz renders under [`diagrams/dot-rendered/`](diagrams/dot-rendered/)
-- Narrative architecture: [`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md)
-- Behavioral Mermaid diagrams for non-C4 mechanics: [`../docs/DIAGRAMS.md`](../docs/DIAGRAMS.md)
+- Narrative architecture: [`../ARCHITECTURE.md`](../ARCHITECTURE.md)
+- Behavioral Mermaid diagrams for non-C4 mechanics: [`../DIAGRAMS.md`](../DIAGRAMS.md)
 
 ## Scope
 
@@ -28,8 +28,8 @@ The system boundary is **Browser Memory Daemon**, including the owned Chrome ext
 
 - `workspace.dsl` is the canonical C4 source for systems, containers, components, deployment, and major scenario flows.
 - `c4-diagrams.md` is the generated all-views C4 atlas and preferred architecture diagram entrypoint.
-- `../docs/DIAGRAMS.md` keeps hand-authored Mermaid diagrams for non-C4 mechanics: policy ladders, redaction branches, state machines, identity formulas, endpoint maps, media cache/status semantics, and delete cascades.
-- Do not duplicate broad topology in `docs/DIAGRAMS.md`; add missing architecture topology to this C4 model instead.
+- `../DIAGRAMS.md` keeps hand-authored Mermaid diagrams for non-C4 mechanics: policy ladders, redaction branches, state machines, identity formulas, endpoint maps, media cache/status semantics, and delete cascades.
+- Do not duplicate broad topology in `../DIAGRAMS.md`; add missing architecture topology to this C4 model instead.
 
 ## Views
 
@@ -60,40 +60,40 @@ Using Structurizr CLI:
 
 ```bash
 STRUCTURIZR_CLI=${STRUCTURIZR_CLI:-/tmp/structurizr-cli/structurizr.sh}
-"$STRUCTURIZR_CLI" validate -workspace architecture/workspace.dsl
+"$STRUCTURIZR_CLI" validate -workspace docs/architecture/workspace.dsl
 
 # Mermaid text exports plus SVG/PNG renders.
-find architecture/diagrams -maxdepth 1 -type f \( -name '*.mmd' -o -name '*.svg' -o -name '*.png' \) -delete
+find docs/architecture/diagrams -maxdepth 1 -type f \( -name '*.mmd' -o -name '*.svg' -o -name '*.png' \) -delete
 JAVA_TOOL_OPTIONS='-Djava.awt.headless=true' \
-  "$STRUCTURIZR_CLI" export -workspace architecture/workspace.dsl -format mermaid -output architecture/diagrams
+  "$STRUCTURIZR_CLI" export -workspace docs/architecture/workspace.dsl -format mermaid -output docs/architecture/diagrams
 
 cat > /tmp/bmd-mermaid-config.json <<'JSON'
 {"securityLevel":"loose","htmlLabels":true}
 JSON
-for f in architecture/diagrams/*.mmd; do
+for f in docs/architecture/diagrams/*.mmd; do
   npx --yes @mermaid-js/mermaid-cli -c /tmp/bmd-mermaid-config.json -i "$f" -o "${f%.mmd}.svg"
   npx --yes @mermaid-js/mermaid-cli -c /tmp/bmd-mermaid-config.json -i "$f" -o "${f%.mmd}.png" -b transparent
 done
 
 # Graphviz/DOT exports for stakeholder-readable relationship-label placement.
-rm -rf architecture/diagrams/dot architecture/diagrams/dot-rendered
-mkdir -p architecture/diagrams/dot architecture/diagrams/dot-rendered
+rm -rf docs/architecture/diagrams/dot docs/architecture/diagrams/dot-rendered
+mkdir -p docs/architecture/diagrams/dot docs/architecture/diagrams/dot-rendered
 JAVA_TOOL_OPTIONS='-Djava.awt.headless=true' \
-  "$STRUCTURIZR_CLI" export -workspace architecture/workspace.dsl -format dot -output architecture/diagrams/dot
+  "$STRUCTURIZR_CLI" export -workspace docs/architecture/workspace.dsl -format dot -output docs/architecture/diagrams/dot
 python3 /home/user/.hermes/skills/software-development/c4-structurizr-architecture/scripts/graphviz-edge-label-backgrounds.py \
-  architecture/diagrams/dot
-for file in architecture/diagrams/dot/*.dot; do
+  docs/architecture/diagrams/dot
+for file in docs/architecture/diagrams/dot/*.dot; do
   base=$(basename "$file" .dot)
-  dot -Tsvg "$file" -o "architecture/diagrams/dot-rendered/$base.svg"
-  dot -Tpng "$file" -o "architecture/diagrams/dot-rendered/$base.png"
+  dot -Tsvg "$file" -o "docs/architecture/diagrams/dot-rendered/$base.svg"
+  dot -Tpng "$file" -o "docs/architecture/diagrams/dot-rendered/$base.png"
 done
 
 # Markdown wrappers display the cleanest render first, keep Mermaid source collapsed,
 # and generate the top-level all-views atlas.
-rm -rf architecture/diagrams/markdown architecture/diagrams/README.md architecture/c4-diagrams.md
+rm -rf docs/architecture/diagrams/markdown docs/architecture/diagrams/README.md docs/architecture/c4-diagrams.md
 python3 /home/user/.hermes/skills/software-development/c4-structurizr-architecture/scripts/structurizr-diagrams-to-markdown.py \
-  --diagrams-dir architecture/diagrams \
-  --workspace architecture/workspace.dsl \
+  --diagrams-dir docs/architecture/diagrams \
+  --workspace docs/architecture/workspace.dsl \
   --title "Browser Memory Daemon Architecture C4 Diagrams"
 ```
 

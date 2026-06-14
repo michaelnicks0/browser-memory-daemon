@@ -11,7 +11,7 @@
 | If you need to... | Read |
 |---|---|
 | Use the system day to day | [`USER_GUIDE.md`](USER_GUIDE.md) |
-| Understand the architecture | [`ARCHITECTURE.md`](ARCHITECTURE.md), [`../architecture/c4-diagrams.md`](../architecture/c4-diagrams.md) |
+| Understand the architecture | [`ARCHITECTURE.md`](ARCHITECTURE.md), [`architecture/c4-diagrams.md`](architecture/c4-diagrams.md) |
 | See behavioral Mermaid flows/diagrams | [`DIAGRAMS.md`](DIAGRAMS.md) |
 | Call or extend the HTTP API | [`api.md`](api.md) |
 | Understand CLI commands and flags | [`CLI_UX_CONTRACT.md`](CLI_UX_CONTRACT.md) |

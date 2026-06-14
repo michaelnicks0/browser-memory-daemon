@@ -1,12 +1,12 @@
-# Daemon Read Components
+# Daemon Doctor Components
 
-> Generated Markdown wrapper for C4 view `DaemonReadComponents`. Canonical model: [`workspace.dsl`](../../workspace.dsl).
+> Generated Markdown wrapper for C4 view `DaemonDoctorComponents`. Canonical model: [`workspace.dsl`](../../workspace.dsl).
 
-<!-- Generated from Structurizr exports; refresh from architecture/workspace.dsl. -->
+<!-- Generated from Structurizr exports; refresh from docs/architecture/workspace.dsl. -->
 
 ## Diagram
 
-![Daemon Read Components](../dot-rendered/structurizr-DaemonReadComponents.svg)
+![Daemon Doctor Components](../dot-rendered/structurizr-DaemonDoctorComponents.svg)
 
 _Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for text review._
 
@@ -28,8 +28,8 @@ graph LR
 
         15["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server]</div><div style='font-size: 80%; margin-top:10px'>Routes loopback API requests,<br />serves UI assets, enforces<br />bearer auth for memory/admin<br />APIs, and applies CORS for<br />allowed origins.</div>"]
         style 15 fill:#85bbf0,stroke:#5d82a8,color:#000000
-        21["<div style='font-weight: bold'>Search and Read Model</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + SQLite FTS5]</div><div style='font-size: 80%; margin-top:10px'>Provides exact FTS search,<br />recent captures, timeline,<br />document detail, snapshot<br />detail, and media artifact<br />detail views.</div>"]
-        style 21 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        23["<div style='font-weight: bold'>Ops Doctor and Audit</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Reports health, DB integrity,<br />FTS consistency, runtime<br />paths, storage counts, media<br />queue status, and writes<br />metadata-only audit events.</div>"]
+        style 23 fill:#85bbf0,stroke:#5d82a8,color:#000000
       end
 
       27[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable relational and<br />full-text store for sources,<br />documents, visits, visit<br />events, snapshots, chunks,<br />chunks_fts, media artifacts,<br />media fetch tasks, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
@@ -40,10 +40,10 @@ graph LR
       style 29 fill:#2f95c8,stroke:#20688c,color:#ffffff
     end
 
-    15-. "<div>Routes read requests to</div><div style='font-size: 70%'></div>" .->21
-    21-. "<div>Reads metadata and FTS from</div><div style='font-size: 70%'>[SQLite FTS5]</div>" .->27
-    21-. "<div>Reads full snapshot text from</div><div style='font-size: 70%'>[Filesystem]</div>" .->28
-    21-. "<div>Checks and serves media files<br />from</div><div style='font-size: 70%'>[Filesystem]</div>" .->29
+    15-. "<div>Routes health and audit work<br />to</div><div style='font-size: 70%'></div>" .->23
+    23-. "<div>Checks integrity and counts<br />in</div><div style='font-size: 70%'>[sqlite3]</div>" .->27
+    23-. "<div>Counts text blob files in</div><div style='font-size: 70%'>[Filesystem]</div>" .->28
+    23-. "<div>Counts media blob files in</div><div style='font-size: 70%'>[Filesystem]</div>" .->29
 
   end
 ```
@@ -54,9 +54,9 @@ graph LR
 
 | Artifact | Link |
 |---|---|
-| Mermaid source | [`structurizr-DaemonReadComponents.mmd`](../structurizr-DaemonReadComponents.mmd) |
-| Mermaid SVG | [`structurizr-DaemonReadComponents.svg`](../structurizr-DaemonReadComponents.svg) |
-| Mermaid PNG | [`structurizr-DaemonReadComponents.png`](../structurizr-DaemonReadComponents.png) |
-| DOT source | [`structurizr-DaemonReadComponents.dot`](../dot/structurizr-DaemonReadComponents.dot) |
-| Graphviz SVG | [`structurizr-DaemonReadComponents.svg`](../dot-rendered/structurizr-DaemonReadComponents.svg) |
-| Graphviz PNG | [`structurizr-DaemonReadComponents.png`](../dot-rendered/structurizr-DaemonReadComponents.png) |
+| Mermaid source | [`structurizr-DaemonDoctorComponents.mmd`](../structurizr-DaemonDoctorComponents.mmd) |
+| Mermaid SVG | [`structurizr-DaemonDoctorComponents.svg`](../structurizr-DaemonDoctorComponents.svg) |
+| Mermaid PNG | [`structurizr-DaemonDoctorComponents.png`](../structurizr-DaemonDoctorComponents.png) |
+| DOT source | [`structurizr-DaemonDoctorComponents.dot`](../dot/structurizr-DaemonDoctorComponents.dot) |
+| Graphviz SVG | [`structurizr-DaemonDoctorComponents.svg`](../dot-rendered/structurizr-DaemonDoctorComponents.svg) |
+| Graphviz PNG | [`structurizr-DaemonDoctorComponents.png`](../dot-rendered/structurizr-DaemonDoctorComponents.png) |

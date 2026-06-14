@@ -9,7 +9,7 @@ Guidance for AI coding agents working in this repo.
 - `docs/README.md` — canonical documentation index.
 - `docs/USER_GUIDE.md` — daily-driver operations and troubleshooting.
 - `docs/ARCHITECTURE.md` — architecture, ConOps, requirements trace, and reconciled media-sidecar plan rationale.
-- `architecture/c4-diagrams.md` — generated C4 architecture diagram atlas; `architecture/workspace.dsl` is canonical.
+- `docs/architecture/c4-diagrams.md` — generated C4 architecture diagram atlas; `docs/architecture/workspace.dsl` is canonical.
 - `docs/DIAGRAMS.md` — behavioral Mermaid diagrams for non-C4 mechanics.
 - `docs/CLI_UX_CONTRACT.md` — CLI contract.
 - `docs/api.md` — authenticated loopback API surface.
