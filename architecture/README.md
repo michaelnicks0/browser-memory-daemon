@@ -3,7 +3,8 @@
 This directory contains the C4 model-as-code for the Browser Memory Daemon repo.
 
 - Canonical source: [`workspace.dsl`](workspace.dsl)
-- Markdown diagram entrypoint: [`diagrams/README.md`](diagrams/README.md)
+- Single-file C4 Markdown atlas: [`c4-diagrams.md`](c4-diagrams.md)
+- Generated diagram artifact index: [`diagrams/README.md`](diagrams/README.md)
 - Per-view Markdown diagrams: [`diagrams/markdown/`](diagrams/markdown/)
 - Lightweight text exports: [`diagrams/*.mmd`](diagrams/) after Mermaid export
 - Visual-review exports: [`diagrams/*.png`](diagrams/), [`diagrams/*.svg`](diagrams/), and Graphviz renders under [`diagrams/dot-rendered/`](diagrams/dot-rendered/)
@@ -80,15 +81,16 @@ for file in architecture/diagrams/dot/*.dot; do
   dot -Tpng "$file" -o "architecture/diagrams/dot-rendered/$base.png"
 done
 
-# Markdown wrappers display the cleanest render first and keep Mermaid source collapsed.
-rm -rf architecture/diagrams/markdown architecture/diagrams/README.md
+# Markdown wrappers display the cleanest render first, keep Mermaid source collapsed,
+# and generate the top-level all-views atlas.
+rm -rf architecture/diagrams/markdown architecture/diagrams/README.md architecture/c4-diagrams.md
 python3 /home/user/.hermes/skills/software-development/c4-structurizr-architecture/scripts/structurizr-diagrams-to-markdown.py \
   --diagrams-dir architecture/diagrams \
   --workspace architecture/workspace.dsl \
-  --title "Browser Memory Daemon Architecture Diagrams"
+  --title "Browser Memory Daemon Architecture C4 Diagrams"
 ```
 
-The Mermaid, DOT, SVG, PNG, and Markdown exports are derived artifacts. Refresh them from `workspace.dsl`; do not treat them as the source of truth. Use `diagrams/README.md` and `diagrams/markdown/*.md` as the Markdown-first human reading surface; those pages embed Graphviz SVG renders with white-backed relationship labels when available and keep Mermaid source collapsed for text review. The `JAVA_TOOL_OPTIONS` setting keeps Structurizr CLI export headless-friendly under WSL.
+The Mermaid, DOT, SVG, PNG, and Markdown exports are derived artifacts. Refresh them from `workspace.dsl`; do not treat them as the source of truth. Use `c4-diagrams.md` as the single-file Markdown atlas for all generated views. `diagrams/README.md` and `diagrams/markdown/*.md` remain generated artifact/per-view navigation surfaces. These Markdown pages embed Graphviz SVG renders with white-backed relationship labels when available and keep Mermaid source collapsed for text review. The `JAVA_TOOL_OPTIONS` setting keeps Structurizr CLI export headless-friendly under WSL.
 
 ## Source grounding
 

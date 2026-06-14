@@ -1,6 +1,6 @@
-# Browser Memory Daemon Architecture Diagrams
+# Browser Memory Daemon Architecture C4 Diagrams
 
-> Generated Markdown entrypoint for Structurizr-derived diagrams. Canonical model: [`workspace.dsl`](../workspace.dsl).
+> Generated Markdown index for Structurizr-derived diagrams. Canonical model: [`workspace.dsl`](../workspace.dsl).
 
 <!-- Generated from architecture/diagrams/*.mmd; refresh from architecture/workspace.dsl. -->
 
