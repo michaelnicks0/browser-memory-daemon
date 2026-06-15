@@ -24,7 +24,7 @@ Guidance for AI coding agents working in this repo.
 
 - Windows Chrome is the browser surface; WSL owns all durable data.
 - Keep implementation data under XDG WSL runtime paths, never in this repo.
-- Default policy mode is `all`: maximum recall, no daemon redaction or URL policy filtering, local block rules ignored, DOM extraction skip retained.
+- Default policy mode is `all`: maximum recall, no daemon redaction or built-in URL filtering, explicit local block rules still apply, DOM extraction skip retained.
 - Preserve `recall`, `balanced`, and `strict` as adjustable alternatives.
 - Add or update tests with behavior changes.
 - For architecture-impacting changes, inspect `docs/architecture/adr/` first and create or supersede an ADR when the change affects boundaries, interfaces, schemas, policy modes, storage, privacy/security posture, media sidecars, verification strategy, or recurring Hermes workflows.
@@ -60,7 +60,7 @@ BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
 - Do not commit `*.sqlite3`, blobs, logs, extension keys, native messaging manifests, tokens, cookies, or raw captures.
 - Do not expose the daemon beyond loopback without explicit approval.
 - Do not make content scripts call localhost directly; route through the service worker.
-- In `all` mode, do not assume block rules or redaction will protect data. That is intentional.
+- In `all` mode, do not assume built-in sensitive URL filters or redaction will protect data; only explicit local block rules narrow capture.
 
 ---
 

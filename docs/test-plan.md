@@ -15,7 +15,8 @@
 | REQ-003 service worker bridge | real Chrome e2e verifies service-worker-owned injection/capture. |
 | REQ-004 auth + loopback | HTTP unauthorized tests; bind defaults in config; Windows PowerShell health checks. |
 | REQ-005 adjustable policy modes | `daemon/tests/unit/test_policy.py`; `extension/tests/unit/extractor.test.js`. |
-| REQ-006 all-mode no URL filtering/redaction | daemon integration stores unredacted fixture secrets; extension unit tests verify URL filters are off while hidden/form/editable/script/style/no-script DOM text is skipped; real Chrome e2e default expects banking/local fixtures searchable. |
+| REQ-006 all-mode no built-in URL filtering/redaction | daemon integration stores unredacted fixture secrets; extension unit tests verify built-in URL filters are off while hidden/form/editable/script/style/no-script DOM text is skipped; real Chrome e2e default expects banking/local fixtures searchable. |
+| REQ-006A explicit block rules | `daemon/tests/unit/test_policy_store.py`; `daemon/tests/e2e/test_admin_api.py::test_url_prefix_policy_rule_applies_in_all_mode_without_blocking_all_localhost`. |
 | REQ-007 non-all redaction | policy and ingest tests verify secrets absent in strict mode. |
 | REQ-008 FTS search | integration/e2e search tests. |
 | REQ-009 schema | DB initialized and table inventory checked by integration/e2e tests. |

@@ -1,5 +1,6 @@
 const DEFAULTS = { daemonUrl: 'http://127.0.0.1:8765', apiToken: '', capturePaused: false, policyMode: 'all', cdpRecorderEnabled: true, cdpRecorderDomains: ['x.com', 'twitter.com'], lastCdpRecorderStatus: null, lastCdpRecorderError: null };
 let currentDomain = '';
+let currentBlockRule = null;
 
 function setStatus(value) {
   document.getElementById('status').textContent = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
@@ -13,13 +14,25 @@ async function currentTab() {
 async function loadCurrentDomain() {
   const tab = await currentTab();
   try {
-    currentDomain = new URL(tab?.url || '').hostname.replace(/^www\./, '');
+    const url = new URL(tab?.url || '');
+    currentDomain = url.hostname.replace(/^www\./, '');
+    currentBlockRule = blockRuleForUrl(url);
   } catch (_) {
     currentDomain = '';
+    currentBlockRule = null;
   }
   document.getElementById('domain').textContent = currentDomain || 'No http(s) tab selected.';
   const cfg = await config();
   document.getElementById('mode').textContent = `mode=${cfg.policyMode || 'all'} paused=${Boolean(cfg.capturePaused)} cdp=${cfg.cdpRecorderEnabled !== false}`;
+}
+
+function blockRuleForUrl(url) {
+  if (!['http:', 'https:'].includes(url.protocol)) return null;
+  const hostname = url.hostname.replace(/^www\./, '');
+  if ((hostname === 'localhost' || hostname.startsWith('127.')) && url.port) {
+    return {rule_type: 'url-prefix', pattern: `${url.protocol}//${url.host}/`, action: 'block'};
+  }
+  return {rule_type: 'domain', pattern: hostname, action: 'block'};
 }
 
 async function config() {
@@ -64,8 +77,8 @@ async function daemonRequest(path, body) {
 }
 
 async function blockCurrentDomain() {
-  if (!currentDomain) throw new Error('No current domain to block.');
-  const payload = await daemonRequest('/policy/rules', {rule_type: 'domain', pattern: currentDomain, action: 'block'});
+  if (!currentBlockRule) throw new Error('No current http(s) page to block.');
+  const payload = await daemonRequest('/policy/rules', currentBlockRule);
   setStatus(payload);
 }
 

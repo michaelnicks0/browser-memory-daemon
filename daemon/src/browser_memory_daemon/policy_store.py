@@ -17,6 +17,8 @@ def normalize_rule_pattern(rule_type: str, pattern: str) -> str:
         raise ValueError("policy rule pattern is required")
     if rule_type == "domain":
         parts = urlsplit(text if "://" in text else f"https://{text}")
+        if parts.port is not None or parts.path not in {"", "/"} or parts.query or parts.fragment:
+            raise ValueError("domain policy rule pattern must be a hostname without port, path, query, or fragment; use url-prefix for scoped URL rules")
         host = (parts.hostname or text).strip().strip("[]").rstrip(".").lower()
         if not host or "/" in host or " " in host:
             raise ValueError("domain policy rule pattern must be a hostname")
@@ -25,7 +27,7 @@ def normalize_rule_pattern(rule_type: str, pattern: str) -> str:
         parts = urlsplit(text)
         if parts.scheme not in {"http", "https"} or not parts.netloc:
             raise ValueError("url-prefix policy rule pattern must be an absolute http(s) URL prefix")
-        return text
+        return text.rstrip("#")
     raise ValueError(f"unsupported policy rule type: {rule_type}")
 
 
@@ -78,7 +80,7 @@ def evaluate_policy_rules(conn: sqlite3.Connection, url: str) -> PolicyDecision:
         if row["rule_type"] == "domain" and _domain_matches(host, pattern):
             return PolicyDecision(False, f"policy-rule:block-domain:{pattern}", "blocked")
         if row["rule_type"] == "url-prefix" and (url or "").startswith(pattern):
-            return PolicyDecision(False, "policy-rule:block-url-prefix", "blocked")
+            return PolicyDecision(False, f"policy-rule:block-url-prefix:{pattern}", "blocked")
     return PolicyDecision(True)
 
 

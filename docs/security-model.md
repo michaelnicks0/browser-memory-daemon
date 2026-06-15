@@ -2,7 +2,7 @@
 
 > **Audience:** operator and maintainers.
 > **Status:** ✅ Adjustable policy modes implemented.
-> **Default:** `all` — maximum personal recall, no URL policy filtering or daemon redaction.
+> **Default:** `all` — maximum personal recall, no built-in URL policy filtering or daemon redaction; explicit local block rules still apply.
 
 ---
 
@@ -25,7 +25,7 @@ The daemon is local-first and WSL-resident. It assumes captured page text may be
 
 | Mode | Purpose | Filtering | Redaction | Notes |
 |---|---|---:|---:|---|
-| `all` | Maximum personal recall. | URL off; DOM skip retained | ❌ Off | Default. Ignores local block rules. |
+| `all` | Maximum personal recall. | Built-in URL filters off; explicit local block rules on; DOM skip retained | ❌ Off | Default. |
 | `recall` | Broad recall with minimal protective boundaries. | ⚠️ Minimal | ✅ On | Blocks incognito/internal/file/non-web schemes. |
 | `balanced` | Practical privacy with less overblocking than strict. | ✅ Moderate | ✅ On | Blocks private hosts, known high-risk domains, and high-risk query keys. |
 | `strict` | Legacy broad privacy filtering. | ✅ Broad | ✅ On | Keyword-heavy domain/path/query blocks. |
@@ -34,13 +34,13 @@ The daemon is local-first and WSL-resident. It assumes captured page text may be
 
 ## `all` mode risk acceptance
 
-`all` intentionally stores original URL/title/body text without daemon redaction and without URL/domain/path/query filtering. It still skips hidden/form/editable/script/style/no-script DOM text because Operator requested those surfaces stay omitted. This is an operator-selected personal recall mode.
+`all` intentionally stores original URL/title/body text without daemon redaction and without built-in URL/domain/path/query filtering. It still applies explicit local block rules and skips hidden/form/editable/script/style/no-script DOM text because Operator requested those surfaces stay omitted. This is an operator-selected personal recall mode.
 
 Known consequences:
 
 - visible/exposed page secrets can be stored and indexed;
 - account, email, chat, health, payment, and local/private pages can be stored;
-- local block rules do not narrow capture;
+- only explicit local block rules narrow capture;
 - Chrome platform restrictions still apply where extension injection is refused.
 
 Mitigations that remain even in `all`:

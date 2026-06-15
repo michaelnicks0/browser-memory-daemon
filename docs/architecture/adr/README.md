@@ -10,12 +10,13 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 |---|---|---|
 | [ADR-0001](0001-use-repo-local-architecture-decision-records.md) | accepted | Use repo-local Markdown ADRs for architecture-significant changes. |
 | [ADR-0002](0002-keep-browser-memory-local-across-windows-chrome-and-wsl.md) | accepted | Keep browser memory local across Windows Chrome and the WSL daemon. |
-| [ADR-0003](0003-use-all-policy-mode-as-daily-driver-default.md) | accepted | Use `all` policy mode as the daily-driver default. |
+| [ADR-0003](0003-use-all-policy-mode-as-daily-driver-default.md) | superseded | Use `all` policy mode as the daily-driver default. Superseded by ADR-0009. |
 | [ADR-0004](0004-use-text-first-sqlite-fts5-and-blob-storage.md) | accepted | Use text-first SQLite/FTS5 and WSL-local blob storage. |
 | [ADR-0005](0005-use-durable-lazy-media-sidecars-with-bounded-cache.md) | accepted | Use durable lazy media sidecars with a bounded disposable cache. |
 | [ADR-0006](0006-use-forget-cascade-with-deletion-receipts.md) | accepted | Use forget/delete cascades with deletion receipts. |
 | [ADR-0007](0007-use-real-chrome-e2e-as-verification-authority.md) | accepted | Use real Chrome / Chrome for Testing e2e as the verification authority. |
 | [ADR-0008](0008-use-c4-structurizr-as-canonical-architecture-model.md) | accepted | Use C4/Structurizr under `docs/architecture/` as the canonical architecture model. |
+| [ADR-0009](0009-apply-explicit-block-rules-in-all-mode.md) | accepted | Apply explicit local block rules in `all` mode while preserving the daily-driver default. |
 
 ## Backfilled decision history
 

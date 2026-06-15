@@ -58,7 +58,7 @@ Do not commit browser captures, DBs, logs, extension private keys, raw HTML, tok
 
 | Mode | Behavior |
 |---|---|
-| `all` | Default. Captures every URL surface Chrome/extension runtime allows; no daemon redaction; skips hidden/form/editable/script/style/no-script DOM text; ignores local block rules. |
+| `all` | Default. Captures every URL surface Chrome/extension runtime allows; no daemon redaction; skips hidden/form/editable/script/style/no-script DOM text; applies explicit local block rules. |
 | `recall` | Broad capture with minimal internal/incognito/non-web blocking and redaction. |
 | `balanced` | Practical blocks for private hosts, known high-risk domains/query keys, and redaction. |
 | `strict` | Legacy broad privacy filtering and redaction. |
@@ -128,4 +128,4 @@ http://127.0.0.1:8765/ui
 - Native messaging fallback/hardening.
 - Encrypted backups/restore.
 - Multi-source importers.
-- Rich allow/redact/quarantine policy editing and retention jobs.
+- Rich allow/redact/quarantine policy editing and retention jobs beyond explicit block rules.

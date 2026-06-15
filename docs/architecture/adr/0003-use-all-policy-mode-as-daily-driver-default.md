@@ -1,13 +1,14 @@
 ---
 id: ADR-0003
-status: accepted
+status: superseded
 date: 2026-06-14
 decision_date: 2026-06-09
 decider: Operator
 scope: repo
 backfilled: true
 supersedes: []
-superseded_by: []
+superseded_by:
+  - ADR-0009
 related:
   - docs/ARCHITECTURE.md
   - docs/security-model.md
@@ -24,6 +25,8 @@ verification:
 ---
 
 # ADR-0003: Use `all` Policy Mode as the Daily-Driver Default
+
+> Superseded by [ADR-0009](0009-apply-explicit-block-rules-in-all-mode.md), which keeps `all` as the daily-driver default but applies explicit local block rules in every mode.
 
 ## Context
 

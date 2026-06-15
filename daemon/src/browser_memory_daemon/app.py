@@ -294,10 +294,12 @@ def make_handler(config: RuntimeConfig):
                     url = params.get("url", [""])[0]
                     static_decision = evaluate_capture(url, policy_mode=config.policy_mode)
                     persistent_decision = static_decision
-                    if static_decision.allowed and config.policy_mode != POLICY_MODE_ALL:
+                    if static_decision.allowed:
                         init_db(config)
                         with connect(config.db_path) as conn:
-                            persistent_decision = evaluate_policy_rules(conn, url)
+                            rules_decision = evaluate_policy_rules(conn, url)
+                            if not rules_decision.allowed:
+                                persistent_decision = rules_decision
                     _json_response(
                         self,
                         200,
@@ -438,8 +440,10 @@ def make_handler(config: RuntimeConfig):
                 )
                 init_db(config)
                 with connect(config.db_path) as conn:
-                    if decision.allowed and config.policy_mode != POLICY_MODE_ALL:
-                        decision = evaluate_policy_rules(conn, url)
+                    if decision.allowed:
+                        rules_decision = evaluate_policy_rules(conn, url)
+                        if not rules_decision.allowed:
+                            decision = rules_decision
                     if not decision.allowed:
                         audit(conn, "visit_event.blocked", {"reason": decision.reason})
                         conn.commit()
@@ -461,8 +465,10 @@ def make_handler(config: RuntimeConfig):
                 )
                 init_db(config)
                 with connect(config.db_path) as conn:
-                    if decision.allowed and config.policy_mode != POLICY_MODE_ALL:
-                        decision = evaluate_policy_rules(conn, url)
+                    if decision.allowed:
+                        rules_decision = evaluate_policy_rules(conn, url)
+                        if not rules_decision.allowed:
+                            decision = rules_decision
                     if not decision.allowed:
                         audit(conn, "capture.blocked", {"reason": decision.reason})
                         conn.commit()

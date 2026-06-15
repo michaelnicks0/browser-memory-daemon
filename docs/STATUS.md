@@ -37,7 +37,7 @@ This means:
 - no static URL/domain/path/query filtering;
 - no daemon redaction before storage/FTS;
 - extension DOM extraction still skips hidden/form/editable/script/style/no-script text;
-- local block rules are ignored;
+- explicit local block rules still apply;
 - platform limits still apply when Chrome refuses extension injection.
 
 ---

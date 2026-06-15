@@ -48,11 +48,11 @@ The daily-driver default is now:
 policy_mode = all
 ```
 
-`all` is intentionally the least restrictive mode: it disables URL/incognito/private-host filtering, disables redaction, and ignores local block rules. Other modes remain available:
+`all` is intentionally the least restrictive mode: it disables built-in URL/incognito/private-host filtering and redaction, while still applying explicit local block rules. Other modes remain available:
 
 | Mode | Intended use |
 |---|---|
-| `all` | Maximum personal recall; no daemon redaction or URL policy filtering; DOM extraction still skips hidden/form/editable/script/style/no-script text. |
+| `all` | Maximum personal recall; no daemon redaction or built-in URL policy filtering; explicit local block rules still apply; DOM extraction still skips hidden/form/editable/script/style/no-script text. |
 | `recall` | Broad capture with browser/internal scheme and incognito blocks plus redaction. |
 | `balanced` | Broad capture with known high-risk domain/query/private-host blocks plus redaction. |
 | `strict` | Legacy broad privacy filtering plus redaction. |

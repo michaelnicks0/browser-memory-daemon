@@ -62,3 +62,8 @@ def test_cli_admin_commands(cli_server, capsys):
     assert main(_base_args(cli_server) + ["policy-rules", "--block-domain", "cli-block.example"]) == 0
     rule = _last_json(capsys)
     assert rule["rule"]["pattern"] == "cli-block.example"
+
+    assert main(_base_args(cli_server) + ["policy-rules", "--block-url-prefix", "http://127.0.0.1:32400/"]) == 0
+    prefix_rule = _last_json(capsys)
+    assert prefix_rule["rule"]["rule_type"] == "url-prefix"
+    assert prefix_rule["rule"]["pattern"] == "http://127.0.0.1:32400/"

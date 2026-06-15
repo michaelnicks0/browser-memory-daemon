@@ -122,7 +122,7 @@ Current UI controls:
 - search exact FTS snippets;
 - review recent captures and timeline by date;
 - open document and snapshot detail, including visit dwell and lifecycle events;
-- add block-domain policy rules for non-`all` modes;
+- add block-domain and URL-prefix policy rules;
 - forget a domain after explicit browser confirmation;
 - run `doctor` diagnostics for DB, FTS, storage, paths, and policy mode.
 
@@ -155,7 +155,7 @@ In `all` mode:
 
 - banking/account/chat/mail/local/private-host URLs are not blocked by policy;
 - URL/title/body text is not redacted by the daemon;
-- explicit local block rules are ignored;
+- explicit local block rules still apply;
 - hidden/form/editable/script/style/no-script DOM text is still skipped;
 - Chrome platform restrictions can still prevent injection on browser-owned pages.
 

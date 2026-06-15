@@ -222,7 +222,7 @@ Current explicit rules are block-only:
 }
 ```
 
-Rules narrow capture only in `recall`, `balanced`, and `strict`. They are intentionally ignored in `all` mode.
+Rules narrow capture in every policy mode, including `all`. Use `domain` for host/subdomain blocks and `url-prefix` for scoped local ports or paths, such as `http://127.0.0.1:32400/`.
 
 ---
 
@@ -230,9 +230,9 @@ Rules narrow capture only in `recall`, `balanced`, and `strict`. They are intent
 
 ```json
 {
-  "allowed": true,
-  "reason": "allowed:all",
-  "privacy_class": "all",
+  "allowed": false,
+  "reason": "policy-rule:block-url-prefix:http://127.0.0.1:32400/",
+  "privacy_class": "blocked",
   "policy_mode": "all",
   "static_reason": "allowed:all"
 }

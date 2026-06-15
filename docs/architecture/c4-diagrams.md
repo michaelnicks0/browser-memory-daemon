@@ -621,7 +621,7 @@ graph LR
         style 15 fill:#85bbf0,stroke:#5d82a8,color:#000000
         16["<div style='font-weight: bold'>Policy Engine</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Evaluates<br />all/recall/balanced/strict<br />capture mode decisions and<br />redacts URL/title/body text<br />outside all mode.</div>"]
         style 16 fill:#85bbf0,stroke:#5d82a8,color:#000000
-        17["<div style='font-weight: bold'>Policy Store</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + SQLite]</div><div style='font-size: 80%; margin-top:10px'>Persists and evaluates local<br />block-domain and URL-prefix<br />rules for non-all modes.</div>"]
+        17["<div style='font-weight: bold'>Policy Store</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + SQLite]</div><div style='font-size: 80%; margin-top:10px'>Persists and evaluates explicit<br />local block-domain and<br />URL-prefix rules for every<br />policy mode.</div>"]
         style 17 fill:#85bbf0,stroke:#5d82a8,color:#000000
       end
 

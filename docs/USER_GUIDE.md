@@ -69,7 +69,7 @@ Do **not** install by editing Chrome profile JSON. Chrome Secure Preferences rej
 
 | Mode | Capture behavior | Redaction | Local block rules |
 |---|---|---:|---:|
-| `all` | Captures all URL surfaces the extension/Chrome platform allows; skips hidden/form/editable/script/style/no-script DOM text. | ❌ Off | ❌ Ignored |
+| `all` | Captures all URL surfaces the extension/Chrome platform allows unless explicitly blocked; skips hidden/form/editable/script/style/no-script DOM text. | ❌ Off | ✅ Applied |
 | `recall` | Captures most `http(s)` pages; blocks incognito/browser-internal/non-web schemes. | ✅ On | ✅ Applied |
 | `balanced` | `recall` plus private-host, known bank/payment/mail/auth domains, and high-risk query-key blocks. | ✅ On | ✅ Applied |
 | `strict` | Legacy broad keyword filtering for sensitive domains/paths/query keys. | ✅ On | ✅ Applied |
@@ -85,6 +85,18 @@ Or for one CLI/dev daemon run:
 ```bash
 PYTHONPATH=daemon/src BMD_API_TOKEN=dev-token \
   python3 -m browser_memory_daemon --token dev-token --policy-mode balanced serve
+```
+
+Add a domain block or scoped local URL-prefix block:
+
+```bash
+PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
+  --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
+  policy-rules --block-domain example.com
+
+PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
+  --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
+  policy-rules --block-url-prefix http://127.0.0.1:32400/
 ```
 
 ---
@@ -178,7 +190,7 @@ Popup controls:
 | Toggle pause | Pauses/resumes capture. Reloading the extension does not necessarily clear pause state. |
 | Health | Checks daemon health and reports extension mode/pause state. |
 | Open dashboard | Opens `/ui`. |
-| Block current domain | Adds a daemon block rule. Ignored in `all` mode. |
+| Block current domain/prefix | Adds a daemon block rule. Localhost pages with explicit ports use URL-prefix rules so one local app does not block every loopback page. |
 | Forget current domain | Deletes stored memory for the current domain after confirmation. |
 
 Options page controls:

@@ -160,6 +160,27 @@ function renderRules(rules) {
   `).join('');
 }
 
+function normalizeUrlPrefix(input) {
+  const url = new URL(input);
+  if (!['http:', 'https:'].includes(url.protocol)) {
+    throw new Error('URL-prefix block rules must use http or https.');
+  }
+  if (!url.pathname) url.pathname = '/';
+  return url.toString();
+}
+
+function blockRuleFromInput(input) {
+  const value = String(input || '').trim();
+  if (!value) throw new Error('Block rule value is required.');
+  if (/^https?:\/\//i.test(value)) {
+    return {rule_type: 'url-prefix', pattern: normalizeUrlPrefix(value), action: 'block'};
+  }
+  if (/^[^/?#\s]+:\d+(?:\/.*)?$/.test(value)) {
+    return {rule_type: 'url-prefix', pattern: normalizeUrlPrefix(`http://${value}`), action: 'block'};
+  }
+  return {rule_type: 'domain', pattern: value, action: 'block'};
+}
+
 async function refreshRecent() {
   setMuted(els.recent, 'Loading…');
   const payload = await api('/recent?limit=25');
@@ -198,9 +219,10 @@ async function search(event) {
 }
 
 async function blockDomain(domain) {
+  const body = blockRuleFromInput(domain);
   const payload = await api('/policy/rules', {
     method: 'POST',
-    body: JSON.stringify({rule_type: 'domain', pattern: domain, action: 'block'}),
+    body: JSON.stringify(body),
   });
   els.blockDomain.value = '';
   await loadRules();

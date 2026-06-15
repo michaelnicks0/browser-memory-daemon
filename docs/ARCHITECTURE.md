@@ -203,7 +203,7 @@ status_reason  = cache-evicted:global-oldest
 | `chunks` / `chunks_fts` | Searchable text chunks and exact FTS index. |
 | `media_artifacts` | Related image/video refs, current blob status, provenance, purge state. |
 | `media_fetch_tasks` | Durable daemon-public media backfill leases/retries/status. |
-| `privacy_rules` | Block rules for non-`all` modes. |
+| `privacy_rules` | Explicit local block rules applied in every policy mode. |
 | `audit_events` | Metadata-only operational audit. |
 | `deletion_receipts` | Forget receipts and counts. |
 | `~/.local/share/browser-memory-daemon/blobs/clean-text/` | Stored text snapshots. |
@@ -229,4 +229,4 @@ status_reason  = cache-evicted:global-oldest
 | Semantic search | Planned only after explicit approval. |
 | Retention/export/backup | Planned. |
 | MCP/Hermes tool integration | Planned. |
-| Rich allow/redact/quarantine policies | Planned; current explicit rules are block-only and ignored in `all`. |
+| Rich allow/redact/quarantine policies | Planned; current explicit rules are block-only and applied in every mode. |

@@ -49,7 +49,7 @@ C4 shows the extension, service worker, browser storage, and daemon containers/c
 ```mermaid
 flowchart TD
   Mode{"policy_mode"}
-  Mode --> All["all<br/>Capture Chrome-allowed URL surfaces<br/>No daemon redaction<br/>Skip hidden/form/editable/script/style/no-script DOM text<br/>Ignore local block rules"]
+  Mode --> All["all<br/>Capture Chrome-allowed URL surfaces unless explicitly blocked<br/>No daemon redaction<br/>Skip hidden/form/editable/script/style/no-script DOM text"]
   Mode --> Recall["recall<br/>Block internal/non-web/incognito<br/>Redact URL/title/body before storage"]
   Mode --> Balanced["balanced<br/>Recall + private-host / known-risk blocks<br/>Redact URL/title/body before storage"]
   Mode --> Strict["strict<br/>Legacy broad keyword blocks<br/>Redact URL/title/body before storage"]

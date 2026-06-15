@@ -42,7 +42,7 @@ Global defaults:
 | `document DOCUMENT_ID` | Document details. | Pretty JSON. |
 | `snapshot SNAPSHOT_ID` | Snapshot details and text. | Pretty JSON. |
 | `search QUERY [--limit N]` | Exact FTS query. | Pretty JSON search results. |
-| `policy-rules [--block-domain DOMAIN]` | List or add block-domain rule. | Pretty JSON. Ignored in `all` mode. |
+| `policy-rules [--block-domain DOMAIN] [--block-url-prefix URL]` | List or add block-domain / URL-prefix rule. | Pretty JSON. Applies in every mode, including `all`. |
 | `forget [--domain DOMAIN] [--url URL]` | Delete memory by domain or URL. | Pretty JSON deletion receipt. |
 | `capture-fixture --url URL --title TITLE --text TEXT` | Synthetic capture through HTTP API. | Pretty JSON ingest result. |
 | `media-worker [--once|--loop] [--limit N] [--interval SEC]` | Run daemon public-media worker manually or as service. | Pretty JSON for `--once`; long-running loop for `--loop`. |
@@ -58,7 +58,7 @@ Global defaults:
 | Missing production token | `load_config` raises and CLI exits non-zero. |
 | Unauthorized API call | HTTP `401`; CLI surfaces exception/non-zero. |
 | Bad capture payload | HTTP `400` with JSON error. |
-| Blocked capture in non-`all` mode | HTTP `200`, `{"stored": false, "blocked": true, "reason": "..."}`. |
+| Blocked capture by static policy or explicit local rule | HTTP `200`, `{"stored": false, "blocked": true, "reason": "..."}`. |
 | `all` mode capture | Stores unredacted payload when payload is otherwise parseable. |
 | Forget by neither URL nor domain | HTTP `400` expected from daemon validation. |
 
@@ -81,12 +81,16 @@ PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
   search "example" --limit 10
 ```
 
-Add a non-all block rule:
+Add block rules:
 
 ```bash
 PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
   --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
   policy-rules --block-domain example.com
+
+PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
+  --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
+  policy-rules --block-url-prefix http://127.0.0.1:32400/
 ```
 
 Forget a domain:

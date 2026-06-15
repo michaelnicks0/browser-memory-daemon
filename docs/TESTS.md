@@ -25,6 +25,7 @@ git diff --check -- .
 | Test file/script | Covers |
 |---|---|
 | `daemon/tests/unit/test_policy.py` | Policy-mode decisions and redaction helpers. |
+| `daemon/tests/unit/test_policy_store.py` | Explicit block-rule validation and URL-prefix scope. |
 | `daemon/tests/integration/test_ingest_search_forget.py` | Ingest, redaction/non-redaction, FTS, dedupe, media artifact refs/blobs/tasks/size gates/fetch-pending, forget, schema. |
 | `daemon/tests/integration/test_media_worker.py` | Durable daemon media worker leases, public fetch, succeeded tasks, purge/rehydrate. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | Lifecycle events, dwell updates, duplicate/overlap protection. |
@@ -44,7 +45,7 @@ git diff --check -- .
 
 | Mode | Daemon unit/integration | Extension unit | Real Chrome e2e |
 |---|---|---|---|
-| `all` | Allows formerly blocked URL surfaces; stores unredacted fixture secrets. | Does not block URLs; still skips hidden/form/editable/script/style/no-script DOM text. | Default e2e expects banking and localhost fixtures searchable while hidden/form text stays absent. |
+| `all` | Allows formerly blocked URL surfaces unless explicitly blocked; stores unredacted fixture secrets. | Does not apply built-in URL blocks; still skips hidden/form/editable/script/style/no-script DOM text. | Default e2e expects banking and localhost fixtures searchable while hidden/form text stays absent. |
 | `recall` | Allows profile/settings and known domains; blocks incognito/internal schemes; redacts. | Allows broad `http(s)`; blocks browser/internal schemes. | Optional via `BMD_REAL_CHROME_POLICY_MODE=recall`. |
 | `balanced` | Allows normal profile/settings; blocks known high-risk domains/private hosts/query secrets; redacts. | Same class in extension prefilter. | Optional via `BMD_REAL_CHROME_POLICY_MODE=balanced`. |
 | `strict` | Legacy broad keyword/domain/path/query blocks; redacts. | Legacy URL/DOM skip behavior. | Optional via `BMD_REAL_CHROME_POLICY_MODE=strict`. |

@@ -148,3 +148,52 @@ def test_policy_rule_blocks_future_capture_and_can_be_deleted(server):
         "2026-06-08T13:00:00Z",
     )
     assert stored["stored"] is True
+
+
+def test_url_prefix_policy_rule_applies_in_all_mode_without_blocking_all_localhost(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", host="127.0.0.1", port=0, policy_mode="all")
+    srv = make_server(cfg)
+    thread = threading.Thread(target=srv.serve_forever, daemon=True)
+    thread.start()
+    base = f"http://127.0.0.1:{srv.server_address[1]}"
+    try:
+        status, created = request(
+            "POST",
+            f"{base}/policy/rules",
+            body={"rule_type": "url-prefix", "pattern": "http://127.0.0.1:32400/", "action": "block"},
+        )
+        assert status == 201
+        assert created["rule"]["pattern"] == "http://127.0.0.1:32400/"
+
+        plex_q = urllib.parse.urlencode({"url": "http://127.0.0.1:32400/web/index.html"})
+        status, plex_decision = request("GET", f"{base}/policy/evaluate?{plex_q}")
+        assert status == 200
+        assert plex_decision["allowed"] is False
+        assert plex_decision["reason"] == "policy-rule:block-url-prefix:http://127.0.0.1:32400/"
+        assert plex_decision["static_reason"] == "allowed:all"
+
+        other_q = urllib.parse.urlencode({"url": "http://127.0.0.1:8765/ui"})
+        status, other_decision = request("GET", f"{base}/policy/evaluate?{other_q}")
+        assert status == 200
+        assert other_decision["allowed"] is True
+        assert other_decision["reason"] == "allowed:all"
+
+        status, blocked = request(
+            "POST",
+            f"{base}/capture",
+            body={"url": "http://127.0.0.1:32400/web/index.html", "title": "Plex", "text": "Plex fixture."},
+        )
+        assert status == 200
+        assert blocked["stored"] is False
+        assert blocked["reason"] == "policy-rule:block-url-prefix:http://127.0.0.1:32400/"
+
+        status, stored = request(
+            "POST",
+            f"{base}/capture",
+            body={"url": "http://127.0.0.1:8765/ui", "title": "BMD UI", "text": "Local UI fixture."},
+        )
+        assert status == 201
+        assert stored["stored"] is True
+    finally:
+        srv.shutdown()
+        thread.join(timeout=5)

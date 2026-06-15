@@ -50,6 +50,7 @@ def main(argv: list[str] | None = None) -> int:
     search.add_argument("--limit", type=int, default=10)
     policy = sub.add_parser("policy-rules")
     policy.add_argument("--block-domain")
+    policy.add_argument("--block-url-prefix")
     forget = sub.add_parser("forget")
     forget.add_argument("--domain")
     forget.add_argument("--url")
@@ -132,8 +133,14 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(_request("GET", f"{base}/doctor", token=cfg.api_token), indent=2))
         return 0
     if args.command == "policy-rules":
-        if args.block_domain:
-            body = {"rule_type": "domain", "pattern": args.block_domain, "action": "block"}
+        if args.block_domain and args.block_url_prefix:
+            parser.error("policy-rules accepts only one of --block-domain or --block-url-prefix")
+        if args.block_domain or args.block_url_prefix:
+            body = {
+                "rule_type": "url-prefix" if args.block_url_prefix else "domain",
+                "pattern": args.block_url_prefix or args.block_domain,
+                "action": "block",
+            }
             print(json.dumps(_request("POST", f"{base}/policy/rules", token=cfg.api_token, body=body), indent=2))
         else:
             print(json.dumps(_request("GET", f"{base}/policy/rules", token=cfg.api_token), indent=2))
