@@ -1,15 +1,15 @@
-const DEFAULTS = { daemonUrl: 'http://127.0.0.1:8765', apiToken: '', capturePaused: false, policyMode: 'all', cdpRecorderEnabled: false, cdpRecorderDomains: ['x.com', 'twitter.com'] };
-const CDP_RECORDER_DEFAULT_OFF_MIGRATION_KEY = 'cdpRecorderDefaultOffMigratedAt';
+const DEFAULTS = { daemonUrl: 'http://127.0.0.1:8765', apiToken: '', capturePaused: false, policyMode: 'all', cdpRecorderEnabled: true, cdpRecorderDomains: ['x.com', 'twitter.com'] };
+const CDP_RECORDER_DEFAULT_ON_MIGRATION_KEY = 'cdpRecorderDefaultOnMigratedAt';
 
 async function load() {
   const cfg = await chrome.storage.local.get(DEFAULTS);
-  if (!cfg[CDP_RECORDER_DEFAULT_OFF_MIGRATION_KEY]) {
+  if (!cfg[CDP_RECORDER_DEFAULT_ON_MIGRATION_KEY]) {
     const migratedAt = new Date().toISOString();
-    const migration = { [CDP_RECORDER_DEFAULT_OFF_MIGRATION_KEY]: migratedAt };
-    if (cfg.cdpRecorderEnabled !== false) {
-      cfg.cdpRecorderEnabled = false;
-      migration.cdpRecorderEnabled = false;
-    }
+    cfg.cdpRecorderEnabled = true;
+    const migration = {
+      cdpRecorderEnabled: true,
+      [CDP_RECORDER_DEFAULT_ON_MIGRATION_KEY]: migratedAt
+    };
     await chrome.storage.local.set(migration);
   }
   document.getElementById('daemonUrl').value = cfg.daemonUrl;
@@ -28,7 +28,7 @@ async function save() {
     policyMode: document.getElementById('policyMode').value,
     cdpRecorderEnabled: document.getElementById('cdpRecorderEnabled').checked,
     cdpRecorderDomains: document.getElementById('cdpRecorderDomains').value.split(',').map((item) => item.trim()).filter(Boolean),
-    [CDP_RECORDER_DEFAULT_OFF_MIGRATION_KEY]: new Date().toISOString()
+    [CDP_RECORDER_DEFAULT_ON_MIGRATION_KEY]: new Date().toISOString()
   });
   document.getElementById('status').textContent = 'Saved';
 }

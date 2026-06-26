@@ -1,13 +1,14 @@
 ---
 id: ADR-0010
-status: accepted
+status: superseded
 date: 2026-06-26
 decision_date: 2026-06-26
 decider: Operator
 scope: repo
 backfilled: false
 supersedes: []
-superseded_by: []
+superseded_by:
+  - ADR-0011
 related:
   - docs/ARCHITECTURE.md
   - docs/USER_GUIDE.md

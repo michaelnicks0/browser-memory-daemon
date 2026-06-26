@@ -5,7 +5,7 @@ const DEFAULTS = {
   apiToken: '',
   capturePaused: false,
   policyMode: 'all',
-  cdpRecorderEnabled: false,
+  cdpRecorderEnabled: true,
   cdpRecorderDomains: ['x.com', 'twitter.com'],
   cdpRecorderMediaHosts: ['video.twimg.com'],
   captureQueue: [],
@@ -13,7 +13,7 @@ const DEFAULTS = {
   tabVisitState: {}
 };
 
-const CDP_RECORDER_DEFAULT_OFF_MIGRATION_KEY = 'cdpRecorderDefaultOffMigratedAt';
+const CDP_RECORDER_DEFAULT_ON_MIGRATION_KEY = 'cdpRecorderDefaultOnMigratedAt';
 
 const MAX_CAPTURE_QUEUE = 100;
 const MAX_VISIT_EVENT_QUEUE = 200;
@@ -75,14 +75,14 @@ function isTrackableUrl(url, policyMode = 'all') {
 
 async function getConfig() {
   const stored = await chrome.storage.local.get(DEFAULTS);
-  if (!stored[CDP_RECORDER_DEFAULT_OFF_MIGRATION_KEY]) {
+  if (!stored[CDP_RECORDER_DEFAULT_ON_MIGRATION_KEY]) {
     const migratedAt = nowIso();
-    stored[CDP_RECORDER_DEFAULT_OFF_MIGRATION_KEY] = migratedAt;
-    const migration = { [CDP_RECORDER_DEFAULT_OFF_MIGRATION_KEY]: migratedAt };
-    if (stored.cdpRecorderEnabled !== false) {
-      stored.cdpRecorderEnabled = false;
-      migration.cdpRecorderEnabled = false;
-    }
+    stored.cdpRecorderEnabled = true;
+    stored[CDP_RECORDER_DEFAULT_ON_MIGRATION_KEY] = migratedAt;
+    const migration = {
+      cdpRecorderEnabled: true,
+      [CDP_RECORDER_DEFAULT_ON_MIGRATION_KEY]: migratedAt
+    };
     await chrome.storage.local.set(migration);
   }
   return {

@@ -2,7 +2,13 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PY="${BMD_PYTHON:-$(command -v python3)}"
+if [ -n "${BMD_PYTHON:-}" ]; then
+  PY="$BMD_PYTHON"
+elif command -v python3.11 >/dev/null 2>&1; then
+  PY="$(command -v python3.11)"
+else
+  PY="$(command -v python3)"
+fi
 WIN_USER="${BMD_WINDOWS_USER:-user}"
 EXT_DIR="${BMD_WINDOWS_EXTENSION_DIR:-/mnt/c/Users/${WIN_USER}/AppData/Local/browser-memory-daemon/extension}"
 CFG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/browser-memory-daemon"

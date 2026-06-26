@@ -1,4 +1,4 @@
-const DEFAULTS = { daemonUrl: 'http://127.0.0.1:8765', apiToken: '', capturePaused: false, policyMode: 'all', cdpRecorderEnabled: false, cdpRecorderDomains: ['x.com', 'twitter.com'], lastCdpRecorderStatus: null, lastCdpRecorderError: null };
+const DEFAULTS = { daemonUrl: 'http://127.0.0.1:8765', apiToken: '', capturePaused: false, policyMode: 'all', cdpRecorderEnabled: true, cdpRecorderDomains: ['x.com', 'twitter.com'], lastCdpRecorderStatus: null, lastCdpRecorderError: null };
 let currentDomain = '';
 let currentBlockRule = null;
 
