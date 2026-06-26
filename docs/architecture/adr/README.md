@@ -19,6 +19,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0009](0009-apply-explicit-block-rules-in-all-mode.md) | accepted | Apply explicit local block rules in `all` mode while preserving the daily-driver default. |
 | [ADR-0010](0010-disable-cdp-recorder-by-default.md) | superseded | Disable the CDP recorder by default so daily Chrome avoids the native debugging banner while preserving opt-in X/Twitter video recovery. Superseded by ADR-0011. |
 | [ADR-0011](0011-enable-cdp-recorder-by-default-with-disable-control.md) | accepted | Enable the CDP recorder by default for X/Twitter video completeness while preserving an operator disable control for banner-free browsing. |
+| [ADR-0012](0012-bootstrap-local-ui-token-from-daemon.md) | accepted | Bootstrap the local dashboard token from the daemon-served `/ui` HTML so the UI opens populated while memory/admin APIs remain bearer-authenticated. |
 
 ## Backfilled decision history
 

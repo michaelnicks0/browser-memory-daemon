@@ -148,17 +148,27 @@ PY
 systemctl --user daemon-reload
 systemctl --user enable --now browser-memory-daemon.service browser-memory-media-worker.service >/dev/null
 systemctl --user restart browser-memory-daemon.service browser-memory-media-worker.service
-sleep 1
 systemctl --user is-active --quiet browser-memory-daemon.service
 systemctl --user is-active --quiet browser-memory-media-worker.service
 
 "$PY" - <<PY
+import time
+import urllib.error
 import urllib.request
 url = "http://$HOST:$PORT/health"
-with urllib.request.urlopen(url, timeout=5) as response:
-    body = response.read().decode("utf-8")
-    if response.status != 200:
-        raise SystemExit(f"health failed: {response.status} {body}")
+last_error = None
+for _ in range(40):
+    try:
+        with urllib.request.urlopen(url, timeout=2) as response:
+            body = response.read().decode("utf-8")
+            if response.status != 200:
+                raise SystemExit(f"health failed: {response.status} {body}")
+            break
+    except urllib.error.URLError as exc:
+        last_error = exc
+        time.sleep(0.25)
+else:
+    raise SystemExit(f"health failed: {last_error}")
 print("WSL health OK:", body)
 PY
 

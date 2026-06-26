@@ -115,7 +115,9 @@ Expected health includes:
 http://127.0.0.1:8765/ui
 ```
 
-Paste the daemon token from `~/.config/browser-memory-daemon/token` into the UI once. The UI stores it in browser `localStorage`; the daemon does not embed the token in HTML.
+Open the local UI directly through the daemon. The daemon embeds the current token into the served `/ui` HTML bootstrap, so the dashboard prepopulates the token and auto-loads recent captures, today's timeline, policy rules, and diagnostics. Static JS/CSS assets do not contain the token, and every memory/admin API still requires the bearer token.
+
+The **Save override** button remains available for unusual development/test cases; normal daily-driver use should not require pasting a token.
 
 Current UI controls:
 

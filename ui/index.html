@@ -14,8 +14,9 @@
       </div>
       <div class="token-card">
         <label for="token">API token</label>
-        <input id="token" type="password" autocomplete="off" placeholder="Paste daemon token" />
-        <button id="save-token" type="button">Save locally</button>
+        <input id="token" type="password" autocomplete="off" placeholder="Loaded from local daemon" />
+        <button id="save-token" type="button">Save override</button>
+        <small id="token-status" class="meta">Loading daemon token…</small>
       </div>
     </header>
 
@@ -37,7 +38,7 @@
             <h2>Recent captures</h2>
             <button id="refresh-recent" type="button">Refresh</button>
           </div>
-          <div id="recent" class="list muted">Add token, then refresh.</div>
+          <div id="recent" class="list muted">Loading recent captures…</div>
         </section>
 
         <section class="panel">
@@ -48,7 +49,7 @@
               <button id="load-timeline" type="button">Load</button>
             </div>
           </div>
-          <div id="timeline" class="list muted">Choose a date or load today.</div>
+          <div id="timeline" class="list muted">Loading today…</div>
         </section>
       </section>
 
@@ -70,7 +71,7 @@
             <h2>Diagnostics</h2>
             <button id="load-doctor" type="button">Run doctor</button>
           </div>
-          <pre id="doctor" class="code muted">Not run.</pre>
+          <pre id="doctor" class="code muted">Waiting for dashboard bootstrap…</pre>
         </section>
       </section>
 

@@ -38,7 +38,7 @@ The system shall enable Operator to reconstruct recently viewed web content by c
 | REQ-009 | Dedupe repeated unchanged captures. | normalized URLs + text hash snapshots | ingest tests |
 | REQ-010 | Capture SPA/delayed pages. | content-script delayed passes + history hooks | real Chrome SPA fixture |
 | REQ-011 | Track dwell/lifecycle metadata. | `/visit-events`, `lifecycle.py` | lifecycle tests + real e2e |
-| REQ-012 | Local UI and CLI operations. | `ui/`, `cli.py`, admin APIs | admin/CLI e2e tests |
+| REQ-012 | Local UI and CLI operations. | `ui/`, `cli.py`, admin APIs; `/ui` token bootstrap | admin/CLI e2e tests |
 | REQ-013 | Delete stored memory with receipts. | `forget.py`, `deletion_receipts` | forget integration/e2e tests |
 | REQ-014 | Real daily-driver install path. | `install-daily-driver.sh` | WSL + Windows health checks |
 | REQ-015 | Media bytes shall never block text/FTS capture. | `/capture` media refs, extension IndexedDB queue, media worker | integration + real Chrome e2e |
@@ -57,7 +57,7 @@ The system shall enable Operator to reconstruct recently viewed web content by c
 | Service worker | Auth, queues, injection, lifecycle state, fast `/capture`, browser lazy media queue/drain, daemon POST/PUTs, CDP recorder orchestration. | Text capture does not wait on media bytes. |
 | Extension media queue | Durable IndexedDB queue for credentialed media fetch/upload. | Stores fetched blobs until raw upload succeeds. |
 | CDP recorder | Enabled-by-default, operator-disableable domain-gated Chrome DevTools Protocol recorder for X/Twitter media network responses. | Captures `video.twimg.com` HLS manifests/segments before they collapse into opaque `blob:` player refs, but Chrome shows a native debugging banner while attached. |
-| Daemon API | Auth, CORS, routing, UI asset serving, raw media blob upload, cache controls. | `/health` public loopback; memory APIs tokened. |
+| Daemon API | Auth, CORS, routing, UI serving, token bootstrap, raw media blob upload, cache controls. | `/health` public loopback; `/ui` HTML gets same-origin token bootstrap; memory APIs tokened. |
 | Policy engine | Mode-specific allow/block/redact decisions. | `all`, `recall`, `balanced`, `strict`. |
 | Ingest pipeline | Normalize, store visits/documents/snapshots/chunks/FTS plus related media artifact refs/blobs. | `all` bypasses redaction. |
 | Lifecycle pipeline | Store metadata-only visit events and update dwell. | Uses policy mode for URL redaction/filtering. |
@@ -215,7 +215,7 @@ status_reason  = cache-evicted:global-oldest
 
 - Retrieved page text is untrusted evidence. It must not drive agent actions without operator intent.
 - The daemon binds to loopback and uses bearer auth for memory/admin endpoints.
-- The daily-driver token lives in WSL config and is copied into the local extension artifact during install.
+- The daily-driver token lives in WSL config, is copied into the local extension artifact during install, and is embedded into daemon-served `/ui` HTML for same-origin dashboard bootstrap; static UI assets stay token-free.
 - `all` mode intentionally removes daemon redaction and URL policy filtering; this is a local personal-recall tradeoff, not a multi-user default.
 - No cloud LLM/vector/embedding pipeline is implemented.
 

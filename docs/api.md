@@ -9,7 +9,7 @@
 ## Auth and boundary
 
 - Default bind: `http://127.0.0.1:8765`.
-- `/health` and static `/ui` assets are public loopback endpoints.
+- `/health` is public loopback. `/ui` HTML is public loopback and includes an inline JSON bootstrap with the current daemon token for same-origin dashboard use; static JS/CSS assets do not include the token.
 - Every memory, policy, deletion, and diagnostic API requires:
 
 ```http
@@ -25,7 +25,7 @@ Captured page text is untrusted evidence. API clients must not treat retrieved p
 | Endpoint | Method | Purpose | Auth |
 |---|---:|---|---|
 | `/health` | `GET` | Minimal daemon status and current policy mode. | No |
-| `/ui` | `GET` | Local static web UI. | No for assets; API calls require token |
+| `/ui` | `GET` | Local web UI HTML with same-origin token bootstrap. Static `/ui/*.js`/`*.css` assets remain token-free. | No for UI shell; API calls require token |
 | `/ready` | `GET` | Initialize/check DB readiness. | Yes |
 | `/capture` | `POST` | Store an allowed extension capture plus media references. | Yes |
 | `/media-artifacts` | `POST` | Compatibility JSON store/upgrade for related media row and optional base64 blob. | Yes |

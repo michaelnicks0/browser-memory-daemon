@@ -67,6 +67,29 @@ def _text_response(handler: BaseHTTPRequestHandler, status: int, body: bytes, *,
     handler.wfile.write(body)
 
 
+def _ui_bootstrap_script(config: RuntimeConfig) -> str:
+    payload = {
+        "api_token": config.api_token,
+        "policy_mode": config.policy_mode,
+        "storage_root": str(config.data_root),
+    }
+    # JSON script bodies are still parsed as HTML script text; escape closing
+    # tags so a future non-url-safe token value cannot terminate the script.
+    body = json.dumps(payload, sort_keys=True).replace("</", "<\\/")
+    return f'    <script id="bmd-bootstrap" type="application/json">{body}</script>\n'
+
+
+def _ui_file_body(path: Path, config: RuntimeConfig) -> bytes:
+    body = path.read_bytes()
+    if path.name != "index.html":
+        return body
+    text = body.decode("utf-8")
+    marker = '    <script src="/ui/app.js"></script>'
+    if marker not in text:
+        return body
+    return text.replace(marker, _ui_bootstrap_script(config) + marker, 1).encode("utf-8")
+
+
 def _binary_response(handler: BaseHTTPRequestHandler, status: int, body: bytes, *, content_type: str, filename: str | None = None) -> None:
     handler.send_response(status)
     handler.send_header("Content-Type", content_type or "application/octet-stream")
@@ -189,7 +212,7 @@ def make_handler(config: RuntimeConfig):
                 return
             ui_file = _ui_file_for_path(parsed.path)
             if ui_file:
-                _text_response(self, 200, ui_file.read_bytes(), content_type=_content_type(ui_file))
+                _text_response(self, 200, _ui_file_body(ui_file, config), content_type=_content_type(ui_file))
                 return
             if not _authorized(self, config):
                 _json_response(self, 401, {"error": "unauthorized"})

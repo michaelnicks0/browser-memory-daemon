@@ -1,5 +1,6 @@
 import json
 import threading
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -73,11 +74,20 @@ def test_admin_read_apis_and_ui_assets(server):
     assert status == 200
     assert "text/html" in content_type
     assert "Browser Memory" in html
+    assert "bmd-bootstrap" in html
+    assert '"api_token": "test-token"' in html
+    assert "Loaded from local daemon" in html
 
     status, content_type, js = raw_request("GET", f"{server}/ui/app.js", token=None)
     assert status == 200
     assert "application/javascript" in content_type
     assert "function escapeHtml" in js
+    assert "test-token" not in js
+    assert "bmd-bootstrap" in js
+
+    with pytest.raises(urllib.error.HTTPError) as exc:
+        raw_request("GET", f"{server}/recent?limit=5", token=None)
+    assert exc.value.code == 401
 
     status, recent = request("GET", f"{server}/recent?limit=5")
     assert status == 200

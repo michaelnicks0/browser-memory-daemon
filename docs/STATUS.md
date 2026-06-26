@@ -16,7 +16,7 @@
 | Exact search | ✅ FTS5 exact search with snippets/source metadata and media artifact counts. | `search.py`, `/search`, tests. |
 | Forget/delete | ✅ URL/domain forget with receipts and text/media blob + FTS cleanup. | `forget.py`, tests. |
 | Media artifacts | ✅ Durable image/video refs and binaries: fast text/manifest capture, browser IndexedDB lazy queue, credentialed fetch, raw blob upload, enabled-by-default X/Twitter CDP recorder with disable control, HLS/audio sidecar handling, daemon public worker, rolling cache gates, purge/rehydrate controls; no OCR/media indexing. | `media.py`, `media_worker.py`, `media_queue.js`, `cdp_recorder.js`, `/media-artifacts/*`, real Chrome e2e. |
-| Local UI | ✅ Search/recent/timeline/detail/doctor/policy/delete panels. | `ui/`, admin API tests. |
+| Local UI | ✅ Token-bootstrapped search/recent/timeline/detail/doctor/policy/delete panels; recent/today/doctor/policy auto-load on open. | `ui/`, admin API tests. |
 | CLI | ✅ serve/health/search/recent/timeline/detail/policy/forget/capture-fixture/media-worker/media-cache. | `cli.py`, CLI e2e. |
 | Dedupe/versioning | ✅ URL normalization + text-hash snapshots. | ingest tests. |
 | SPA/delayed capture | ✅ Delayed passes and History API hooks. | real Chrome SPA fixture. |

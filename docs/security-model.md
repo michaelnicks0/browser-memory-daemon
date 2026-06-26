@@ -14,7 +14,7 @@ The daemon is local-first and WSL-resident. It assumes captured page text may be
 |---|---|
 | Network | Daemon binds to `127.0.0.1` by default. |
 | API auth | Bearer token required for memory/admin APIs. |
-| Health/UI assets | `/health` and static `/ui` assets are public loopback only. |
+| Health/UI shell | `/health` and `/ui` are public loopback only; `/ui` HTML includes a same-origin token bootstrap for operator UX, while static assets stay token-free. |
 | Durable storage | WSL XDG paths; repo and Chrome profile are not storage roots. |
 | Browser bridge | Content scripts message service worker; service worker owns daemon fetch/auth/queues. |
 | Agent safety | Captured page text is untrusted evidence, never instructions. |
@@ -79,7 +79,7 @@ In `recall`, `balanced`, and `strict`, redaction runs before DB/FTS/blob storage
   BMD_ROTATE_TOKEN=1 BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
   ```
 
-- Local web UI is served from loopback at `/ui`; static assets are public, but every memory/admin API call requires the bearer token.
+- Local web UI is served from loopback at `/ui`; the HTML bootstrap embeds the current daemon token so the dashboard auto-loads without manual paste. Static JS/CSS assets remain token-free, and every memory/admin API call still requires the bearer token.
 - Deletion UX requires explicit browser confirmation before UI/popup forget-domain calls, and the daemon returns deletion receipts.
 
 ---

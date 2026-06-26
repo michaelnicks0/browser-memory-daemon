@@ -125,7 +125,7 @@ Local UI:
 http://127.0.0.1:8765/ui
 ```
 
-Paste the token once into the UI when prompted. Static UI files are public loopback assets; every memory/admin API call still requires the token.
+The daily-driver daemon embeds the current token into the `/ui` HTML bootstrap, so opening `http://127.0.0.1:8765/ui` from the local machine should prepopulate the token and immediately load recent captures, today's timeline, policy rules, and diagnostics. The token is not written into the static JS/CSS assets or the repo, and every memory/admin API call still requires the bearer token.
 
 ---
 

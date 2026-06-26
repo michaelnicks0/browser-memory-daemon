@@ -101,6 +101,8 @@ Local UI:
 http://127.0.0.1:8765/ui
 ```
 
+The daemon embeds the current bearer token into the local `/ui` HTML bootstrap so the dashboard opens populated and auto-loads recent captures, today's timeline, rules, and diagnostics without manual token paste.
+
 ---
 
 ## Implemented now

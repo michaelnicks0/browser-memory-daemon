@@ -1,5 +1,6 @@
 const els = {
   token: document.querySelector('#token'),
+  tokenStatus: document.querySelector('#token-status'),
   saveToken: document.querySelector('#save-token'),
   searchForm: document.querySelector('#search-form'),
   query: document.querySelector('#query'),
@@ -16,8 +17,21 @@ const els = {
   doctor: document.querySelector('#doctor'),
 };
 
+function bootstrapConfig() {
+  const node = document.querySelector('#bmd-bootstrap');
+  if (!node?.textContent) return {};
+  try {
+    return JSON.parse(node.textContent);
+  } catch (_) {
+    return {};
+  }
+}
+
+const bootstrap = bootstrapConfig();
+
 const state = {
-  token: localStorage.getItem('bmd.apiToken') || '',
+  token: bootstrap.api_token || localStorage.getItem('bmd.apiToken') || '',
+  tokenSource: bootstrap.api_token ? 'daemon' : (localStorage.getItem('bmd.apiToken') ? 'localStorage' : ''),
 };
 
 function escapeHtml(value) {
@@ -277,10 +291,21 @@ async function handleDelegatedClick(event) {
 
 function wire() {
   els.token.value = state.token;
+  if (els.tokenStatus) {
+    if (state.tokenSource === 'daemon') {
+      els.tokenStatus.textContent = `Loaded from this daemon · policy=${bootstrap.policy_mode || 'unknown'} · storage=${bootstrap.storage_root || 'unknown'}`;
+    } else if (state.tokenSource === 'localStorage') {
+      els.tokenStatus.textContent = 'Loaded saved browser override. The daemon can provide the token automatically on refresh.';
+    } else {
+      els.tokenStatus.textContent = 'No token available from daemon; paste one only if this page is served from somewhere else.';
+    }
+  }
   els.saveToken.addEventListener('click', () => {
     state.token = els.token.value.trim();
+    state.tokenSource = 'localStorage';
     localStorage.setItem('bmd.apiToken', state.token);
     setMuted(els.results, 'Token saved in this browser localStorage.');
+    if (els.tokenStatus) els.tokenStatus.textContent = 'Saved browser override. Refresh to return to daemon-provided token.';
   });
   els.searchForm.addEventListener('submit', (event) => search(event).catch((error) => setMuted(els.results, error.message)));
   els.refreshRecent.addEventListener('click', () => refreshRecent().catch((error) => setMuted(els.recent, error.message)));
@@ -293,8 +318,19 @@ function wire() {
   document.addEventListener('click', handleDelegatedClick);
 }
 
-wire();
-if (state.token) {
+function bootDashboard() {
+  wire();
+  if (!state.token) {
+    setMuted(els.recent, 'No daemon token was embedded. Open this UI through http://127.0.0.1:8765/ui or paste a token override.');
+    setMuted(els.timeline, 'No token available.');
+    els.doctor.textContent = 'No token available.';
+    return;
+  }
+  setMuted(els.results, state.tokenSource === 'daemon' ? 'Token loaded from local daemon. Dashboard is refreshing.' : 'Token loaded from browser storage. Dashboard is refreshing.');
   refreshRecent().catch((error) => setMuted(els.recent, error.message));
+  loadTimeline().catch((error) => setMuted(els.timeline, error.message));
   loadRules().catch((error) => setMuted(els.policyRules, error.message));
+  loadDoctor().catch((error) => { els.doctor.textContent = error.message; });
 }
+
+bootDashboard();
