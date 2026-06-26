@@ -1,4 +1,4 @@
-const DEFAULTS = { daemonUrl: 'http://127.0.0.1:8765', apiToken: '', capturePaused: false, policyMode: 'all', cdpRecorderEnabled: true, cdpRecorderDomains: ['x.com', 'twitter.com'], lastCdpRecorderStatus: null, lastCdpRecorderError: null };
+const DEFAULTS = { daemonUrl: 'http://127.0.0.1:8765', apiToken: '', capturePaused: false, policyMode: 'all', cdpRecorderEnabled: false, cdpRecorderDomains: ['x.com', 'twitter.com'], lastCdpRecorderStatus: null, lastCdpRecorderError: null };
 let currentDomain = '';
 let currentBlockRule = null;
 
@@ -23,7 +23,7 @@ async function loadCurrentDomain() {
   }
   document.getElementById('domain').textContent = currentDomain || 'No http(s) tab selected.';
   const cfg = await config();
-  document.getElementById('mode').textContent = `mode=${cfg.policyMode || 'all'} paused=${Boolean(cfg.capturePaused)} cdp=${cfg.cdpRecorderEnabled !== false}`;
+  document.getElementById('mode').textContent = `mode=${cfg.policyMode || 'all'} paused=${Boolean(cfg.capturePaused)} cdp=${Boolean(cfg.cdpRecorderEnabled)}`;
 }
 
 function blockRuleForUrl(url) {
@@ -53,7 +53,7 @@ async function health() {
     extension: {
       policyMode: cfg.policyMode || 'all',
       capturePaused: Boolean(cfg.capturePaused),
-      cdpRecorderEnabled: cfg.cdpRecorderEnabled !== false,
+      cdpRecorderEnabled: Boolean(cfg.cdpRecorderEnabled),
       cdpRecorderDomains: cfg.cdpRecorderDomains,
       lastCdpRecorderStatus: cfg.lastCdpRecorderStatus || null,
       lastCdpRecorderError: cfg.lastCdpRecorderError || null

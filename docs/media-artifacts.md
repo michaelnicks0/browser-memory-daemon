@@ -34,7 +34,7 @@ The Chrome content script extracts media references from:
 | `<video src>` / `<video><source src>` | `video:content` | Direct video source is stored if fetchable and under caps. |
 | Performance resource timing video entries | `video:content` | Preserved even when image refs fill the cap, so late-loaded direct video resources do not get crowded out by thumbnails. |
 | HLS `.m3u8` playlists | `video:content` | Browser sidecar leaves them for the daemon; the daemon resolves master/media playlists, concatenates init + segment bytes, and stores best-effort local `video/mp4`/`video/mp2t` artifacts plus audio-only rendition sidecars as `audio/*` blobs. |
-| CDP network media responses | `video:cdp-segment` / `video:cdp-manifest` | On X/Twitter tabs the extension uses `chrome.debugger` + CDP `Network` events to capture `video.twimg.com` HLS manifests and media segments before they disappear behind `blob:` player URLs. |
+| CDP network media responses | `video:cdp-segment` / `video:cdp-manifest` | Optional opt-in path: on X/Twitter tabs the extension uses `chrome.debugger` + CDP `Network` events to capture `video.twimg.com` HLS manifests and media segments before they disappear behind `blob:` player URLs. |
 
 Quality skips retained:
 
@@ -122,11 +122,11 @@ Important properties:
 - Credentialed media fetch happens inside Chrome; cookies are **not** exported to WSL.
 - WSL daemon media worker backfills public `http:`, `https:`, and `data:` refs.
 - HLS `.m3u8` playlist URLs are daemon-owned, not browser-queue-owned: the worker follows master playlists to a variant playlist, downloads init/segment bytes within the artifact cap, and stores the assembled bytes as local video. Audio-only HLS renditions are also stored as audio MIME sidecars (`audio/mp4`, etc.) while retaining `media_type='video'` provenance.
-- CDP recorder lane: when an active tab matches the configured recorder domains (`x.com`, `twitter.com` by default), the extension attaches `chrome.debugger`, enables CDP `Network`, records `video.twimg.com` manifest/segment responses, creates `media_artifacts` rows with `cdp_recorder=true`, and either uploads the response body directly or lets the daemon HLS backfill worker assemble the manifest. This captures media before X exposes only transient `blob:` URLs; same-snapshot or same-page/time-window `blob:` video rows are labeled `covered-by-cdp-recorder` when stored CDP bytes exist.
+- Optional CDP recorder lane: when enabled and an active tab matches the configured recorder domains (`x.com`, `twitter.com` by default), the extension attaches `chrome.debugger`, enables CDP `Network`, records `video.twimg.com` manifest/segment responses, creates `media_artifacts` rows with `cdp_recorder=true`, and either uploads the response body directly or lets the daemon HLS backfill worker assemble the manifest. This captures media before X exposes only transient `blob:` URLs; same-snapshot or same-page/time-window `blob:` video rows are labeled `covered-by-cdp-recorder` when stored CDP bytes exist.
 - Content scripts opportunistically fetch `blob:`/inline media while the renderer page is alive and send bytes through the service worker; this is the only reliable path for simple transient browser blob URLs. Remaining uncovered `blob:` videos are kept as `referenced:opaque-browser-blob`, not failures.
 - If media cannot be fetched, the reference row remains with an explicit classified status/reason. `failed` is reserved for unexpected/unclassified bugs; terminal remote conditions are normalized to `skipped`, `expired`, or `retrying`.
 - Browser queue tasks in `fetching` or `uploading` become due again after a stale processing window, so MV3 service-worker suspension does not strand them permanently.
-- Chrome shows a normal “extension is debugging this browser” indicator while the CDP recorder is attached; attachment is domain-gated to configured X/Twitter tabs and media-host-gated to `video.twimg.com`.
+- Chrome shows a normal “extension is debugging this browser” indicator while the CDP recorder is attached, so the recorder is disabled by default and should be enabled only when X/Twitter video recovery matters. Attachment is domain-gated to configured X/Twitter tabs and media-host-gated to `video.twimg.com`.
 
 ---
 

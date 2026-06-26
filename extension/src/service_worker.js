@@ -5,13 +5,15 @@ const DEFAULTS = {
   apiToken: '',
   capturePaused: false,
   policyMode: 'all',
-  cdpRecorderEnabled: true,
+  cdpRecorderEnabled: false,
   cdpRecorderDomains: ['x.com', 'twitter.com'],
   cdpRecorderMediaHosts: ['video.twimg.com'],
   captureQueue: [],
   visitEventQueue: [],
   tabVisitState: {}
 };
+
+const CDP_RECORDER_DEFAULT_OFF_MIGRATION_KEY = 'cdpRecorderDefaultOffMigratedAt';
 
 const MAX_CAPTURE_QUEUE = 100;
 const MAX_VISIT_EVENT_QUEUE = 200;
@@ -73,7 +75,22 @@ function isTrackableUrl(url, policyMode = 'all') {
 
 async function getConfig() {
   const stored = await chrome.storage.local.get(DEFAULTS);
-  return { ...DEFAULTS, ...stored, policyMode: normalizePolicyMode(stored.policyMode || DEFAULTS.policyMode) };
+  if (!stored[CDP_RECORDER_DEFAULT_OFF_MIGRATION_KEY]) {
+    const migratedAt = nowIso();
+    stored[CDP_RECORDER_DEFAULT_OFF_MIGRATION_KEY] = migratedAt;
+    const migration = { [CDP_RECORDER_DEFAULT_OFF_MIGRATION_KEY]: migratedAt };
+    if (stored.cdpRecorderEnabled !== false) {
+      stored.cdpRecorderEnabled = false;
+      migration.cdpRecorderEnabled = false;
+    }
+    await chrome.storage.local.set(migration);
+  }
+  return {
+    ...DEFAULTS,
+    ...stored,
+    policyMode: normalizePolicyMode(stored.policyMode || DEFAULTS.policyMode),
+    cdpRecorderEnabled: Boolean(stored.cdpRecorderEnabled)
+  };
 }
 
 async function saveQueue(queue) {

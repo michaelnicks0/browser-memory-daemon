@@ -201,7 +201,7 @@ Options page controls:
 | API token | Token copied from WSL config during install. |
 | Policy mode | `all`, `recall`, `balanced`, or `strict`. |
 | Pause capture | Same pause state as popup. |
-| Enable CDP media recorder | Domain-gated `chrome.debugger` recorder for X/Twitter video manifests/segments. |
+| Enable CDP media recorder | Off by default. Optional domain-gated `chrome.debugger` recorder for X/Twitter video manifests/segments; enabling it makes Chrome show the native “Browser Memory Daemon started debugging this browser” banner while attached. |
 | CDP recorder domains | Comma-separated page domains that may attach CDP recorder; default `x.com,twitter.com`. |
 
 ---
@@ -212,6 +212,7 @@ Options page controls:
 |---|---|
 | No captures after reload | Extension popup may still be paused. Toggle pause until `paused=false`. |
 | Daemon healthy in WSL but Chrome cannot capture | Verify Windows loopback health and that Chrome extension token is present. |
+| Chrome shows “Browser Memory Daemon started debugging this browser” | Open the extension options and disable **Enable CDP media recorder**, then click the banner **Cancel** button or reload the extension. Normal text capture continues; X/Twitter CDP video recovery is opt-in. |
 | Real-browser e2e fails to load extension | Use Chrome for Testing, not branded Chrome command-line unpacked-extension automation. |
 | Search returns URLs but not expected text | Check policy mode. `strict`/`balanced` may block/redact; `all` should preserve text. |
 | Daily Chrome extension disappears after profile edits | Do not edit profile JSON; use Chrome Load unpacked UI. |

@@ -15,7 +15,7 @@
 | SQLite/FTS/media storage | ✅ Documents/visits/snapshots/chunks/FTS/media/audit/deletion receipts. | `schema.sql`, integration/e2e tests. |
 | Exact search | ✅ FTS5 exact search with snippets/source metadata and media artifact counts. | `search.py`, `/search`, tests. |
 | Forget/delete | ✅ URL/domain forget with receipts and text/media blob + FTS cleanup. | `forget.py`, tests. |
-| Media artifacts | ✅ Durable image/video refs and binaries: fast text/manifest capture, browser IndexedDB lazy queue, credentialed fetch, raw blob upload, X/Twitter CDP recorder, HLS/audio sidecar handling, daemon public worker, rolling cache gates, purge/rehydrate controls; no OCR/media indexing. | `media.py`, `media_worker.py`, `media_queue.js`, `cdp_recorder.js`, `/media-artifacts/*`, real Chrome e2e. |
+| Media artifacts | ✅ Durable image/video refs and binaries: fast text/manifest capture, browser IndexedDB lazy queue, credentialed fetch, raw blob upload, opt-in X/Twitter CDP recorder, HLS/audio sidecar handling, daemon public worker, rolling cache gates, purge/rehydrate controls; no OCR/media indexing. | `media.py`, `media_worker.py`, `media_queue.js`, `cdp_recorder.js`, `/media-artifacts/*`, real Chrome e2e. |
 | Local UI | ✅ Search/recent/timeline/detail/doctor/policy/delete panels. | `ui/`, admin API tests. |
 | CLI | ✅ serve/health/search/recent/timeline/detail/policy/forget/capture-fixture/media-worker/media-cache. | `cli.py`, CLI e2e. |
 | Dedupe/versioning | ✅ URL normalization + text-hash snapshots. | ingest tests. |

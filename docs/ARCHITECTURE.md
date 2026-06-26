@@ -56,7 +56,7 @@ The system shall enable Operator to reconstruct recently viewed web content by c
 | Content script | Schedule initial/delayed/SPA captures and scroll tracking. | Reads `policyMode` from extension storage. |
 | Service worker | Auth, queues, injection, lifecycle state, fast `/capture`, browser lazy media queue/drain, daemon POST/PUTs, CDP recorder orchestration. | Text capture does not wait on media bytes. |
 | Extension media queue | Durable IndexedDB queue for credentialed media fetch/upload. | Stores fetched blobs until raw upload succeeds. |
-| CDP recorder | Domain-gated Chrome DevTools Protocol recorder for X/Twitter media network responses. | Captures `video.twimg.com` HLS manifests/segments before they collapse into opaque `blob:` player refs. |
+| CDP recorder | Optional, off-by-default domain-gated Chrome DevTools Protocol recorder for X/Twitter media network responses. | Captures `video.twimg.com` HLS manifests/segments before they collapse into opaque `blob:` player refs, but Chrome shows a native debugging banner while attached. |
 | Daemon API | Auth, CORS, routing, UI asset serving, raw media blob upload, cache controls. | `/health` public loopback; memory APIs tokened. |
 | Policy engine | Mode-specific allow/block/redact decisions. | `all`, `recall`, `balanced`, `strict`. |
 | Ingest pipeline | Normalize, store visits/documents/snapshots/chunks/FTS plus related media artifact refs/blobs. | `all` bypasses redaction. |
@@ -105,7 +105,7 @@ text/FTS/media refs remain authoritative
 | Fast capture | Store text, FTS, visits/snapshots, and media refs immediately. | `extension/src/content_script.js`, `extension/src/service_worker.js`, `daemon/src/browser_memory_daemon/ingest.py`, `media.py` |
 | Browser lazy sidecar | Fetch credentialed media inside Chrome and upload raw blobs. | `extension/src/media_queue.js`, `service_worker.js` |
 | Inline/blob upload | Let the content script read transient `blob:` / `data:` bytes while page context is alive. | `extension/src/content_script.js`, `service_worker.js` |
-| CDP recorder | Capture X/Twitter `video.twimg.com` HLS manifests/segments before only opaque `blob:` player URLs remain. | `extension/src/cdp_recorder.js`, `service_worker.js` |
+| CDP recorder | Opt-in capture of X/Twitter `video.twimg.com` HLS manifests/segments before only opaque `blob:` player URLs remain. | `extension/src/cdp_recorder.js`, `service_worker.js` |
 | Daemon lazy sidecar | Public unauthenticated backfill with leases, backoff, HLS assembly, and status classification. | `daemon/src/browser_memory_daemon/media_worker.py`, `media.py` |
 | Cache management | Purge/rehydrate controls plus oldest-first rolling eviction for domain/global caps. | `media.py`, `cli.py`, `/media-artifacts/*` |
 
@@ -129,7 +129,7 @@ text/FTS/media refs remain authoritative
 | Credentialed media fetch must stay inside Chrome. | Browser lazy sidecar uses Chrome's credential envelope; WSL daemon never receives Chrome cookies. |
 | Raw binary upload should avoid base64 inflation. | Primary path is `PUT /media-artifacts/{artifact_id}/blob`; JSON/base64 is compatibility-only. |
 | Daemon public backfill should use durable leases/backoff. | `media_fetch_tasks` stores leases, attempts, retry time, worker kind, and terminal status. |
-| X/Twitter video should be recoverable when the DOM only exposes `blob:` player URLs. | Domain-gated CDP recorder captures `video.twimg.com` manifests/segments and tags related rows with `cdp_recorder=true`. |
+| X/Twitter video should be recoverable when the DOM only exposes `blob:` player URLs. | Opt-in domain-gated CDP recorder captures `video.twimg.com` manifests/segments and tags related rows with `cdp_recorder=true`; daily-driver default keeps it off to avoid Chrome's debugging banner. |
 | HLS audio/video should be stored when technically feasible. | Worker resolves master/media playlists, assembles segments under caps, and stores audio-only renditions as `audio/*` sidecars while preserving video provenance. |
 | Blob video refs should not remain ambiguous. | Same-document or same-snapshot CDP-covered refs become `covered-by-cdp-recorder`; residual unreadable refs become `opaque-browser-blob`. |
 | Media blobs must be bounded and disposable. | Per-artifact/snapshot/domain/global gates plus manual purge/rehydrate and oldest-first rolling eviction. |
