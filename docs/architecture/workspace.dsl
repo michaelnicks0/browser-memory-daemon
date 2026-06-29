@@ -1,6 +1,6 @@
 workspace "Browser Memory Daemon" "C4 architecture model for the local-first Windows Chrome to WSL browser recall system." {
     model {
-        michael = person "Operator" "Sole operator who browses with Windows Chrome and searches, reviews, and deletes local browser-memory records."
+        operator = person "Operator" "Sole local operator who browses with Windows Chrome and searches, reviews, and deletes local browser-memory records."
 
         windowsChrome = softwareSystem "Windows Chrome" "The Windows Chrome runtime that loads web pages, hosts the MV3 extension, runs the local UI in a tab, and exposes Chrome extension APIs." {
             tags "External"
@@ -57,8 +57,8 @@ workspace "Browser Memory Daemon" "C4 architecture model for the local-first Win
 
         }
 
-        michael -> windowsChrome "Browses web pages with"
-        michael -> browserMemoryDaemon "Searches, reviews, and deletes local browser memory through"
+        operator -> windowsChrome "Browses web pages with"
+        operator -> browserMemoryDaemon "Searches, reviews, and deletes local browser memory through"
         windowsChrome -> webSites "Loads pages and media from" "HTTPS"
         browserMemoryDaemon -> windowsChrome "Runs its MV3 extension inside and uses APIs from"
         browserMemoryDaemon -> webSites "Captures page refs and fetches browser-side or public media from" "Chrome DOM/fetch; WSL HTTP(S), data URLs; no Chrome cookies in WSL"
@@ -119,14 +119,14 @@ workspace "Browser Memory Daemon" "C4 architecture model for the local-first Win
         opsDoctor -> mediaBlobCache "Counts media blob files in" "Filesystem"
 
         dailyDriver = deploymentEnvironment "Daily-driver local" {
-            workstation = deploymentNode "Local workstation" "Operator's Windows workstation running Windows Chrome and WSL2." "Windows + WSL2" {
+            workstation = deploymentNode "Local workstation" "Windows workstation running Windows Chrome and WSL2." "Windows + WSL2" {
                 windowsProfile = deploymentNode "Windows user profile" "Windows-local browser-memory-daemon artifacts and Chrome runtime." "Windows profile" {
                     windowsChromeNode = deploymentNode "Windows Chrome daily-driver profile" "Manual Load unpacked or Reload hosts the extension and local UI tab." "Google Chrome MV3" {
                         containerInstance chromeExtension
                         containerInstance extensionBrowserStorage
                         containerInstance localWebUi
                     }
-                    extensionCopy = infrastructureNode "Windows unpacked extension copy" "Built extension copy at C:\\Users\\user\\AppData\\Local\\browser-memory-daemon\\extension containing the local daemon token." "Windows filesystem"
+                    extensionCopy = infrastructureNode "Windows unpacked extension copy" "Built extension copy under %LOCALAPPDATA%\\browser-memory-daemon\\extension containing the local daemon token." "Windows filesystem"
                 }
                 wslNode = deploymentNode "WSL2 Ubuntu" "WSL-owned services, config, and durable data paths." "Ubuntu + systemd --user" {
                     systemdUser = deploymentNode "systemd --user services" "User services installed by scripts/install-daily-driver.sh." "systemd --user" {
@@ -272,7 +272,7 @@ workspace "Browser Memory Daemon" "C4 architecture model for the local-first Win
         }
 
         dynamic browserMemoryDaemon "FastCaptureFlow" {
-            michael -> windowsChrome "Browses a web page"
+            operator -> windowsChrome "Browses a web page"
             chromeExtension -> windowsChrome "Runs content script and service worker inside active tab"
             chromeExtension -> wslLoopbackDaemon "POSTs /capture with visible text, metadata, and media refs"
             wslLoopbackDaemon -> sqliteDatabase "Stores document, visit, snapshot, chunks, FTS, media refs, and tasks"

@@ -1,8 +1,8 @@
 # Browser Memory Daemon Storage Growth Model
 
-> **Audience:** Operator and future maintainers
+> **Audience:** Operators and future maintainers
 > **Scope:** Estimate how large the current Chrome → WSL browser-memory daemon will grow under real browsing.
-> **Status:** ✅ Initial empirical model from live daemon DB + local Chrome History aggregates.
+> **Status:** ✅ Public sizing model using representative daemon/storage assumptions; local empirical source data is intentionally not included.
 
 ---
 
@@ -10,7 +10,7 @@
 
 The implementation is **text-first** with optional bounded media blobs. Text/FTS growth remains manageable; media is intentionally cache-like and now has explicit size gates plus purge/rehydrate controls.
 
-Using Operator's recent Chrome History baseline and the daemon's current storage multiplier, the most realistic planning range is:
+Using a representative daily-driver baseline and the daemon's current storage multiplier, the most realistic planning range is:
 
 | Usage posture | Assumption | Expected growth |
 |---|---:|---:|
@@ -25,74 +25,36 @@ Practical expectation for **text/FTS** remains **5–15 GB/year** under normal-h
 
 ---
 
-## Data sources used
+## Representative inputs
 
-| Source | What was measured | Notes |
-|---|---|---|
-| Live daemon DB | Current row counts, SQLite page stats, FTS/table sizes, clean-text blob sizes | `~/.local/share/browser-memory-daemon/browser-memory.sqlite3` |
-| Live daemon blob tree | Clean text files under `blobs/clean-text/` | File sizes only; no content dumped. |
-| Chrome History copy | 1/3/7/14/30/90 day visit and unique-URL aggregates | Copied locked DB to temp; aggregate counts only; no URLs/domains written here. |
-| Current code behavior | Text-first extraction, chunking, FTS5 duplication, lifecycle metadata, bounded media refs/blobs | Media blobs are cache-managed; no screenshots, full HTML, embeddings yet. |
+The model intentionally avoids publishing local browsing history, URLs, domains, or live daemon row counts. It uses representative extracted-text sizes from early daemon measurements plus code-level storage behavior:
 
----
-
-## Current live storage snapshot
-
-Measured current daemon state:
-
-| Metric | Value |
-|---|---:|
-| Documents | 20 |
-| Visits | 37 |
-| Snapshots | 53 |
-| Chunks | 243 |
-| Visit events | 72 |
-| Audit events | 281 |
-| Main SQLite DB | 2.03 MiB |
-| Clean-text blobs | 0.37 MiB |
-| Runtime root total | 2.40 MiB |
-| SQLite free pages | 70 |
-
-Current extracted-text distribution:
-
-| Text per snapshot | Bytes | Approx KiB |
-|---|---:|---:|
-| Median | 3,649 | 3.6 KiB |
-| Mean | 7,296 | 7.1 KiB |
-| p75 | 10,850 | 10.6 KiB |
-| p90 | 21,447 | 20.9 KiB |
-| p95 | 29,048 | 28.4 KiB |
-| Max | 29,065 | 28.4 KiB |
-
-Chunking distribution:
-
-| Chunks per snapshot | Value |
-|---|---:|
-| Median | 2 |
-| Mean | 4.58 |
-| p75 | 7 |
-| p90 | 12 |
-| p95 | 17 |
-| Max | 17 |
+| Input | Planning value | Why it matters |
+|---|---:|---|
+| Median extracted text per snapshot | 3.6 KiB | Light pages and deduped captures. |
+| Mean extracted text per snapshot | 7.1 KiB | Primary planning case. |
+| p90 extracted text per snapshot | 20.9 KiB | Dynamic/social/search pages with more visible text. |
+| Mean chunks per snapshot | 4.58 | Drives `chunks` and FTS storage growth. |
+| Runtime multiplier | ~6.5x extracted text | Accounts for clean text blobs, SQLite chunk text, FTS shadow/index tables, metadata, and audit/lifecycle rows. |
 
 ---
 
 ## Where the bytes go
 
-Current SQLite `dbstat` top storage consumers:
+The largest durable text/FTS consumers are expected to be:
 
-| Component | Bytes | Role |
+| Component | Relative size | Role |
 |---|---:|---|
-| `chunks` | 610,304 | Searchable chunk text + metadata. |
-| `chunks_fts_content` | 593,920 | FTS content shadow copy. |
-| `chunks_fts_data` | 274,432 | FTS index data. |
-| `audit_events` | 69,632 | Capture/search/visit audit metadata. |
-| `visit_events` | 36,864 | Dwell/lifecycle metadata. |
-| `snapshots` | 24,576 | Snapshot metadata. |
-| `visits` | 20,480 | Visit metadata. |
-| `documents` | 12,288 | Document identity metadata. |
+| `chunks` | High | Searchable chunk text + metadata. |
+| `chunks_fts_content` | High | FTS content shadow copy. |
+| `chunks_fts_data` | Medium | FTS index data. |
+| `audit_events` | Low/medium | Capture/search/visit audit metadata. |
+| `visit_events` | Low | Dwell/lifecycle metadata. |
+| `snapshots` | Low | Snapshot metadata. |
+| `visits` | Low | Visit metadata. |
+| `documents` | Low | Document identity metadata. |
 
-Current storage multiplier:
+Planning storage multiplier:
 
 ```text
 runtime bytes / clean extracted text bytes ≈ 6.5x
@@ -112,35 +74,14 @@ As the DB grows, fixed overhead will amortize, but **5–7x extracted text** is 
 
 ---
 
-## Operator's Chrome usage baseline
+## Planning usage baseline
 
-Recent Chrome History aggregate counts:
-
-| Window | Visits | Unique URL IDs | Rough hosts |
-|---|---:|---:|---:|
-| Last 1 day | 365 | 218 | 37 |
-| Last 3 days | 1,159 | 737 | 70 |
-| Last 7 days | 1,159 | 737 | 70 |
-| Last 14 days | 2,551 | 1,689 | 139 |
-| Last 30 days | 8,917 | 5,780 | 374 |
-| Last 90 days | 29,738 | 22,251 | 752 |
-
-30-day daily distribution:
-
-| Daily aggregate | Visits/day | Unique URLs/day |
-|---|---:|---:|
-| Mean | 343 | 249 |
-| Median | 382 | 285 |
-| p75 | 499 | 354 |
-| p90 | 543 | 426 |
-| Max | 601 | 431 |
-
-Interpretation:
+Interpretation for any daily-driver browser profile:
 
 - Chrome History visits are not exactly daemon snapshots.
 - A single page can produce several daemon snapshots due delayed capture / SPA changes.
 - Repeated unchanged pages dedupe into visits without duplicating snapshot/chunk/FTS rows.
-- Using **250–350 snapshots/day** is a reasonable baseline range for current browsing.
+- Using **250–350 snapshots/day** is a reasonable baseline range for a busy daily-driver profile.
 - Using **500 snapshots/day** is a reasonable heavy/day planning point.
 
 ---
@@ -168,7 +109,7 @@ storage = snapshots_per_day × extracted_text_bytes_per_snapshot × 6.5
 | 1000 | Mean current | 7.1 KiB | 45.23 | 1.33 | 16.12 |
 | 1000 | p90 current | 20.9 KiB | 132.95 | 3.89 | 47.39 |
 
-Chrome-history-driven estimates using current mean text size:
+Planning baseline estimates using current mean text size:
 
 | Assumption | MB/day | GB/month | GB/year |
 |---|---:|---:|---:|
@@ -264,7 +205,7 @@ Do **not** start by deleting pages or filtering domains if the product goal is e
 
 ## Bottom line
 
-For Operator's current local-first all-mode setup:
+For the current local-first all-mode setup:
 
 ```text
 Expected:  ~4–8 GB/year

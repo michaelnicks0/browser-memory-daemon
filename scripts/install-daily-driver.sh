@@ -9,7 +9,11 @@ elif command -v python3.11 >/dev/null 2>&1; then
 else
   PY="$(command -v python3)"
 fi
-WIN_USER="${BMD_WINDOWS_USER:-user}"
+WIN_USER="${BMD_WINDOWS_USER:-${USER:-${LOGNAME:-}}}"
+if [ -z "$WIN_USER" ]; then
+  echo "Set BMD_WINDOWS_USER or BMD_WINDOWS_EXTENSION_DIR so the installer can locate the Windows profile." >&2
+  exit 1
+fi
 EXT_DIR="${BMD_WINDOWS_EXTENSION_DIR:-/mnt/c/Users/${WIN_USER}/AppData/Local/browser-memory-daemon/extension}"
 CFG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/browser-memory-daemon"
 DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/browser-memory-daemon"

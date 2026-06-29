@@ -94,7 +94,8 @@ async function findChrome() {
 }
 
 async function ensureChromeForTesting() {
-  const cacheRoot = process.env.BMD_CHROME_FOR_TESTING_CACHE || `/mnt/c/Users/${process.env.USER || 'user'}/AppData/Local/browser-memory-daemon/chrome-for-testing`;
+  const windowsUser = process.env.BMD_WINDOWS_USER || process.env.USERNAME || process.env.USER || 'Default';
+  const cacheRoot = process.env.BMD_CHROME_FOR_TESTING_CACHE || `/mnt/c/Users/${windowsUser}/AppData/Local/browser-memory-daemon/chrome-for-testing`;
   const metaUrl = 'https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json';
   await mkdir(cacheRoot, { recursive: true });
   const metadataResponse = await fetch(metaUrl);

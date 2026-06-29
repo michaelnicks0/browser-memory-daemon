@@ -169,19 +169,20 @@
 <!-- 1 -->
 <g id="1" class="node">
 <title>1</title>
-<polygon fill="#08427b" stroke="#052e56" points="454,-275 46,-275 46,-68 454,-68 454,-275"/>
-<text text-anchor="start" x="191" y="-226.8" font-family="Arial" font-size="34.00" fill="#ffffff">Operator</text>
-<text text-anchor="start" x="214.5" y="-204.8" font-family="Arial" font-size="19.00" fill="#ffffff">[Person]</text>
-<text text-anchor="start" x="78.5" y="-167.8" font-family="Arial" font-size="24.00" fill="#ffffff">Sole operator who browses with</text>
-<text text-anchor="start" x="75" y="-143.8" font-family="Arial" font-size="24.00" fill="#ffffff">Windows Chrome and searches,</text>
-<text text-anchor="start" x="111.5" y="-119.8" font-family="Arial" font-size="24.00" fill="#ffffff">reviews, and deletes local</text>
-<text text-anchor="start" x="111.5" y="-95.8" font-family="Arial" font-size="24.00" fill="#ffffff">browser&#45;memory records.</text>
+<polygon fill="#08427b" stroke="#052e56" points="447.5,-287 52.5,-287 52.5,-56 447.5,-56 447.5,-287"/>
+<text text-anchor="start" x="183" y="-238.8" font-family="Arial" font-size="34.00" fill="#ffffff">Operator</text>
+<text text-anchor="start" x="214.5" y="-216.8" font-family="Arial" font-size="19.00" fill="#ffffff">[Person]</text>
+<text text-anchor="start" x="123.5" y="-179.8" font-family="Arial" font-size="24.00" fill="#ffffff">Sole local operator who</text>
+<text text-anchor="start" x="81.5" y="-155.8" font-family="Arial" font-size="24.00" fill="#ffffff">browses with Windows Chrome</text>
+<text text-anchor="start" x="102.5" y="-131.8" font-family="Arial" font-size="24.00" fill="#ffffff">and searches, reviews, and</text>
+<text text-anchor="start" x="88" y="-107.8" font-family="Arial" font-size="24.00" fill="#ffffff">deletes local browser&#45;memory</text>
+<text text-anchor="start" x="206" y="-83.8" font-family="Arial" font-size="24.00" fill="#ffffff">records.</text>
 </g>
 <!-- 1&#45;&gt;2 -->
 <g id="30" class="edge">
 <title>1&#45;&gt;2</title>
-<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M454.17,-171.5C630.8,-171.5 885.34,-171.5 1061.71,-171.5"/>
-<polygon fill="#444444" stroke="#444444" points="1061.89,-175 1071.89,-171.5 1061.89,-168 1061.89,-175"/>
+<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M447.52,-171.5C624.41,-171.5 883.25,-171.5 1061.85,-171.5"/>
+<polygon fill="#444444" stroke="#444444" points="1061.9,-175 1071.9,-171.5 1061.9,-168 1061.9,-175"/>
 <polygon fill="white" stroke="transparent" points="620.5,-171.5 620.5,-205.5 880.5,-205.5 880.5,-171.5 620.5,-171.5"/>
 <text text-anchor="start" x="624.5" y="-182.3" font-family="Arial" font-size="24.00" fill="#444444">1. Browses a web page</text>
 </g>

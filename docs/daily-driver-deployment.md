@@ -1,6 +1,6 @@
 # Daily-Driver Chrome Deployment
 
-> **Scope:** Install or refresh Operator's Windows Chrome daily-driver capture stack while keeping durable memory in WSL.
+> **Scope:** Install or refresh a Windows Chrome daily-driver capture stack while keeping durable memory in WSL.
 > **Default policy:** `all` — no daemon redaction or URL policy filtering; DOM extraction still skips hidden/form/editable/script/style/no-script text.
 
 ---
@@ -70,10 +70,10 @@ chrome://extensions → Browser Memory Daemon → Reload
 
 ---
 
-## Local workstation installed state
+## Example installed state
 
 ```text
-Extension ID: pgebbgmpbngnjgebbacafndebdjbbida
+Extension ID: assigned by Chrome for the local unpacked extension
 Extension path: %LOCALAPPDATA%\browser-memory-daemon\extension
 Chrome profile backup root: %LOCALAPPDATA%\browser-memory-daemon\backups\
 ```

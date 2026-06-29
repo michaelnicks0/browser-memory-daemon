@@ -23,7 +23,7 @@ digraph {
 
       15 [id=15,shape=rect, label=<<font point-size="34">HTTP Request Router</font><br /><font point-size="19">[Component: Python http.server]</font><br /><br /><font point-size="24">Routes loopback API requests,<br />serves UI assets, enforces<br />bearer auth for memory/admin<br />APIs, and applies CORS for<br />allowed origins.</font>>, style=filled, color="#5d82a8", fillcolor="#85bbf0", fontcolor="#000000"]
       16 [id=16,shape=rect, label=<<font point-size="34">Policy Engine</font><br /><font point-size="19">[Component: Python]</font><br /><br /><font point-size="24">Evaluates<br />all/recall/balanced/strict<br />capture mode decisions and<br />redacts URL/title/body text<br />outside all mode.</font>>, style=filled, color="#5d82a8", fillcolor="#85bbf0", fontcolor="#000000"]
-      17 [id=17,shape=rect, label=<<font point-size="34">Policy Store</font><br /><font point-size="19">[Component: Python + SQLite]</font><br /><br /><font point-size="24">Persists and evaluates explicit<br />local block-domain and<br />URL-prefix rules for every<br />policy mode.</font>>, style=filled, color="#5d82a8", fillcolor="#85bbf0", fontcolor="#000000"]
+      17 [id=17,shape=rect, label=<<font point-size="34">Policy Store</font><br /><font point-size="19">[Component: Python + SQLite]</font><br /><br /><font point-size="24">Persists and evaluates<br />explicit local block-domain<br />and URL-prefix rules for every<br />policy mode.</font>>, style=filled, color="#5d82a8", fillcolor="#85bbf0", fontcolor="#000000"]
     }
 
   }

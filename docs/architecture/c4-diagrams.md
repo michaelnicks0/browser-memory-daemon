@@ -621,7 +621,7 @@ graph LR
         style 15 fill:#85bbf0,stroke:#5d82a8,color:#000000
         16["<div style='font-weight: bold'>Policy Engine</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Evaluates<br />all/recall/balanced/strict<br />capture mode decisions and<br />redacts URL/title/body text<br />outside all mode.</div>"]
         style 16 fill:#85bbf0,stroke:#5d82a8,color:#000000
-        17["<div style='font-weight: bold'>Policy Store</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + SQLite]</div><div style='font-size: 80%; margin-top:10px'>Persists and evaluates explicit<br />local block-domain and<br />URL-prefix rules for every<br />policy mode.</div>"]
+        17["<div style='font-weight: bold'>Policy Store</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + SQLite]</div><div style='font-size: 80%; margin-top:10px'>Persists and evaluates<br />explicit local block-domain<br />and URL-prefix rules for<br />every policy mode.</div>"]
         style 17 fill:#85bbf0,stroke:#5d82a8,color:#000000
       end
 
@@ -1046,7 +1046,7 @@ graph LR
       style 5 fill:#438dd5,stroke:#2e6295,color:#ffffff
     end
 
-    1["<div style='font-weight: bold'>Operator</div><div style='font-size: 70%; margin-top: 0px'>[Person]</div><div style='font-size: 80%; margin-top:10px'>Sole operator who browses<br />with Windows Chrome and<br />searches, reviews, and<br />deletes local browser-memory<br />records.</div>"]
+    1["<div style='font-weight: bold'>Operator</div><div style='font-size: 70%; margin-top: 0px'>[Person]</div><div style='font-size: 80%; margin-top:10px'>Sole local operator who<br />browses with Windows Chrome<br />and searches, reviews, and<br />deletes local browser-memory<br />records.</div>"]
     style 1 fill:#08427b,stroke:#052e56,color:#ffffff
     2["<div style='font-weight: bold'>Windows Chrome</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>The Windows Chrome runtime<br />that loads web pages, hosts<br />the MV3 extension, runs the<br />local UI in a tab, and<br />exposes Chrome extension<br />APIs.</div>"]
     style 2 fill:#999999,stroke:#6b6b6b,color:#ffffff
@@ -1162,7 +1162,7 @@ graph LR
   subgraph diagram ["System Context View: Browser Memory Daemon"]
     style diagram fill:#ffffff,stroke:#ffffff
 
-    1["<div style='font-weight: bold'>Operator</div><div style='font-size: 70%; margin-top: 0px'>[Person]</div><div style='font-size: 80%; margin-top:10px'>Sole operator who browses<br />with Windows Chrome and<br />searches, reviews, and<br />deletes local browser-memory<br />records.</div>"]
+    1["<div style='font-weight: bold'>Operator</div><div style='font-size: 70%; margin-top: 0px'>[Person]</div><div style='font-size: 80%; margin-top:10px'>Sole local operator who<br />browses with Windows Chrome<br />and searches, reviews, and<br />deletes local browser-memory<br />records.</div>"]
     style 1 fill:#08427b,stroke:#052e56,color:#ffffff
     2["<div style='font-weight: bold'>Windows Chrome</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>The Windows Chrome runtime<br />that loads web pages, hosts<br />the MV3 extension, runs the<br />local UI in a tab, and<br />exposes Chrome extension<br />APIs.</div>"]
     style 2 fill:#999999,stroke:#6b6b6b,color:#ffffff

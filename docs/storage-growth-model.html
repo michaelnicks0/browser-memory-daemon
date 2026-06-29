@@ -126,14 +126,14 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
   <article class="md-body">
 <h1 id="browser-memory-daemon-storage-growth-model">Browser Memory Daemon Storage Growth Model</h1>
 <blockquote>
-<p><strong>Audience:</strong> Operator and future maintainers
+<p><strong>Audience:</strong> Operators and future maintainers
 <strong>Scope:</strong> Estimate how large the current Chrome → WSL browser-memory daemon will grow under real browsing.
-<strong>Status:</strong> ✅ Initial empirical model from live daemon DB + local Chrome History aggregates.</p>
+<strong>Status:</strong> ✅ Public sizing model using representative daemon/storage assumptions; local empirical source data is intentionally not included.</p>
 </blockquote>
 <hr />
 <h2 id="tldr">TL;DR</h2>
 <p>The implementation is <strong>text-first</strong> with optional bounded media blobs. Text/FTS growth remains manageable; media is intentionally cache-like and now has explicit size gates plus purge/rehydrate controls.</p>
-<p>Using Operator's recent Chrome History baseline and the daemon's current storage multiplier, the most realistic planning range is:</p>
+<p>Using a representative daily-driver baseline and the daemon's current storage multiplier, the most realistic planning range is:</p>
 <table>
 <thead>
 <tr>
@@ -177,223 +177,99 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </table>
 <p>Practical expectation for <strong>text/FTS</strong> remains <strong>5–15 GB/year</strong> under normal-heavy browsing. Media blobs are separate from this estimate: defaults cap individual artifacts at 250 MB, per-snapshot media at 1 GB, per-domain media at 10 GB, and total media cache at 100 GB. Domain/global media budgets are rolling caches: oldest blobs are evicted first while refs/text remain.</p>
 <hr />
-<h2 id="data-sources-used">Data sources used</h2>
+<h2 id="representative-inputs">Representative inputs</h2>
+<p>The model intentionally avoids publishing local browsing history, URLs, domains, or live daemon row counts. It uses representative extracted-text sizes from early daemon measurements plus code-level storage behavior:</p>
 <table>
 <thead>
 <tr>
-<th>Source</th>
-<th>What was measured</th>
-<th>Notes</th>
+<th>Input</th>
+<th style="text-align: right;">Planning value</th>
+<th>Why it matters</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Live daemon DB</td>
-<td>Current row counts, SQLite page stats, FTS/table sizes, clean-text blob sizes</td>
-<td><code>~/.local/share/browser-memory-daemon/browser-memory.sqlite3</code></td>
-</tr>
-<tr>
-<td>Live daemon blob tree</td>
-<td>Clean text files under <code>blobs/clean-text/</code></td>
-<td>File sizes only; no content dumped.</td>
-</tr>
-<tr>
-<td>Chrome History copy</td>
-<td>1/3/7/14/30/90 day visit and unique-URL aggregates</td>
-<td>Copied locked DB to temp; aggregate counts only; no URLs/domains written here.</td>
-</tr>
-<tr>
-<td>Current code behavior</td>
-<td>Text-first extraction, chunking, FTS5 duplication, lifecycle metadata, bounded media refs/blobs</td>
-<td>Media blobs are cache-managed; no screenshots, full HTML, embeddings yet.</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="current-live-storage-snapshot">Current live storage snapshot</h2>
-<p>Measured current daemon state:</p>
-<table>
-<thead>
-<tr>
-<th>Metric</th>
-<th style="text-align: right;">Value</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Documents</td>
-<td style="text-align: right;">20</td>
-</tr>
-<tr>
-<td>Visits</td>
-<td style="text-align: right;">37</td>
-</tr>
-<tr>
-<td>Snapshots</td>
-<td style="text-align: right;">53</td>
-</tr>
-<tr>
-<td>Chunks</td>
-<td style="text-align: right;">243</td>
-</tr>
-<tr>
-<td>Visit events</td>
-<td style="text-align: right;">72</td>
-</tr>
-<tr>
-<td>Audit events</td>
-<td style="text-align: right;">281</td>
-</tr>
-<tr>
-<td>Main SQLite DB</td>
-<td style="text-align: right;">2.03 MiB</td>
-</tr>
-<tr>
-<td>Clean-text blobs</td>
-<td style="text-align: right;">0.37 MiB</td>
-</tr>
-<tr>
-<td>Runtime root total</td>
-<td style="text-align: right;">2.40 MiB</td>
-</tr>
-<tr>
-<td>SQLite free pages</td>
-<td style="text-align: right;">70</td>
-</tr>
-</tbody>
-</table>
-<p>Current extracted-text distribution:</p>
-<table>
-<thead>
-<tr>
-<th>Text per snapshot</th>
-<th style="text-align: right;">Bytes</th>
-<th style="text-align: right;">Approx KiB</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Median</td>
-<td style="text-align: right;">3,649</td>
+<td>Median extracted text per snapshot</td>
 <td style="text-align: right;">3.6 KiB</td>
+<td>Light pages and deduped captures.</td>
 </tr>
 <tr>
-<td>Mean</td>
-<td style="text-align: right;">7,296</td>
+<td>Mean extracted text per snapshot</td>
 <td style="text-align: right;">7.1 KiB</td>
+<td>Primary planning case.</td>
 </tr>
 <tr>
-<td>p75</td>
-<td style="text-align: right;">10,850</td>
-<td style="text-align: right;">10.6 KiB</td>
-</tr>
-<tr>
-<td>p90</td>
-<td style="text-align: right;">21,447</td>
+<td>p90 extracted text per snapshot</td>
 <td style="text-align: right;">20.9 KiB</td>
+<td>Dynamic/social/search pages with more visible text.</td>
 </tr>
 <tr>
-<td>p95</td>
-<td style="text-align: right;">29,048</td>
-<td style="text-align: right;">28.4 KiB</td>
-</tr>
-<tr>
-<td>Max</td>
-<td style="text-align: right;">29,065</td>
-<td style="text-align: right;">28.4 KiB</td>
-</tr>
-</tbody>
-</table>
-<p>Chunking distribution:</p>
-<table>
-<thead>
-<tr>
-<th>Chunks per snapshot</th>
-<th style="text-align: right;">Value</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Median</td>
-<td style="text-align: right;">2</td>
-</tr>
-<tr>
-<td>Mean</td>
+<td>Mean chunks per snapshot</td>
 <td style="text-align: right;">4.58</td>
+<td>Drives <code>chunks</code> and FTS storage growth.</td>
 </tr>
 <tr>
-<td>p75</td>
-<td style="text-align: right;">7</td>
-</tr>
-<tr>
-<td>p90</td>
-<td style="text-align: right;">12</td>
-</tr>
-<tr>
-<td>p95</td>
-<td style="text-align: right;">17</td>
-</tr>
-<tr>
-<td>Max</td>
-<td style="text-align: right;">17</td>
+<td>Runtime multiplier</td>
+<td style="text-align: right;">~6.5x extracted text</td>
+<td>Accounts for clean text blobs, SQLite chunk text, FTS shadow/index tables, metadata, and audit/lifecycle rows.</td>
 </tr>
 </tbody>
 </table>
 <hr />
 <h2 id="where-the-bytes-go">Where the bytes go</h2>
-<p>Current SQLite <code>dbstat</code> top storage consumers:</p>
+<p>The largest durable text/FTS consumers are expected to be:</p>
 <table>
 <thead>
 <tr>
 <th>Component</th>
-<th style="text-align: right;">Bytes</th>
+<th style="text-align: right;">Relative size</th>
 <th>Role</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>chunks</code></td>
-<td style="text-align: right;">610,304</td>
+<td style="text-align: right;">High</td>
 <td>Searchable chunk text + metadata.</td>
 </tr>
 <tr>
 <td><code>chunks_fts_content</code></td>
-<td style="text-align: right;">593,920</td>
+<td style="text-align: right;">High</td>
 <td>FTS content shadow copy.</td>
 </tr>
 <tr>
 <td><code>chunks_fts_data</code></td>
-<td style="text-align: right;">274,432</td>
+<td style="text-align: right;">Medium</td>
 <td>FTS index data.</td>
 </tr>
 <tr>
 <td><code>audit_events</code></td>
-<td style="text-align: right;">69,632</td>
+<td style="text-align: right;">Low/medium</td>
 <td>Capture/search/visit audit metadata.</td>
 </tr>
 <tr>
 <td><code>visit_events</code></td>
-<td style="text-align: right;">36,864</td>
+<td style="text-align: right;">Low</td>
 <td>Dwell/lifecycle metadata.</td>
 </tr>
 <tr>
 <td><code>snapshots</code></td>
-<td style="text-align: right;">24,576</td>
+<td style="text-align: right;">Low</td>
 <td>Snapshot metadata.</td>
 </tr>
 <tr>
 <td><code>visits</code></td>
-<td style="text-align: right;">20,480</td>
+<td style="text-align: right;">Low</td>
 <td>Visit metadata.</td>
 </tr>
 <tr>
 <td><code>documents</code></td>
-<td style="text-align: right;">12,288</td>
+<td style="text-align: right;">Low</td>
 <td>Document identity metadata.</td>
 </tr>
 </tbody>
 </table>
-<p>Current storage multiplier:</p>
+<p>Planning storage multiplier:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>runtime bytes / clean extracted text bytes ≈ 6.5x
 </code></pre></div>
 
@@ -409,99 +285,13 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </ol>
 <p>As the DB grows, fixed overhead will amortize, but <strong>5–7x extracted text</strong> is the right planning range unless the schema is optimized.</p>
 <hr />
-<h2 id="michaels-chrome-usage-baseline">Operator's Chrome usage baseline</h2>
-<p>Recent Chrome History aggregate counts:</p>
-<table>
-<thead>
-<tr>
-<th>Window</th>
-<th style="text-align: right;">Visits</th>
-<th style="text-align: right;">Unique URL IDs</th>
-<th style="text-align: right;">Rough hosts</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Last 1 day</td>
-<td style="text-align: right;">365</td>
-<td style="text-align: right;">218</td>
-<td style="text-align: right;">37</td>
-</tr>
-<tr>
-<td>Last 3 days</td>
-<td style="text-align: right;">1,159</td>
-<td style="text-align: right;">737</td>
-<td style="text-align: right;">70</td>
-</tr>
-<tr>
-<td>Last 7 days</td>
-<td style="text-align: right;">1,159</td>
-<td style="text-align: right;">737</td>
-<td style="text-align: right;">70</td>
-</tr>
-<tr>
-<td>Last 14 days</td>
-<td style="text-align: right;">2,551</td>
-<td style="text-align: right;">1,689</td>
-<td style="text-align: right;">139</td>
-</tr>
-<tr>
-<td>Last 30 days</td>
-<td style="text-align: right;">8,917</td>
-<td style="text-align: right;">5,780</td>
-<td style="text-align: right;">374</td>
-</tr>
-<tr>
-<td>Last 90 days</td>
-<td style="text-align: right;">29,738</td>
-<td style="text-align: right;">22,251</td>
-<td style="text-align: right;">752</td>
-</tr>
-</tbody>
-</table>
-<p>30-day daily distribution:</p>
-<table>
-<thead>
-<tr>
-<th>Daily aggregate</th>
-<th style="text-align: right;">Visits/day</th>
-<th style="text-align: right;">Unique URLs/day</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Mean</td>
-<td style="text-align: right;">343</td>
-<td style="text-align: right;">249</td>
-</tr>
-<tr>
-<td>Median</td>
-<td style="text-align: right;">382</td>
-<td style="text-align: right;">285</td>
-</tr>
-<tr>
-<td>p75</td>
-<td style="text-align: right;">499</td>
-<td style="text-align: right;">354</td>
-</tr>
-<tr>
-<td>p90</td>
-<td style="text-align: right;">543</td>
-<td style="text-align: right;">426</td>
-</tr>
-<tr>
-<td>Max</td>
-<td style="text-align: right;">601</td>
-<td style="text-align: right;">431</td>
-</tr>
-</tbody>
-</table>
-<p>Interpretation:</p>
+<h2 id="planning-usage-baseline">Planning usage baseline</h2>
+<p>Interpretation for any daily-driver browser profile:</p>
 <ul>
 <li>Chrome History visits are not exactly daemon snapshots.</li>
 <li>A single page can produce several daemon snapshots due delayed capture / SPA changes.</li>
 <li>Repeated unchanged pages dedupe into visits without duplicating snapshot/chunk/FTS rows.</li>
-<li>Using <strong>250–350 snapshots/day</strong> is a reasonable baseline range for current browsing.</li>
+<li>Using <strong>250–350 snapshots/day</strong> is a reasonable baseline range for a busy daily-driver profile.</li>
 <li>Using <strong>500 snapshots/day</strong> is a reasonable heavy/day planning point.</li>
 </ul>
 <hr />
@@ -620,7 +410,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 </tbody>
 </table>
-<p>Chrome-history-driven estimates using current mean text size:</p>
+<p>Planning baseline estimates using current mean text size:</p>
 <table>
 <thead>
 <tr>
@@ -806,7 +596,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </ul>
 <hr />
 <h2 id="bottom-line">Bottom line</h2>
-<p>For Operator's current local-first all-mode setup:</p>
+<p>For the current local-first all-mode setup:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>Expected:  ~4–8 GB/year
 Likely planning envelope: 5–15 GB/year
 Heavy/dynamic edge: 20–50 GB/year

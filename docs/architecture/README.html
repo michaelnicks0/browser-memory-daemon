@@ -252,7 +252,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td><code>DailyDriverDeployment</code></td>
 <td>Deployment</td>
-<td>Local workstation daily-driver topology: Windows Chrome, WSL systemd user services, and WSL XDG data paths.</td>
+<td>Local daily-driver topology: Windows Chrome, WSL systemd user services, and WSL XDG data paths.</td>
 </tr>
 </tbody>
 </table>
@@ -348,7 +348,7 @@ python3<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;<
 </table>
 <h2 id="assumptions-and-tbds">Assumptions and TBDs</h2>
 <ul>
-<li>Deployment view is limited to the documented <strong>Daily-driver local</strong> Local workstation topology. No separate staging/production topology is modeled.</li>
+<li>Deployment view is limited to the documented <strong>Daily-driver local</strong> workstation topology. No separate staging/production topology is modeled.</li>
 <li>Non-runtime deployment artifacts such as the Windows unpacked extension copy, protected token/env files, and audit log are modeled in the DSL but excluded from the rendered deployment view to keep the runtime topology legible. The WSL CLI and in-browser extension storage are also excluded from the deployment render because their relationships are covered in C2/C3 views and made the deployment topology unreadable.</li>
 <li>Semantic/vector search, MCP/Hermes integration, native messaging transport, encrypted backup/restore, and multi-source importers are explicitly pending and are not modeled as current runtime containers.</li>
 <li>Chrome extension manual Load unpacked/Reload is an operational step, not a runtime container.</li>

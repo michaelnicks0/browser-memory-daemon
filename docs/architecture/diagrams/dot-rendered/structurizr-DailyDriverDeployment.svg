@@ -13,7 +13,7 @@
 <g id="clust1" class="cluster">
 <title>cluster_85</title>
 <polygon fill="none" stroke="#444444" points="8,-64 8,-2006.38 1947,-2006.38 1947,-64 8,-64"/>
-<text text-anchor="start" x="883" y="-92.8" font-family="Arial" font-size="24.00" fill="#444444">Local workstation</text>
+<text text-anchor="start" x="884" y="-92.8" font-family="Arial" font-size="24.00" fill="#444444">Local workstation</text>
 <text text-anchor="start" x="815.5" y="-72.8" font-family="Arial" font-size="19.00" fill="#444444">[Deployment Node: Windows + WSL2]</text>
 </g>
 <g id="clust2" class="cluster">

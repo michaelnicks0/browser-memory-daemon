@@ -71,7 +71,7 @@ The system boundary is **Browser Memory Daemon**, including the owned Chrome ext
 | `FastCaptureFlow` | Dynamic | Fast text/ref capture path that stores FTS recall, returns IDs, and queues lazy media work before media bytes arrive. |
 | `CredentialedMediaSidecarFlow` | Dynamic | Browser-side media fetch/upload path that keeps Chrome cookies inside Chrome. |
 | `DaemonPublicMediaWorkerFlow` | Dynamic | Public no-cookie daemon media backfill path. |
-| `DailyDriverDeployment` | Deployment | Local workstation daily-driver topology: Windows Chrome, WSL systemd user services, and WSL XDG data paths. |
+| `DailyDriverDeployment` | Deployment | Local daily-driver topology: Windows Chrome, WSL systemd user services, and WSL XDG data paths. |
 
 ## Render and validate
 
@@ -137,7 +137,7 @@ Primary source evidence used for this model:
 
 ## Assumptions and TBDs
 
-- Deployment view is limited to the documented **Daily-driver local** Local workstation topology. No separate staging/production topology is modeled.
+- Deployment view is limited to the documented **Daily-driver local** workstation topology. No separate staging/production topology is modeled.
 - Non-runtime deployment artifacts such as the Windows unpacked extension copy, protected token/env files, and audit log are modeled in the DSL but excluded from the rendered deployment view to keep the runtime topology legible. The WSL CLI and in-browser extension storage are also excluded from the deployment render because their relationships are covered in C2/C3 views and made the deployment topology unreadable.
 - Semantic/vector search, MCP/Hermes integration, native messaging transport, encrypted backup/restore, and multi-source importers are explicitly pending and are not modeled as current runtime containers.
 - Chrome extension manual Load unpacked/Reload is an operational step, not a runtime container.
