@@ -7,6 +7,8 @@ Guidance for AI coding agents working in this repo.
 ## Read first
 
 - `docs/README.md` — canonical documentation index.
+- `browser-memory-daemon-high-level-doc.html` — generated visual front door for publish-ready browser reading.
+- `docs/EXECUTIVE_BRIEF.md` — high-level value, maturity, and risk posture.
 - `docs/USER_GUIDE.md` — daily-driver operations and troubleshooting.
 - `docs/ARCHITECTURE.md` — architecture, ConOps, requirements trace, and reconciled media-sidecar plan rationale.
 - `docs/architecture/adr/README.md` — architecture decision records (ADRs) for change-by-change design rationale.
@@ -36,9 +38,13 @@ Guidance for AI coding agents working in this repo.
 ## Commands
 
 ```bash
-python3 -m pytest -q
+python3.11 -m venv .venv && . .venv/bin/activate && python -m pip install -r requirements-dev.txt
+BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-e2e.sh
+python scripts/generate_test_inventory.py --check
+python scripts/generate_showcase.py --spec scripts/showcase.spec.json --check
+python scripts/render_docs.py --repo . --slug browser-memory-daemon --check
+python -m pytest -q
 cd extension && npm test && npm run build
-./scripts/run-e2e.sh
 ./scripts/secret-scan.sh
 git diff --check -- .
 ```

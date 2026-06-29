@@ -183,7 +183,7 @@ status_reason  = cache-evicted:global-oldest
 
 | Mode | URL filtering | DOM filtering | URL/body redaction | Persistent block rules |
 |---|---|---|---|---|
-| `all` | Off. Allows any absolute URL accepted by runtime. | Skips hidden/form/editable/script/style/no-script. | Off. | Ignored. |
+| `all` | Built-in filters off. Allows any absolute URL accepted by runtime unless explicitly blocked. | Skips hidden/form/editable/script/style/no-script. | Off. | Applied. |
 | `recall` | Blocks incognito/browser-internal/file/non-web schemes. | Skips hidden/form/editable/script/style/no-script. | On. | Applied. |
 | `balanced` | `recall` plus private hosts, known high-risk domains, high-risk query keys. | Same as `recall`. | On. | Applied. |
 | `strict` | Legacy broad keyword filters for domains/paths/query keys. | Same as `recall`. | On. | Applied. |

@@ -76,7 +76,7 @@ The primary gate remains `./scripts/run-e2e.sh`, which runs daemon tests, extens
 
 ## Verification / validation
 
-- Verification: `scripts/run-e2e.sh` runs `python3 -m pytest -q`, extension `npm test` and `npm run build`, real Chrome e2e by default, secret scan, and `git diff --check -- .`.
+- Verification: `scripts/run-e2e.sh` runs daemon pytest through `BMD_PYTHON`/Python 3.11+, extension `npm test` and `npm run build`, real Chrome e2e by default, secret scan, and `git diff --check -- .`.
 - Verification: `scripts/real-chrome-e2e.mjs` asserts real search hits, hidden/form/editable absence, all-mode sensitive/local fixtures, SPA route capture, media storage, queue drainage, DB counts, and lifecycle telemetry.
 - Verification: `docs/TESTS.md` and `docs/test-plan.md` list the primary gates and requirement coverage.
 - Backfill hygiene verification passed on 2026-06-14: ADR lint, repo Markdown fence check, `git diff --check -- .`, `./scripts/secret-scan.sh`, and `BMD_SKIP_REAL_CHROME_E2E=1 ./scripts/run-e2e.sh` using a temporary Python 3.11 shim.

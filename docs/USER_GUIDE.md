@@ -8,11 +8,35 @@
 
 ## What it does
 
-The system captures text from pages you browse in Windows Chrome, sends it over loopback to a WSL daemon, stores it in SQLite + FTS5, and lets you search/inspect/forget it locally.
+The system captures text from pages you browse in Windows Chrome, sends it over loopback to a WSL daemon, stores it in SQLite + FTS5, and lets you search, inspect, and forget it locally.
 
 ```text
 Windows Chrome extension → http://127.0.0.1:8765 → WSL SQLite/FTS/blobs → CLI/UI/search
 ```
+
+The mental model:
+
+| Layer | Owns | Operator takeaway |
+|---|---|---|
+| Chrome extension | Capture, pause/block/forget UI, browser-side media queue. | Reload this after extension code or token/policy changes. |
+| WSL daemon | Auth, policy, ingest, search, UI shell, delete receipts, media cache controls. | This is the durable memory service. |
+| WSL runtime paths | SQLite, clean-text blobs, media blobs, token/env, audit log. | Runtime data never belongs in Git. |
+
+Use Python 3.11+ for CLI/dev commands. If the host `python3` is older, run `python3.11` explicitly or set `BMD_PYTHON=/path/to/python3.11` for helper scripts.
+
+---
+
+## I want to…
+
+| Goal | Start here |
+|---|---|
+| Refresh daily Chrome integration | [`Install or refresh daily Chrome integration`](#install-or-refresh-daily-chrome-integration) |
+| Check whether capture is healthy | [`Daily-driver state checks`](#daily-driver-state-checks) |
+| Search remembered pages | [`Search and inspect memory`](#search-and-inspect-memory) |
+| Narrow capture for a host/path/port | [`Policy modes`](#policy-modes) and `policy-rules` examples |
+| Remove remembered data | [`Forget memory`](#forget-memory) |
+| Purge or refill media blobs | [`Media cache controls`](#media-cache-controls) |
+| Stop Chrome's debugging banner | [`Troubleshooting`](#troubleshooting) |
 
 ---
 
@@ -23,7 +47,7 @@ systemctl --user is-active browser-memory-daemon.service
 systemctl --user is-active browser-memory-media-worker.service
 systemctl --user is-enabled browser-memory-daemon.service
 systemctl --user is-enabled browser-memory-media-worker.service
-PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" doctor
 ```
 
@@ -58,7 +82,7 @@ chrome://extensions → Browser Memory Daemon → Reload
 Chrome stores the loaded extension at:
 
 ```text
-C:\Users\user\AppData\Local\browser-memory-daemon\extension
+%LOCALAPPDATA%\browser-memory-daemon\extension
 ```
 
 Do **not** install by editing Chrome profile JSON. Chrome Secure Preferences rejects direct extension-entry transplants.
@@ -84,17 +108,17 @@ Or for one CLI/dev daemon run:
 
 ```bash
 PYTHONPATH=daemon/src BMD_API_TOKEN=dev-token \
-  python3 -m browser_memory_daemon --token dev-token --policy-mode balanced serve
+  python3.11 -m browser_memory_daemon --token dev-token --policy-mode balanced serve
 ```
 
 Add a domain block or scoped local URL-prefix block:
 
 ```bash
-PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
   policy-rules --block-domain example.com
 
-PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
   policy-rules --block-url-prefix http://127.0.0.1:32400/
 ```
@@ -106,7 +130,7 @@ PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
 CLI search:
 
 ```bash
-PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
   search "my query" --limit 10
 ```
@@ -114,7 +138,7 @@ PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
 Recent captures:
 
 ```bash
-PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
   recent --limit 25
 ```
@@ -136,7 +160,7 @@ Text/FTS rows are the durable recall source. Media blobs are a bounded cache und
 Dry-run a domain purge:
 
 ```bash
-PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
   media-cache purge --domain linkedin.com --dry-run
 ```
@@ -144,7 +168,7 @@ PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
 Execute purge and queue best-effort public rehydration:
 
 ```bash
-PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
   media-cache purge --domain linkedin.com --execute --rehydrate
 ```
@@ -152,7 +176,7 @@ PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
 Run one media worker pass manually:
 
 ```bash
-PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
   media-worker --once --limit 100
 ```
@@ -164,7 +188,7 @@ PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
 Forget a domain:
 
 ```bash
-PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
   forget --domain example.com
 ```
@@ -172,7 +196,7 @@ PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
 Forget one URL:
 
 ```bash
-PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
   forget --url "https://example.com/article"
 ```

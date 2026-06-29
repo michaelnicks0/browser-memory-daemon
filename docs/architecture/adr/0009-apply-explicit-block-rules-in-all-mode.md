@@ -15,7 +15,7 @@ related:
   - daemon/tests/e2e/test_admin_api.py
   - daemon/tests/unit/test_policy_store.py
 verification:
-  - python3 -m pytest daemon/tests/unit/test_policy_store.py daemon/tests/e2e/test_admin_api.py::test_url_prefix_policy_rule_applies_in_all_mode_without_blocking_all_localhost daemon/tests/e2e/test_cli_admin.py::test_cli_admin_commands -q
+  - python3.11 -m pytest daemon/tests/unit/test_policy_store.py daemon/tests/e2e/test_admin_api.py::test_url_prefix_policy_rule_applies_in_all_mode_without_blocking_all_localhost daemon/tests/e2e/test_cli_admin.py::test_cli_admin_commands -q
 ---
 
 # ADR-0009: Apply Explicit Block Rules in `all` Mode

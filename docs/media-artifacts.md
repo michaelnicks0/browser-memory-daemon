@@ -236,9 +236,10 @@ Purge removes blob files and marks artifacts `purged`; it does **not** delete te
 CLI wrappers:
 
 ```bash
-PYTHONPATH=daemon/src python3 -m browser_memory_daemon media-cache purge --domain linkedin.com --dry-run
-PYTHONPATH=daemon/src python3 -m browser_memory_daemon media-cache purge --domain linkedin.com --execute --rehydrate
-PYTHONPATH=daemon/src python3 -m browser_memory_daemon media-worker --once --limit 100
+TOKEN="$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)"
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon --token "$TOKEN" media-cache purge --domain linkedin.com --dry-run
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon --token "$TOKEN" media-cache purge --domain linkedin.com --execute --rehydrate
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon --token "$TOKEN" media-worker --once --limit 100
 ```
 
 ### Retrieve media artifact
@@ -292,10 +293,13 @@ Video caveat:
 Implemented gates:
 
 ```bash
-python3 -m pytest -q
+python3.11 -m venv .venv
+. .venv/bin/activate
+python -m pip install -r requirements-dev.txt
+python -m pytest -q
 cd extension && npm test && npm run build
-./scripts/run-e2e.sh
-BMD_REAL_CHROME_POLICY_MODE=strict ./scripts/run-real-chrome-e2e.sh
+BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-e2e.sh
+BMD_PYTHON="${BMD_PYTHON:-python}" BMD_REAL_CHROME_POLICY_MODE=strict ./scripts/run-real-chrome-e2e.sh
 ./scripts/secret-scan.sh
 git diff --check -- .
 ```

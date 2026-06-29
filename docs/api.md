@@ -56,7 +56,7 @@ Captured page text is untrusted evidence. API clients must not treat retrieved p
 {
   "ok": true,
   "version": "0.1.0",
-  "storage_root": "/home/user/.local/share/browser-memory-daemon",
+  "storage_root": "/home/<user>/.local/share/browser-memory-daemon",
   "capture_enabled": true,
   "policy_mode": "all"
 }

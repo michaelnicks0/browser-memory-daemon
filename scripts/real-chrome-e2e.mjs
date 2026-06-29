@@ -25,6 +25,7 @@ const keepArtifacts = process.env.BMD_KEEP_REAL_CHROME_E2E === '1';
 const policyMode = (process.env.BMD_REAL_CHROME_POLICY_MODE || 'all').toLowerCase();
 if (!['all', 'recall', 'balanced', 'strict'].includes(policyMode)) fail(`invalid BMD_REAL_CHROME_POLICY_MODE=${policyMode}`);
 const allMode = policyMode === 'all';
+const pythonBin = process.env.BMD_PYTHON || 'python3';
 
 const visibleNeedle = `BMD_REAL_CHROME_VISIBLE_${runId.replace(/[^A-Za-z0-9]/g, '_')}`;
 const hiddenNeedle = `BMD_REAL_CHROME_HIDDEN_${runId.replace(/[^A-Za-z0-9]/g, '_')}`;
@@ -172,6 +173,19 @@ async function waitForSearchHit(query, timeoutMs = 15000) {
 function startPageServer() {
   pageServer = createServer((req, res) => {
     const url = new URL(req.url || '/', `http://${req.headers.host || 'bmd-allowed.test'}`);
+    const origin = String(req.headers.origin || '');
+    if (origin) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.setHeader('Vary', 'Origin');
+    }
+    if (req.method === 'OPTIONS') {
+      res.statusCode = 204;
+      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'content-type');
+      res.end();
+      return;
+    }
     if (url.pathname === '/media-image.png' || url.pathname === '/cookie-media.png') {
       const png = Buffer.from('iVBORw0KGgo=', 'base64');
       if (url.pathname === '/cookie-media.png') cookieMediaRequests += 1;
@@ -188,7 +202,9 @@ function startPageServer() {
     }
     res.setHeader('content-type', 'text/html; charset=utf-8');
     if (url.pathname === '/allowed') {
-      res.setHeader('Set-Cookie', 'bmd_media_cookie=ok; Path=/; SameSite=Lax');
+      // No SameSite attribute: the synthetic profile disables modern SameSite hardening
+      // so this exercises credentialed extension fetch without requiring HTTPS.
+      res.setHeader('Set-Cookie', 'bmd_media_cookie=ok; Path=/');
       res.end(`<!doctype html>
 <html>
   <head><title>Allowed Real Chrome E2E</title></head>
@@ -277,7 +293,7 @@ async function startDaemon() {
     BMD_HOST: '127.0.0.1',
     BMD_POLICY_MODE: policyMode
   };
-  daemonProcess = spawn('python3', [
+  daemonProcess = spawn(pythonBin, [
     '-m', 'browser_memory_daemon',
     '--host', '127.0.0.1',
     '--port', String(daemonPort),
@@ -331,6 +347,8 @@ async function startChrome() {
     '--disable-sync',
     '--disable-background-networking',
     '--disable-component-update',
+    '--disable-features=SameSiteByDefaultCookies,CookiesWithoutSameSiteMustBeSecure,ThirdPartyStoragePartitioning,ThirdPartyCookiesPhaseout,TrackingProtection3pcd',
+    `--unsafely-treat-insecure-origin-as-secure=http://bmd-allowed.test:${pagePort}`,
     `--host-resolver-rules=MAP bmd-allowed.test 127.0.0.1,MAP bank.example.test 127.0.0.1,EXCLUDE localhost`,
     `--load-extension=${extWin}`,
     'about:blank'
@@ -623,7 +641,7 @@ for table in ['documents', 'visits', 'visit_events', 'snapshots', 'chunks', 'med
 counts['audit_event_types'] = dict(conn.execute('SELECT event_type, COUNT(*) FROM audit_events GROUP BY event_type').fetchall())
 print(json.dumps(counts, sort_keys=True))
 `;
-  const result = spawnSync('python3', ['-c', script], { encoding: 'utf8' });
+  const result = spawnSync(pythonBin, ['-c', script], { encoding: 'utf8' });
   if (result.status !== 0) fail(`DB count query failed: ${result.stderr || result.stdout}`);
   return JSON.parse(result.stdout.trim());
 }
@@ -642,7 +660,7 @@ for row in rows:
     row['file_size'] = path.stat().st_size if path and path.exists() else 0
 print(json.dumps({'rows': rows, 'stored': sum(1 for row in rows if row.get('has_file')), 'bytes': sum(row.get('file_size', 0) for row in rows), 'tasks': tasks}, sort_keys=True))
 `;
-  const result = spawnSync('python3', ['-c', script], { encoding: 'utf8' });
+  const result = spawnSync(pythonBin, ['-c', script], { encoding: 'utf8' });
   if (result.status !== 0) fail(`DB media query failed: ${result.stderr || result.stdout}`);
   return JSON.parse(result.stdout.trim());
 }
@@ -680,7 +698,7 @@ visits = [dict(row) for row in conn.execute('SELECT id, url, dwell_seconds FROM 
 events = [dict(row) for row in conn.execute('SELECT visit_id, url, event_type, active_seconds, max_scroll_percent FROM visit_events ORDER BY created_at ASC').fetchall()]
 print(json.dumps({'visits': visits, 'events': events}, sort_keys=True))
 `;
-  const result = spawnSync('python3', ['-c', script], { encoding: 'utf8' });
+  const result = spawnSync(pythonBin, ['-c', script], { encoding: 'utf8' });
   if (result.status !== 0) fail(`DB telemetry query failed: ${result.stderr || result.stdout}`);
   return JSON.parse(result.stdout.trim());
 }

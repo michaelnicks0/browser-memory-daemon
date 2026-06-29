@@ -4,7 +4,7 @@
 > **Default policy:** `all` — maximum personal recall, no URL policy filtering or daemon redaction.
 > **Scope:** Windows Chrome capture with WSL-resident storage/search/ops.
 
-Current operational docs are under [`docs/`](docs/). Historical design-plan content has been reconciled into the current docs, especially [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and [`docs/media-artifacts.md`](docs/media-artifacts.md).
+Start with the generated visual front door: [`browser-memory-daemon-high-level-doc.html`](browser-memory-daemon-high-level-doc.html). Markdown remains canonical under [`docs/`](docs/); the generated HTML companions are for polished browser reading. Historical design-plan content has been reconciled into the current docs, especially [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and [`docs/media-artifacts.md`](docs/media-artifacts.md).
 
 ---
 
@@ -26,6 +26,7 @@ Windows Chrome extension
 
 Start with:
 
+- [`docs/EXECUTIVE_BRIEF.md`](docs/EXECUTIVE_BRIEF.md) — high-level value, maturity, and risk posture.
 - [`docs/README.md`](docs/README.md) — documentation reading path.
 - [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) — operator guide.
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system architecture and requirements trace.
@@ -67,9 +68,17 @@ Do not commit browser captures, DBs, logs, extension private keys, raw HTML, tok
 
 ## Commands
 
+Requires Python 3.11+. If the host `python3` is older, use `python3.11` directly or set `BMD_PYTHON=/path/to/python3.11` for helper scripts. Install local verification dependencies in a venv before running the full gate:
+
+```bash
+python3.11 -m venv .venv
+. .venv/bin/activate
+python -m pip install -r requirements-dev.txt
+```
+
 ```bash
 # Run daemon tests
-python3 -m pytest -q
+python -m pytest -q
 
 # Run extension unit tests and build
 cd extension
@@ -77,20 +86,25 @@ npm test
 npm run build
 
 # Run all checks, including real Windows Chrome-family e2e
-./scripts/run-e2e.sh
+BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-e2e.sh
+
+# Check generated docs artifacts
+python scripts/generate_test_inventory.py --check
+python scripts/generate_showcase.py --spec scripts/showcase.spec.json --check
+python scripts/render_docs.py --repo . --slug browser-memory-daemon --check
 
 # Run only the real browser extension e2e
-./scripts/run-real-chrome-e2e.sh
+BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-real-chrome-e2e.sh
 
 # Install/refresh daily-driver WSL service + Windows extension copy in all mode
 BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
 
 # Start daemon in dev/test mode
 PYTHONPATH=daemon/src BMD_API_TOKEN=dev-token \
-  python3 -m browser_memory_daemon --token dev-token --policy-mode all serve
+  python3.11 -m browser_memory_daemon --token dev-token --policy-mode all serve
 
 # Search through the CLI
-PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
   search "example"
 ```

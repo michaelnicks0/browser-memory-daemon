@@ -39,13 +39,19 @@
 ## Current commands
 
 ```bash
-python3 -m pytest -q
+python3.11 -m venv .venv
+. .venv/bin/activate
+python -m pip install -r requirements-dev.txt
+python -m pytest -q
 cd extension && npm test && npm run build
-./scripts/run-real-chrome-e2e.sh
-./scripts/run-e2e.sh
+BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-real-chrome-e2e.sh
+BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-e2e.sh
+python scripts/generate_test_inventory.py --check
+python scripts/generate_showcase.py --spec scripts/showcase.spec.json --check
+python scripts/render_docs.py --repo . --slug browser-memory-daemon --check
 ```
 
-`run-real-chrome-e2e.sh` uses Windows Chrome for Testing because branded Chrome 137+ no longer reliably honors command-line `--load-extension` automation.
+`run-real-chrome-e2e.sh` uses Windows Chrome for Testing because branded Chrome 137+ no longer reliably honors command-line `--load-extension` automation. It honors `BMD_PYTHON` for the WSL daemon and DB probes.
 
 ---
 
@@ -54,20 +60,20 @@ cd extension && npm test && npm run build
 Default all-mode:
 
 ```bash
-./scripts/run-real-chrome-e2e.sh
+BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-real-chrome-e2e.sh
 ```
 
 Strict-mode regression:
 
 ```bash
-BMD_REAL_CHROME_POLICY_MODE=strict ./scripts/run-real-chrome-e2e.sh
+BMD_PYTHON="${BMD_PYTHON:-python}" BMD_REAL_CHROME_POLICY_MODE=strict ./scripts/run-real-chrome-e2e.sh
 ```
 
 Balanced/recall smoke:
 
 ```bash
-BMD_REAL_CHROME_POLICY_MODE=balanced ./scripts/run-real-chrome-e2e.sh
-BMD_REAL_CHROME_POLICY_MODE=recall ./scripts/run-real-chrome-e2e.sh
+BMD_PYTHON="${BMD_PYTHON:-python}" BMD_REAL_CHROME_POLICY_MODE=balanced ./scripts/run-real-chrome-e2e.sh
+BMD_PYTHON="${BMD_PYTHON:-python}" BMD_REAL_CHROME_POLICY_MODE=recall ./scripts/run-real-chrome-e2e.sh
 ```
 
 ---

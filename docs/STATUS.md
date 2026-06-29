@@ -1,7 +1,7 @@
 # Browser Memory Daemon Status — Implemented, Pending, Risks
 
 > **Audience:** Operator and future maintainers.
-> **Current branch:** `master`.
+> **Current source:** repository HEAD; release branch may vary.
 > **Policy default:** `all`.
 
 ---
@@ -50,7 +50,7 @@ This means:
 | Semantic/vector search | Later, explicit approval required | Exact FTS remains current source of truth. |
 | Retention policies/export/backup | Medium | Needed before long-term high-volume use. |
 | MCP/Hermes integration | Later | Should treat captured text as untrusted evidence. |
-| Rich policy rules | Medium | Future allow/redact/metadata-only modes; current explicit rules are block-only and skipped in `all`. |
+| Rich policy rules | Medium | Future allow/redact/metadata-only modes; current explicit rules are block-only and apply in every mode, including `all`. |
 | Reconciliation for orphan lifecycle events | Low/medium | Some media/dynamic pages can send lifecycle before capture attaches. |
 | Packaged extension distribution | Later | Daily driver currently uses manual Load unpacked due Chrome Secure Preferences. |
 

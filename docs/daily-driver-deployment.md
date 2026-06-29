@@ -26,7 +26,7 @@ The daemon is persistent in WSL. Chrome still requires **Load unpacked** / **Rel
 | Item | Path |
 |---|---|
 | Source repo | `~/repos/workstation/browser-memory-daemon/` |
-| Windows extension copy | `C:\Users\user\AppData\Local\browser-memory-daemon\extension\` |
+| Windows extension copy | `%LOCALAPPDATA%\browser-memory-daemon\extension\` |
 | WSL token file | `~/.config/browser-memory-daemon/token` |
 | WSL service env | `~/.config/browser-memory-daemon/env` |
 | systemd daemon unit | `~/.config/systemd/user/browser-memory-daemon.service` |
@@ -74,8 +74,8 @@ chrome://extensions → Browser Memory Daemon → Reload
 
 ```text
 Extension ID: pgebbgmpbngnjgebbacafndebdjbbida
-Extension path: C:\Users\user\AppData\Local\browser-memory-daemon\extension
-Chrome profile backup root: C:\Users\user\AppData\Local\browser-memory-daemon\backups\
+Extension path: %LOCALAPPDATA%\browser-memory-daemon\extension
+Chrome profile backup root: %LOCALAPPDATA%\browser-memory-daemon\backups\
 ```
 
 Direct `Preferences` / `Secure Preferences` JSON transplant was tested and rejected by Chrome on launch. Chrome protects extension entries with legacy MACs and encrypted hashes; invalid entries are removed. Use Chrome's own **Load unpacked** / **Reload** flow.
@@ -89,7 +89,7 @@ systemctl --user status browser-memory-daemon.service
 systemctl --user status browser-memory-media-worker.service
 journalctl --user -u browser-memory-daemon.service -n 50 --no-pager
 journalctl --user -u browser-memory-media-worker.service -n 50 --no-pager
-PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
   health
 ```
@@ -140,7 +140,7 @@ After loading/reloading the extension in Chrome:
 4. search from WSL:
 
    ```bash
-   PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
+   PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
      --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
      search "distinct phrase from the page"
    ```
@@ -164,7 +164,7 @@ In `all` mode:
 Use `forget` after the fact if a domain should be removed:
 
 ```bash
-PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
   forget --domain example.com
 ```

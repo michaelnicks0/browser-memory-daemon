@@ -1,0 +1,806 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Architecture — browser-memory-daemon</title>
+<style>
+:root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;color:var(--text);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,ui-sans-serif,system-ui,sans-serif;background:radial-gradient(1100px 520px at 78% -8%,rgba(59,130,246,.22),transparent 60%),radial-gradient(820px 480px at 6% 4%,rgba(82,212,255,.12),transparent 55%),radial-gradient(700px 700px at 92% 96%,rgba(91,225,156,.08),transparent 55%),var(--bg);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:30px 22px 70px}
+a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
+code{font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:#08152b;border:1px solid var(--line);border-radius:6px;padding:.1em .42em;color:#d6e6ff}
+h1,h2,h3{letter-spacing:-.02em;margin:0}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;color:var(--cyan);font-weight:700;letter-spacing:.16em;text-transform:uppercase;font-size:.72rem}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--cyan);box-shadow:0 0 16px 2px rgba(82,212,255,.85);animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.7)}}
+.hero{position:relative;border:1px solid var(--line2);border-radius:26px;padding:38px 36px 30px;margin-bottom:18px;background:linear-gradient(165deg,rgba(31,52,92,.55),rgba(10,20,38,.7));box-shadow:0 30px 90px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.05);overflow:hidden}
+.hero h1{font-size:clamp(2.3rem,5.2vw,3.9rem);line-height:1.02;margin:14px 0 12px}
+.hero h1 .g{background:linear-gradient(92deg,var(--cyan),var(--blue) 55%,var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p.lead{color:#cfe0f7;font-size:1.12rem;max-width:62ch;margin:0 0 8px}
+.hero .sub{color:var(--muted);max-width:64ch}
+.pillbar{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.pill{display:inline-flex;align-items:center;gap:7px;font-size:.82rem;color:#dce8fb;background:rgba(11,22,42,.7);border:1px solid var(--line2);border-radius:999px;padding:7px 13px}
+.pill b{color:#fff}.pill .k{width:7px;height:7px;border-radius:50%}
+.k.live{background:var(--amber)}.k.local{background:var(--green)}.k.priv{background:var(--rose)}.k.blue{background:var(--blue)}
+.metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin:18px 0 6px}
+.metric{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015));border:1px solid var(--line);border-radius:16px;padding:15px 14px;text-align:center}
+.metric .n{font-size:1.85rem;font-weight:800;letter-spacing:-.03em;background:linear-gradient(180deg,#fff,#bcd2f2);-webkit-background-clip:text;background-clip:text;color:transparent}
+.metric .l{display:block;color:var(--dim);font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;margin-top:3px}
+@media(max-width:880px){.metrics{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:520px){.metrics{grid-template-columns:repeat(2,1fr)}}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0 26px}
+.toc a{font-size:.84rem;color:#cfe0f7;border:1px solid var(--line2);background:rgba(10,20,38,.6);border-radius:999px;padding:8px 14px}
+.toc a:hover{border-color:var(--cyan);text-decoration:none;color:#fff}
+section.block{margin:30px 0}
+.block>h2{font-size:1.5rem;margin-bottom:6px;display:flex;align-items:center;gap:11px}
+.block>h2 .num{font-size:.8rem;color:var(--ink);background:linear-gradient(180deg,var(--cyan),var(--blue));width:26px;height:26px;border-radius:8px;display:inline-grid;place-items:center;font-weight:800}
+.block>p.intro{color:var(--muted);max-width:74ch;margin:6px 0 16px}
+.card{background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.012));border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:0 18px 50px rgba(0,0,0,.3)}
+.figure{border:1px solid var(--line);border-radius:20px;background:radial-gradient(700px 300px at 50% 0,rgba(35,60,105,.4),rgba(8,17,33,.6));padding:24px;overflow:hidden}
+.figure svg{display:block;width:100%;height:auto}
+.cap{color:var(--dim);font-size:.82rem;text-align:center;margin-top:12px}
+.lanes{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:820px){.lanes{grid-template-columns:1fr}}
+.lane{position:relative;border:1px solid var(--line2);border-radius:18px;padding:20px;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.01));transition:transform .15s ease,border-color .15s ease}
+.lane:hover{transform:translateY(-3px);border-color:var(--cyan)}
+.lane .tag{font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;font-weight:700}
+.lane.exec .tag{color:var(--violet)}.lane.user .tag{color:var(--green)}.lane.maint .tag{color:var(--amber)}
+.lane h3{font-size:1.16rem;margin:8px 0 6px}.lane p{color:var(--muted);font-size:.9rem;margin:0 0 14px}
+.lane .go{font-size:.86rem;font-weight:600}
+.lane .ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;margin-bottom:6px;border:1px solid var(--line2);font-size:1.2rem}
+.lane.exec .ic{background:rgba(183,155,255,.13)}.lane.user .ic{background:rgba(91,225,156,.13)}.lane.maint .ic{background:rgba(255,180,84,.13)}
+table{width:100%;border-collapse:collapse;margin-top:6px;font-size:.9rem}
+th,td{text-align:left;padding:11px 13px;border-bottom:1px solid var(--line)}
+th{color:var(--dim);font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700}
+tr:last-child td{border-bottom:0}td b{color:#fff}
+.note{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line2);border-left:3px solid var(--cyan);border-radius:12px;padding:14px 16px;background:rgba(10,20,38,.5);color:#cfe0f7;font-size:.9rem;margin-top:14px}
+.note .i{font-size:1.1rem;line-height:1.2}
+footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);color:var(--dim);font-size:.82rem}
+.prov{margin-top:8px;color:#8aa0bd}.prov code{font-size:11.5px}
+.featgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px}
+.feat{background:linear-gradient(180deg,rgba(20,32,54,.7),rgba(12,21,38,.6));border:1px solid var(--line);border-radius:16px;padding:18px}
+.feat .fic{font-size:1.4rem;margin-bottom:8px}
+.feat h3{font-size:1.02rem;margin:0 0 6px;color:#eaf2ff}
+.feat p{margin:0;color:#b8c8e4;font-size:.9rem;line-height:1.55}
+ol.flow{list-style:none;margin:0;padding:0}
+ol.flow li{display:flex;gap:14px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line)}
+ol.flow li:last-child{border-bottom:0}
+ol.flow .fstep{flex:0 0 auto;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:.92rem;color:#06101f;background:linear-gradient(135deg,var(--cyan),var(--blue))}
+ol.flow .fwrap{display:flex;flex-direction:column;gap:2px}
+ol.flow .fwrap b{color:#eaf2ff;font-size:.98rem}
+ol.flow .fwrap span{color:#aebfdc;font-size:.88rem;line-height:1.5}
+table.cmdtable{width:100%;border-collapse:collapse;font-size:.86rem}
+table.cmdtable th,table.cmdtable td{text-align:left;padding:9px 12px;border:1px solid var(--line);vertical-align:top}
+table.cmdtable th{background:rgba(35,60,105,.4);color:#dbe8ff;font-weight:700}
+table.cmdtable tr:nth-child(even) td{background:rgba(255,255,255,.018)}
+table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:#08152b;border:1px solid var(--line);border-radius:5px;padding:.08em .38em;color:#d6e6ff;white-space:nowrap}
+@media(max-width:760px){.featgrid{grid-template-columns:1fr}}
+
+.docbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:14px;padding:12px 20px;margin:-30px -22px 24px;background:rgba(8,15,28,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line2)}
+.docbar a.home{display:inline-flex;align-items:center;gap:8px;font-weight:700;color:var(--cyan);font-size:.9rem}
+.docbar .crumb{color:var(--dim);font-size:.84rem}
+.docbar .crumb b{color:var(--text)}
+.md-body{max-width:none}
+.md-body h1{font-size:2.1rem;margin:6px 0 14px;letter-spacing:-.02em}
+.md-body h2{font-size:1.5rem;margin:30px 0 10px;padding-bottom:7px;border-bottom:1px solid var(--line);letter-spacing:-.02em}
+.md-body h3{font-size:1.2rem;margin:22px 0 8px}
+.md-body h4{font-size:1.02rem;margin:18px 0 6px;color:#cfe0f7}
+.md-body p{color:#cdd9ee;margin:10px 0}
+.md-body ul,.md-body ol{color:#cdd9ee;padding-left:24px}
+.md-body li{margin:5px 0}
+.md-body a{color:var(--cyan)}
+.md-body strong{color:#fff}
+.md-body blockquote{margin:14px 0;padding:10px 16px;border-left:3px solid var(--blue);background:rgba(10,20,38,.55);border-radius:0 10px 10px 0;color:#bcd0ec}
+.md-body code{font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:#08152b;border:1px solid var(--line);border-radius:6px;padding:.1em .42em;color:#d6e6ff}
+.md-body pre{background:#070f1f;border:1px solid var(--line);border-radius:12px;padding:16px 18px;overflow:auto;margin:14px 0}
+.md-body pre code{background:none;border:0;padding:0;color:#d6e6ff;font-size:12.5px;line-height:1.6}
+.md-body table{width:100%;border-collapse:collapse;margin:16px 0;font-size:.88rem}
+.md-body th,.md-body td{text-align:left;padding:9px 12px;border:1px solid var(--line)}
+.md-body th{background:rgba(35,60,105,.4);color:#dbe8ff;font-weight:700}
+.md-body tr:nth-child(even) td{background:rgba(255,255,255,.018)}
+.md-body hr{border:0;border-top:1px solid var(--line);margin:26px 0}
+.md-body .mmd{margin:18px 0;padding:16px;border:1px solid var(--line);border-radius:16px;background:radial-gradient(700px 280px at 50% 0,rgba(35,60,105,.32),rgba(8,17,33,.55))}
+.md-body .mmd-scroll{overflow-x:auto;overflow-y:hidden;text-align:center}
+.md-body .mmd:not(.wide) .mmd-scroll{text-align:center}
+.md-body .mmd.wide .mmd-scroll{text-align:left}
+.md-body .mmd svg{height:auto;display:inline-block}
+.md-body .mmd-hint{font:600 11px/1.4 ui-sans-serif,system-ui;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;opacity:.8}
+.md-body .mmd-scroll::-webkit-scrollbar{height:9px}
+.md-body .mmd-scroll::-webkit-scrollbar-thumb{background:var(--line2);border-radius:6px}
+.md-body .mmd-scroll::-webkit-scrollbar-track{background:transparent}
+.md-body .codehilite{background:#070f1f;border:1px solid var(--line);border-radius:12px;margin:14px 0}
+.md-body .codehilite pre{border:0;margin:0;background:none}
+.md-footer{margin-top:42px;padding-top:18px;border-top:1px solid var(--line);color:var(--dim);font-size:.82rem}
+.md-footer code{font-size:11.5px}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="docbar">
+    <a class="home" href="../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
+    <span class="crumb">/ <b>docs/ARCHITECTURE.md</b></span>
+  </div>
+  <article class="md-body">
+<h1 id="browser-memory-daemon-architecture-windows-chrome-to-wsl-recall">Browser Memory Daemon Architecture — Windows Chrome to WSL Recall</h1>
+<blockquote>
+<p><strong>Audience:</strong> maintainers and future agents.
+<strong>Mission:</strong> provide local-first, searchable personal browser recall from Windows Chrome with durable storage in WSL.
+<strong>Current default:</strong> <code>policy_mode=all</code> for maximum recall.</p>
+</blockquote>
+<hr />
+<h2 id="mission-and-conops">Mission and ConOps</h2>
+<p>The system shall enable Operator to reconstruct recently viewed web content by capturing Chrome page text locally, storing it in WSL, and exposing exact search, timeline, detail, lifecycle, and deletion tools without cloud dependency.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Current design</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Operator</td>
+<td>Operator only.</td>
+</tr>
+<tr>
+<td>Browser surface</td>
+<td>Windows Chrome daily-driver profile plus Chrome for Testing in e2e.</td>
+</tr>
+<tr>
+<td>Capture path</td>
+<td>MV3 extension → service worker → authenticated localhost HTTP.</td>
+</tr>
+<tr>
+<td>Storage owner</td>
+<td>WSL daemon. Chrome profile is not the durable memory store.</td>
+</tr>
+<tr>
+<td>Search model</td>
+<td>Exact SQLite FTS5 first. No embeddings yet.</td>
+</tr>
+<tr>
+<td>Default policy posture</td>
+<td><code>all</code>: no daemon redaction or URL policy filtering, maximum recall, DOM extraction skip retained.</td>
+</tr>
+<tr>
+<td>Deletion model</td>
+<td>Forget by domain/URL with deletion receipts.</td>
+</tr>
+<tr>
+<td>Validation target</td>
+<td>Real Windows Chrome can capture, search, and forget synthetic pages through WSL.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="requirements-trace">Requirements trace</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+<th>Implementation</th>
+<th>Verification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>REQ-001</td>
+<td>Capture Chrome page text into WSL.</td>
+<td><code>extension/src/*</code>, <code>/capture</code>, <code>ingest.py</code></td>
+<td><code>scripts/run-real-chrome-e2e.sh</code></td>
+</tr>
+<tr>
+<td>REQ-002</td>
+<td>Keep durable data out of repo and Chrome profile.</td>
+<td><code>RuntimeConfig</code>, XDG paths, <code>.gitignore</code></td>
+<td><code>doctor</code>, secret scan, runtime-root tests</td>
+</tr>
+<tr>
+<td>REQ-003</td>
+<td>Service worker owns daemon communication.</td>
+<td><code>service_worker.js</code></td>
+<td>extension unit tests + real e2e</td>
+</tr>
+<tr>
+<td>REQ-004</td>
+<td>Authenticated loopback API.</td>
+<td><code>app.py</code>, bearer token</td>
+<td>HTTP e2e unauthorized test</td>
+</tr>
+<tr>
+<td>REQ-005</td>
+<td>Adjustable capture policy modes.</td>
+<td><code>policy.py</code>, <code>extractor.js</code>, options/popup</td>
+<td>daemon + extension unit tests</td>
+</tr>
+<tr>
+<td>REQ-006</td>
+<td><code>all</code> mode disables URL filtering and daemon redaction while still skipping hidden/form/editable/script/style/no-script DOM text.</td>
+<td><code>policy_mode=all</code>, no-redaction ingest path</td>
+<td>unit/integration + real e2e all-mode expectations</td>
+</tr>
+<tr>
+<td>REQ-007</td>
+<td>Non-all modes preserve redaction and stricter policy options.</td>
+<td><code>redact_text</code>, <code>redact_url</code>, strict/balanced/recall</td>
+<td>policy and ingest tests</td>
+</tr>
+<tr>
+<td>REQ-008</td>
+<td>Exact search with citations.</td>
+<td><code>chunks_fts</code>, <code>search.py</code>, detail APIs</td>
+<td>integration/e2e search tests</td>
+</tr>
+<tr>
+<td>REQ-009</td>
+<td>Dedupe repeated unchanged captures.</td>
+<td>normalized URLs + text hash snapshots</td>
+<td>ingest tests</td>
+</tr>
+<tr>
+<td>REQ-010</td>
+<td>Capture SPA/delayed pages.</td>
+<td>content-script delayed passes + history hooks</td>
+<td>real Chrome SPA fixture</td>
+</tr>
+<tr>
+<td>REQ-011</td>
+<td>Track dwell/lifecycle metadata.</td>
+<td><code>/visit-events</code>, <code>lifecycle.py</code></td>
+<td>lifecycle tests + real e2e</td>
+</tr>
+<tr>
+<td>REQ-012</td>
+<td>Local UI and CLI operations.</td>
+<td><code>ui/</code>, <code>cli.py</code>, admin APIs; <code>/ui</code> token bootstrap</td>
+<td>admin/CLI e2e tests</td>
+</tr>
+<tr>
+<td>REQ-013</td>
+<td>Delete stored memory with receipts.</td>
+<td><code>forget.py</code>, <code>deletion_receipts</code></td>
+<td>forget integration/e2e tests</td>
+</tr>
+<tr>
+<td>REQ-014</td>
+<td>Real daily-driver install path.</td>
+<td><code>install-daily-driver.sh</code></td>
+<td>WSL + Windows health checks</td>
+</tr>
+<tr>
+<td>REQ-015</td>
+<td>Media bytes shall never block text/FTS capture.</td>
+<td><code>/capture</code> media refs, extension IndexedDB queue, media worker</td>
+<td>integration + real Chrome e2e</td>
+</tr>
+<tr>
+<td>REQ-016</td>
+<td>Credentialed media fetch shall stay inside Chrome; WSL shall not receive browser cookies.</td>
+<td>browser lazy sidecar <code>fetch(... credentials: 'include')</code> + raw <code>PUT</code></td>
+<td>cookie-required real Chrome fixture</td>
+</tr>
+<tr>
+<td>REQ-017</td>
+<td>Media cache shall be bounded and disposable/rebuildable.</td>
+<td>size gates, <code>/media-artifacts/purge-cache</code>, <code>media-cache</code> CLI</td>
+<td>HTTP/integration tests</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="logical-decomposition">Logical decomposition</h2>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Responsibility</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chrome manifest</td>
+<td>Permission envelope and extension entrypoints.</td>
+<td>Uses <code>&lt;all_urls&gt;</code> so <code>all</code> mode is meaningful.</td>
+</tr>
+<tr>
+<td>Extractor</td>
+<td>Traverse DOM and build capture payload.</td>
+<td>Policy-aware; all modes skip hidden/form/editable/script/style/no-script DOM text.</td>
+</tr>
+<tr>
+<td>Content script</td>
+<td>Schedule initial/delayed/SPA captures and scroll tracking.</td>
+<td>Reads <code>policyMode</code> from extension storage.</td>
+</tr>
+<tr>
+<td>Service worker</td>
+<td>Auth, queues, injection, lifecycle state, fast <code>/capture</code>, browser lazy media queue/drain, daemon POST/PUTs, CDP recorder orchestration.</td>
+<td>Text capture does not wait on media bytes.</td>
+</tr>
+<tr>
+<td>Extension media queue</td>
+<td>Durable IndexedDB queue for credentialed media fetch/upload.</td>
+<td>Stores fetched blobs until raw upload succeeds.</td>
+</tr>
+<tr>
+<td>CDP recorder</td>
+<td>Enabled-by-default, operator-disableable domain-gated Chrome DevTools Protocol recorder for X/Twitter media network responses.</td>
+<td>Captures <code>video.twimg.com</code> HLS manifests/segments before they collapse into opaque <code>blob:</code> player refs, but Chrome shows a native debugging banner while attached.</td>
+</tr>
+<tr>
+<td>Daemon API</td>
+<td>Auth, CORS, routing, UI serving, token bootstrap, raw media blob upload, cache controls.</td>
+<td><code>/health</code> public loopback; <code>/ui</code> HTML gets same-origin token bootstrap; memory APIs tokened.</td>
+</tr>
+<tr>
+<td>Policy engine</td>
+<td>Mode-specific allow/block/redact decisions.</td>
+<td><code>all</code>, <code>recall</code>, <code>balanced</code>, <code>strict</code>.</td>
+</tr>
+<tr>
+<td>Ingest pipeline</td>
+<td>Normalize, store visits/documents/snapshots/chunks/FTS plus related media artifact refs/blobs.</td>
+<td><code>all</code> bypasses redaction.</td>
+</tr>
+<tr>
+<td>Lifecycle pipeline</td>
+<td>Store metadata-only visit events and update dwell.</td>
+<td>Uses policy mode for URL redaction/filtering.</td>
+</tr>
+<tr>
+<td>Daemon media worker</td>
+<td>Durable public-media backfill with leases/backoff/retry and HLS/audio sidecar assembly.</td>
+<td>Does not receive or export Chrome cookies.</td>
+</tr>
+<tr>
+<td>Media cache manager</td>
+<td>Applies size gates, manual purge/rehydrate, and oldest-first domain/global rolling eviction.</td>
+<td>Blob bytes are disposable; text, refs, hashes, and provenance remain durable.</td>
+</tr>
+<tr>
+<td>Ops/read model</td>
+<td>Search, recent, timeline, detail, doctor.</td>
+<td>Captured text remains untrusted evidence.</td>
+</tr>
+<tr>
+<td>Deletion pipeline</td>
+<td>Domain/URL forget and receipt creation.</td>
+<td>Removes DB rows, FTS rows, text/media blobs, lifecycle rows.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="architecture-diagrams">Architecture diagrams</h2>
+<p>The canonical C4 model lives in <a href="architecture/workspace.dsl"><code>architecture/workspace.dsl</code></a>. Use the generated single-file atlas at <a href="architecture/c4-diagrams.html"><code>architecture/c4-diagrams.md</code></a> for architecture topology.</p>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>C4 view</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>What is the system boundary?</td>
+<td><code>SystemContext</code></td>
+</tr>
+<tr>
+<td>How does fast capture move from Chrome to WSL storage?</td>
+<td><code>CaptureContainers</code>, <code>ExtensionCaptureComponents</code>, <code>DaemonIngestComponents</code>, <code>FastCaptureFlow</code></td>
+</tr>
+<tr>
+<td>How do browser-side media sidecars work at architecture level?</td>
+<td><code>BrowserMediaContainers</code>, <code>ExtensionMediaComponents</code>, <code>CredentialedMediaSidecarFlow</code></td>
+</tr>
+<tr>
+<td>How does daemon-public media backfill work?</td>
+<td><code>DaemonMediaWorkerContainers</code>, <code>DaemonMediaComponents</code>, <code>DaemonPublicMediaWorkerFlow</code></td>
+</tr>
+<tr>
+<td>How do read/search/forget/doctor operations reach storage?</td>
+<td><code>OpsContainers</code>, <code>DaemonReadComponents</code>, <code>DaemonForgetComponents</code>, <code>DaemonDoctorComponents</code></td>
+</tr>
+<tr>
+<td>What runs where on the daily-driver workstation?</td>
+<td><code>DailyDriverDeployment</code></td>
+</tr>
+</tbody>
+</table>
+<p>Hand-authored Mermaid diagrams for behavior that C4 intentionally omits — policy ladders, redaction branches, state machines, dedupe formulas, endpoint maps, media status/cache semantics, and delete cascades — live in <a href="DIAGRAMS.html"><code>DIAGRAMS.md</code></a>.</p>
+<hr />
+<h2 id="durable-media-sidecar-architecture">Durable media sidecar architecture</h2>
+<p>The media lane is built around one invariant:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>fast text sidecar owns recall correctness
+lazy media sidecars own byte completeness
+media blobs are a bounded disposable cache
+text/FTS/media refs remain authoritative
+</code></pre></div>
+
+<p><code>/capture</code> stores page text, FTS chunks, visits/snapshots, and media reference rows first. Binary media work is explicitly asynchronous so slow videos, signed URLs, or worker suspension cannot break text recall.</p>
+<h3 id="media-lanes">Media lanes</h3>
+<table>
+<thead>
+<tr>
+<th>Lane</th>
+<th>Purpose</th>
+<th>Current files</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Fast capture</td>
+<td>Store text, FTS, visits/snapshots, and media refs immediately.</td>
+<td><code>extension/src/content_script.js</code>, <code>extension/src/service_worker.js</code>, <code>daemon/src/browser_memory_daemon/ingest.py</code>, <code>media.py</code></td>
+</tr>
+<tr>
+<td>Browser lazy sidecar</td>
+<td>Fetch credentialed media inside Chrome and upload raw blobs.</td>
+<td><code>extension/src/media_queue.js</code>, <code>service_worker.js</code></td>
+</tr>
+<tr>
+<td>Inline/blob upload</td>
+<td>Let the content script read transient <code>blob:</code> / <code>data:</code> bytes while page context is alive.</td>
+<td><code>extension/src/content_script.js</code>, <code>service_worker.js</code></td>
+</tr>
+<tr>
+<td>CDP recorder</td>
+<td>Enabled-by-default capture of X/Twitter <code>video.twimg.com</code> HLS manifests/segments before only opaque <code>blob:</code> player URLs remain, with an options-page disable control.</td>
+<td><code>extension/src/cdp_recorder.js</code>, <code>service_worker.js</code></td>
+</tr>
+<tr>
+<td>Daemon lazy sidecar</td>
+<td>Public unauthenticated backfill with leases, backoff, HLS assembly, and status classification.</td>
+<td><code>daemon/src/browser_memory_daemon/media_worker.py</code>, <code>media.py</code></td>
+</tr>
+<tr>
+<td>Cache management</td>
+<td>Purge/rehydrate controls plus oldest-first rolling eviction for domain/global caps.</td>
+<td><code>media.py</code>, <code>cli.py</code>, <code>/media-artifacts/*</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="visual-references">Visual references</h3>
+<table>
+<thead>
+<tr>
+<th>Need</th>
+<th>Diagram/doc</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Architecture-level media topology</td>
+<td><a href="architecture/c4-diagrams.html"><code>architecture/c4-diagrams.md</code></a>: <code>BrowserMediaContainers</code>, <code>ExtensionMediaComponents</code>, <code>DaemonMediaWorkerContainers</code>, <code>DaemonMediaComponents</code></td>
+</tr>
+<tr>
+<td>Browser credentialed sidecar scenario</td>
+<td><a href="architecture/c4-diagrams.html"><code>architecture/c4-diagrams.md</code></a>: <code>CredentialedMediaSidecarFlow</code></td>
+</tr>
+<tr>
+<td>Daemon-public worker scenario</td>
+<td><a href="architecture/c4-diagrams.html"><code>architecture/c4-diagrams.md</code></a>: <code>DaemonPublicMediaWorkerFlow</code></td>
+</tr>
+<tr>
+<td>Parallel browser/daemon sidecar sequence, status reasons, HLS/CDP details</td>
+<td><a href="media-artifacts.html#capture-flow"><code>media-artifacts.md</code></a></td>
+</tr>
+<tr>
+<td>Cache/status behavior and provenance-preserving purge</td>
+<td><a href="DIAGRAMS.html#4-durable-media-sidecars-and-cache-outcomes"><code>DIAGRAMS.md</code></a></td>
+</tr>
+</tbody>
+</table>
+<h3 id="requirements-resolved-by-the-current-media-design">Requirements resolved by the current media design</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Current implementation status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Text/FTS must not wait on media bytes.</td>
+<td><code>/capture</code> stores refs and returns artifact IDs before lazy binary work.</td>
+</tr>
+<tr>
+<td>Every discovered media candidate should produce a durable row.</td>
+<td>Implemented subject to the per-capture ref cap; video refs are prioritized over lower-priority images.</td>
+</tr>
+<tr>
+<td>Browser media work must survive service-worker suspension.</td>
+<td>IndexedDB tasks/blobs plus stale-task requeue.</td>
+</tr>
+<tr>
+<td>Credentialed media fetch must stay inside Chrome.</td>
+<td>Browser lazy sidecar uses Chrome's credential envelope; WSL daemon never receives Chrome cookies.</td>
+</tr>
+<tr>
+<td>Raw binary upload should avoid base64 inflation.</td>
+<td>Primary path is <code>PUT /media-artifacts/{artifact_id}/blob</code>; JSON/base64 is compatibility-only.</td>
+</tr>
+<tr>
+<td>Daemon public backfill should use durable leases/backoff.</td>
+<td><code>media_fetch_tasks</code> stores leases, attempts, retry time, worker kind, and terminal status.</td>
+</tr>
+<tr>
+<td>X/Twitter video should be recoverable when the DOM only exposes <code>blob:</code> player URLs.</td>
+<td>Enabled-by-default domain-gated CDP recorder captures <code>video.twimg.com</code> manifests/segments and tags related rows with <code>cdp_recorder=true</code>; the options page can disable it to avoid Chrome's debugging banner.</td>
+</tr>
+<tr>
+<td>HLS audio/video should be stored when technically feasible.</td>
+<td>Worker resolves master/media playlists, assembles segments under caps, and stores audio-only renditions as <code>audio/*</code> sidecars while preserving video provenance.</td>
+</tr>
+<tr>
+<td>Blob video refs should not remain ambiguous.</td>
+<td>Same-document or same-snapshot CDP-covered refs become <code>covered-by-cdp-recorder</code>; residual unreadable refs become <code>opaque-browser-blob</code>.</td>
+</tr>
+<tr>
+<td>Media blobs must be bounded and disposable.</td>
+<td>Per-artifact/snapshot/domain/global gates plus manual purge/rehydrate and oldest-first rolling eviction.</td>
+</tr>
+<tr>
+<td>Purged blobs should be rehydratable when remote URLs still work.</td>
+<td>Cache purge can reset eligible daemon-public tasks to <code>pending</code> for best-effort refetch.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="media-state-and-cache-semantics">Media state and cache semantics</h3>
+<table>
+<thead>
+<tr>
+<th>State/reason</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>referenced</code></td>
+<td>Durable ref exists; bytes are absent by design, not a failure.</td>
+</tr>
+<tr>
+<td><code>metadata-only</code></td>
+<td>CDP/browser/compat path recorded a row without local bytes yet.</td>
+</tr>
+<tr>
+<td><code>stored</code></td>
+<td>Local blob exists under <code>blobs/media/</code>.</td>
+</tr>
+<tr>
+<td><code>retrying</code></td>
+<td>Transient fetch condition with future retry.</td>
+</tr>
+<tr>
+<td><code>skipped</code></td>
+<td>Classified terminal non-storage condition, such as over-size, unsupported MIME, or policy gate.</td>
+</tr>
+<tr>
+<td><code>expired</code></td>
+<td>Remote signed/dated media disappeared before fetch.</td>
+</tr>
+<tr>
+<td><code>purged</code></td>
+<td>Blob bytes were intentionally removed while ref/hash/provenance stayed durable.</td>
+</tr>
+<tr>
+<td><code>failed</code></td>
+<td>Reserved for unexpected/unclassified bugs; normal remote/cache outcomes should not land here.</td>
+</tr>
+</tbody>
+</table>
+<p>Current default media gates come from <code>RuntimeConfig</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Gate</th>
+<th style="text-align: right;">Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Max artifact bytes</td>
+<td style="text-align: right;">250 MB</td>
+</tr>
+<tr>
+<td>Per-snapshot media bytes</td>
+<td style="text-align: right;">1 GB</td>
+</tr>
+<tr>
+<td>Per-domain media bytes</td>
+<td style="text-align: right;">10 GB</td>
+</tr>
+<tr>
+<td>Global media cache bytes</td>
+<td style="text-align: right;">100 GB</td>
+</tr>
+<tr>
+<td>Media refs per capture</td>
+<td style="text-align: right;">50</td>
+</tr>
+<tr>
+<td>Daemon public fetches per capture</td>
+<td style="text-align: right;">12</td>
+</tr>
+<tr>
+<td>Manual <code>/fetch-pending</code> API call limit</td>
+<td style="text-align: right;">100</td>
+</tr>
+<tr>
+<td>Worker service interval / batch</td>
+<td style="text-align: right;">30 seconds / 25 items</td>
+</tr>
+</tbody>
+</table>
+<p>Domain/global gates are rolling caches. When a new blob would exceed either cap, the daemon evicts the oldest stored blobs in that scope first and preserves rows as:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>capture_status = purged
+status_reason  = cache-evicted:domain-oldest
+# or
+status_reason  = cache-evicted:global-oldest
+</code></pre></div>
+
+<h3 id="explicit-media-non-goals">Explicit media non-goals</h3>
+<ul>
+<li>OCR or media-derived text indexing.</li>
+<li>DRM/EME capture.</li>
+<li>General DASH/MSE capture when Chrome exposes no readable blob, direct URL, or public HLS manifest.</li>
+<li>Always-on screenshots for every page.</li>
+</ul>
+<hr />
+<h2 id="policy-mode-semantics">Policy mode semantics</h2>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>URL filtering</th>
+<th>DOM filtering</th>
+<th>URL/body redaction</th>
+<th>Persistent block rules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>all</code></td>
+<td>Built-in filters off. Allows any absolute URL accepted by runtime unless explicitly blocked.</td>
+<td>Skips hidden/form/editable/script/style/no-script.</td>
+<td>Off.</td>
+<td>Applied.</td>
+</tr>
+<tr>
+<td><code>recall</code></td>
+<td>Blocks incognito/browser-internal/file/non-web schemes.</td>
+<td>Skips hidden/form/editable/script/style/no-script.</td>
+<td>On.</td>
+<td>Applied.</td>
+</tr>
+<tr>
+<td><code>balanced</code></td>
+<td><code>recall</code> plus private hosts, known high-risk domains, high-risk query keys.</td>
+<td>Same as <code>recall</code>.</td>
+<td>On.</td>
+<td>Applied.</td>
+</tr>
+<tr>
+<td><code>strict</code></td>
+<td>Legacy broad keyword filters for domains/paths/query keys.</td>
+<td>Same as <code>recall</code>.</td>
+<td>On.</td>
+<td>Applied.</td>
+</tr>
+</tbody>
+</table>
+<p><code>all</code> still has platform limits: Chrome may refuse extension injection on browser-owned pages or pages outside extension permission/runtime access.</p>
+<hr />
+<h2 id="storage-model">Storage model</h2>
+<table>
+<thead>
+<tr>
+<th>Table/path</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>documents</code></td>
+<td>Stable normalized document identity.</td>
+</tr>
+<tr>
+<td><code>visits</code></td>
+<td>Each captured visit, original/stored URL, dwell, browser profile.</td>
+</tr>
+<tr>
+<td><code>visit_events</code></td>
+<td>Metadata-only lifecycle segments.</td>
+</tr>
+<tr>
+<td><code>snapshots</code></td>
+<td>Distinct text versions per document.</td>
+</tr>
+<tr>
+<td><code>chunks</code> / <code>chunks_fts</code></td>
+<td>Searchable text chunks and exact FTS index.</td>
+</tr>
+<tr>
+<td><code>media_artifacts</code></td>
+<td>Related image/video refs, current blob status, provenance, purge state.</td>
+</tr>
+<tr>
+<td><code>media_fetch_tasks</code></td>
+<td>Durable daemon-public media backfill leases/retries/status.</td>
+</tr>
+<tr>
+<td><code>privacy_rules</code></td>
+<td>Explicit local block rules applied in every policy mode.</td>
+</tr>
+<tr>
+<td><code>audit_events</code></td>
+<td>Metadata-only operational audit.</td>
+</tr>
+<tr>
+<td><code>deletion_receipts</code></td>
+<td>Forget receipts and counts.</td>
+</tr>
+<tr>
+<td><code>~/.local/share/browser-memory-daemon/blobs/clean-text/</code></td>
+<td>Stored text snapshots.</td>
+</tr>
+<tr>
+<td><code>~/.local/share/browser-memory-daemon/blobs/media/</code></td>
+<td>Stored media blobs; purgeable cache.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="trust-and-safety-boundaries">Trust and safety boundaries</h2>
+<ul>
+<li>Retrieved page text is untrusted evidence. It must not drive agent actions without operator intent.</li>
+<li>The daemon binds to loopback and uses bearer auth for memory/admin endpoints.</li>
+<li>The daily-driver token lives in WSL config, is copied into the local extension artifact during install, and is embedded into daemon-served <code>/ui</code> HTML for same-origin dashboard bootstrap; static UI assets stay token-free.</li>
+<li><code>all</code> mode intentionally removes daemon redaction and URL policy filtering; this is a local personal-recall tradeoff, not a multi-user default.</li>
+<li>No cloud LLM/vector/embedding pipeline is implemented.</li>
+</ul>
+<hr />
+<h2 id="open-architecture-lanes">Open architecture lanes</h2>
+<table>
+<thead>
+<tr>
+<th>Lane</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Native messaging hardening</td>
+<td>Planned. HTTP loopback remains current transport.</td>
+</tr>
+<tr>
+<td>Semantic search</td>
+<td>Planned only after explicit approval.</td>
+</tr>
+<tr>
+<td>Retention/export/backup</td>
+<td>Planned.</td>
+</tr>
+<tr>
+<td>MCP/Hermes tool integration</td>
+<td>Planned.</td>
+</tr>
+<tr>
+<td>Rich allow/redact/quarantine policies</td>
+<td>Planned; current explicit rules are block-only and applied in every mode.</td>
+</tr>
+</tbody>
+</table>
+  </article>
+  <div class="md-footer">
+    Rendered from <code>docs/ARCHITECTURE.md</code> — the Markdown file is the canonical,
+    version-controlled source. This HTML is generated (regenerate with
+    <code>scripts/render_docs.py</code>); do not hand-edit.
+  </div>
+</div>
+</body>
+</html>

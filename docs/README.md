@@ -1,7 +1,7 @@
 # Browser Memory Daemon Docs — Reading Path
 
 > **Audience:** Operator and future agents maintaining the Windows Chrome → WSL browser-memory stack.
-> **Status:** ✅ Operator-grade doc index added with architecture, diagrams, CLI/API, tests, deployment, and status pages.
+> **Status:** ✅ Publish-ready doc set with executive brief, user guide, generated HTML companions, architecture, diagrams, CLI/API, tests, deployment, and status pages.
 > **Data boundary:** Live browser memory stays under WSL runtime paths, never in this repo.
 
 ---
@@ -10,6 +10,8 @@
 
 | If you need to... | Read |
 |---|---|
+| Get the polished visual overview | [`../browser-memory-daemon-high-level-doc.html`](../browser-memory-daemon-high-level-doc.html) |
+| Understand value, maturity, and risk posture quickly | [`EXECUTIVE_BRIEF.md`](EXECUTIVE_BRIEF.md) |
 | Use the system day to day | [`USER_GUIDE.md`](USER_GUIDE.md) |
 | Understand the architecture | [`ARCHITECTURE.md`](ARCHITECTURE.md), [`architecture/c4-diagrams.md`](architecture/c4-diagrams.md) |
 | Understand architecture/design decision history | [`architecture/adr/README.md`](architecture/adr/README.md) |
@@ -29,6 +31,9 @@
 
 | Area | Canonical files |
 |---|---|
+| Publish-ready front door | `browser-memory-daemon-high-level-doc.html`, `scripts/showcase.spec.json`, `scripts/generate_showcase.py` |
+| Markdown-to-HTML companions | `scripts/render_docs.py`, `scripts/mermaid-theme.json`, generated `*.html` siblings |
+| Generated test inventory | `scripts/generate_test_inventory.py`, `docs/TESTS.md` generated regions |
 | Daemon runtime/config | `daemon/src/browser_memory_daemon/config.py`, `scripts/install-daily-driver.sh` |
 | HTTP API and UI serving | `daemon/src/browser_memory_daemon/app.py`, `ui/` |
 | Ingest/storage/search/forget | `ingest.py`, `schema.sql`, `search.py`, `forget.py` |
@@ -62,10 +67,16 @@ policy_mode = all
 ## Verification quickstart
 
 ```bash
-python3 -m pytest -q
+python3.11 -m venv .venv
+. .venv/bin/activate
+python -m pip install -r requirements-dev.txt
+BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-e2e.sh
+python scripts/generate_test_inventory.py --check
+python scripts/generate_showcase.py --spec scripts/showcase.spec.json --check
+python scripts/render_docs.py --repo . --slug browser-memory-daemon --check
+python -m pytest -q
 cd extension && npm test && npm run build
-./scripts/run-real-chrome-e2e.sh
-./scripts/run-e2e.sh
+BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-real-chrome-e2e.sh
 ./scripts/secret-scan.sh
 git diff --check -- .
 ```

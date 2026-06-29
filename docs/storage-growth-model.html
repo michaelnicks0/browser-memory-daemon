@@ -1,0 +1,824 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Storage-Growth-Model — browser-memory-daemon</title>
+<style>
+:root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;color:var(--text);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,ui-sans-serif,system-ui,sans-serif;background:radial-gradient(1100px 520px at 78% -8%,rgba(59,130,246,.22),transparent 60%),radial-gradient(820px 480px at 6% 4%,rgba(82,212,255,.12),transparent 55%),radial-gradient(700px 700px at 92% 96%,rgba(91,225,156,.08),transparent 55%),var(--bg);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:30px 22px 70px}
+a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
+code{font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:#08152b;border:1px solid var(--line);border-radius:6px;padding:.1em .42em;color:#d6e6ff}
+h1,h2,h3{letter-spacing:-.02em;margin:0}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;color:var(--cyan);font-weight:700;letter-spacing:.16em;text-transform:uppercase;font-size:.72rem}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--cyan);box-shadow:0 0 16px 2px rgba(82,212,255,.85);animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.7)}}
+.hero{position:relative;border:1px solid var(--line2);border-radius:26px;padding:38px 36px 30px;margin-bottom:18px;background:linear-gradient(165deg,rgba(31,52,92,.55),rgba(10,20,38,.7));box-shadow:0 30px 90px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.05);overflow:hidden}
+.hero h1{font-size:clamp(2.3rem,5.2vw,3.9rem);line-height:1.02;margin:14px 0 12px}
+.hero h1 .g{background:linear-gradient(92deg,var(--cyan),var(--blue) 55%,var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p.lead{color:#cfe0f7;font-size:1.12rem;max-width:62ch;margin:0 0 8px}
+.hero .sub{color:var(--muted);max-width:64ch}
+.pillbar{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.pill{display:inline-flex;align-items:center;gap:7px;font-size:.82rem;color:#dce8fb;background:rgba(11,22,42,.7);border:1px solid var(--line2);border-radius:999px;padding:7px 13px}
+.pill b{color:#fff}.pill .k{width:7px;height:7px;border-radius:50%}
+.k.live{background:var(--amber)}.k.local{background:var(--green)}.k.priv{background:var(--rose)}.k.blue{background:var(--blue)}
+.metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin:18px 0 6px}
+.metric{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015));border:1px solid var(--line);border-radius:16px;padding:15px 14px;text-align:center}
+.metric .n{font-size:1.85rem;font-weight:800;letter-spacing:-.03em;background:linear-gradient(180deg,#fff,#bcd2f2);-webkit-background-clip:text;background-clip:text;color:transparent}
+.metric .l{display:block;color:var(--dim);font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;margin-top:3px}
+@media(max-width:880px){.metrics{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:520px){.metrics{grid-template-columns:repeat(2,1fr)}}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0 26px}
+.toc a{font-size:.84rem;color:#cfe0f7;border:1px solid var(--line2);background:rgba(10,20,38,.6);border-radius:999px;padding:8px 14px}
+.toc a:hover{border-color:var(--cyan);text-decoration:none;color:#fff}
+section.block{margin:30px 0}
+.block>h2{font-size:1.5rem;margin-bottom:6px;display:flex;align-items:center;gap:11px}
+.block>h2 .num{font-size:.8rem;color:var(--ink);background:linear-gradient(180deg,var(--cyan),var(--blue));width:26px;height:26px;border-radius:8px;display:inline-grid;place-items:center;font-weight:800}
+.block>p.intro{color:var(--muted);max-width:74ch;margin:6px 0 16px}
+.card{background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.012));border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:0 18px 50px rgba(0,0,0,.3)}
+.figure{border:1px solid var(--line);border-radius:20px;background:radial-gradient(700px 300px at 50% 0,rgba(35,60,105,.4),rgba(8,17,33,.6));padding:24px;overflow:hidden}
+.figure svg{display:block;width:100%;height:auto}
+.cap{color:var(--dim);font-size:.82rem;text-align:center;margin-top:12px}
+.lanes{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:820px){.lanes{grid-template-columns:1fr}}
+.lane{position:relative;border:1px solid var(--line2);border-radius:18px;padding:20px;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.01));transition:transform .15s ease,border-color .15s ease}
+.lane:hover{transform:translateY(-3px);border-color:var(--cyan)}
+.lane .tag{font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;font-weight:700}
+.lane.exec .tag{color:var(--violet)}.lane.user .tag{color:var(--green)}.lane.maint .tag{color:var(--amber)}
+.lane h3{font-size:1.16rem;margin:8px 0 6px}.lane p{color:var(--muted);font-size:.9rem;margin:0 0 14px}
+.lane .go{font-size:.86rem;font-weight:600}
+.lane .ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;margin-bottom:6px;border:1px solid var(--line2);font-size:1.2rem}
+.lane.exec .ic{background:rgba(183,155,255,.13)}.lane.user .ic{background:rgba(91,225,156,.13)}.lane.maint .ic{background:rgba(255,180,84,.13)}
+table{width:100%;border-collapse:collapse;margin-top:6px;font-size:.9rem}
+th,td{text-align:left;padding:11px 13px;border-bottom:1px solid var(--line)}
+th{color:var(--dim);font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700}
+tr:last-child td{border-bottom:0}td b{color:#fff}
+.note{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line2);border-left:3px solid var(--cyan);border-radius:12px;padding:14px 16px;background:rgba(10,20,38,.5);color:#cfe0f7;font-size:.9rem;margin-top:14px}
+.note .i{font-size:1.1rem;line-height:1.2}
+footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);color:var(--dim);font-size:.82rem}
+.prov{margin-top:8px;color:#8aa0bd}.prov code{font-size:11.5px}
+.featgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px}
+.feat{background:linear-gradient(180deg,rgba(20,32,54,.7),rgba(12,21,38,.6));border:1px solid var(--line);border-radius:16px;padding:18px}
+.feat .fic{font-size:1.4rem;margin-bottom:8px}
+.feat h3{font-size:1.02rem;margin:0 0 6px;color:#eaf2ff}
+.feat p{margin:0;color:#b8c8e4;font-size:.9rem;line-height:1.55}
+ol.flow{list-style:none;margin:0;padding:0}
+ol.flow li{display:flex;gap:14px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line)}
+ol.flow li:last-child{border-bottom:0}
+ol.flow .fstep{flex:0 0 auto;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:.92rem;color:#06101f;background:linear-gradient(135deg,var(--cyan),var(--blue))}
+ol.flow .fwrap{display:flex;flex-direction:column;gap:2px}
+ol.flow .fwrap b{color:#eaf2ff;font-size:.98rem}
+ol.flow .fwrap span{color:#aebfdc;font-size:.88rem;line-height:1.5}
+table.cmdtable{width:100%;border-collapse:collapse;font-size:.86rem}
+table.cmdtable th,table.cmdtable td{text-align:left;padding:9px 12px;border:1px solid var(--line);vertical-align:top}
+table.cmdtable th{background:rgba(35,60,105,.4);color:#dbe8ff;font-weight:700}
+table.cmdtable tr:nth-child(even) td{background:rgba(255,255,255,.018)}
+table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:#08152b;border:1px solid var(--line);border-radius:5px;padding:.08em .38em;color:#d6e6ff;white-space:nowrap}
+@media(max-width:760px){.featgrid{grid-template-columns:1fr}}
+
+.docbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:14px;padding:12px 20px;margin:-30px -22px 24px;background:rgba(8,15,28,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line2)}
+.docbar a.home{display:inline-flex;align-items:center;gap:8px;font-weight:700;color:var(--cyan);font-size:.9rem}
+.docbar .crumb{color:var(--dim);font-size:.84rem}
+.docbar .crumb b{color:var(--text)}
+.md-body{max-width:none}
+.md-body h1{font-size:2.1rem;margin:6px 0 14px;letter-spacing:-.02em}
+.md-body h2{font-size:1.5rem;margin:30px 0 10px;padding-bottom:7px;border-bottom:1px solid var(--line);letter-spacing:-.02em}
+.md-body h3{font-size:1.2rem;margin:22px 0 8px}
+.md-body h4{font-size:1.02rem;margin:18px 0 6px;color:#cfe0f7}
+.md-body p{color:#cdd9ee;margin:10px 0}
+.md-body ul,.md-body ol{color:#cdd9ee;padding-left:24px}
+.md-body li{margin:5px 0}
+.md-body a{color:var(--cyan)}
+.md-body strong{color:#fff}
+.md-body blockquote{margin:14px 0;padding:10px 16px;border-left:3px solid var(--blue);background:rgba(10,20,38,.55);border-radius:0 10px 10px 0;color:#bcd0ec}
+.md-body code{font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:#08152b;border:1px solid var(--line);border-radius:6px;padding:.1em .42em;color:#d6e6ff}
+.md-body pre{background:#070f1f;border:1px solid var(--line);border-radius:12px;padding:16px 18px;overflow:auto;margin:14px 0}
+.md-body pre code{background:none;border:0;padding:0;color:#d6e6ff;font-size:12.5px;line-height:1.6}
+.md-body table{width:100%;border-collapse:collapse;margin:16px 0;font-size:.88rem}
+.md-body th,.md-body td{text-align:left;padding:9px 12px;border:1px solid var(--line)}
+.md-body th{background:rgba(35,60,105,.4);color:#dbe8ff;font-weight:700}
+.md-body tr:nth-child(even) td{background:rgba(255,255,255,.018)}
+.md-body hr{border:0;border-top:1px solid var(--line);margin:26px 0}
+.md-body .mmd{margin:18px 0;padding:16px;border:1px solid var(--line);border-radius:16px;background:radial-gradient(700px 280px at 50% 0,rgba(35,60,105,.32),rgba(8,17,33,.55))}
+.md-body .mmd-scroll{overflow-x:auto;overflow-y:hidden;text-align:center}
+.md-body .mmd:not(.wide) .mmd-scroll{text-align:center}
+.md-body .mmd.wide .mmd-scroll{text-align:left}
+.md-body .mmd svg{height:auto;display:inline-block}
+.md-body .mmd-hint{font:600 11px/1.4 ui-sans-serif,system-ui;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;opacity:.8}
+.md-body .mmd-scroll::-webkit-scrollbar{height:9px}
+.md-body .mmd-scroll::-webkit-scrollbar-thumb{background:var(--line2);border-radius:6px}
+.md-body .mmd-scroll::-webkit-scrollbar-track{background:transparent}
+.md-body .codehilite{background:#070f1f;border:1px solid var(--line);border-radius:12px;margin:14px 0}
+.md-body .codehilite pre{border:0;margin:0;background:none}
+.md-footer{margin-top:42px;padding-top:18px;border-top:1px solid var(--line);color:var(--dim);font-size:.82rem}
+.md-footer code{font-size:11.5px}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="docbar">
+    <a class="home" href="../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
+    <span class="crumb">/ <b>docs/storage-growth-model.md</b></span>
+  </div>
+  <article class="md-body">
+<h1 id="browser-memory-daemon-storage-growth-model">Browser Memory Daemon Storage Growth Model</h1>
+<blockquote>
+<p><strong>Audience:</strong> Operator and future maintainers
+<strong>Scope:</strong> Estimate how large the current Chrome → WSL browser-memory daemon will grow under real browsing.
+<strong>Status:</strong> ✅ Initial empirical model from live daemon DB + local Chrome History aggregates.</p>
+</blockquote>
+<hr />
+<h2 id="tldr">TL;DR</h2>
+<p>The implementation is <strong>text-first</strong> with optional bounded media blobs. Text/FTS growth remains manageable; media is intentionally cache-like and now has explicit size gates plus purge/rehydrate controls.</p>
+<p>Using Operator's recent Chrome History baseline and the daemon's current storage multiplier, the most realistic planning range is:</p>
+<table>
+<thead>
+<tr>
+<th>Usage posture</th>
+<th style="text-align: right;">Assumption</th>
+<th style="text-align: right;">Expected growth</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Light / filtered day</td>
+<td style="text-align: right;">100 snapshots/day, current mean text size</td>
+<td style="text-align: right;">~1.6 GB/year</td>
+</tr>
+<tr>
+<td>Actual-ish baseline</td>
+<td style="text-align: right;">~250 snapshots/day, current mean text size</td>
+<td style="text-align: right;">~4.0 GB/year</td>
+</tr>
+<tr>
+<td>Busy baseline</td>
+<td style="text-align: right;">~350 snapshots/day, current mean text size</td>
+<td style="text-align: right;">~5.6 GB/year</td>
+</tr>
+<tr>
+<td>Heavy browsing</td>
+<td style="text-align: right;">500 snapshots/day, current mean text size</td>
+<td style="text-align: right;">~8.1 GB/year</td>
+</tr>
+<tr>
+<td>Very heavy / dynamic pages</td>
+<td style="text-align: right;">500 snapshots/day, p90 text size</td>
+<td style="text-align: right;">~23.7 GB/year</td>
+</tr>
+<tr>
+<td>Extreme</td>
+<td style="text-align: right;">1000 snapshots/day, p90 text size</td>
+<td style="text-align: right;">~47.4 GB/year</td>
+</tr>
+</tbody>
+</table>
+<p>Practical expectation for <strong>text/FTS</strong> remains <strong>5–15 GB/year</strong> under normal-heavy browsing. Media blobs are separate from this estimate: defaults cap individual artifacts at 250 MB, per-snapshot media at 1 GB, per-domain media at 10 GB, and total media cache at 100 GB. Domain/global media budgets are rolling caches: oldest blobs are evicted first while refs/text remain.</p>
+<hr />
+<h2 id="data-sources-used">Data sources used</h2>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>What was measured</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Live daemon DB</td>
+<td>Current row counts, SQLite page stats, FTS/table sizes, clean-text blob sizes</td>
+<td><code>~/.local/share/browser-memory-daemon/browser-memory.sqlite3</code></td>
+</tr>
+<tr>
+<td>Live daemon blob tree</td>
+<td>Clean text files under <code>blobs/clean-text/</code></td>
+<td>File sizes only; no content dumped.</td>
+</tr>
+<tr>
+<td>Chrome History copy</td>
+<td>1/3/7/14/30/90 day visit and unique-URL aggregates</td>
+<td>Copied locked DB to temp; aggregate counts only; no URLs/domains written here.</td>
+</tr>
+<tr>
+<td>Current code behavior</td>
+<td>Text-first extraction, chunking, FTS5 duplication, lifecycle metadata, bounded media refs/blobs</td>
+<td>Media blobs are cache-managed; no screenshots, full HTML, embeddings yet.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="current-live-storage-snapshot">Current live storage snapshot</h2>
+<p>Measured current daemon state:</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th style="text-align: right;">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Documents</td>
+<td style="text-align: right;">20</td>
+</tr>
+<tr>
+<td>Visits</td>
+<td style="text-align: right;">37</td>
+</tr>
+<tr>
+<td>Snapshots</td>
+<td style="text-align: right;">53</td>
+</tr>
+<tr>
+<td>Chunks</td>
+<td style="text-align: right;">243</td>
+</tr>
+<tr>
+<td>Visit events</td>
+<td style="text-align: right;">72</td>
+</tr>
+<tr>
+<td>Audit events</td>
+<td style="text-align: right;">281</td>
+</tr>
+<tr>
+<td>Main SQLite DB</td>
+<td style="text-align: right;">2.03 MiB</td>
+</tr>
+<tr>
+<td>Clean-text blobs</td>
+<td style="text-align: right;">0.37 MiB</td>
+</tr>
+<tr>
+<td>Runtime root total</td>
+<td style="text-align: right;">2.40 MiB</td>
+</tr>
+<tr>
+<td>SQLite free pages</td>
+<td style="text-align: right;">70</td>
+</tr>
+</tbody>
+</table>
+<p>Current extracted-text distribution:</p>
+<table>
+<thead>
+<tr>
+<th>Text per snapshot</th>
+<th style="text-align: right;">Bytes</th>
+<th style="text-align: right;">Approx KiB</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Median</td>
+<td style="text-align: right;">3,649</td>
+<td style="text-align: right;">3.6 KiB</td>
+</tr>
+<tr>
+<td>Mean</td>
+<td style="text-align: right;">7,296</td>
+<td style="text-align: right;">7.1 KiB</td>
+</tr>
+<tr>
+<td>p75</td>
+<td style="text-align: right;">10,850</td>
+<td style="text-align: right;">10.6 KiB</td>
+</tr>
+<tr>
+<td>p90</td>
+<td style="text-align: right;">21,447</td>
+<td style="text-align: right;">20.9 KiB</td>
+</tr>
+<tr>
+<td>p95</td>
+<td style="text-align: right;">29,048</td>
+<td style="text-align: right;">28.4 KiB</td>
+</tr>
+<tr>
+<td>Max</td>
+<td style="text-align: right;">29,065</td>
+<td style="text-align: right;">28.4 KiB</td>
+</tr>
+</tbody>
+</table>
+<p>Chunking distribution:</p>
+<table>
+<thead>
+<tr>
+<th>Chunks per snapshot</th>
+<th style="text-align: right;">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Median</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr>
+<td>Mean</td>
+<td style="text-align: right;">4.58</td>
+</tr>
+<tr>
+<td>p75</td>
+<td style="text-align: right;">7</td>
+</tr>
+<tr>
+<td>p90</td>
+<td style="text-align: right;">12</td>
+</tr>
+<tr>
+<td>p95</td>
+<td style="text-align: right;">17</td>
+</tr>
+<tr>
+<td>Max</td>
+<td style="text-align: right;">17</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="where-the-bytes-go">Where the bytes go</h2>
+<p>Current SQLite <code>dbstat</code> top storage consumers:</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th style="text-align: right;">Bytes</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>chunks</code></td>
+<td style="text-align: right;">610,304</td>
+<td>Searchable chunk text + metadata.</td>
+</tr>
+<tr>
+<td><code>chunks_fts_content</code></td>
+<td style="text-align: right;">593,920</td>
+<td>FTS content shadow copy.</td>
+</tr>
+<tr>
+<td><code>chunks_fts_data</code></td>
+<td style="text-align: right;">274,432</td>
+<td>FTS index data.</td>
+</tr>
+<tr>
+<td><code>audit_events</code></td>
+<td style="text-align: right;">69,632</td>
+<td>Capture/search/visit audit metadata.</td>
+</tr>
+<tr>
+<td><code>visit_events</code></td>
+<td style="text-align: right;">36,864</td>
+<td>Dwell/lifecycle metadata.</td>
+</tr>
+<tr>
+<td><code>snapshots</code></td>
+<td style="text-align: right;">24,576</td>
+<td>Snapshot metadata.</td>
+</tr>
+<tr>
+<td><code>visits</code></td>
+<td style="text-align: right;">20,480</td>
+<td>Visit metadata.</td>
+</tr>
+<tr>
+<td><code>documents</code></td>
+<td style="text-align: right;">12,288</td>
+<td>Document identity metadata.</td>
+</tr>
+</tbody>
+</table>
+<p>Current storage multiplier:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>runtime bytes / clean extracted text bytes ≈ 6.5x
+</code></pre></div>
+
+<p>That multiplier is high because the system stores text multiple ways:</p>
+<ol>
+<li>clean snapshot blob;</li>
+<li>chunk text in SQLite;</li>
+<li>FTS content shadow table;</li>
+<li>FTS index data;</li>
+<li>metadata tables and indexes;</li>
+<li>audit/lifecycle rows;</li>
+<li>early fixed SQLite overhead.</li>
+</ol>
+<p>As the DB grows, fixed overhead will amortize, but <strong>5–7x extracted text</strong> is the right planning range unless the schema is optimized.</p>
+<hr />
+<h2 id="michaels-chrome-usage-baseline">Operator's Chrome usage baseline</h2>
+<p>Recent Chrome History aggregate counts:</p>
+<table>
+<thead>
+<tr>
+<th>Window</th>
+<th style="text-align: right;">Visits</th>
+<th style="text-align: right;">Unique URL IDs</th>
+<th style="text-align: right;">Rough hosts</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Last 1 day</td>
+<td style="text-align: right;">365</td>
+<td style="text-align: right;">218</td>
+<td style="text-align: right;">37</td>
+</tr>
+<tr>
+<td>Last 3 days</td>
+<td style="text-align: right;">1,159</td>
+<td style="text-align: right;">737</td>
+<td style="text-align: right;">70</td>
+</tr>
+<tr>
+<td>Last 7 days</td>
+<td style="text-align: right;">1,159</td>
+<td style="text-align: right;">737</td>
+<td style="text-align: right;">70</td>
+</tr>
+<tr>
+<td>Last 14 days</td>
+<td style="text-align: right;">2,551</td>
+<td style="text-align: right;">1,689</td>
+<td style="text-align: right;">139</td>
+</tr>
+<tr>
+<td>Last 30 days</td>
+<td style="text-align: right;">8,917</td>
+<td style="text-align: right;">5,780</td>
+<td style="text-align: right;">374</td>
+</tr>
+<tr>
+<td>Last 90 days</td>
+<td style="text-align: right;">29,738</td>
+<td style="text-align: right;">22,251</td>
+<td style="text-align: right;">752</td>
+</tr>
+</tbody>
+</table>
+<p>30-day daily distribution:</p>
+<table>
+<thead>
+<tr>
+<th>Daily aggregate</th>
+<th style="text-align: right;">Visits/day</th>
+<th style="text-align: right;">Unique URLs/day</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mean</td>
+<td style="text-align: right;">343</td>
+<td style="text-align: right;">249</td>
+</tr>
+<tr>
+<td>Median</td>
+<td style="text-align: right;">382</td>
+<td style="text-align: right;">285</td>
+</tr>
+<tr>
+<td>p75</td>
+<td style="text-align: right;">499</td>
+<td style="text-align: right;">354</td>
+</tr>
+<tr>
+<td>p90</td>
+<td style="text-align: right;">543</td>
+<td style="text-align: right;">426</td>
+</tr>
+<tr>
+<td>Max</td>
+<td style="text-align: right;">601</td>
+<td style="text-align: right;">431</td>
+</tr>
+</tbody>
+</table>
+<p>Interpretation:</p>
+<ul>
+<li>Chrome History visits are not exactly daemon snapshots.</li>
+<li>A single page can produce several daemon snapshots due delayed capture / SPA changes.</li>
+<li>Repeated unchanged pages dedupe into visits without duplicating snapshot/chunk/FTS rows.</li>
+<li>Using <strong>250–350 snapshots/day</strong> is a reasonable baseline range for current browsing.</li>
+<li>Using <strong>500 snapshots/day</strong> is a reasonable heavy/day planning point.</li>
+</ul>
+<hr />
+<h2 id="growth-scenarios">Growth scenarios</h2>
+<p>Assumptions:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>storage = snapshots_per_day × extracted_text_bytes_per_snapshot × 6.5
+</code></pre></div>
+
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">Snapshots/day</th>
+<th>Text case</th>
+<th style="text-align: right;">Avg text</th>
+<th style="text-align: right;">MB/day</th>
+<th style="text-align: right;">GB/30d</th>
+<th style="text-align: right;">GB/year</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">100</td>
+<td>Median current</td>
+<td style="text-align: right;">3.6 KiB</td>
+<td style="text-align: right;">2.26</td>
+<td style="text-align: right;">0.07</td>
+<td style="text-align: right;">0.81</td>
+</tr>
+<tr>
+<td style="text-align: right;">100</td>
+<td>Mean current</td>
+<td style="text-align: right;">7.1 KiB</td>
+<td style="text-align: right;">4.52</td>
+<td style="text-align: right;">0.13</td>
+<td style="text-align: right;">1.61</td>
+</tr>
+<tr>
+<td style="text-align: right;">100</td>
+<td>p90 current</td>
+<td style="text-align: right;">20.9 KiB</td>
+<td style="text-align: right;">13.29</td>
+<td style="text-align: right;">0.39</td>
+<td style="text-align: right;">4.74</td>
+</tr>
+<tr>
+<td style="text-align: right;">250</td>
+<td>Median current</td>
+<td style="text-align: right;">3.6 KiB</td>
+<td style="text-align: right;">5.65</td>
+<td style="text-align: right;">0.17</td>
+<td style="text-align: right;">2.02</td>
+</tr>
+<tr>
+<td style="text-align: right;">250</td>
+<td>Mean current</td>
+<td style="text-align: right;">7.1 KiB</td>
+<td style="text-align: right;">11.31</td>
+<td style="text-align: right;">0.33</td>
+<td style="text-align: right;">4.03</td>
+</tr>
+<tr>
+<td style="text-align: right;">250</td>
+<td>p90 current</td>
+<td style="text-align: right;">20.9 KiB</td>
+<td style="text-align: right;">33.24</td>
+<td style="text-align: right;">0.97</td>
+<td style="text-align: right;">11.85</td>
+</tr>
+<tr>
+<td style="text-align: right;">350</td>
+<td>Mean current</td>
+<td style="text-align: right;">7.1 KiB</td>
+<td style="text-align: right;">15.83</td>
+<td style="text-align: right;">0.46</td>
+<td style="text-align: right;">5.64</td>
+</tr>
+<tr>
+<td style="text-align: right;">350</td>
+<td>p90 current</td>
+<td style="text-align: right;">20.9 KiB</td>
+<td style="text-align: right;">46.53</td>
+<td style="text-align: right;">1.36</td>
+<td style="text-align: right;">16.59</td>
+</tr>
+<tr>
+<td style="text-align: right;">500</td>
+<td>Mean current</td>
+<td style="text-align: right;">7.1 KiB</td>
+<td style="text-align: right;">22.61</td>
+<td style="text-align: right;">0.66</td>
+<td style="text-align: right;">8.06</td>
+</tr>
+<tr>
+<td style="text-align: right;">500</td>
+<td>p90 current</td>
+<td style="text-align: right;">20.9 KiB</td>
+<td style="text-align: right;">66.47</td>
+<td style="text-align: right;">1.95</td>
+<td style="text-align: right;">23.69</td>
+</tr>
+<tr>
+<td style="text-align: right;">1000</td>
+<td>Mean current</td>
+<td style="text-align: right;">7.1 KiB</td>
+<td style="text-align: right;">45.23</td>
+<td style="text-align: right;">1.33</td>
+<td style="text-align: right;">16.12</td>
+</tr>
+<tr>
+<td style="text-align: right;">1000</td>
+<td>p90 current</td>
+<td style="text-align: right;">20.9 KiB</td>
+<td style="text-align: right;">132.95</td>
+<td style="text-align: right;">3.89</td>
+<td style="text-align: right;">47.39</td>
+</tr>
+</tbody>
+</table>
+<p>Chrome-history-driven estimates using current mean text size:</p>
+<table>
+<thead>
+<tr>
+<th>Assumption</th>
+<th style="text-align: right;">MB/day</th>
+<th style="text-align: right;">GB/month</th>
+<th style="text-align: right;">GB/year</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>249 snapshots/day — mean unique URL/day</td>
+<td style="text-align: right;">11.27</td>
+<td style="text-align: right;">0.33</td>
+<td style="text-align: right;">4.02</td>
+</tr>
+<tr>
+<td>343 snapshots/day — mean visits/day</td>
+<td style="text-align: right;">15.51</td>
+<td style="text-align: right;">0.45</td>
+<td style="text-align: right;">5.53</td>
+</tr>
+<tr>
+<td>499 snapshots/day — p75 visits/day</td>
+<td style="text-align: right;">22.57</td>
+<td style="text-align: right;">0.66</td>
+<td style="text-align: right;">8.04</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="future-feature-impact">Future feature impact</h2>
+<h3 id="embeddings-vector-search">Embeddings / vector search</h3>
+<p>No embeddings exist yet. If added later, rough incremental storage at 250 snapshots/day and current 4.58 chunks/snapshot:</p>
+<table>
+<thead>
+<tr>
+<th>Embedding format</th>
+<th style="text-align: right;">Extra MB/day</th>
+<th style="text-align: right;">Extra GB/year</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1536-d float32</td>
+<td style="text-align: right;">6.72</td>
+<td style="text-align: right;">2.39</td>
+</tr>
+<tr>
+<td>1536-d float16</td>
+<td style="text-align: right;">3.36</td>
+<td style="text-align: right;">1.20</td>
+</tr>
+<tr>
+<td>768-d float32</td>
+<td style="text-align: right;">3.36</td>
+<td style="text-align: right;">1.20</td>
+</tr>
+<tr>
+<td>1536-d int8</td>
+<td style="text-align: right;">1.68</td>
+<td style="text-align: right;">0.60</td>
+</tr>
+</tbody>
+</table>
+<p>Embeddings are not the scary part if stored compactly. They are likely <strong>+0.5–3 GB/year</strong> for normal use.</p>
+<h3 id="full-html-screenshots-assets">Full HTML, screenshots, assets</h3>
+<p>These would change the model completely:</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Likely impact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Full HTML snapshots</td>
+<td>Could be 5–50x current text-only storage depending on pages.</td>
+</tr>
+<tr>
+<td>Screenshots</td>
+<td>Easily hundreds of KB to multiple MB per page.</td>
+</tr>
+<tr>
+<td>Images/assets/video cache</td>
+<td>Now implemented as a bounded, purgeable cache. Defaults still allow large growth under media-heavy browsing, but per-artifact/snapshot/domain/global gates prevent unbounded accumulation.</td>
+</tr>
+</tbody>
+</table>
+<p>Recommendation: keep the daemon <strong>text-first</strong> unless a specific future feature needs richer capture.</p>
+<hr />
+<h2 id="main-growth-drivers">Main growth drivers</h2>
+<ol>
+<li><strong>Snapshots/day</strong> — highest-leverage variable.</li>
+<li><strong>Dynamic recapture</strong> — SPAs, social feeds, video pages, account portals can produce multiple snapshots.</li>
+<li><strong>Extracted text size</strong> — social/feed/search/video pages include sidebars, recommendations, comments, and page chrome.</li>
+<li><strong>FTS duplication</strong> — <code>chunks</code> + <code>chunks_fts_content</code> + <code>chunks_fts_data</code> are the biggest DB components.</li>
+<li><strong>Audit/lifecycle verbosity</strong> — currently small, but can grow indefinitely.</li>
+<li><strong>No retention policy</strong> — intentional for exact recall, but means monotonic growth.</li>
+</ol>
+<hr />
+<h2 id="optimization-options-that-preserve-recall">Optimization options that preserve recall</h2>
+<p>These reduce bytes without silently dropping memories.</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Recall impact</th>
+<th style="text-align: right;">Expected benefit</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Add daily storage metrics / watchdog</td>
+<td>None</td>
+<td style="text-align: right;">Operational visibility</td>
+<td>First thing to do.</td>
+</tr>
+<tr>
+<td>Periodic SQLite <code>VACUUM</code> / <code>optimize</code></td>
+<td>None</td>
+<td style="text-align: right;">Recovers free pages, improves FTS</td>
+<td>Manual or scheduled.</td>
+</tr>
+<tr>
+<td>Use FTS5 external-content table</td>
+<td>None if implemented carefully</td>
+<td style="text-align: right;">Save ~20–35% DB size</td>
+<td>Removes <code>chunks_fts_content</code> duplication.</td>
+</tr>
+<tr>
+<td>Stop storing both full clean blob and chunk text</td>
+<td>Low if detail view reconstructs from chunks</td>
+<td style="text-align: right;">Save ~10–25% total</td>
+<td>Need verify exact reconstruction.</td>
+</tr>
+<tr>
+<td>Compress clean-text blobs with zstd/gzip</td>
+<td>None if transparent</td>
+<td style="text-align: right;">Small/moderate</td>
+<td>Blob is currently smaller than DB text+FTS.</td>
+</tr>
+<tr>
+<td>Bound audit retention or compact audit to summaries</td>
+<td>Low for recall; affects ops history</td>
+<td style="text-align: right;">Small/moderate</td>
+<td>Keep capture/search evidence if desired.</td>
+</tr>
+<tr>
+<td>Domain/day rollup stats</td>
+<td>None</td>
+<td style="text-align: right;">Visibility</td>
+<td>Helps spot runaway domains.</td>
+</tr>
+</tbody>
+</table>
+<p>Do <strong>not</strong> start by deleting pages or filtering domains if the product goal is exact recall. Start with observability and storage efficiency.</p>
+<hr />
+<h2 id="recommended-operating-plan">Recommended operating plan</h2>
+<h3 id="short-term">Short term</h3>
+<ul>
+<li>Add a <code>storage stats</code> CLI/API endpoint:</li>
+<li>DB bytes / WAL bytes / blob bytes;</li>
+<li>documents / visits / snapshots / chunks / events;</li>
+<li>daily growth slope;</li>
+<li>top domains by snapshot count and text bytes.</li>
+<li>Add local warning thresholds for durable text/DB growth:</li>
+<li>warn at 10 GB, 25 GB, 50 GB;</li>
+<li>do not auto-delete text/FTS memories. Media blobs are already a rolling cache under the configured domain/global media caps.</li>
+</ul>
+<h3 id="medium-term">Medium term</h3>
+<ul>
+<li>Migrate FTS to external-content mode if the DB grows beyond ~10 GB.</li>
+<li>Add <code>sqlite optimize</code> / <code>VACUUM</code> maintenance command.</li>
+<li>Add optional export/backup before any compaction work.</li>
+</ul>
+<h3 id="long-term">Long term</h3>
+<ul>
+<li>If semantic search lands, store embeddings compactly (<code>float16</code> or quantized) unless quality demands float32.</li>
+<li>Avoid screenshots/assets unless explicitly scoped; they dominate storage.</li>
+</ul>
+<hr />
+<h2 id="bottom-line">Bottom line</h2>
+<p>For Operator's current local-first all-mode setup:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>Expected:  ~4–8 GB/year
+Likely planning envelope: 5–15 GB/year
+Heavy/dynamic edge: 20–50 GB/year
+</code></pre></div>
+
+<p>That is acceptable for workstation storage. The right next move is <strong>storage observability</strong>, not capture reduction.</p>
+  </article>
+  <div class="md-footer">
+    Rendered from <code>docs/storage-growth-model.md</code> — the Markdown file is the canonical,
+    version-controlled source. This HTML is generated (regenerate with
+    <code>scripts/render_docs.py</code>); do not hand-edit.
+  </div>
+</div>
+</body>
+</html>

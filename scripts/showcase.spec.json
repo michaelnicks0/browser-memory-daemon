@@ -1,0 +1,267 @@
+{
+  "title": "Browser Memory Daemon",
+  "slug": "browser-memory-daemon",
+  "version": "0.1.0",
+  "tagline_plain": "Windows Chrome recall.",
+  "tagline_grad": "WSL memory. Local by default.",
+  "lead": "A local-first browser-memory stack: Windows Chrome captures visible page text, a WSL daemon stores it in SQLite + FTS5, and the operator searches, inspects, and forgets it locally.",
+  "sub": "The default `all` mode maximizes personal recall with no daemon redaction or built-in URL filtering, while explicit local block rules, loopback auth, and WSL runtime boundaries keep the system operator-owned.",
+  "pills": [
+    {"kind": "local", "label": "<b>Local-first</b> · WSL storage"},
+    {"kind": "blue", "label": "<b>all</b> default policy"},
+    {"kind": "priv", "label": "<b>Bearer auth</b> · loopback"},
+    {"kind": "live", "label": "<b>80</b> tests"}
+  ],
+  "metrics": [
+    {"n": "80", "l": "Test functions"},
+    {"n": "14", "l": "Test files"},
+    {"n": "13", "l": "CLI commands"},
+    {"n": "24", "l": "API route patterns"},
+    {"n": "18", "l": "C4 views"},
+    {"n": "0", "l": "Cloud deps"}
+  ],
+  "features_intro": "The repo is a complete local browser-memory implementation, not a mockup: capture, policy, storage, search, UI, deletion, media sidecars, and real Chrome verification are all present.",
+  "features": [
+    {
+      "icon": "🧠",
+      "title": "Text-first recall",
+      "body": "Visible Chrome page text becomes documents, visits, snapshots, chunks, and FTS rows in WSL. Text recall does not wait on media bytes."
+    },
+    {
+      "icon": "🔎",
+      "title": "Exact local search",
+      "body": "SQLite FTS5 backs search, timeline, recent captures, document detail, snapshot text, and source snippets through the CLI, API, and local UI."
+    },
+    {
+      "icon": "🛡️",
+      "title": "Adjustable policy modes",
+      "body": "`all`, `recall`, `balanced`, and `strict` are implemented. `all` removes built-in URL filtering/redaction but still honors explicit local block rules."
+    },
+    {
+      "icon": "🎞️",
+      "title": "Durable media sidecars",
+      "body": "Browser IndexedDB queues, raw blob upload, X/Twitter CDP recovery, daemon public fetch, HLS handling, and rolling cache gates preserve media provenance without blocking text capture."
+    },
+    {
+      "icon": "🖥️",
+      "title": "Operator surfaces",
+      "body": "A token-bootstrapped local dashboard, CLI, popup/options controls, HTTP API, doctor checks, policy rules, and deletion receipts cover day-to-day operation."
+    },
+    {
+      "icon": "✅",
+      "title": "Real browser verification",
+      "body": "The test suite includes daemon pytest, extension node:test/build, and Chrome for Testing e2e for capture/search/forget/media/lifecycle behavior."
+    }
+  ],
+  "flow_intro": "The runtime spine is simple: capture fast, classify locally, store text durably, fetch media lazily, and keep every operator read/delete path authenticated.",
+  "flow": [
+    {
+      "title": "Chrome observes the page",
+      "body": "Content scripts extract visible text, media refs, scroll/dwell hints, and lifecycle signals while retaining hidden/form/editable/script/style/no-script skips."
+    },
+    {
+      "title": "Service worker owns transport",
+      "body": "The extension service worker attaches the bearer token, queues capture/media work, and posts only to the loopback WSL daemon."
+    },
+    {
+      "title": "Policy classifies locally",
+      "body": "The daemon applies the selected policy mode plus persistent block rules; non-all modes redact before storage."
+    },
+    {
+      "title": "Text is stored first",
+      "body": "The ingest path normalizes URLs, hashes text snapshots, writes clean-text blobs, chunks, and FTS rows, then returns stable IDs."
+    },
+    {
+      "title": "Media sidecars fill in",
+      "body": "Browser and daemon workers fetch/upload blobs asynchronously under per-artifact, snapshot, domain, and global cache gates."
+    },
+    {
+      "title": "Operator reads or forgets",
+      "body": "CLI/API/UI surfaces expose exact search, recent/timeline/detail, doctor diagnostics, media cache controls, policy rules, and forget receipts."
+    }
+  ],
+  "model_intro": "One mental model: Chrome is the sensor, WSL is the memory, and every retrieval/deletion path stays local and token-gated.",
+  "hub": {
+    "label": "BMD",
+    "sub": "local browser memory"
+  },
+  "spokes": [
+    {
+      "label": "🧩 Chrome extension",
+      "sub": "capture + popup/options + queues",
+      "tone": "blue"
+    },
+    {
+      "label": "🔐 Loopback daemon",
+      "sub": "auth, policy, API, UI shell",
+      "tone": "priv"
+    },
+    {
+      "label": "🗄️ WSL store",
+      "sub": "SQLite, FTS5, text/media blobs",
+      "tone": "local"
+    },
+    {
+      "label": "🎬 Media sidecars",
+      "sub": "browser queue, CDP, public worker",
+      "tone": "violet"
+    },
+    {
+      "label": "🧪 Real Chrome gates",
+      "sub": "Chrome for Testing e2e path",
+      "tone": "live"
+    }
+  ],
+  "model_cap": "Chrome captures; WSL remembers. Media sidecars are asynchronous; exact text recall remains the source of truth.",
+  "commands_intro": "The operator surface is intentionally small: start/verify the daemon, search/inspect memory, narrow capture with block rules, delete with receipts, and manage media cache pressure.",
+  "commands_col3": "Primary surface",
+  "commands": [
+    {
+      "group": "Daemon runtime",
+      "cmds": "<code>serve</code> <code>health</code> <code>doctor</code>",
+      "touches": "Loopback API, DB readiness, runtime diagnostics"
+    },
+    {
+      "group": "Read model",
+      "cmds": "<code>search</code> <code>recent</code> <code>timeline</code> <code>document</code> <code>snapshot</code>",
+      "touches": "SQLite/FTS exact search and detail views"
+    },
+    {
+      "group": "Policy controls",
+      "cmds": "<code>policy-rules</code> <code>--block-domain</code> <code>--block-url-prefix</code>",
+      "touches": "Persistent local block rules in every policy mode"
+    },
+    {
+      "group": "Deletion",
+      "cmds": "<code>forget --domain</code> <code>forget --url</code>",
+      "touches": "Documents, visits, chunks, FTS, text blobs, media rows/blobs, receipts"
+    },
+    {
+      "group": "Media cache",
+      "cmds": "<code>media-worker</code> <code>media-cache purge</code> <code>media-cache rehydrate</code>",
+      "touches": "Daemon-public fetch tasks, blob cache, purge/rehydrate controls"
+    },
+    {
+      "group": "Install / verify",
+      "cmds": "<code>install-daily-driver.sh</code> <code>run-e2e.sh</code> <code>run-real-chrome-e2e.sh</code>",
+      "touches": "WSL user services, Windows extension copy, Chrome for Testing e2e"
+    }
+  ],
+  "audiences_intro": "Three doors in, depending on the reader's altitude.",
+  "audiences": [
+    {
+      "cls": "exec",
+      "icon": "📌",
+      "tag": "First read",
+      "title": "Executive Brief",
+      "body": "What it does, why it matters, maturity, and safety posture without implementation detail.",
+      "href": "docs/EXECUTIVE_BRIEF.html",
+      "go": "Read the brief"
+    },
+    {
+      "cls": "user",
+      "icon": "⌨️",
+      "tag": "Operator",
+      "title": "User Guide",
+      "body": "Daily-driver setup, state checks, search, policy rules, media cache controls, and troubleshooting.",
+      "href": "docs/USER_GUIDE.html",
+      "go": "Start operating"
+    },
+    {
+      "cls": "maint",
+      "icon": "🏗️",
+      "tag": "Maintainer",
+      "title": "Architecture",
+      "body": "Requirements trace, C4 atlas, behavioral diagrams, ADRs, API/CLI contracts, and verification gates.",
+      "href": "docs/ARCHITECTURE.html",
+      "go": "Go deep"
+    }
+  ],
+  "boundary_title": "The safety boundary",
+  "boundary_intro": "The product is powerful because it captures broadly by default. The safety story is locality, explicit operator control, and no hidden cloud path.",
+  "boundary": {
+    "inside_title": "🔒 STAYS ON WORKSTATION + WSL",
+    "inside": [
+      {
+        "title": "Chrome extension",
+        "sub": "sensor + queues\nWindows profile surface",
+        "tone": "blue"
+      },
+      {
+        "title": "WSL daemon",
+        "sub": "loopback API\npolicy + UI shell",
+        "tone": "local"
+      },
+      {
+        "title": "SQLite/FTS",
+        "sub": "text blobs\nmedia cache",
+        "tone": "local"
+      }
+    ],
+    "blocked": [
+      {
+        "title": "☁️ Cloud upload",
+        "sub": "no LLM/vector path"
+      },
+      {
+        "title": "🚫 Git repo data",
+        "sub": "no DBs/tokens/blobs"
+      }
+    ]
+  },
+  "boundary_cap": "Runtime data belongs under WSL XDG paths. The repo contains source, docs, generated visuals, and tests — not browser memory, tokens, cookies, or raw captures.",
+  "boundary_note": "The default <b>all</b> mode is an operator-selected recall posture: no daemon redaction and no built-in URL filtering. Explicit local block rules still apply. See <a href=\"docs/security-model.html\">security-model</a> for the full contract.",
+  "docmap_intro": "This page is the visual front door. Markdown stays canonical; the linked HTML pages are generated companions for polished browser reading.",
+  "docmap": [
+    {
+      "doc": "Executive Brief",
+      "href": "docs/EXECUTIVE_BRIEF.html",
+      "owns": "Value, maturity, risk posture",
+      "altitude": "30,000 ft"
+    },
+    {
+      "doc": "User Guide",
+      "href": "docs/USER_GUIDE.html",
+      "owns": "Daily-driver usage and troubleshooting",
+      "altitude": "10,000 ft"
+    },
+    {
+      "doc": "Architecture",
+      "href": "docs/ARCHITECTURE.html",
+      "owns": "Requirements trace, decomposition, boundaries",
+      "altitude": "Maintainer"
+    },
+    {
+      "doc": "C4 Atlas",
+      "href": "docs/architecture/c4-diagrams.html",
+      "owns": "Generated C4 topology and scenarios",
+      "altitude": "Maintainer"
+    },
+    {
+      "doc": "API Reference",
+      "href": "docs/api.html",
+      "owns": "HTTP routes, payloads, auth",
+      "altitude": "Ground"
+    },
+    {
+      "doc": "CLI Contract",
+      "href": "docs/CLI_UX_CONTRACT.html",
+      "owns": "Commands, flags, output/error contract",
+      "altitude": "Ground"
+    },
+    {
+      "doc": "Security Model",
+      "href": "docs/security-model.html",
+      "owns": "Policy modes, auth, locality, limitations",
+      "altitude": "Risk"
+    },
+    {
+      "doc": "Tests",
+      "href": "docs/TESTS.html",
+      "owns": "Verification gates and generated inventory",
+      "altitude": "Verify"
+    }
+  ],
+  "footer_provenance": "Metrics grounded in source on 2026-06-28: 80 static test functions from scripts/generate_test_inventory.py; 13 top-level CLI commands from cli.py --help; 24 route patterns from app.py; 18 C4 .mmd views under docs/architecture/diagrams; zero cloud runtime dependencies in current architecture docs/code.",
+  "out": "browser-memory-daemon-high-level-doc.html"
+}

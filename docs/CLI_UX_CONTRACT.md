@@ -8,8 +8,10 @@
 
 ## Invocation shape
 
+The CLI requires Python 3.11+.
+
 ```bash
-PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   [--host HOST] \
   [--port PORT] \
   [--token TOKEN] \
@@ -70,13 +72,13 @@ Start a dev daemon in all mode:
 
 ```bash
 PYTHONPATH=daemon/src BMD_API_TOKEN=dev-token \
-  python3 -m browser_memory_daemon --token dev-token --policy-mode all serve
+  python3.11 -m browser_memory_daemon --token dev-token --policy-mode all serve
 ```
 
 Search daily-driver memory:
 
 ```bash
-PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
   search "example" --limit 10
 ```
@@ -84,11 +86,11 @@ PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
 Add block rules:
 
 ```bash
-PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
   policy-rules --block-domain example.com
 
-PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
   policy-rules --block-url-prefix http://127.0.0.1:32400/
 ```
@@ -96,7 +98,7 @@ PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
 Forget a domain:
 
 ```bash
-PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
   forget --domain example.com
 ```
@@ -104,7 +106,7 @@ PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
 Media cache dry-run:
 
 ```bash
-PYTHONPATH=daemon/src python3 -m browser_memory_daemon \
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
   media-cache purge --domain linkedin.com --dry-run
 ```

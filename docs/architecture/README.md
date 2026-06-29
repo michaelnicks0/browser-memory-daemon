@@ -11,6 +11,25 @@ This directory contains the C4 model-as-code for the Browser Memory Daemon repo.
 - Narrative architecture: [`../ARCHITECTURE.md`](../ARCHITECTURE.md)
 - Behavioral Mermaid diagrams for non-C4 mechanics: [`../DIAGRAMS.md`](../DIAGRAMS.md)
 
+## Architecture at a glance
+
+```mermaid
+flowchart TB
+  Web["Web + media origins"] --> Chrome["Windows Chrome"]
+  Chrome --> Ext["MV3 extension"]
+  Ext --> Daemon["WSL loopback daemon"]
+  Daemon --> DB[("SQLite + FTS5")]
+  Daemon --> Blobs[("Text + media blobs")]
+  Daemon --> Ops["Local UI + CLI"]
+
+  classDef external fill:#fdd9e1,stroke:#d34d77,color:#3a0c1c;
+  classDef browser fill:#dbeafe,stroke:#3b82f6,color:#0b2942;
+  classDef local fill:#d6f5e6,stroke:#2f9e68,color:#0b2f22;
+  class Web external;
+  class Chrome,Ext browser;
+  class Daemon,DB,Blobs,Ops local;
+```
+
 ## Scope
 
 The model covers the current local daily-driver architecture:
@@ -60,6 +79,7 @@ Using Structurizr CLI:
 
 ```bash
 STRUCTURIZR_CLI=${STRUCTURIZR_CLI:-/tmp/structurizr-cli/structurizr.sh}
+C4_SKILL_DIR="${C4_SKILL_DIR:-$HOME/.hermes/skills/software-development/c4-structurizr-architecture}"
 "$STRUCTURIZR_CLI" validate -workspace docs/architecture/workspace.dsl
 
 # Mermaid text exports plus SVG/PNG renders.
@@ -80,7 +100,7 @@ rm -rf docs/architecture/diagrams/dot docs/architecture/diagrams/dot-rendered
 mkdir -p docs/architecture/diagrams/dot docs/architecture/diagrams/dot-rendered
 JAVA_TOOL_OPTIONS='-Djava.awt.headless=true' \
   "$STRUCTURIZR_CLI" export -workspace docs/architecture/workspace.dsl -format dot -output docs/architecture/diagrams/dot
-python3 /home/user/.hermes/skills/software-development/c4-structurizr-architecture/scripts/graphviz-edge-label-backgrounds.py \
+python3 "$C4_SKILL_DIR/scripts/graphviz-edge-label-backgrounds.py" \
   docs/architecture/diagrams/dot
 for file in docs/architecture/diagrams/dot/*.dot; do
   base=$(basename "$file" .dot)
@@ -91,7 +111,7 @@ done
 # Markdown wrappers display the cleanest render first, keep Mermaid source collapsed,
 # and generate the top-level all-views atlas.
 rm -rf docs/architecture/diagrams/markdown docs/architecture/diagrams/README.md docs/architecture/c4-diagrams.md
-python3 /home/user/.hermes/skills/software-development/c4-structurizr-architecture/scripts/structurizr-diagrams-to-markdown.py \
+python3 "$C4_SKILL_DIR/scripts/structurizr-diagrams-to-markdown.py" \
   --diagrams-dir docs/architecture/diagrams \
   --workspace docs/architecture/workspace.dsl \
   --title "Browser Memory Daemon Architecture C4 Diagrams"
