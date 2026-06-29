@@ -9,7 +9,6 @@ superseded_by: []
 related:
   - docs/ARCHITECTURE.md
   - docs/test-plan.md
-  - [removed-publication-dossier]
 verification:
   - git diff --check -- .
   - markdown fence check over repo Markdown files
@@ -22,7 +21,7 @@ verification:
 
 Browser Memory Daemon has accumulated long-lived architecture decisions across several surfaces: Windows Chrome extension boundaries, WSL daemon ownership, local-only storage, policy modes, media sidecars, deletion semantics, C4 diagrams, and real-browser verification.
 
-The repo already has strong architecture documentation in `docs/ARCHITECTURE.md`, verification traceability in `docs/test-plan.md`, and local research dossiers for hardening work. Those documents describe the current architecture well, but they do not provide a small change-by-change decision ledger for future agents to answer: “Why was this direction chosen, what alternatives were rejected, and what evidence made it acceptable?”
+The repo already has strong architecture documentation in `docs/ARCHITECTURE.md` and verification traceability in `docs/test-plan.md`. Those documents describe the current architecture well, but they do not provide a small change-by-change decision ledger for future agents to answer: “Why was this direction chosen, what alternatives were rejected, and what evidence made it acceptable?”
 
 Hermes chat history and persistent memory are not the right storage layer for that rationale. Chat history can be hard to reconstruct during future repo work, and memory is global, small, and not repo-local. Future agents need the decision trail beside the code and docs they are modifying.
 
@@ -77,7 +76,5 @@ Each ADR will be a small Markdown file named `NNNN-short-title.md`, indexed from
 
 ## References
 
-- `~/repos/research/hermes-architecture-decision-records/hermes-architecture-decision-records.md`
 - `docs/ARCHITECTURE.md`
 - `docs/test-plan.md`
-- `[removed-publication-dossier]`

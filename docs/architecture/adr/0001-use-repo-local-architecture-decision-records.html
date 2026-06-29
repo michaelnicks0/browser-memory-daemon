@@ -135,7 +135,6 @@ superseded_by: []
 related:
   - docs/ARCHITECTURE.md
   - docs/test-plan.md
-  - [removed-publication-dossier]
 verification:
   - git diff --check -- .
   - markdown fence check over repo Markdown files
@@ -144,7 +143,7 @@ verification:
 <h1 id="adr-0001-use-repo-local-architecture-decision-records">ADR-0001: Use Repo-Local Architecture Decision Records</h1>
 <h2 id="context">Context</h2>
 <p>Browser Memory Daemon has accumulated long-lived architecture decisions across several surfaces: Windows Chrome extension boundaries, WSL daemon ownership, local-only storage, policy modes, media sidecars, deletion semantics, C4 diagrams, and real-browser verification.</p>
-<p>The repo already has strong architecture documentation in <code>docs/ARCHITECTURE.md</code>, verification traceability in <code>docs/test-plan.md</code>, and local research dossiers for hardening work. Those documents describe the current architecture well, but they do not provide a small change-by-change decision ledger for future agents to answer: “Why was this direction chosen, what alternatives were rejected, and what evidence made it acceptable?”</p>
+<p>The repo already has strong architecture documentation in <code>docs/ARCHITECTURE.md</code> and verification traceability in <code>docs/test-plan.md</code>. Those documents describe the current architecture well, but they do not provide a small change-by-change decision ledger for future agents to answer: “Why was this direction chosen, what alternatives were rejected, and what evidence made it acceptable?”</p>
 <p>Hermes chat history and persistent memory are not the right storage layer for that rationale. Chat history can be hard to reconstruct during future repo work, and memory is global, small, and not repo-local. Future agents need the decision trail beside the code and docs they are modifying.</p>
 <h2 id="decision">Decision</h2>
 <p>We will keep repo-local Markdown Architecture Decision Records under <code>docs/architecture/adr/</code> for architecture-significant Browser Memory Daemon changes.</p>
@@ -227,10 +226,8 @@ verification:
 </ul>
 <h2 id="references">References</h2>
 <ul>
-<li><code>~/repos/research/hermes-architecture-decision-records/hermes-architecture-decision-records.md</code></li>
 <li><code>docs/ARCHITECTURE.md</code></li>
 <li><code>docs/test-plan.md</code></li>
-<li><code>[removed-publication-dossier]</code></li>
 </ul>
   </article>
   <div class="md-footer">

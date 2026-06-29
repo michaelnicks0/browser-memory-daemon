@@ -18,7 +18,6 @@ Guidance for AI coding agents working in this repo.
 - `docs/api.md` — authenticated loopback API surface.
 - `docs/security-model.md` — policy/security posture.
 - `docs/TESTS.md` and `docs/test-plan.md` — verification gates and traceability.
-- `[removed-publication-dossier]` — local media sidecar hardening dossier and evidence trail.
 
 ---
 

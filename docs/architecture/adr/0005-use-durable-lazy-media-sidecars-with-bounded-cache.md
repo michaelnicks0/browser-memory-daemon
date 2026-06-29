@@ -12,7 +12,6 @@ related:
   - docs/ARCHITECTURE.md
   - docs/media-artifacts.md
   - docs/storage-growth-model.md
-  - [removed-publication-dossier]
   - daemon/src/browser_memory_daemon/media.py
   - daemon/src/browser_memory_daemon/media_worker.py
   - extension/src/media_queue.js
@@ -106,7 +105,6 @@ Text, FTS rows, media refs, hashes, and provenance are durable. Media blob bytes
 - `docs/ARCHITECTURE.md#durable-media-sidecar-architecture`
 - `docs/media-artifacts.md`
 - `docs/storage-growth-model.md`
-- `[removed-publication-dossier]`
 - `daemon/src/browser_memory_daemon/media.py`
 - `daemon/src/browser_memory_daemon/media_worker.py`
 - `extension/src/media_queue.js`

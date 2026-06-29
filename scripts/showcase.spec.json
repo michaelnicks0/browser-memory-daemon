@@ -262,6 +262,6 @@
       "altitude": "Verify"
     }
   ],
-  "footer_provenance": "Metrics grounded in source on 2026-06-28: 80 static test functions from scripts/generate_test_inventory.py; 13 top-level CLI commands from cli.py --help; 24 route patterns from app.py; 18 C4 .mmd views under docs/architecture/diagrams; zero cloud runtime dependencies in current architecture docs/code.",
+  "footer_provenance": "Metrics grounded in checked-in source: 80 static test functions from scripts/generate_test_inventory.py; 13 top-level CLI commands from cli.py --help; 24 route patterns from app.py; 18 C4 .mmd views under docs/architecture/diagrams; zero cloud runtime dependencies in current architecture docs/code.",
   "out": "browser-memory-daemon-high-level-doc.html"
 }
