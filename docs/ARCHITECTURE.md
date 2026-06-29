@@ -25,7 +25,15 @@ The system shall enable Operator to reconstruct recently viewed web content by c
 
 ![High-level architecture diagram showing Windows Chrome capture, authenticated loopback transport, WSL-owned memory, and local operator/verification surfaces.](architecture/high-level-architecture.svg)
 
-The fast path is text-first: page text, lifecycle metadata, and media references are captured before any media bytes are fetched. Media sidecars run later in Chrome or the daemon, and all durable memory remains under WSL-owned storage.
+Read the diagram as three contracts plus one operating surface:
+
+| Lane | Meaning | Current implementation |
+|---|---|---|
+| Solid blue | Synchronous browser capture. | Chrome content script/service worker sends visible text, lifecycle events, and media references to the loopback API. |
+| Solid green | Local authenticated ingest and storage. | The WSL daemon applies policy, writes SQLite/FTS rows and clean-text blobs, and serves token-gated read/delete APIs. |
+| Dashed violet | Lazy media and operator/test control. | Browser/daemon sidecars fetch media bytes later; CLI, local dashboard, and real Chrome e2e exercise the same local surfaces. |
+
+The fast path is text-first: page text, lifecycle metadata, and media references are captured before any media bytes are fetched. Media sidecars run later in Chrome or the daemon, media bytes are bounded and disposable, and all durable memory remains under WSL-owned storage.
 
 ---
 

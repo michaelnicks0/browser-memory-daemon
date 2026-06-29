@@ -177,7 +177,34 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </table>
 <h2 id="high-level-architecture-at-a-glance">High-level architecture at a glance</h2>
 <p><img alt="High-level architecture diagram showing Windows Chrome capture, authenticated loopback transport, WSL-owned memory, and local operator/verification surfaces." src="architecture/high-level-architecture.svg" /></p>
-<p>The fast path is text-first: page text, lifecycle metadata, and media references are captured before any media bytes are fetched. Media sidecars run later in Chrome or the daemon, and all durable memory remains under WSL-owned storage.</p>
+<p>Read the diagram as three contracts plus one operating surface:</p>
+<table>
+<thead>
+<tr>
+<th>Lane</th>
+<th>Meaning</th>
+<th>Current implementation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Solid blue</td>
+<td>Synchronous browser capture.</td>
+<td>Chrome content script/service worker sends visible text, lifecycle events, and media references to the loopback API.</td>
+</tr>
+<tr>
+<td>Solid green</td>
+<td>Local authenticated ingest and storage.</td>
+<td>The WSL daemon applies policy, writes SQLite/FTS rows and clean-text blobs, and serves token-gated read/delete APIs.</td>
+</tr>
+<tr>
+<td>Dashed violet</td>
+<td>Lazy media and operator/test control.</td>
+<td>Browser/daemon sidecars fetch media bytes later; CLI, local dashboard, and real Chrome e2e exercise the same local surfaces.</td>
+</tr>
+</tbody>
+</table>
+<p>The fast path is text-first: page text, lifecycle metadata, and media references are captured before any media bytes are fetched. Media sidecars run later in Chrome or the daemon, media bytes are bounded and disposable, and all durable memory remains under WSL-owned storage.</p>
 <hr />
 <h2 id="requirements-trace">Requirements trace</h2>
 <table>
