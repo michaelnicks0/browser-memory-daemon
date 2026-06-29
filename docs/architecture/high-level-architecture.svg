@@ -1,164 +1,210 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 720" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900" role="img" aria-labelledby="title desc">
   <title id="title">Browser Memory Daemon high-level architecture</title>
-  <desc id="desc">A high-level architecture diagram showing web and media origins flowing into Windows Chrome, through an authenticated loopback bridge, into WSL-owned SQLite, FTS, text, and media storage, with local UI, CLI, and real Chrome verification surfaces.</desc>
+  <desc id="desc">Windows Chrome captures page text and media references, sends them through a bearer-token loopback API, and stores searchable memory in WSL-owned SQLite, FTS, and blob stores. Operator UI, CLI, and real Chrome e2e tests remain local.</desc>
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#07111f"/>
-      <stop offset="0.55" stop-color="#09182b"/>
-      <stop offset="1" stop-color="#06101d"/>
-    </linearGradient>
-    <radialGradient id="glow" cx="45%" cy="10%" r="70%">
-      <stop offset="0" stop-color="#163a66" stop-opacity="0.46"/>
-      <stop offset="0.48" stop-color="#0a1b31" stop-opacity="0.18"/>
-      <stop offset="1" stop-color="#06101d" stop-opacity="0"/>
+    <radialGradient id="bgGlowA" cx="12%" cy="4%" r="64%">
+      <stop offset="0" stop-color="#123b66" stop-opacity="0.72"/>
+      <stop offset="0.46" stop-color="#0a1426" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#060d18" stop-opacity="0"/>
     </radialGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
-      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000814" flood-opacity="0.38"/>
+    <radialGradient id="bgGlowB" cx="92%" cy="8%" r="62%">
+      <stop offset="0" stop-color="#2b5fa8" stop-opacity="0.34"/>
+      <stop offset="0.58" stop-color="#0a1426" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#060d18" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="panelFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#10213d" stop-opacity="0.96"/>
+      <stop offset="1" stop-color="#0b172b" stop-opacity="0.96"/>
+    </linearGradient>
+    <linearGradient id="cardFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#152846"/>
+      <stop offset="1" stop-color="#101d34"/>
+    </linearGradient>
+    <linearGradient id="apiFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#16335c"/>
+      <stop offset="1" stop-color="#102746"/>
+    </linearGradient>
+    <linearGradient id="storeFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#173454"/>
+      <stop offset="1" stop-color="#11263f"/>
+    </linearGradient>
+    <linearGradient id="greenFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#143b34"/>
+      <stop offset="1" stop-color="#102b2a"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-30%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#000000" flood-opacity="0.38"/>
     </filter>
-    <marker id="arrow-cyan" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#6cb4ff"/>
+    <filter id="smallShadow" x="-20%" y="-30%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000000" flood-opacity="0.32"/>
+    </filter>
+    <marker id="arrowBlue" markerWidth="13" markerHeight="13" refX="10" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5aa6ff"/>
     </marker>
-    <marker id="arrow-green" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <marker id="arrowGreen" markerWidth="13" markerHeight="13" refX="10" refY="5" orient="auto" markerUnits="strokeWidth">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#5be19c"/>
     </marker>
-    <marker id="arrow-purple" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#b58cff"/>
+    <marker id="arrowViolet" markerWidth="13" markerHeight="13" refX="10" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#b79bff"/>
     </marker>
     <style>
-      .canvas { fill: url(#bg); }
-      .glow { fill: url(#glow); }
-      .title { fill: #eaf2ff; font: 700 30px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: -0.02em; }
-      .subtitle { fill: #9fb1cc; font: 500 15px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-      .panel { fill: rgba(20, 32, 54, 0.72); stroke: #2c4060; stroke-width: 1.4; }
-      .panel-title { fill: #eaf2ff; font: 700 16px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0.01em; }
-      .node-title { fill: #f6fbff; font: 700 15px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-      .node-sub { fill: #b8c7dd; font: 500 12.5px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-      .tag { fill: #07111f; font: 800 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0.08em; }
-      .external { fill: #2a1732; stroke: #ff6f9c; }
-      .chrome { fill: #132a4d; stroke: #6cb4ff; }
-      .bridge { fill: #0b3551; stroke: #52d4ff; }
-      .wsl { fill: #0f2f26; stroke: #5be19c; }
-      .ops { fill: #241b3d; stroke: #b58cff; }
-      .test { fill: #3a2a12; stroke: #ffb454; }
-      .node { stroke-width: 1.6; filter: url(#shadow); }
-      .arrow { fill: none; stroke: #6cb4ff; stroke-width: 2.4; marker-end: url(#arrow-cyan); }
-      .arrow-green { fill: none; stroke: #5be19c; stroke-width: 2.4; marker-end: url(#arrow-green); }
-      .arrow-purple { fill: none; stroke: #b58cff; stroke-width: 2.2; marker-end: url(#arrow-purple); stroke-dasharray: 7 6; }
-      .label-box { fill: #07111f; stroke: #263b5d; stroke-width: 1; opacity: 0.96; }
-      .label { fill: #d7e7ff; font: 700 11.5px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-      .muted { fill: #9fb1cc; font: 500 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .bg { fill:#060d18; }
+      .grid { stroke:#20324f; stroke-width:1; opacity:.16; }
+      .title { font: 800 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Arial, sans-serif; fill:#edf5ff; letter-spacing:-.02em; }
+      .subtitle { font: 500 17px -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Arial, sans-serif; fill:#aebfde; }
+      .eyebrow { font: 800 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Arial, sans-serif; fill:#52d4ff; letter-spacing:.16em; text-transform:uppercase; }
+      .panel-title { font: 800 17px -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Arial, sans-serif; fill:#dceaff; }
+      .panel-sub { font: 600 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Arial, sans-serif; fill:#7fdcff; letter-spacing:.08em; text-transform:uppercase; }
+      .node-title { font: 800 18px -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Arial, sans-serif; fill:#edf5ff; }
+      .node-sub { font: 600 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Arial, sans-serif; fill:#c0d2f0; }
+      .node-note { font: 700 12.5px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill:#e2eeff; }
+      .label { font: 900 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Arial, sans-serif; fill:#06101f; letter-spacing:.04em; text-transform:uppercase; }
+      .legend { font: 700 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Arial, sans-serif; fill:#cfe0f7; }
+      .legend-muted { font: 500 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Arial, sans-serif; fill:#9fb1cc; }
+      .footer { font: 800 15.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Arial, sans-serif; fill:#d7e7ff; }
+      .panel { fill:url(#panelFill); stroke:#2c4060; stroke-width:1.4; }
+      .card { fill:url(#cardFill); stroke:#2c4060; stroke-width:1.25; }
+      .card-blue { fill:url(#apiFill); stroke:#3b82f6; stroke-width:1.4; }
+      .card-green { fill:url(#greenFill); stroke:#2fbb82; stroke-width:1.4; }
+      .card-store { fill:url(#storeFill); stroke:#52d4ff; stroke-width:1.35; }
+      .lane-blue { stroke:#5aa6ff; stroke-width:4; fill:none; marker-end:url(#arrowBlue); stroke-linecap:round; stroke-linejoin:round; }
+      .lane-green { stroke:#5be19c; stroke-width:4.4; fill:none; marker-end:url(#arrowGreen); stroke-linecap:round; stroke-linejoin:round; }
+      .lane-violet { stroke:#b79bff; stroke-width:3.4; fill:none; stroke-dasharray:10 8; marker-end:url(#arrowViolet); stroke-linecap:round; stroke-linejoin:round; }
+      .dim-line { stroke:#2c4060; stroke-width:1.2; fill:none; opacity:.75; }
     </style>
   </defs>
 
-  <rect class="canvas" x="0" y="0" width="1120" height="720" rx="28"/>
-  <rect class="glow" x="0" y="0" width="1120" height="720" rx="28"/>
+  <rect class="bg" width="1400" height="900"/>
+  <path d="M 0 0 H 1400 V 900 H 0 Z" fill="url(#bgGlowA)"/>
+  <path d="M 0 0 H 1400 V 900 H 0 Z" fill="url(#bgGlowB)"/>
+  <g opacity="0.55">
+    <path class="grid" d="M 80 0 V 900 M 160 0 V 900 M 240 0 V 900 M 320 0 V 900 M 400 0 V 900 M 480 0 V 900 M 560 0 V 900 M 640 0 V 900 M 720 0 V 900 M 800 0 V 900 M 880 0 V 900 M 960 0 V 900 M 1040 0 V 900 M 1120 0 V 900 M 1200 0 V 900 M 1280 0 V 900"/>
+    <path class="grid" d="M 0 80 H 1400 M 0 160 H 1400 M 0 240 H 1400 M 0 320 H 1400 M 0 400 H 1400 M 0 480 H 1400 M 0 560 H 1400 M 0 640 H 1400 M 0 720 H 1400 M 0 800 H 1400"/>
+  </g>
 
-  <text class="title" x="48" y="52">Browser Memory Daemon — high-level architecture</text>
-  <text class="subtitle" x="48" y="78">Windows Chrome is the sensor. WSL owns durable recall. Everything stays local, tokened, searchable, and forgettable.</text>
+  <text x="54" y="62" class="eyebrow">Browser Memory Daemon · high-level architecture</text>
+  <text x="54" y="106" class="title">Windows Chrome captures. WSL remembers.</text>
+  <text x="54" y="135" class="subtitle">Local bearer-token bridge, SQLite + FTS5 recall, bounded media sidecars, and explicit forget controls.</text>
 
-  <!-- Column panels -->
-  <rect class="panel" x="40" y="112" width="308" height="370" rx="22"/>
-  <text class="panel-title" x="64" y="145">1. Windows Chrome browser surface</text>
+  <g transform="translate(944 46)">
+    <rect x="0" y="0" width="402" height="92" rx="18" fill="#0b172b" stroke="#2c4060"/>
+    <circle cx="26" cy="26" r="6" fill="#5aa6ff"/>
+    <text x="42" y="31" class="legend">solid blue</text>
+    <text x="128" y="31" class="legend-muted">synchronous capture</text>
+    <circle cx="26" cy="54" r="6" fill="#5be19c"/>
+    <text x="42" y="59" class="legend">solid green</text>
+    <text x="128" y="59" class="legend-muted">local ingest/storage</text>
+    <circle cx="26" cy="80" r="6" fill="#b79bff"/>
+    <text x="42" y="85" class="legend">dashed violet</text>
+    <text x="146" y="85" class="legend-muted">lazy media + ops/test control</text>
+  </g>
 
-  <rect class="panel" x="386" y="190" width="248" height="214" rx="22"/>
-  <text class="panel-title" x="410" y="223">2. Authenticated loopback bridge</text>
+  <!-- Main panels -->
+  <g filter="url(#shadow)">
+    <rect x="50" y="168" width="360" height="466" rx="26" class="panel"/>
+    <rect x="470" y="204" width="300" height="394" rx="26" class="panel"/>
+    <rect x="830" y="168" width="520" height="466" rx="26" class="panel"/>
+    <rect x="50" y="686" width="1300" height="150" rx="26" class="panel"/>
+  </g>
 
-  <rect class="panel" x="672" y="112" width="408" height="370" rx="22"/>
-  <text class="panel-title" x="696" y="145">3. WSL-owned local memory</text>
+  <text x="76" y="205" class="panel-sub">Windows host</text>
+  <text x="76" y="231" class="panel-title">Chrome capture surface</text>
+  <text x="496" y="241" class="panel-sub">localhost only</text>
+  <text x="496" y="267" class="panel-title">Authenticated bridge</text>
+  <text x="856" y="205" class="panel-sub">WSL runtime paths</text>
+  <text x="856" y="231" class="panel-title">Durable local memory</text>
+  <text x="76" y="723" class="panel-sub">Operator and verification</text>
+  <text x="76" y="749" class="panel-title">Read, administer, test, and delete without leaving the workstation</text>
 
-  <rect class="panel" x="40" y="524" width="1040" height="138" rx="22"/>
-  <text class="panel-title" x="64" y="557">4. Operator + verification surfaces</text>
+  <!-- Cross-panel flows behind node cards -->
+  <path class="lane-blue" d="M 356 384 C 420 384 430 332 488 332"/>
+  <path class="lane-violet" d="M 356 492 C 422 492 430 470 488 470"/>
+  <path class="lane-green" d="M 746 362 C 784 362 800 336 856 336"/>
+  <path class="lane-violet" d="M 746 480 C 794 480 802 540 858 540"/>
+  <path class="lane-violet" d="M 724 742 C 740 666 842 616 938 586"/>
+  <path class="lane-violet" d="M 1118 736 C 1120 664 1032 620 984 586" opacity="0.85"/>
 
-  <!-- Chrome column -->
-  <rect class="node external" x="72" y="168" width="244" height="62" rx="16"/>
-  <text class="node-title" x="96" y="194">Web + media origins</text>
-  <text class="node-sub" x="96" y="214">HTML · images · video URLs</text>
+  <!-- Flow labels -->
+  <g filter="url(#smallShadow)">
+    <rect x="388" y="356" width="122" height="32" rx="16" fill="#5aa6ff"/>
+    <rect x="386" y="461" width="112" height="32" rx="16" fill="#b79bff"/>
+    <rect x="786" y="330" width="106" height="32" rx="16" fill="#5be19c"/>
+    <rect x="760" y="506" width="146" height="32" rx="16" fill="#b79bff"/>
+    <rect x="786" y="622" width="124" height="32" rx="16" fill="#b79bff"/>
+    <rect x="1036" y="648" width="132" height="32" rx="16" fill="#b79bff"/>
+  </g>
+  <text x="449" y="378" text-anchor="middle" class="label">text + refs</text>
+  <text x="442" y="483" text-anchor="middle" class="label">raw blobs</text>
+  <text x="839" y="352" text-anchor="middle" class="label">auth local</text>
+  <text x="833" y="528" text-anchor="middle" class="label">lazy backfill</text>
+  <text x="848" y="644" text-anchor="middle" class="label">ops control</text>
+  <text x="1102" y="670" text-anchor="middle" class="label">e2e verify</text>
 
-  <rect class="node chrome" x="72" y="260" width="244" height="66" rx="16"/>
-  <text class="node-title" x="96" y="286">Daily-driver tab</text>
-  <text class="node-sub" x="96" y="306">visible DOM · lifecycle · scroll</text>
+  <!-- Browser panel cards -->
+  <g filter="url(#smallShadow)">
+    <rect x="82" y="268" width="296" height="82" rx="17" class="card"/>
+    <rect x="82" y="376" width="296" height="92" rx="17" class="card-blue"/>
+    <rect x="82" y="496" width="296" height="94" rx="17" class="card"/>
+  </g>
+  <text x="110" y="302" class="node-title">Web pages and media origins</text>
+  <text x="110" y="325" class="node-sub">HTML, visible text, images, video URLs</text>
+  <text x="110" y="410" class="node-title">Chrome tab + MV3 extension</text>
+  <text x="110" y="435" class="node-sub">content script, service worker, popup/options</text>
+  <text x="110" y="456" class="node-sub">hidden/form/editable/script/style skips retained</text>
+  <text x="110" y="530" class="node-title">Browser media sidecars</text>
+  <text x="110" y="555" class="node-sub">IndexedDB queue, credentialed fetch, CDP recorder</text>
+  <text x="110" y="576" class="node-note">credentials stay inside Chrome</text>
+  <path class="dim-line" d="M 230 350 V 374" marker-end="url(#arrowBlue)"/>
+  <path class="dim-line" d="M 230 468 V 494" marker-end="url(#arrowViolet)"/>
 
-  <rect class="node chrome" x="72" y="356" width="244" height="78" rx="16"/>
-  <text class="node-title" x="96" y="383">MV3 extension</text>
-  <text class="node-sub" x="96" y="404">content script + service worker</text>
-  <text class="node-sub" x="96" y="421">capture policy · local queues</text>
+  <!-- Bridge panel cards -->
+  <g filter="url(#smallShadow)">
+    <rect x="500" y="300" width="240" height="96" rx="18" class="card-blue"/>
+    <rect x="500" y="430" width="240" height="92" rx="18" class="card"/>
+  </g>
+  <text x="528" y="333" class="node-title">Bearer-token HTTP API</text>
+  <text x="528" y="358" class="node-note">/capture · /visit-events</text>
+  <text x="528" y="379" class="node-note">/media-artifacts · /forget</text>
+  <text x="528" y="463" class="node-title">Local trust boundary</text>
+  <text x="528" y="488" class="node-sub">binds to 127.0.0.1 by default</text>
+  <text x="528" y="509" class="node-sub">CORS limited to Chrome extension + loopback</text>
 
-  <rect class="node chrome" x="92" y="444" width="204" height="48" rx="14"/>
-  <text class="node-title" x="116" y="474">Browser sidecars</text>
-  <text class="node-sub" x="116" y="489">IndexedDB · CDP · blob PUTs</text>
+  <!-- WSL panel cards -->
+  <g filter="url(#smallShadow)">
+    <rect x="862" y="268" width="456" height="92" rx="18" class="card-green"/>
+    <rect x="862" y="390" width="210" height="86" rx="18" class="card-store"/>
+    <rect x="1104" y="390" width="214" height="86" rx="18" class="card-store"/>
+    <rect x="862" y="512" width="456" height="88" rx="18" class="card"/>
+  </g>
+  <text x="890" y="302" class="node-title">Browser Memory Daemon</text>
+  <text x="890" y="327" class="node-sub">policy, ingest, exact search, local UI shell, forget receipts</text>
+  <text x="890" y="348" class="node-note">no cloud vector or LLM upload path</text>
+  <text x="890" y="424" class="node-title">SQLite + FTS5</text>
+  <text x="890" y="449" class="node-sub">documents, visits, snapshots, chunks, media refs</text>
+  <text x="1132" y="424" class="node-title">Blob stores</text>
+  <text x="1132" y="449" class="node-sub">clean text + bounded media cache</text>
+  <text x="890" y="546" class="node-title">Daemon media worker</text>
+  <text x="890" y="571" class="node-sub">public no-cookie fetch, HLS assembly, rolling purge + rehydrate</text>
+  <path class="lane-green" d="M 990 360 V 383"/>
+  <path class="lane-green" d="M 1164 360 V 383"/>
+  <path class="lane-violet" d="M 1212 476 C 1212 500 1160 512 1112 512"/>
 
-  <!-- Bridge -->
-  <rect class="node bridge" x="420" y="258" width="180" height="92" rx="18"/>
-  <text class="node-title" x="446" y="290">Bearer-token</text>
-  <text class="node-title" x="446" y="309">HTTP API</text>
-  <text class="node-sub" x="446" y="332">/capture · /visit-events</text>
-  <text class="node-sub" x="446" y="348">/media-artifacts</text>
+  <!-- Bottom operator/test cards -->
+  <g filter="url(#smallShadow)">
+    <rect x="428" y="738" width="228" height="66" rx="17" class="card"/>
+    <rect x="690" y="738" width="228" height="66" rx="17" class="card"/>
+    <rect x="952" y="738" width="270" height="66" rx="17" class="card"/>
+  </g>
+  <text x="456" y="766" class="node-title">Local dashboard</text>
+  <text x="456" y="789" class="node-sub">/ui token bootstrap, search, policy, forget</text>
+  <text x="718" y="766" class="node-title">CLI</text>
+  <text x="718" y="789" class="node-sub">search, doctor, media-cache, media-worker</text>
+  <text x="980" y="766" class="node-title">Real Chrome end-to-end tests</text>
+  <text x="980" y="789" class="node-sub">pytest, node:test, Chrome for Testing fixtures</text>
 
-  <!-- WSL column -->
-  <rect class="node wsl" x="712" y="166" width="328" height="82" rx="18"/>
-  <text class="node-title" x="738" y="194">Browser Memory Daemon</text>
-  <text class="node-sub" x="738" y="215">policy · ingest · search · forget</text>
-  <text class="node-sub" x="738" y="232">local UI serving · token bootstrap</text>
+  <rect x="76" y="785" width="326" height="26" rx="13" fill="#0b172b" stroke="#2c4060"/>
+  <text x="94" y="803" class="legend-muted">Runtime DBs, blobs, logs, tokens, and captures stay outside Git.</text>
 
-  <rect class="node wsl" x="712" y="280" width="154" height="84" rx="18"/>
-  <text class="node-title" x="738" y="309">SQLite + FTS5</text>
-  <text class="node-sub" x="738" y="330">documents · visits</text>
-  <text class="node-sub" x="738" y="347">chunks · media refs</text>
-
-  <rect class="node wsl" x="886" y="280" width="154" height="84" rx="18"/>
-  <text class="node-title" x="912" y="309">Local blobs</text>
-  <text class="node-sub" x="912" y="330">clean text</text>
-  <text class="node-sub" x="912" y="347">bounded media cache</text>
-
-  <rect class="node wsl" x="742" y="396" width="268" height="58" rx="16"/>
-  <text class="node-title" x="768" y="424">Daemon media worker</text>
-  <text class="node-sub" x="768" y="442">public backfill · purge · rehydrate</text>
-
-  <!-- Operator nodes -->
-  <rect class="node ops" x="94" y="580" width="220" height="56" rx="16"/>
-  <text class="node-title" x="122" y="611">Local dashboard</text>
-  <text class="node-sub" x="122" y="629">/ui tokened reads + admin</text>
-
-  <rect class="node ops" x="450" y="580" width="220" height="56" rx="16"/>
-  <text class="node-title" x="478" y="611">CLI</text>
-  <text class="node-sub" x="478" y="629">search · doctor · forget</text>
-
-  <rect class="node test" x="806" y="580" width="220" height="56" rx="16"/>
-  <text class="node-title" x="834" y="611">Real Chrome e2e</text>
-  <text class="node-sub" x="834" y="629">pytest · node:test · Chrome</text>
-
-  <!-- Main flow -->
-  <path class="arrow" d="M194 230 L194 252"/>
-  <path class="arrow" d="M194 326 L194 348"/>
-  <path class="arrow" d="M316 394 C352 394 362 304 412 304"/>
-  <path class="arrow-green" d="M600 304 C630 304 646 207 704 207"/>
-
-  <path class="arrow-green" d="M876 248 L876 272"/>
-  <path class="arrow-green" d="M892 248 C930 252 953 260 963 272"/>
-  <path class="arrow-green" d="M802 396 C788 385 788 378 789 366"/>
-  <path class="arrow-green" d="M948 396 C964 384 964 376 963 366"/>
-
-  <!-- Lazy media and operator verification -->
-  <path class="arrow" d="M194 444 L194 434"/>
-  <path class="arrow" d="M296 468 C360 468 360 338 412 334"/>
-  <path class="arrow-purple" d="M876 454 C864 490 778 510 650 552 C610 565 585 570 560 576"/>
-  <path class="arrow-purple" d="M204 580 C210 528 154 498 148 434"/>
-  <path class="arrow-purple" d="M560 580 C594 515 690 492 758 248"/>
-  <path class="arrow-purple" d="M916 580 C916 520 842 500 760 454"/>
-
-  <!-- Labels -->
-  <rect class="label-box" x="326" y="280" width="118" height="24" rx="8"/>
-  <text class="label" x="339" y="297">fast text + refs</text>
-
-  <rect class="label-box" x="612" y="278" width="88" height="24" rx="8"/>
-  <text class="label" x="625" y="295">tokened local</text>
-
-  <rect class="label-box" x="306" y="435" width="86" height="24" rx="8"/>
-  <text class="label" x="319" y="452">raw blobs</text>
-
-  <rect class="label-box" x="818" y="500" width="112" height="24" rx="8"/>
-  <text class="label" x="831" y="517">public backfill</text>
-
-  <rect x="72" y="674" width="976" height="1" fill="#253a5c" opacity="0.7"/>
-  <text class="muted" x="72" y="700">Invariant: text/FTS capture is synchronous and authoritative; media bytes are lazy, bounded, disposable sidecars.</text>
+  <rect x="50" y="846" width="1300" height="38" rx="19" fill="#0b172b" stroke="#2c4060"/>
+  <text x="76" y="871" class="footer">Invariant: text and FTS capture are synchronous and authoritative; media bytes are lazy, bounded, and disposable sidecars.</text>
 </svg>

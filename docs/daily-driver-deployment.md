@@ -75,7 +75,6 @@ chrome://extensions → Browser Memory Daemon → Reload
 ```text
 Extension ID: assigned by Chrome for the local unpacked extension
 Extension path: %LOCALAPPDATA%\browser-memory-daemon\extension
-Chrome profile backup root: %LOCALAPPDATA%\browser-memory-daemon\backups\
 ```
 
 Direct `Preferences` / `Secure Preferences` JSON transplant was tested and rejected by Chrome on launch. Chrome protects extension entries with legacy MACs and encrypted hashes; invalid entries are removed. Use Chrome's own **Load unpacked** / **Reload** flow.
