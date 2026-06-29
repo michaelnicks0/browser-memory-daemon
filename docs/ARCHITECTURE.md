@@ -21,6 +21,12 @@ The system shall enable Operator to reconstruct recently viewed web content by c
 | Deletion model | Forget by domain/URL with deletion receipts. |
 | Validation target | Real Windows Chrome can capture, search, and forget synthetic pages through WSL. |
 
+## High-level architecture at a glance
+
+![High-level architecture diagram showing Windows Chrome capture, authenticated loopback transport, WSL-owned memory, and local operator/verification surfaces.](architecture/high-level-architecture.svg)
+
+The fast path is text-first: page text, lifecycle metadata, and media references are captured before any media bytes are fetched. Media sidecars run later in Chrome or the daemon, and all durable memory remains under WSL-owned storage.
+
 ---
 
 ## Requirements trace
