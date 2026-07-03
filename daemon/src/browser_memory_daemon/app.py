@@ -154,9 +154,16 @@ def _coerce_limit(value, default: int, maximum: int) -> int:
     return max(1, min(parsed, maximum))
 
 
+def _ensure_db(config: RuntimeConfig) -> None:
+    # Request handlers still ensure the schema exists, but they must not run the
+    # legacy media-task backfill on every capture/event. That backfill can scan
+    # and write thousands of rows and contend with the media worker.
+    init_db(config, seed_media_tasks=False)
+
+
 def _background_fetch_pending_media(config: RuntimeConfig, *, snapshot_id: str, limit: int) -> None:
     try:
-        init_db(config)
+        _ensure_db(config)
         with connect(config.db_path) as conn:
             result = fetch_pending_media_artifacts(conn, config, snapshot_id=snapshot_id, limit=limit)
             audit(
@@ -220,13 +227,13 @@ def make_handler(config: RuntimeConfig):
             params = parse_qs(parsed.query)
             try:
                 if parsed.path == "/ready":
-                    init_db(config)
+                    _ensure_db(config)
                     _json_response(self, 200, {"ready": True, "db_path": str(config.db_path)})
                     return
                 if parsed.path == "/search":
                     query = params.get("q", [""])[0]
                     limit = int(params.get("limit", ["10"])[0])
-                    init_db(config)
+                    _ensure_db(config)
                     with connect(config.db_path) as conn:
                         results = search_memory(conn, query, limit=limit)
                         audit(conn, "search", {"query_len": len(query), "result_count": len(results)})
@@ -234,7 +241,7 @@ def make_handler(config: RuntimeConfig):
                     _json_response(self, 200, {"results": results})
                     return
                 if parsed.path == "/recent":
-                    init_db(config)
+                    _ensure_db(config)
                     with connect(config.db_path) as conn:
                         results = recent_captures(conn, limit=params.get("limit", ["25"])[0])
                         audit(conn, "recent", {"result_count": len(results)})
@@ -242,7 +249,7 @@ def make_handler(config: RuntimeConfig):
                     _json_response(self, 200, {"results": results})
                     return
                 if parsed.path == "/timeline":
-                    init_db(config)
+                    _ensure_db(config)
                     with connect(config.db_path) as conn:
                         results = timeline(
                             conn,
@@ -257,7 +264,7 @@ def make_handler(config: RuntimeConfig):
                     return
                 if parsed.path.startswith("/documents/"):
                     document_id = unquote(parsed.path.removeprefix("/documents/"))
-                    init_db(config)
+                    _ensure_db(config)
                     with connect(config.db_path) as conn:
                         result = document_detail(conn, document_id)
                         audit(conn, "document.detail", {"document_id": document_id})
@@ -266,7 +273,7 @@ def make_handler(config: RuntimeConfig):
                     return
                 if parsed.path.startswith("/snapshots/"):
                     snapshot_id = unquote(parsed.path.removeprefix("/snapshots/"))
-                    init_db(config)
+                    _ensure_db(config)
                     with connect(config.db_path) as conn:
                         result = snapshot_detail(conn, snapshot_id)
                         audit(conn, "snapshot.detail", {"snapshot_id": snapshot_id})
@@ -274,7 +281,7 @@ def make_handler(config: RuntimeConfig):
                     _json_response(self, 200, result)
                     return
                 if parsed.path == "/media-artifacts/queue-status":
-                    init_db(config)
+                    _ensure_db(config)
                     with connect(config.db_path) as conn:
                         result = media_queue_status(conn, config, limit=_coerce_limit(params.get("limit", ["50"])[0], 50, 200))
                         audit(conn, "media.queue_status", {})
@@ -283,7 +290,7 @@ def make_handler(config: RuntimeConfig):
                     return
                 if parsed.path.startswith("/media-artifacts/"):
                     artifact_id = unquote(parsed.path.removeprefix("/media-artifacts/"))
-                    init_db(config)
+                    _ensure_db(config)
                     with connect(config.db_path) as conn:
                         artifact = media_artifact(conn, artifact_id)
                         audit(conn, "media.detail", {"artifact_id": artifact_id})
@@ -301,7 +308,7 @@ def make_handler(config: RuntimeConfig):
                     )
                     return
                 if parsed.path == "/doctor":
-                    init_db(config)
+                    _ensure_db(config)
                     with connect(config.db_path) as conn:
                         result = doctor(config, conn)
                         audit(conn, "doctor", {"ok": result["ok"]})
@@ -309,7 +316,7 @@ def make_handler(config: RuntimeConfig):
                     _json_response(self, 200, result)
                     return
                 if parsed.path == "/policy/rules":
-                    init_db(config)
+                    _ensure_db(config)
                     with connect(config.db_path) as conn:
                         _json_response(self, 200, {"rules": list_policy_rules(conn)})
                     return
@@ -318,7 +325,7 @@ def make_handler(config: RuntimeConfig):
                     static_decision = evaluate_capture(url, policy_mode=config.policy_mode)
                     persistent_decision = static_decision
                     if static_decision.allowed:
-                        init_db(config)
+                        _ensure_db(config)
                         with connect(config.db_path) as conn:
                             rules_decision = evaluate_policy_rules(conn, url)
                             if not rules_decision.allowed:
@@ -356,7 +363,7 @@ def make_handler(config: RuntimeConfig):
                     _json_response(self, 400, {"error": "invalid content length"})
                     return
                 try:
-                    init_db(config)
+                    _ensure_db(config)
                     with connect(config.db_path) as conn:
                         headers = {key: self.headers.get(key, "") for key in ["Content-Type", "X-BMD-Document-ID", "X-BMD-Snapshot-ID", "X-BMD-Source-URL"]}
                         result = store_media_blob_stream(conn, config, artifact_id, self.rfile, headers=headers, content_length=content_length)
@@ -385,7 +392,7 @@ def make_handler(config: RuntimeConfig):
                 return
             if parsed.path == "/media-artifacts/purge-cache":
                 try:
-                    init_db(config)
+                    _ensure_db(config)
                     with connect(config.db_path) as conn:
                         result = purge_media_cache(conn, config, data)
                         audit(conn, "media.cache_purge", {"dry_run": result["dry_run"], "rehydrate": result["rehydrate"], "selected": result["selected"], "purged": result["purged"], "bytes": result["bytes"]})
@@ -397,7 +404,7 @@ def make_handler(config: RuntimeConfig):
                     return
             if parsed.path == "/media-artifacts/fetch-pending":
                 try:
-                    init_db(config)
+                    _ensure_db(config)
                     with connect(config.db_path) as conn:
                         result = fetch_pending_media_artifacts(
                             conn,
@@ -430,7 +437,7 @@ def make_handler(config: RuntimeConfig):
                     return
             if parsed.path == "/media-artifacts":
                 try:
-                    init_db(config)
+                    _ensure_db(config)
                     with connect(config.db_path) as conn:
                         result = store_media_artifact(conn, config, data)
                         audit(
@@ -461,7 +468,7 @@ def make_handler(config: RuntimeConfig):
                     is_incognito=bool(data.get("is_incognito") or data.get("incognito") or False),
                     policy_mode=config.policy_mode,
                 )
-                init_db(config)
+                _ensure_db(config)
                 with connect(config.db_path) as conn:
                     if decision.allowed:
                         rules_decision = evaluate_policy_rules(conn, url)
@@ -486,7 +493,7 @@ def make_handler(config: RuntimeConfig):
                     is_incognito=bool(data.get("is_incognito") or data.get("incognito") or False),
                     policy_mode=config.policy_mode,
                 )
-                init_db(config)
+                _ensure_db(config)
                 with connect(config.db_path) as conn:
                     if decision.allowed:
                         rules_decision = evaluate_policy_rules(conn, url)
@@ -512,7 +519,7 @@ def make_handler(config: RuntimeConfig):
                         return
             if parsed.path == "/forget":
                 try:
-                    init_db(config)
+                    _ensure_db(config)
                     with connect(config.db_path) as conn:
                         result = forget(conn, domain=data.get("domain"), url=data.get("url"))
                         audit(conn, "forget", {"receipt_id": result["receipt_id"], "scope_keys": sorted(result["scope"].keys())})
@@ -524,7 +531,7 @@ def make_handler(config: RuntimeConfig):
                     return
             if parsed.path == "/policy/rules":
                 try:
-                    init_db(config)
+                    _ensure_db(config)
                     with connect(config.db_path) as conn:
                         rule = create_policy_rule(
                             conn,
@@ -547,7 +554,7 @@ def make_handler(config: RuntimeConfig):
             if parsed.path.startswith("/policy/rules/"):
                 rule_id = unquote(parsed.path.removeprefix("/policy/rules/"))
                 try:
-                    init_db(config)
+                    _ensure_db(config)
                     with connect(config.db_path) as conn:
                         result = delete_policy_rule(conn, rule_id)
                     _json_response(self, 200, result)

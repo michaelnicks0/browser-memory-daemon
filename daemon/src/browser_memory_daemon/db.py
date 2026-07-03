@@ -10,16 +10,18 @@ from typing import Any
 from .config import RuntimeConfig
 
 SCHEMA_PATH = Path(__file__).with_name("schema.sql")
+SQLITE_BUSY_TIMEOUT_MS = 30_000
 
 
 def connect(db_path: Path) -> sqlite3.Connection:
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(db_path, timeout=SQLITE_BUSY_TIMEOUT_MS / 1000)
     conn.row_factory = sqlite3.Row
+    conn.execute(f"PRAGMA busy_timeout = {SQLITE_BUSY_TIMEOUT_MS}")
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
 
-def init_db(config: RuntimeConfig) -> None:
+def init_db(config: RuntimeConfig, *, seed_media_tasks: bool = True) -> None:
     config.ensure_dirs()
     with connect(config.db_path) as conn:
         conn.executescript(SCHEMA_PATH.read_text())
@@ -27,7 +29,8 @@ def init_db(config: RuntimeConfig) -> None:
             "INSERT OR IGNORE INTO sources(id, source_type, source_name) VALUES (?, ?, ?)",
             ("chrome-extension", "browser", "chrome-extension"),
         )
-        _seed_media_fetch_tasks(conn)
+        if seed_media_tasks:
+            _seed_media_fetch_tasks(conn)
 
 
 def _stable_id(prefix: str, value: str) -> str:

@@ -5,6 +5,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+import browser_memory_daemon.app as app_module
 from browser_memory_daemon.app import make_server
 from browser_memory_daemon.config import load_config
 
@@ -40,6 +41,39 @@ def binary_request(method, url, token="test-token", body=b"", content_type="appl
         req.add_header(key, value)
     with urllib.request.urlopen(req, timeout=10) as response:
         return response.status, json.loads(response.read().decode() or "{}")
+
+
+def test_http_capture_skips_legacy_media_backfill_on_request(tmp_path, monkeypatch):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", host="127.0.0.1", port=0, policy_mode="all")
+    cfg = replace(cfg, media_fetch_on_capture=False)
+    seed_calls = []
+    real_init_db = app_module.init_db
+
+    def spy_init_db(config, *, seed_media_tasks=True):
+        seed_calls.append(seed_media_tasks)
+        return real_init_db(config, seed_media_tasks=seed_media_tasks)
+
+    monkeypatch.setattr(app_module, "init_db", spy_init_db)
+    server = app_module.make_server(cfg)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        status, stored = request("POST", f"{base}/capture", body={
+            "visit_id": "http-no-backfill-1",
+            "url": "https://example.org/no-backfill",
+            "title": "No per-request backfill",
+            "text": "Capture requests should not reseed legacy media tasks.",
+        })
+        assert status == 201
+        assert stored["stored"] is True
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+
+    assert seed_calls[0] is True
+    assert False in seed_calls
+    assert seed_calls.count(True) == 1
 
 
 def test_http_media_fetch_raw_upload_and_purge_rehydrate_controls(tmp_path):
