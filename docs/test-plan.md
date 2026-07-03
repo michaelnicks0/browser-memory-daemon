@@ -60,6 +60,14 @@ Advisory performance benchmark:
 
 The benchmark uses deterministic synthetic captures and local data/media sidecars only. It reports ingest, read surface, endpoint-style audit-write, media-worker selection/run, storage growth, and advisory budget sections; use its JSON output as the baseline for read-model tuning.
 
+Traceability gate:
+
+```bash
+python3.11 scripts/generate_test_inventory.py --check
+```
+
+This gate fails when an architecture `REQ-*` row is missing from this test plan or when this test plan references a deleted/renamed test file. It remains a static inventory/traceability gate; line/branch coverage thresholds are intentionally deferred until coverage tooling and trend data exist.
+
 `run-real-chrome-e2e.sh` uses Windows Chrome for Testing because branded Chrome 137+ no longer reliably honors command-line `--load-extension` automation. It honors `BMD_PYTHON` for the WSL daemon and DB probes. By default it runs the `all strict` matrix; set `BMD_REAL_CHROME_POLICY_MODE=<mode>` for a single debugging run or `BMD_REAL_CHROME_MATRIX_MODES="all strict balanced recall"` for an extended local matrix.
 
 ---

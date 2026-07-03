@@ -7,7 +7,8 @@
 - **Non-goals for this map:** no cloud vector DB/LLM upload, no default Chrome profile automation, no publishing/pushing, no native-messaging rewrite unless a later ticket proves it is the next bottleneck.
 - **Standing constraints:** runtime data stays under XDG paths, not the repo; captured page text is untrusted evidence; tests must not use Michael's daily Chrome profile; architecture-impacting decisions require `docs/architecture/adr/` inspection and likely an ADR.
 - **Inspected context:** `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/STATUS.md`, `docs/TESTS.md`, `docs/test-plan.md`, `docs/api.md`, `docs/USER_GUIDE.md`, `docs/architecture/adr/README.md`, `scripts/install-daily-driver.sh`, `scripts/run-real-chrome-e2e.sh`, `pyproject.toml`, `extension/package.json`.
-- **Current baseline from inspected docs:** 88 static tests across 17 files: 65 daemon pytest tests and 23 extension `node:test` tests. Source/test line snapshot from ticket 001: daemon source 4,360 LOC vs daemon tests 1,939 LOC; extension source 2,138 LOC vs extension tests 371 LOC.
+- **Original baseline from ticket 001:** 88 static tests across 17 files: 65 daemon pytest tests and 23 extension `node:test` tests. Source/test line snapshot from ticket 001: daemon source 4,360 LOC vs daemon tests 1,939 LOC; extension source 2,138 LOC vs extension tests 371 LOC.
+- **Closed-frontier inventory:** 111 static tests across 23 files: 84 daemon pytest tests and 27 extension `node:test` tests; `docs/TESTS.md` traceability gate passes for 17 architecture requirements.
 - **Relevant accepted ADRs:** local-first Windows Chrome ⇄ WSL boundary, text-first SQLite/FTS5 + blobs, durable lazy media sidecars, real Chrome e2e as verification authority, C4 model as canonical architecture, generated docs as derived artifacts.
 
 ## Decisions so far
@@ -27,10 +28,11 @@
 - [015 — Add storage-headroom and service-start failure budget checks](tickets/015-storage-headroom-service-start-budget.md) — added redaction-safe headroom thresholds plus systemd restart and journal service-start budgets; recorded ADR-0018.
 - [012 — Design retention, compaction, and backup posture](tickets/012-retention-compaction-backup-design.md) — accepted durable-text/default, disposable-media-cache, WAL-aware local backup/export posture; recorded ADR-0019 and split implementation follow-ups 017/018.
 - [013 — Add local UI smoke coverage](tickets/013-ui-dashboard-smoke-coverage.md) — added daemon-served shell/bootstrap checks plus a low-dependency mocked DOM/fetch harness for initial API calls, empty states, no-token state, and panel error rendering.
+- [014 — Add coverage gates and requirements traceability enforcement](tickets/014-coverage-gates-traceability.md) — promoted `generate_test_inventory.py --check` into a static inventory + architecture requirement traceability gate; recorded ADR-0020.
 
 ## Frontier
 
-- [014 — Add coverage gates and requirements traceability enforcement](tickets/014-coverage-gates-traceability.md) — now unblocked by ticket 006 coverage expansion, but still best near the end after more coverage tickets land.
+None. The current durability/performance/coverage frontier is closed.
 
 ## Split follow-ups not in current frontier
 
@@ -47,16 +49,17 @@ None.
 - Whether default durable-text retention needs age/domain/profile narrowing after long-running storage-growth evidence; ADR-0019 keeps full text by default for now.
 - Whether native messaging should remain a later hardening lane or become a near-term reliability requirement after loopback/SQLite hardening.
 - Whether performance budgets should gate every PR/session or stay advisory because Windows Chrome e2e is comparatively heavy.
+- Whether line/branch coverage thresholds should be added after explicit coverage tooling and trend data exist; ADR-0020 keeps static traceability as the hard gate for now.
 - Whether operational alerts should integrate with an external notification channel; remote delivery requires explicit approval.
 
 ## Handoff
 
-Open frontier tickets: 1. Blocked tickets: 0. Deferred split follow-ups: 2.
+Open frontier tickets: 0. Blocked tickets: 0. Deferred split follow-ups: 2.
 
-Recommended next ticket: **014 — Add coverage gates and requirements traceability enforcement**. UI smoke coverage is now deterministic; the remaining current-frontier gap is deciding measured coverage/traceability enforcement after the coverage expansion tickets.
+Recommended next ticket: none in the current frontier. If work continues beyond this queue, choose one of the deferred split follow-ups only after explicitly accepting that it is a new implementation lane, not unfinished current-frontier work.
 
 Copy into a fresh session:
 
 ```text
-Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/014-coverage-gates-traceability.md.
+Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md. Current frontier is closed; deferred split follow-ups are tickets/017-retention-maintenance-command.md and tickets/018-local-backup-export-command.md.
 ```

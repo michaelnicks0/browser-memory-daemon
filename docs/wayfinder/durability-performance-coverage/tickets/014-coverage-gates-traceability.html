@@ -126,7 +126,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
   <article class="md-body">
 <h1 id="add-coverage-gates-and-requirements-traceability-enforcement">Add coverage gates and requirements traceability enforcement</h1>
 <h2 id="status">Status</h2>
-<p>blocked</p>
+<p>closed</p>
 <h2 id="question">Question</h2>
 <p>After a first wave of new tests lands, should the repo enforce measured coverage and requirement-to-test traceability beyond the generated static inventory?</p>
 <h2 id="type">Type</h2>
@@ -144,12 +144,55 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <h2 id="blocks-blocked-by">Blocks / blocked by</h2>
 <ul>
 <li>Blocks: future regression policy and release gates.</li>
-<li>Blocked by: at least one coverage-expansion ticket; ticket 001 baseline is complete.</li>
+<li>Blocked by: none. Coverage-expanded tickets 005, 006, 007, 008, and 013 are closed.</li>
 </ul>
 <h2 id="resolution">Resolution</h2>
-<p>Pending.</p>
+<p>Closed with a measured static inventory/traceability gate rather than premature line-coverage thresholds.</p>
+<p>Measurement before choosing enforcement:</p>
+<ul>
+<li><code>/usr/bin/time -f 'pytest_elapsed=%e' /tmp/browser-memory-daemon-verify-venv/bin/python -m pytest -q</code> passed in about 13.56s.</li>
+<li><code>/usr/bin/time -f 'extension_elapsed=%e' bash -lc 'cd extension &amp;&amp; npm test &amp;&amp; npm run build'</code> passed in about 0.45s.</li>
+<li><code>coverage</code> was not installed in the verification venv / <code>requirements-dev.txt</code>, so hard line/branch thresholds would require a new dependency plus baseline trend data. Deferred by ADR-0020.</li>
+<li>Static inventory after this ticket: 111 source-level tests across 23 files, with 84 daemon pytest tests and 27 extension <code>node:test</code> tests.</li>
+</ul>
+<p>Implemented gate:</p>
+<ul>
+<li><code>scripts/generate_test_inventory.py --check</code> still verifies generated <code>docs/TESTS.md</code> inventory freshness.</li>
+<li>The same gate now verifies every architecture <code>REQ-*</code> row in <code>docs/ARCHITECTURE.md</code> appears in <code>docs/test-plan.md</code>.</li>
+<li>The gate now fails when <code>docs/test-plan.md</code> references missing test/source paths, catching stale traceability links after file renames/deletions.</li>
+<li><code>docs/TESTS.md</code> renders the generated traceability report; ADR-0020 records the verification-strategy decision.</li>
+</ul>
+<p>Evidence:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>/tmp/browser-memory-daemon-verify-venv/bin/python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pytest<span style="color: #F8F8F2"> </span>-q<span style="color: #F8F8F2"> </span>daemon/tests/e2e/test_generate_test_inventory.py
+<span style="color: #959077"># 2 passed</span>
+
+/tmp/browser-memory-daemon-verify-venv/bin/python<span style="color: #F8F8F2"> </span>scripts/generate_test_inventory.py<span style="color: #F8F8F2"> </span>--check
+<span style="color: #959077"># docs/TESTS.md ok: 111 tests / 23 files (84 pytest, 27 node:test)</span>
+
+/tmp/browser-memory-daemon-verify-venv/bin/python<span style="color: #F8F8F2"> </span>scripts/generate_test_inventory.py<span style="color: #F8F8F2"> </span>--json
+<span style="color: #959077"># trace_ok=True; architecture requirements=17; tests=111; files=23</span>
+
+<span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span>/tmp/browser-memory-daemon-verify-venv/bin/python<span style="color: #F8F8F2"> </span>./scripts/run-e2e.sh
+<span style="color: #959077"># passed: daemon pytest, extension node:test/build, real Chrome for Testing all+strict matrix, secret scan, whitespace check</span>
+
+/tmp/browser-memory-daemon-verify-venv/bin/python<span style="color: #F8F8F2"> </span>scripts/generate_showcase.py<span style="color: #F8F8F2"> </span>--spec<span style="color: #F8F8F2"> </span>scripts/showcase.spec.json<span style="color: #F8F8F2"> </span>--check
+<span style="color: #959077"># browser-memory-daemon-high-level-doc.html ok</span>
+
+/tmp/browser-memory-daemon-verify-venv/bin/python<span style="color: #F8F8F2"> </span>scripts/render_docs.py<span style="color: #F8F8F2"> </span>--repo<span style="color: #F8F8F2"> </span>.<span style="color: #F8F8F2"> </span>--slug<span style="color: #F8F8F2"> </span>browser-memory-daemon<span style="color: #F8F8F2"> </span>--check
+<span style="color: #959077"># 79 rendered docs match source</span>
+
+<span style="color: #F8F8F2">cd </span>extension<span style="color: #F8F8F2"> </span><span style="color: #FF4689">&amp;&amp;</span><span style="color: #F8F8F2"> </span>npm<span style="color: #F8F8F2"> test </span><span style="color: #FF4689">&amp;&amp;</span><span style="color: #F8F8F2"> </span>npm<span style="color: #F8F8F2"> </span>run<span style="color: #F8F8F2"> </span>build
+<span style="color: #959077"># 27 node:test tests passed; extension build passed</span>
+
+<span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span>/tmp/browser-memory-daemon-verify-venv/bin/python<span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
+<span style="color: #959077"># passed: real Chrome for Testing all+strict matrix</span>
+
+./scripts/secret-scan.sh<span style="color: #F8F8F2"> </span><span style="color: #FF4689">&amp;&amp;</span><span style="color: #F8F8F2"> </span>git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span>--check<span style="color: #F8F8F2"> </span>--<span style="color: #F8F8F2"> </span>.
+<span style="color: #959077"># passed</span>
+</code></pre></div>
+
 <h2 id="new-tickets-fog-updates">New tickets / fog updates</h2>
-<p>Pending. Do not pick thresholds before measuring current real coverage and gate runtime.</p>
+<p>No new ticket. Line/branch coverage thresholds remain intentionally deferred until coverage tooling is added and trend data exists; the current hard gate is static inventory + requirements traceability.</p>
   </article>
   <div class="md-footer">
     Rendered from <code>docs/wayfinder/durability-performance-coverage/tickets/014-coverage-gates-traceability.md</code> — the Markdown file is the canonical,

@@ -27,6 +27,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0017](0017-add-read-model-composite-indexes.md) | accepted | Add composite SQLite indexes for measured read-model ordering paths. |
 | [ADR-0018](0018-enforce-daily-driver-headroom-and-start-budgets.md) | accepted | Enforce daily-driver headroom and service-start failure budgets in local health checks. |
 | [ADR-0019](0019-use-durable-text-retention-with-wal-aware-local-backup.md) | accepted | Use durable text retention with WAL-aware local backup and disposable media cache. |
+| [ADR-0020](0020-enforce-static-requirement-traceability-gate.md) | accepted | Enforce static requirement traceability in the generated test inventory gate. |
 
 ## Backfilled decision history
 

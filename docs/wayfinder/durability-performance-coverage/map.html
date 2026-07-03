@@ -132,7 +132,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li><strong>Non-goals for this map:</strong> no cloud vector DB/LLM upload, no default Chrome profile automation, no publishing/pushing, no native-messaging rewrite unless a later ticket proves it is the next bottleneck.</li>
 <li><strong>Standing constraints:</strong> runtime data stays under XDG paths, not the repo; captured page text is untrusted evidence; tests must not use Michael's daily Chrome profile; architecture-impacting decisions require <code>docs/architecture/adr/</code> inspection and likely an ADR.</li>
 <li><strong>Inspected context:</strong> <code>AGENTS.md</code>, <code>docs/ARCHITECTURE.md</code>, <code>docs/STATUS.md</code>, <code>docs/TESTS.md</code>, <code>docs/test-plan.md</code>, <code>docs/api.md</code>, <code>docs/USER_GUIDE.md</code>, <code>docs/architecture/adr/README.md</code>, <code>scripts/install-daily-driver.sh</code>, <code>scripts/run-real-chrome-e2e.sh</code>, <code>pyproject.toml</code>, <code>extension/package.json</code>.</li>
-<li><strong>Current baseline from inspected docs:</strong> 88 static tests across 17 files: 65 daemon pytest tests and 23 extension <code>node:test</code> tests. Source/test line snapshot from ticket 001: daemon source 4,360 LOC vs daemon tests 1,939 LOC; extension source 2,138 LOC vs extension tests 371 LOC.</li>
+<li><strong>Original baseline from ticket 001:</strong> 88 static tests across 17 files: 65 daemon pytest tests and 23 extension <code>node:test</code> tests. Source/test line snapshot from ticket 001: daemon source 4,360 LOC vs daemon tests 1,939 LOC; extension source 2,138 LOC vs extension tests 371 LOC.</li>
+<li><strong>Closed-frontier inventory:</strong> 111 static tests across 23 files: 84 daemon pytest tests and 27 extension <code>node:test</code> tests; <code>docs/TESTS.md</code> traceability gate passes for 17 architecture requirements.</li>
 <li><strong>Relevant accepted ADRs:</strong> local-first Windows Chrome ⇄ WSL boundary, text-first SQLite/FTS5 + blobs, durable lazy media sidecars, real Chrome e2e as verification authority, C4 model as canonical architecture, generated docs as derived artifacts.</li>
 </ul>
 <h2 id="decisions-so-far">Decisions so far</h2>
@@ -152,11 +153,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li><a href="tickets/015-storage-headroom-service-start-budget.html">015 — Add storage-headroom and service-start failure budget checks</a> — added redaction-safe headroom thresholds plus systemd restart and journal service-start budgets; recorded ADR-0018.</li>
 <li><a href="tickets/012-retention-compaction-backup-design.html">012 — Design retention, compaction, and backup posture</a> — accepted durable-text/default, disposable-media-cache, WAL-aware local backup/export posture; recorded ADR-0019 and split implementation follow-ups 017/018.</li>
 <li><a href="tickets/013-ui-dashboard-smoke-coverage.html">013 — Add local UI smoke coverage</a> — added daemon-served shell/bootstrap checks plus a low-dependency mocked DOM/fetch harness for initial API calls, empty states, no-token state, and panel error rendering.</li>
+<li><a href="tickets/014-coverage-gates-traceability.html">014 — Add coverage gates and requirements traceability enforcement</a> — promoted <code>generate_test_inventory.py --check</code> into a static inventory + architecture requirement traceability gate; recorded ADR-0020.</li>
 </ul>
 <h2 id="frontier">Frontier</h2>
-<ul>
-<li><a href="tickets/014-coverage-gates-traceability.html">014 — Add coverage gates and requirements traceability enforcement</a> — now unblocked by ticket 006 coverage expansion, but still best near the end after more coverage tickets land.</li>
-</ul>
+<p>None. The current durability/performance/coverage frontier is closed.</p>
 <h2 id="split-follow-ups-not-in-current-frontier">Split follow-ups not in current frontier</h2>
 <ul>
 <li><a href="tickets/017-retention-maintenance-command.html">017 — Implement retention maintenance command</a> — dry-run/execute checkpoint/optimize/orphan-audit/compacted-copy implementation from ADR-0019.</li>
@@ -170,13 +170,14 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>Whether default durable-text retention needs age/domain/profile narrowing after long-running storage-growth evidence; ADR-0019 keeps full text by default for now.</li>
 <li>Whether native messaging should remain a later hardening lane or become a near-term reliability requirement after loopback/SQLite hardening.</li>
 <li>Whether performance budgets should gate every PR/session or stay advisory because Windows Chrome e2e is comparatively heavy.</li>
+<li>Whether line/branch coverage thresholds should be added after explicit coverage tooling and trend data exist; ADR-0020 keeps static traceability as the hard gate for now.</li>
 <li>Whether operational alerts should integrate with an external notification channel; remote delivery requires explicit approval.</li>
 </ul>
 <h2 id="handoff">Handoff</h2>
-<p>Open frontier tickets: 1. Blocked tickets: 0. Deferred split follow-ups: 2.</p>
-<p>Recommended next ticket: <strong>014 — Add coverage gates and requirements traceability enforcement</strong>. UI smoke coverage is now deterministic; the remaining current-frontier gap is deciding measured coverage/traceability enforcement after the coverage expansion tickets.</p>
+<p>Open frontier tickets: 0. Blocked tickets: 0. Deferred split follow-ups: 2.</p>
+<p>Recommended next ticket: none in the current frontier. If work continues beyond this queue, choose one of the deferred split follow-ups only after explicitly accepting that it is a new implementation lane, not unfinished current-frontier work.</p>
 <p>Copy into a fresh session:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/014-coverage-gates-traceability.md.
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md. Current frontier is closed; deferred split follow-ups are tickets/017-retention-maintenance-command.md and tickets/018-local-backup-export-command.md.
 </code></pre></div>
   </article>
   <div class="md-footer">

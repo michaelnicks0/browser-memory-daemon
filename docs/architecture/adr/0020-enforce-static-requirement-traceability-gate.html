@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Readme — browser-memory-daemon</title>
+<title>0020-Enforce-Static-Requirement-Traceability-Gate — browser-memory-daemon</title>
 <style>
 :root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
@@ -121,193 +121,73 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <div class="wrap">
   <div class="docbar">
     <a class="home" href="../../../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
-    <span class="crumb">/ <b>docs/architecture/adr/README.md</b></span>
+    <span class="crumb">/ <b>docs/architecture/adr/0020-enforce-static-requirement-traceability-gate.md</b></span>
   </div>
   <article class="md-body">
-<h1 id="architecture-decision-records">Architecture Decision Records</h1>
-<blockquote>
-<p>Purpose: preserve the reasoning behind architecture, design, interface, dependency, policy, and Hermes workflow decisions that future agents must understand before changing this repo.</p>
-</blockquote>
-<p>ADRs live in this repo because Browser Memory Daemon is architecture-heavy and agent-maintained. Chat history, memory, and commit messages are not sufficient paper trails for long-lived design choices.</p>
-<h2 id="index">Index</h2>
-<table>
-<thead>
-<tr>
-<th>ADR</th>
-<th>Status</th>
-<th>Decision</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><a href="0001-use-repo-local-architecture-decision-records.html">ADR-0001</a></td>
-<td>accepted</td>
-<td>Use repo-local Markdown ADRs for architecture-significant changes.</td>
-</tr>
-<tr>
-<td><a href="0002-keep-browser-memory-local-across-windows-chrome-and-wsl.html">ADR-0002</a></td>
-<td>accepted</td>
-<td>Keep browser memory local across Windows Chrome and the WSL daemon.</td>
-</tr>
-<tr>
-<td><a href="0003-use-all-policy-mode-as-daily-driver-default.html">ADR-0003</a></td>
-<td>superseded</td>
-<td>Use <code>all</code> policy mode as the daily-driver default. Superseded by ADR-0009.</td>
-</tr>
-<tr>
-<td><a href="0004-use-text-first-sqlite-fts5-and-blob-storage.html">ADR-0004</a></td>
-<td>accepted</td>
-<td>Use text-first SQLite/FTS5 and WSL-local blob storage.</td>
-</tr>
-<tr>
-<td><a href="0005-use-durable-lazy-media-sidecars-with-bounded-cache.html">ADR-0005</a></td>
-<td>accepted</td>
-<td>Use durable lazy media sidecars with a bounded disposable cache.</td>
-</tr>
-<tr>
-<td><a href="0006-use-forget-cascade-with-deletion-receipts.html">ADR-0006</a></td>
-<td>accepted</td>
-<td>Use forget/delete cascades with deletion receipts.</td>
-</tr>
-<tr>
-<td><a href="0007-use-real-chrome-e2e-as-verification-authority.html">ADR-0007</a></td>
-<td>accepted</td>
-<td>Use real Chrome / Chrome for Testing e2e as the verification authority.</td>
-</tr>
-<tr>
-<td><a href="0008-use-c4-structurizr-as-canonical-architecture-model.html">ADR-0008</a></td>
-<td>accepted</td>
-<td>Use C4/Structurizr under <code>docs/architecture/</code> as the canonical architecture model.</td>
-</tr>
-<tr>
-<td><a href="0009-apply-explicit-block-rules-in-all-mode.html">ADR-0009</a></td>
-<td>accepted</td>
-<td>Apply explicit local block rules in <code>all</code> mode while preserving the daily-driver default.</td>
-</tr>
-<tr>
-<td><a href="0010-disable-cdp-recorder-by-default.html">ADR-0010</a></td>
-<td>superseded</td>
-<td>Disable the CDP recorder by default so daily Chrome avoids the native debugging banner while preserving opt-in X/Twitter video recovery. Superseded by ADR-0011.</td>
-</tr>
-<tr>
-<td><a href="0011-enable-cdp-recorder-by-default-with-disable-control.html">ADR-0011</a></td>
-<td>accepted</td>
-<td>Enable the CDP recorder by default for X/Twitter video completeness while preserving an operator disable control for banner-free browsing.</td>
-</tr>
-<tr>
-<td><a href="0012-bootstrap-local-ui-token-from-daemon.html">ADR-0012</a></td>
-<td>accepted</td>
-<td>Bootstrap the local dashboard token from the daemon-served <code>/ui</code> HTML so the UI opens populated while memory/admin APIs remain bearer-authenticated.</td>
-</tr>
-<tr>
-<td><a href="0013-generated-publish-docs.html">ADR-0013</a></td>
-<td>accepted</td>
-<td>Use generated high-level docs and HTML companions for publish-ready documentation while keeping Markdown canonical.</td>
-</tr>
-<tr>
-<td><a href="0014-use-wal-and-bounded-sqlite-contention-policy.html">ADR-0014</a></td>
-<td>accepted</td>
-<td>Use WAL, busy-timeout, startup-only DB initialization, and bounded loopback backlog as the SQLite contention policy.</td>
-</tr>
-<tr>
-<td><a href="0015-use-idempotent-local-write-paths.html">ADR-0015</a></td>
-<td>accepted</td>
-<td>Use idempotent local write paths for duplicate captures, media/cache filesystem work, and semantic policy-rule uniqueness.</td>
-</tr>
-<tr>
-<td><a href="0016-use-deterministic-synthetic-performance-benchmarks.html">ADR-0016</a></td>
-<td>accepted</td>
-<td>Use deterministic synthetic benchmarks as advisory performance evidence before read-model/index tuning.</td>
-</tr>
-<tr>
-<td><a href="0017-add-read-model-composite-indexes.html">ADR-0017</a></td>
-<td>accepted</td>
-<td>Add composite SQLite indexes for measured read-model ordering paths.</td>
-</tr>
-<tr>
-<td><a href="0018-enforce-daily-driver-headroom-and-start-budgets.html">ADR-0018</a></td>
-<td>accepted</td>
-<td>Enforce daily-driver headroom and service-start failure budgets in local health checks.</td>
-</tr>
-<tr>
-<td><a href="0019-use-durable-text-retention-with-wal-aware-local-backup.html">ADR-0019</a></td>
-<td>accepted</td>
-<td>Use durable text retention with WAL-aware local backup and disposable media cache.</td>
-</tr>
-<tr>
-<td><a href="0020-enforce-static-requirement-traceability-gate.html">ADR-0020</a></td>
-<td>accepted</td>
-<td>Enforce static requirement traceability in the generated test inventory gate.</td>
-</tr>
-</tbody>
-</table>
-<h2 id="backfilled-decision-history">Backfilled decision history</h2>
-<p>ADR-0002 through ADR-0008 are historical backfills recorded on 2026-06-14 from repo docs, code, tests, and git history. They did not introduce new runtime behavior; they document already-accepted architecture decisions so future changes can cite, comply with, or supersede them.</p>
-<p>Backfill verification run on 2026-06-14:</p>
+<hr />
+<p>id: ADR-0020
+status: accepted
+date: 2026-07-03
+decider: Operator
+scope: repo
+backfilled: false
+supersedes: []
+superseded_by: []
+related:
+  - docs/TESTS.md
+  - docs/test-plan.md
+  - scripts/generate_test_inventory.py
+  - docs/wayfinder/durability-performance-coverage/tickets/014-coverage-gates-traceability.md
+verification:
+  - /tmp/browser-memory-daemon-verify-venv/bin/python -m pytest -q daemon/tests/e2e/test_generate_test_inventory.py
+  - /tmp/browser-memory-daemon-verify-venv/bin/python scripts/generate_test_inventory.py --check
+  - BMD_PYTHON=/tmp/browser-memory-daemon-verify-venv/bin/python ./scripts/run-e2e.sh
+  - /tmp/browser-memory-daemon-verify-venv/bin/python scripts/render_docs.py --repo . --slug browser-memory-daemon --check</p>
+<hr />
+<h1 id="adr-0020-enforce-static-requirement-traceability-gate">ADR-0020: Enforce Static Requirement Traceability Gate</h1>
+<h2 id="status">Status</h2>
+<p>accepted</p>
+<h2 id="context">Context</h2>
+<p>The repo already generated a source-level test inventory from pytest and Node <code>node:test</code> sources, but the gate only checked that <code>docs/TESTS.md</code> matched discovered test functions. Ticket 014 asked whether to enforce measured coverage and requirement-to-test traceability beyond that static inventory after the coverage expansion tickets landed.</p>
+<p>Current measurement before choosing enforcement:</p>
 <ul>
-<li>ADR lint and repo Markdown fence check passed.</li>
-<li><code>git diff --check -- .</code> passed.</li>
-<li><code>./scripts/secret-scan.sh</code> passed.</li>
-<li><code>BMD_SKIP_REAL_CHROME_E2E=1 ./scripts/run-e2e.sh</code> passed using a temporary Python 3.11 shim because the host <code>python3</code> is Python 3.8 while this repo declares <code>requires-python = "&gt;=3.11"</code>.</li>
+<li><code>python -m pytest -q</code> passed in roughly 13.56 seconds on the local verification venv.</li>
+<li><code>cd extension &amp;&amp; npm test &amp;&amp; npm run build</code> passed in roughly 0.45 seconds for the Node unit/build gate.</li>
+<li>Python line coverage tooling is not present in <code>requirements-dev.txt</code>; adding it would introduce a new dependency and a threshold choice without historical trend data.</li>
+<li>The generated inventory now observes 111 static tests across 23 files after the ticket 013 UI smoke coverage.</li>
 </ul>
-<h2 id="when-to-create-or-supersede-an-adr">When to create or supersede an ADR</h2>
-<p>Create or supersede an ADR when a change affects:</p>
-<ul>
-<li>component boundaries or ownership;</li>
-<li>Chrome extension ↔ WSL daemon interfaces;</li>
-<li>API, CLI, schema, event, or storage contracts;</li>
-<li>capture policy, redaction, security, privacy, or deletion semantics;</li>
-<li>major dependency/platform/provider choices;</li>
-<li>media sidecar, worker, cache, lifecycle, or recall architecture;</li>
-<li>verification strategy or real-browser e2e boundary;</li>
-<li>recurring Hermes/agent workflow for maintaining this repo.</li>
-</ul>
-<p>Do not create an ADR for trivial bug fixes, mechanical refactors, test-only cleanup, or completed-task logs.</p>
-<h2 id="status-values">Status values</h2>
-<table>
-<thead>
-<tr>
-<th>Status</th>
-<th>Meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>proposed</code></td>
-<td>Drafted but not yet accepted by Operator / project direction.</td>
-</tr>
-<tr>
-<td><code>accepted</code></td>
-<td>Active decision; future changes should comply.</td>
-</tr>
-<tr>
-<td><code>rejected</code></td>
-<td>Considered and intentionally not chosen.</td>
-</tr>
-<tr>
-<td><code>deprecated</code></td>
-<td>Still historical, but no longer recommended.</td>
-</tr>
-<tr>
-<td><code>superseded</code></td>
-<td>Replaced by a later ADR; keep the old record intact and link both ways.</td>
-</tr>
-</tbody>
-</table>
-<h2 id="agent-workflow">Agent workflow</h2>
+<h2 id="decision">Decision</h2>
+<p>Use <code>scripts/generate_test_inventory.py --check</code> as the hard low-cost coverage/traceability gate for now:</p>
 <ol>
-<li>Inspect <code>AGENTS.md</code>, <code>docs/README.md</code>, and this ADR index before architecture-impacting work.</li>
-<li>Search existing ADRs for related decisions.</li>
-<li>If changing an accepted decision, create a new ADR and mark the older one <code>superseded</code>; do not materially rewrite accepted history.</li>
-<li>Keep ADRs short and cite real repo evidence, commands, tests, issues, commits, or research docs.</li>
-<li>Record verification/validation evidence after checks run.</li>
-<li>Commit the ADR with the implementation/design slice it governs.</li>
+<li>Continue enforcing the generated static source inventory in <code>docs/TESTS.md</code>.</li>
+<li>Add a generated traceability report that cross-checks every <code>REQ-*</code> row in <code>docs/ARCHITECTURE.md</code> against <code>docs/test-plan.md</code>.</li>
+<li>Fail the gate when <code>docs/test-plan.md</code> omits an architecture requirement row.</li>
+<li>Fail the gate when file/test references in <code>docs/test-plan.md</code> point to paths that no longer exist.</li>
+<li>Keep line/branch coverage thresholds advisory/deferred until the project has explicit coverage tooling and baseline trend data.</li>
 </ol>
-<h2 id="template">Template</h2>
-<p>Use <a href="template.html"><code>template.md</code></a> for new ADRs.</p>
+<h2 id="consequences">Consequences</h2>
+<ul>
+<li>Future architecture requirements must be reflected in <code>docs/test-plan.md</code> or the inventory gate fails.</li>
+<li>Test-plan references cannot silently drift to deleted/renamed test files.</li>
+<li>The gate remains cheap and deterministic; it does not execute browser captures or read runtime data.</li>
+<li>This is not a full statement-coverage metric. It is a traceability guard plus static test inventory until a later ADR promotes line/branch coverage thresholds.</li>
+</ul>
+<h2 id="verification-validation">Verification / validation</h2>
+<ul>
+<li>The focused generator tests prove pass/fail behavior for successful traceability, missing requirements, and unresolved test references.</li>
+<li><code>docs/TESTS.md</code> now includes the generated traceability report.</li>
+<li>The gate output is redaction-safe because it scans repo Markdown and test source names only; it does not inspect runtime capture content.</li>
+</ul>
+<h2 id="references">References</h2>
+<ul>
+<li><code>docs/TESTS.md</code></li>
+<li><code>docs/test-plan.md</code></li>
+<li><code>scripts/generate_test_inventory.py</code></li>
+<li><code>docs/wayfinder/durability-performance-coverage/tickets/014-coverage-gates-traceability.md</code></li>
+</ul>
   </article>
   <div class="md-footer">
-    Rendered from <code>docs/architecture/adr/README.md</code> — the Markdown file is the canonical,
+    Rendered from <code>docs/architecture/adr/0020-enforce-static-requirement-traceability-gate.md</code> — the Markdown file is the canonical,
     version-controlled source. This HTML is generated (regenerate with
     <code>scripts/render_docs.py</code>); do not hand-edit.
   </div>
