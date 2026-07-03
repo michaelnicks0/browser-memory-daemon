@@ -5,7 +5,7 @@
 > **Runtime:** Python **3.11+** (`pyproject.toml` requires `>=3.11`). Use `BMD_PYTHON=/path/to/python3.11` when the host `python3` is older.
 
 <!-- BEGIN GENERATED:inventory-summary -->
-> **Current inventory:** 96 static test functions across 17 files — 73 daemon pytest tests + 23 extension node:test tests.
+> **Current inventory:** 100 static test functions across 18 files — 73 daemon pytest tests + 27 extension node:test tests.
 <!-- END GENERATED:inventory-summary -->
 
 ---
@@ -66,7 +66,7 @@ Use `--runtime-root PATH` only for explicit fixture roots; do not point the stre
 ## Generated test inventory
 
 <!-- BEGIN GENERATED:audit-run -->
-Latest inventory: **96 static test functions** across **17 files** (73 daemon pytest; 23 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
+Latest inventory: **100 static test functions** across **18 files** (73 daemon pytest; 27 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
 <!-- END GENERATED:audit-run -->
 
 ### Per-file counts
@@ -90,8 +90,9 @@ Latest inventory: **96 static test functions** across **17 files** (73 daemon py
 | `extension/tests/unit/extractor.test.js` | node:test | 11 |
 | `extension/tests/unit/media_queue.test.js` | node:test | 5 |
 | `extension/tests/unit/queue.test.js` | node:test | 1 |
+| `extension/tests/unit/service_worker.test.js` | node:test | 4 |
 | `extension/tests/unit/shared.test.js` | node:test | 2 |
-| **Total** |  | **96** |
+| **Total** |  | **100** |
 <!-- END GENERATED:per-file-counts -->
 
 <details>
@@ -194,6 +195,10 @@ Latest inventory: **96 static test functions** across **17 files** (73 daemon py
 | `extension/tests/unit/media_queue.test.js` | node:test | `(module)` | `stale fetching and uploading tasks become due after processing window` | 32 | Stale fetching and uploading tasks become due after processing window. |
 | `extension/tests/unit/media_queue.test.js` | node:test | `(module)` | `normalizeTask requires stable artifact id for queue callers` | 40 | NormalizeTask requires stable artifact id for queue callers. |
 | `extension/tests/unit/queue.test.js` | node:test | `(module)` | `queue preserves FIFO order` | 4 | Queue preserves FIFO order. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker preserves queued captures while daemon is down and drains them after reload` | 183 | Service worker preserves queued captures while daemon is down and drains them after reload. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker skips missing token and pause without mutating capture queue, then resumes` | 219 | Service worker skips missing token and pause without mutating capture queue, then resumes. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker injection respects stale token, pause, and strict URL controls` | 250 | Service worker injection respects stale token, pause, and strict URL controls. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker media upload retries keep fetched blob until successful upload` | 279 | Service worker media upload retries keep fetched blob until successful upload. |
 | `extension/tests/unit/shared.test.js` | node:test | `(module)` | `daemon URL normalization strips trailing slashes` | 4 | Daemon URL normalization strips trailing slashes. |
 | `extension/tests/unit/shared.test.js` | node:test | `(module)` | `auth headers include bearer token` | 9 | Auth headers include bearer token. |
 <!-- END GENERATED:test-case-inventory -->

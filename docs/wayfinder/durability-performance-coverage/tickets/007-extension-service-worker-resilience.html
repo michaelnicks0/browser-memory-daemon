@@ -126,7 +126,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
   <article class="md-body">
 <h1 id="expand-extension-service-worker-resilience-coverage">Expand extension service-worker resilience coverage</h1>
 <h2 id="status">Status</h2>
-<p>open</p>
+<p>closed</p>
 <h2 id="question">Question</h2>
 <p>Can extension tests cover service-worker resilience when the daemon is down, the token/config is stale, capture is paused/resumed, queues persist across worker lifetimes, and media uploads retry without data loss?</p>
 <h2 id="type">Type</h2>
@@ -146,9 +146,23 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>Blocked by: none; ticket 001 preferred.</li>
 </ul>
 <h2 id="resolution">Resolution</h2>
-<p>Pending.</p>
+<p>Closed in this slice. Added a Node <code>vm</code> service-worker harness around the real <code>extension/src/service_worker.js</code> with mocked Chrome extension APIs, storage, fetch, and the media IndexedDB queue implementation. Coverage now proves:</p>
+<ul>
+<li>daemon-down capture attempts remain in <code>captureQueue</code> and drain after a simulated service-worker reload;</li>
+<li>missing-token and paused states skip new capture queue mutation, then resume cleanly;</li>
+<li>injection honors stale-token, paused, already-injected, and strict URL-block controls;</li>
+<li>browser-side media upload retries preserve fetched blobs until a later successful upload deletes the task/blob.</li>
+</ul>
+<p>Evidence:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">cd </span>extension<span style="color: #F8F8F2"> </span><span style="color: #FF4689">&amp;&amp;</span><span style="color: #F8F8F2"> </span>npm<span style="color: #F8F8F2"> test</span>
+<span style="color: #959077"># 27 node:test tests passed</span>
+
+<span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span>/tmp/browser-memory-daemon-verify-venv/bin/python<span style="color: #F8F8F2"> </span>./scripts/run-e2e.sh
+<span style="color: #959077"># pytest passed; extension node:test 27/27; extension build; real Chrome for Testing e2e ok; secret scan passed</span>
+</code></pre></div>
+
 <h2 id="new-tickets-fog-updates">New tickets / fog updates</h2>
-<p>Pending. If test harnessing Chrome extension APIs becomes large, split a separate harness ticket before adding many behavior tests.</p>
+<p>No new tickets. The harness stayed small and local to <code>extension/tests/unit/service_worker.test.js</code>; no separate harness ticket is needed.</p>
   </article>
   <div class="md-footer">
     Rendered from <code>docs/wayfinder/durability-performance-coverage/tickets/007-extension-service-worker-resilience.md</code> — the Markdown file is the canonical,

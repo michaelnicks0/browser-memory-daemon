@@ -132,7 +132,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </blockquote>
 <!-- BEGIN GENERATED:inventory-summary -->
 <blockquote>
-<p><strong>Current inventory:</strong> 96 static test functions across 17 files — 73 daemon pytest tests + 23 extension node:test tests.</p>
+<p><strong>Current inventory:</strong> 100 static test functions across 18 files — 73 daemon pytest tests + 27 extension node:test tests.</p>
 </blockquote>
 <!-- END GENERATED:inventory-summary -->
 
@@ -180,7 +180,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <hr />
 <h2 id="generated-test-inventory">Generated test inventory</h2>
 <!-- BEGIN GENERATED:audit-run -->
-<p>Latest inventory: <strong>96 static test functions</strong> across <strong>17 files</strong> (73 daemon pytest; 23 extension node:test). Regenerate with <code>python3.11 scripts/generate_test_inventory.py --write</code>; enforce with <code>--check</code>. Counts are source-level test functions, not pytest parametrized case expansions.</p>
+<p>Latest inventory: <strong>100 static test functions</strong> across <strong>18 files</strong> (73 daemon pytest; 27 extension node:test). Regenerate with <code>python3.11 scripts/generate_test_inventory.py --write</code>; enforce with <code>--check</code>. Counts are source-level test functions, not pytest parametrized case expansions.</p>
 <!-- END GENERATED:audit-run -->
 
 <h3 id="per-file-counts">Per-file counts</h3>
@@ -275,6 +275,11 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <td style="text-align: right;">1</td>
 </tr>
 <tr>
+<td><code>extension/tests/unit/service_worker.test.js</code></td>
+<td>node:test</td>
+<td style="text-align: right;">4</td>
+</tr>
+<tr>
 <td><code>extension/tests/unit/shared.test.js</code></td>
 <td>node:test</td>
 <td style="text-align: right;">2</td>
@@ -282,7 +287,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <tr>
 <td><strong>Total</strong></td>
 <td></td>
-<td style="text-align: right;"><strong>96</strong></td>
+<td style="text-align: right;"><strong>100</strong></td>
 </tr>
 </tbody>
 </table>
@@ -388,6 +393,10 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 | `extension/tests/unit/media_queue.test.js` | node:test | `(module)` | `stale fetching and uploading tasks become due after processing window` | 32 | Stale fetching and uploading tasks become due after processing window. |
 | `extension/tests/unit/media_queue.test.js` | node:test | `(module)` | `normalizeTask requires stable artifact id for queue callers` | 40 | NormalizeTask requires stable artifact id for queue callers. |
 | `extension/tests/unit/queue.test.js` | node:test | `(module)` | `queue preserves FIFO order` | 4 | Queue preserves FIFO order. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker preserves queued captures while daemon is down and drains them after reload` | 183 | Service worker preserves queued captures while daemon is down and drains them after reload. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker skips missing token and pause without mutating capture queue, then resumes` | 219 | Service worker skips missing token and pause without mutating capture queue, then resumes. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker injection respects stale token, pause, and strict URL controls` | 250 | Service worker injection respects stale token, pause, and strict URL controls. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker media upload retries keep fetched blob until successful upload` | 279 | Service worker media upload retries keep fetched blob until successful upload. |
 | `extension/tests/unit/shared.test.js` | node:test | `(module)` | `daemon URL normalization strips trailing slashes` | 4 | Daemon URL normalization strips trailing slashes. |
 | `extension/tests/unit/shared.test.js` | node:test | `(module)` | `auth headers include bearer token` | 9 | Auth headers include bearer token. |
 <!-- END GENERATED:test-case-inventory -->

@@ -227,6 +227,8 @@ Popup controls:
 | Block current domain/prefix | Adds a daemon block rule. Localhost pages with explicit ports use URL-prefix rules so one local app does not block every loopback page. |
 | Forget current domain | Deletes stored memory for the current domain after confirmation. |
 
+Resilience behavior: if the daemon is temporarily unavailable, successfully queued captures stay in extension storage and are retried on the next queue drain/service-worker lifetime. Missing-token or paused states skip new capture queue mutation; resume capture after restoring the token or toggling pause off. Browser-side media uploads keep fetched blobs in IndexedDB until upload succeeds or the retry budget is exhausted.
+
 Options page controls:
 
 | Field | Meaning |

@@ -389,6 +389,7 @@ systemctl<span style="color: #F8F8F2"> </span>--user<span style="color: #F8F8F2"
 </tr>
 </tbody>
 </table>
+<p>Resilience behavior: if the daemon is temporarily unavailable, successfully queued captures stay in extension storage and are retried on the next queue drain/service-worker lifetime. Missing-token or paused states skip new capture queue mutation; resume capture after restoring the token or toggling pause off. Browser-side media uploads keep fetched blobs in IndexedDB until upload succeeds or the retry budget is exhausted.</p>
 <p>Options page controls:</p>
 <table>
 <thead>

@@ -150,7 +150,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>REQ-003 service worker bridge</td>
-<td>real Chrome e2e verifies service-worker-owned injection/capture.</td>
+<td><code>extension/tests/unit/service_worker.test.js</code> covers service-worker queue/pause/token/rule resilience; real Chrome e2e verifies service-worker-owned injection/capture.</td>
 </tr>
 <tr>
 <td>REQ-004 auth + loopback</td>
@@ -230,7 +230,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>REQ-022 durable media sidecars</td>
-<td><code>test_media_worker.py</code>, <code>media_queue.test.js</code>, HTTP raw blob/purge tests, real Chrome media e2e.</td>
+<td><code>test_media_worker.py</code>, <code>media_queue.test.js</code>, <code>service_worker.test.js</code> media upload retry coverage, HTTP raw blob/purge tests, real Chrome media e2e.</td>
 </tr>
 </tbody>
 </table>

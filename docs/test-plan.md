@@ -12,7 +12,7 @@
 |---|---|
 | REQ-001 capture | `daemon/tests/e2e/test_http_api.py` synthetic capture; `scripts/run-real-chrome-e2e.sh` verifies Windows Chrome capture. |
 | REQ-002 WSL storage | tests use runtime roots outside repo; runtime paths ignored; doctor exposes runtime paths. |
-| REQ-003 service worker bridge | real Chrome e2e verifies service-worker-owned injection/capture. |
+| REQ-003 service worker bridge | `extension/tests/unit/service_worker.test.js` covers service-worker queue/pause/token/rule resilience; real Chrome e2e verifies service-worker-owned injection/capture. |
 | REQ-004 auth + loopback | HTTP unauthorized tests; bind defaults in config; Windows PowerShell health checks. |
 | REQ-005 adjustable policy modes | `daemon/tests/unit/test_policy.py`; `extension/tests/unit/extractor.test.js`. |
 | REQ-006 all-mode no built-in URL filtering/redaction | daemon integration stores unredacted fixture secrets; extension unit tests verify built-in URL filters are off while hidden/form/editable/script/style/no-script DOM text is skipped; real Chrome e2e default expects banking/local fixtures searchable. |
@@ -32,7 +32,7 @@
 | REQ-019 doctor | `/doctor` and CLI doctor verify DB integrity, FTS consistency, paths, counts, and policy mode. |
 | REQ-020 artifact boundary | `.gitignore` and `scripts/secret-scan.sh`. |
 | REQ-021 Windows browser e2e | `scripts/run-real-chrome-e2e.sh` synthetic allowed/SPA/banking/local scenarios plus public media, cookie-required media, and synthetic `blob:` video artifacts. |
-| REQ-022 durable media sidecars | `test_media_worker.py`, `media_queue.test.js`, HTTP raw blob/purge tests, real Chrome media e2e. |
+| REQ-022 durable media sidecars | `test_media_worker.py`, `media_queue.test.js`, `service_worker.test.js` media upload retry coverage, HTTP raw blob/purge tests, real Chrome media e2e. |
 
 ---
 
