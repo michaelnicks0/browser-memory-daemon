@@ -12,11 +12,10 @@
 
 ## Decisions so far
 
-- None in this Wayfinder map yet. Existing ADR decisions listed above are context, not new decisions from this program.
+- [001 — Establish reliability/performance/coverage baseline](tickets/001-baseline-failure-budget.md) — baseline captured 2026-07-03 UTC: full gate passed, live daily-driver services and DB integrity were OK, media-worker journal history exposed a resolved no-space start-failure class, and read-model endpoints need deterministic benchmark budgets.
 
 ## Frontier
 
-- [001 — Establish reliability/performance/coverage baseline](tickets/001-baseline-failure-budget.md) — measure the current state and define explicit failure/performance/test budgets before broad edits.
 - [002 — Add daily-driver health snapshot command](tickets/002-daily-driver-health-snapshot.md) — create one redaction-safe operator command/report for services, loopback, journals, DB freshness, queues, and extension artifact state.
 - [003 — Build deterministic concurrency stress harness](tickets/003-concurrency-stress-harness.md) — produce a repeatable load test for captures, lifecycle events, search, media uploads, and media-worker passes.
 - [005 — Expand HTTP API contract coverage](tickets/005-http-api-contract-coverage.md) — cover auth, malformed input, method/route errors, limits, and response consistency across endpoints.
@@ -25,14 +24,15 @@
 - [008 — Expand real Chrome e2e matrix](tickets/008-real-chrome-e2e-matrix.md) — turn the real-browser authority into a broader policy/control/surface matrix without touching daily Chrome.
 - [009 — Add performance benchmark harness and budgets](tickets/009-performance-benchmark-harness.md) — measure ingest/search/timeline/detail/media-worker behavior on synthetic scalable datasets.
 - [011 — Harden installer/token/Windows artifact consistency](tickets/011-installer-token-artifact-consistency.md) — make daily-driver install/refresh more testable and self-validating.
+- [012 — Design retention, compaction, and backup posture](tickets/012-retention-compaction-backup-design.md) — now unblocked by the baseline; use current DB/media/headroom evidence plus explicit operator thresholds.
 - [013 — Add local UI smoke coverage](tickets/013-ui-dashboard-smoke-coverage.md) — add dashboard bootstrap/API rendering checks beyond static asset serving.
+- [015 — Add storage-headroom and service-start failure budget checks](tickets/015-storage-headroom-service-start-budget.md) — turn the no-space systemd failure class into preflight/health checks and a journal budget.
 
 ## Blocked
 
 - [004 — Harden SQLite write-path policy](tickets/004-sqlite-write-path-hardening.md) — blocked by ticket 003's stress harness so fixes have a tight red/green loop.
 - [010 — Optimize read-model query/index performance](tickets/010-read-model-query-performance.md) — blocked by ticket 009's benchmark harness and budgets.
-- [012 — Design retention, compaction, and backup posture](tickets/012-retention-compaction-backup-design.md) — blocked by ticket 001 baseline; likely ADR-worthy.
-- [014 — Add coverage gates and requirements traceability enforcement](tickets/014-coverage-gates-traceability.md) — blocked by ticket 001 baseline and a first wave of coverage expansion tickets.
+- [014 — Add coverage gates and requirements traceability enforcement](tickets/014-coverage-gates-traceability.md) — blocked by at least one coverage-expansion ticket; ticket 001 baseline is complete.
 
 ## Fog
 
@@ -45,10 +45,12 @@
 
 ## Handoff
 
-Recommended next ticket: **001 — Establish reliability/performance/coverage baseline**.
+Open frontier tickets: 11. Blocked tickets: 3.
+
+Recommended next ticket: **002 — Add daily-driver health snapshot command**. The baseline showed that `active` services and `/doctor` success are not enough; the operator needs one redaction-safe command that also reports journal churn, queue state, and storage headroom.
 
 Copy into a fresh session:
 
 ```text
-Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/001-baseline-failure-budget.md.
+Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/002-daily-driver-health-snapshot.md.
 ```

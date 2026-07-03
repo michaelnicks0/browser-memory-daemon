@@ -17,6 +17,7 @@ task
 - `daemon/src/browser_memory_daemon/ops.py`
 - `daemon/src/browser_memory_daemon/cli.py`
 - Recent operational finding: service `active` was insufficient; journal/restart churn and `database is locked` had to be checked.
+- Ticket 001 baseline: service `active` plus `/doctor ok` still missed 7-day media-worker journal churn from no-space start failures; include journal counts, queue state, and filesystem headroom without dumping captured content.
 
 ## Blocks / blocked by
 

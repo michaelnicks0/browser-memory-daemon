@@ -139,6 +139,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li><code>daemon/src/browser_memory_daemon/ops.py</code></li>
 <li><code>daemon/src/browser_memory_daemon/cli.py</code></li>
 <li>Recent operational finding: service <code>active</code> was insufficient; journal/restart churn and <code>database is locked</code> had to be checked.</li>
+<li>Ticket 001 baseline: service <code>active</code> plus <code>/doctor ok</code> still missed 7-day media-worker journal churn from no-space start failures; include journal counts, queue state, and filesystem headroom without dumping captured content.</li>
 </ul>
 <h2 id="blocks-blocked-by">Blocks / blocked by</h2>
 <ul>

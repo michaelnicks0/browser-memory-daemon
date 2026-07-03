@@ -1,7 +1,7 @@
 # Design retention, compaction, and backup posture
 
 ## Status
-blocked
+open
 
 ## Question
 What retention, compaction, export, and backup posture should Browser Memory Daemon adopt for long-term high-volume use while preserving local-first recall and deletion semantics?
@@ -21,7 +21,7 @@ research
 ## Blocks / blocked by
 
 - Blocks: retention implementation tickets and any backup/export feature.
-- Blocked by: ticket 001.
+- Blocked by: none. Ticket 001 provides current DB/media/headroom evidence; likely ADR-worthy.
 
 ## Resolution
 

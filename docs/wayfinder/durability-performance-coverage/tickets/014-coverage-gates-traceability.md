@@ -22,7 +22,7 @@ task
 ## Blocks / blocked by
 
 - Blocks: future regression policy and release gates.
-- Blocked by: ticket 001 and at least one coverage-expansion ticket.
+- Blocked by: at least one coverage-expansion ticket; ticket 001 baseline is complete.
 
 ## Resolution
 

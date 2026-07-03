@@ -21,7 +21,7 @@ prototype
 ## Blocks / blocked by
 
 - Blocks: ticket 010 query/index optimization and any performance gate.
-- Blocked by: ticket 001 baseline.
+- Blocked by: none. Ticket 001 provides interim live-system guardrails; this ticket should replace them with deterministic synthetic benchmark output.
 
 ## Resolution
 

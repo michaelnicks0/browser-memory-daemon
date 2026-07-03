@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>001-Baseline-Failure-Budget — browser-memory-daemon</title>
+<title>015-Storage-Headroom-Service-Start-Budget — browser-memory-daemon</title>
 <style>
 :root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
@@ -121,220 +121,38 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <div class="wrap">
   <div class="docbar">
     <a class="home" href="../../../../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
-    <span class="crumb">/ <b>docs/wayfinder/durability-performance-coverage/tickets/001-baseline-failure-budget.md</b></span>
+    <span class="crumb">/ <b>docs/wayfinder/durability-performance-coverage/tickets/015-storage-headroom-service-start-budget.md</b></span>
   </div>
   <article class="md-body">
-<h1 id="establish-reliabilityperformancecoverage-baseline">Establish reliability/performance/coverage baseline</h1>
+<h1 id="add-storage-headroom-and-service-start-failure-budget-checks">Add storage-headroom and service-start failure budget checks</h1>
 <h2 id="status">Status</h2>
-<p>closed</p>
+<p>open</p>
 <h2 id="question">Question</h2>
-<p>What is the current measured baseline for daily-driver reliability, performance, and test coverage, and what explicit budgets should future tickets prove against?</p>
+<p>Can Browser Memory Daemon detect low filesystem/runtime headroom and service-start failure churn before the daily-driver media worker reaches systemd <code>No space left on device</code> / <code>resources</code> failures?</p>
 <h2 id="type">Type</h2>
-<p>research</p>
+<p>task</p>
 <h2 id="inputs-links">Inputs / links</h2>
 <ul>
-<li><code>docs/STATUS.md</code></li>
-<li><code>docs/TESTS.md</code></li>
-<li><code>docs/test-plan.md</code></li>
-<li><code>docs/ARCHITECTURE.md</code></li>
-<li><code>systemctl --user</code> service state for <code>browser-memory-daemon.service</code> and <code>browser-memory-media-worker.service</code></li>
-<li><code>journalctl --user</code> recent error history</li>
-<li>SQLite aggregate/freshness probes only; do not dump captured content</li>
-<li>Current tests: <code>BMD_PYTHON=/tmp/browser-memory-daemon-verify-venv/bin/python ./scripts/run-e2e.sh</code></li>
+<li>Ticket 001 baseline: 7-day media-worker journal history contained 919 warning-or-higher lines, dominated by 900 resolved systemd start-failure lines from 2026-06-27 to 2026-06-28.</li>
+<li><code>scripts/install-daily-driver.sh</code></li>
+<li><code>docs/TESTS.md#daily-driver-smoke-checklist</code></li>
+<li><code>docs/USER_GUIDE.md</code></li>
+<li><code>daemon/src/browser_memory_daemon/ops.py</code></li>
+<li><code>daemon/src/browser_memory_daemon/cli.py</code></li>
+<li>Current runtime locations: WSL data/state/config roots and Windows extension artifact root.</li>
 </ul>
 <h2 id="blocks-blocked-by">Blocks / blocked by</h2>
 <ul>
-<li>Blocks: most implementation tickets in this map, especially tickets 003, 009, 012, and 014.</li>
-<li>Blocked by: none.</li>
+<li>Blocks: hard operational alerting budgets, installer safety, and long-running soak gates.</li>
+<li>Blocked by: none. Coordinate with ticket 002 if the health snapshot command is implemented first.</li>
 </ul>
 <h2 id="resolution">Resolution</h2>
-<p>Resolved 2026-07-03 UTC against repo HEAD on <code>main</code>. Probes were redaction-safe: no captured page text, snippets, cookies, tokens, or raw daily-driver URLs are recorded here.</p>
-<h3 id="current-reliability-baseline">Current reliability baseline</h3>
-<table>
-<thead>
-<tr>
-<th>Area</th>
-<th style="text-align: right;">Measured baseline</th>
-<th>Budget for future tickets</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Daemon service</td>
-<td style="text-align: right;"><code>browser-memory-daemon.service</code> is enabled/active/running; <code>NRestarts=0</code>; current process started 2026-07-02 20:19:49 EDT.</td>
-<td>Service must be active after verification; no restart-count increase during the verification window unless the ticket explicitly restarts it.</td>
-</tr>
-<tr>
-<td>Media-worker service</td>
-<td style="text-align: right;"><code>browser-memory-media-worker.service</code> is enabled/active/running; <code>NRestarts=0</code>; current process started 2026-07-02 20:19:49 EDT.</td>
-<td>Same as daemon, plus queue budgets below.</td>
-</tr>
-<tr>
-<td>Loopback health</td>
-<td style="text-align: right;"><code>GET /health</code> returned <code>ok=true</code>, <code>capture_enabled=true</code>, <code>policy_mode=all</code>; elapsed 0.055s for the single probe.</td>
-<td>Health must stay <code>ok=true</code>; policy mode changes must be explicit.</td>
-</tr>
-<tr>
-<td>Doctor</td>
-<td style="text-align: right;">CLI <code>doctor</code> exited 0 in 3.15s; <code>ok=true</code>, SQLite <code>integrity_check=ok</code>, <code>chunks_missing_fts=0</code>.</td>
-<td>Doctor must stay green; integrity and FTS-missing budgets are zero.</td>
-</tr>
-<tr>
-<td>Journal history, 7 days</td>
-<td style="text-align: right;">Daemon: 2 warnings, 0 errors. Media worker: 919 warning-or-higher lines: 300 errors and 619 warnings. Dominant class was a resolved 2026-06-27 to 2026-06-28 systemd start failure: <code>No space left on device</code> / <code>resources</code> / <code>Failed to start Browser Memory Media Worker</code> (900 lines).</td>
-<td>Fresh verification windows should allow 0 new priority 0-3 service errors. Known historical warning debt must not grow. Add a health/preflight budget for storage headroom and service-start failures.</td>
-</tr>
-<tr>
-<td>Filesystem headroom at measurement</td>
-<td style="text-align: right;">WSL <code>/</code>: 755G size, 240G used, 477G free, 34% used. Windows <code>C:</code>: 1.7T size, 880G used, 797G free, 53% used.</td>
-<td>Health/installer checks should fail or warn before systemd reports no-space service-start failures. Exact thresholds belong in ticket 015 / retention work.</td>
-</tr>
-</tbody>
-</table>
-<h3 id="current-daily-driver-db-and-queue-baseline">Current daily-driver DB and queue baseline</h3>
-<table>
-<thead>
-<tr>
-<th>Area</th>
-<th style="text-align: right;">Measured baseline</th>
-<th>Budget for future tickets</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>DB size</td>
-<td style="text-align: right;">367,779,840 bytes / 350.74 MiB; WAL 0 bytes.</td>
-<td>No uncontrolled DB growth in tests; live growth needs ticket 012 retention thresholds before a hard cap.</td>
-</tr>
-<tr>
-<td>Text/media storage</td>
-<td style="text-align: right;">Clean text: 4,820 files, 23,551,779 bytes / 22.46 MiB. Media: 61,393 files, 12,389,528,151 bytes / 11.54 GiB.</td>
-<td>Media cache must remain below configured gates; full DB/text retention budget is deferred to ticket 012.</td>
-</tr>
-<tr>
-<td>Table counts</td>
-<td style="text-align: right;">documents 1,851; visits 3,945; visit_events 9,697; snapshots 4,820; chunks/chunks_fts 15,651; media_artifacts 117,201; media_fetch_tasks 115,005; audit_events 241,672.</td>
-<td>Schema/FTS counts must remain internally consistent; <code>chunks_missing_fts=0</code> is a hard budget.</td>
-</tr>
-<tr>
-<td>Freshness</td>
-<td style="text-align: right;">Latest visit/snapshot 2026-07-03T00:44:25.203Z; latest visit event 2026-07-03T00:44:39.093Z; latest media artifact 2026-07-03 00:40:10; baseline probe timestamp 2026-07-03T00:47:21Z.</td>
-<td>Freshness checks should compare against expected operator activity, not wall-clock alone. Ticket 002 should surface this without dumping captured content.</td>
-</tr>
-<tr>
-<td>Media artifacts by status</td>
-<td style="text-align: right;">stored 60,974; purged 53,389; referenced 1,849; skipped 611; expired 320; retrying 36; failed 22.</td>
-<td>Terminal/expected statuses need classification coverage; unexplained <code>failed</code> and <code>retrying</code> should not grow without an explicit reason.</td>
-</tr>
-<tr>
-<td>Media tasks by status</td>
-<td style="text-align: right;">succeeded 113,413; skipped 1,518; retrying 35; leased 22; failed 17. Due pending/retrying tasks: 31. Stale leases: 0.</td>
-<td>Stale leases budget is zero. Retry/failed/due counts may exist for remote/source failures, but should be trended and classified by tickets 002, 006, and 015.</td>
-</tr>
-</tbody>
-</table>
-<h3 id="current-performance-baseline">Current performance baseline</h3>
-<p>These are guardrails from one local WSL/Windows run, not a deterministic benchmark suite. Ticket 009 should replace them with synthetic, repeatable machine-readable budgets.</p>
-<table>
-<thead>
-<tr>
-<th>Probe</th>
-<th style="text-align: right;">Measured baseline</th>
-<th style="text-align: right;">Interim budget</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Full local gate: <code>BMD_PYTHON=/tmp/browser-memory-daemon-verify-venv/bin/python ./scripts/run-e2e.sh</code></td>
-<td style="text-align: right;">pass, 45.28s</td>
-<td style="text-align: right;">pass, &lt;= 90s unless environment explains variance</td>
-</tr>
-<tr>
-<td>Daemon pytest: <code>/tmp/browser-memory-daemon-verify-venv/bin/python -m pytest -q</code></td>
-<td style="text-align: right;">pass, 59 tests, 26.41s</td>
-<td style="text-align: right;">pass, &lt;= 60s</td>
-</tr>
-<tr>
-<td>Extension <code>npm test &amp;&amp; npm run build</code></td>
-<td style="text-align: right;">pass, 23 tests, 0.43s</td>
-<td style="text-align: right;">pass, &lt;= 2s</td>
-</tr>
-<tr>
-<td>Real Chrome e2e</td>
-<td style="text-align: right;">pass, 16.83s</td>
-<td style="text-align: right;">pass, &lt;= 45s</td>
-</tr>
-<tr>
-<td><code>/health</code> live loopback, 7 samples</td>
-<td style="text-align: right;">median 1.10ms; observed p95 1.34ms</td>
-<td style="text-align: right;">p95 &lt;= 50ms</td>
-</tr>
-<tr>
-<td><code>/policy/rules</code>, 7 samples</td>
-<td style="text-align: right;">median 2.83ms; observed p95 3.03ms</td>
-<td style="text-align: right;">p95 &lt;= 50ms</td>
-</tr>
-<tr>
-<td><code>/search</code> no-hit, 7 samples</td>
-<td style="text-align: right;">median 14.23ms; observed p95 14.65ms</td>
-<td style="text-align: right;">p95 &lt;= 50ms</td>
-</tr>
-<tr>
-<td><code>/recent?limit=25</code>, 7 samples</td>
-<td style="text-align: right;">median 373.69ms; observed p95 383.47ms</td>
-<td style="text-align: right;">p95 &lt;= 1s</td>
-</tr>
-<tr>
-<td><code>/timeline?limit=100</code>, 7 samples</td>
-<td style="text-align: right;">median 1,391.96ms; observed p95 1,404.84ms</td>
-<td style="text-align: right;">p95 &lt;= 3s</td>
-</tr>
-<tr>
-<td><code>/doctor</code>, 7 samples</td>
-<td style="text-align: right;">median 3,232.69ms; observed p95 3,275.98ms</td>
-<td style="text-align: right;">p95 &lt;= 6s</td>
-</tr>
-</tbody>
-</table>
-<h3 id="current-coverage-baseline">Current coverage baseline</h3>
-<table>
-<thead>
-<tr>
-<th>Area</th>
-<th style="text-align: right;">Measured baseline</th>
-<th>Budget for future tickets</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Static test inventory</td>
-<td style="text-align: right;">82 test functions across 15 files: 59 daemon pytest tests and 23 extension <code>node:test</code> tests.</td>
-<td>Inventory must not decrease without a deliberate explanation; behavior changes need focused tests.</td>
-</tr>
-<tr>
-<td>Source/test line snapshot</td>
-<td style="text-align: right;">Daemon source: 18 files / 4,360 total lines; daemon tests: 10 files / 1,939 total lines. Extension source: 9 files / 2,138 total lines; extension tests: 5 files / 371 total lines.</td>
-<td>Use as a coarse shape check only; real measured line/branch coverage is deferred to ticket 014 after first-wave coverage expansion.</td>
-</tr>
-<tr>
-<td>Requirement trace</td>
-<td style="text-align: right;"><code>docs/test-plan.md</code> maps REQ-001 through REQ-022 to current evidence.</td>
-<td>New or changed requirements must update <code>docs/test-plan.md</code> and <code>docs/TESTS.md</code> inventory/gates.</td>
-</tr>
-</tbody>
-</table>
-<h3 id="summary-decision">Summary decision</h3>
-<p>The baseline is good enough to unblock targeted durability/performance/coverage work, but not good enough to declare a hard release gate yet. Future tickets should prove against the hard correctness budgets now, use the performance budgets as interim guardrails, and move repeatable benchmarking/coverage enforcement into tickets 009 and 014.</p>
+<p>Pending.</p>
 <h2 id="new-tickets-fog-updates">New tickets / fog updates</h2>
-<ul>
-<li>Created <a href="015-storage-headroom-service-start-budget.html">015 — Add storage-headroom and service-start failure budget checks</a> for the dominant media-worker <code>No space left on device</code> / systemd start-failure class.</li>
-<li>Unblocked ticket 012; retention/compaction/backup design now has current DB/media/headroom evidence.</li>
-<li>Ticket 009 remains the path to replace ad hoc live endpoint timings with deterministic synthetic benchmark output.</li>
-<li>Ticket 014 remains blocked by at least one coverage-expansion ticket; this ticket established the inventory baseline but did not add measured line/branch coverage.</li>
-</ul>
+<p>Pending. If this chooses hard disk thresholds, reconcile with ticket 012 retention/compaction/backup design and consider whether an ADR is needed for operator-facing failure semantics.</p>
   </article>
   <div class="md-footer">
-    Rendered from <code>docs/wayfinder/durability-performance-coverage/tickets/001-baseline-failure-budget.md</code> — the Markdown file is the canonical,
+    Rendered from <code>docs/wayfinder/durability-performance-coverage/tickets/015-storage-headroom-service-start-budget.md</code> — the Markdown file is the canonical,
     version-controlled source. This HTML is generated (regenerate with
     <code>scripts/render_docs.py</code>); do not hand-edit.
   </div>

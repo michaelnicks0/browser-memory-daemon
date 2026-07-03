@@ -137,11 +137,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </ul>
 <h2 id="decisions-so-far">Decisions so far</h2>
 <ul>
-<li>None in this Wayfinder map yet. Existing ADR decisions listed above are context, not new decisions from this program.</li>
+<li><a href="tickets/001-baseline-failure-budget.html">001 — Establish reliability/performance/coverage baseline</a> — baseline captured 2026-07-03 UTC: full gate passed, live daily-driver services and DB integrity were OK, media-worker journal history exposed a resolved no-space start-failure class, and read-model endpoints need deterministic benchmark budgets.</li>
 </ul>
 <h2 id="frontier">Frontier</h2>
 <ul>
-<li><a href="tickets/001-baseline-failure-budget.html">001 — Establish reliability/performance/coverage baseline</a> — measure the current state and define explicit failure/performance/test budgets before broad edits.</li>
 <li><a href="tickets/002-daily-driver-health-snapshot.html">002 — Add daily-driver health snapshot command</a> — create one redaction-safe operator command/report for services, loopback, journals, DB freshness, queues, and extension artifact state.</li>
 <li><a href="tickets/003-concurrency-stress-harness.html">003 — Build deterministic concurrency stress harness</a> — produce a repeatable load test for captures, lifecycle events, search, media uploads, and media-worker passes.</li>
 <li><a href="tickets/005-http-api-contract-coverage.html">005 — Expand HTTP API contract coverage</a> — cover auth, malformed input, method/route errors, limits, and response consistency across endpoints.</li>
@@ -150,14 +149,15 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li><a href="tickets/008-real-chrome-e2e-matrix.html">008 — Expand real Chrome e2e matrix</a> — turn the real-browser authority into a broader policy/control/surface matrix without touching daily Chrome.</li>
 <li><a href="tickets/009-performance-benchmark-harness.html">009 — Add performance benchmark harness and budgets</a> — measure ingest/search/timeline/detail/media-worker behavior on synthetic scalable datasets.</li>
 <li><a href="tickets/011-installer-token-artifact-consistency.html">011 — Harden installer/token/Windows artifact consistency</a> — make daily-driver install/refresh more testable and self-validating.</li>
+<li><a href="tickets/012-retention-compaction-backup-design.html">012 — Design retention, compaction, and backup posture</a> — now unblocked by the baseline; use current DB/media/headroom evidence plus explicit operator thresholds.</li>
 <li><a href="tickets/013-ui-dashboard-smoke-coverage.html">013 — Add local UI smoke coverage</a> — add dashboard bootstrap/API rendering checks beyond static asset serving.</li>
+<li><a href="tickets/015-storage-headroom-service-start-budget.html">015 — Add storage-headroom and service-start failure budget checks</a> — turn the no-space systemd failure class into preflight/health checks and a journal budget.</li>
 </ul>
 <h2 id="blocked">Blocked</h2>
 <ul>
 <li><a href="tickets/004-sqlite-write-path-hardening.html">004 — Harden SQLite write-path policy</a> — blocked by ticket 003's stress harness so fixes have a tight red/green loop.</li>
 <li><a href="tickets/010-read-model-query-performance.html">010 — Optimize read-model query/index performance</a> — blocked by ticket 009's benchmark harness and budgets.</li>
-<li><a href="tickets/012-retention-compaction-backup-design.html">012 — Design retention, compaction, and backup posture</a> — blocked by ticket 001 baseline; likely ADR-worthy.</li>
-<li><a href="tickets/014-coverage-gates-traceability.html">014 — Add coverage gates and requirements traceability enforcement</a> — blocked by ticket 001 baseline and a first wave of coverage expansion tickets.</li>
+<li><a href="tickets/014-coverage-gates-traceability.html">014 — Add coverage gates and requirements traceability enforcement</a> — blocked by at least one coverage-expansion ticket; ticket 001 baseline is complete.</li>
 </ul>
 <h2 id="fog">Fog</h2>
 <ul>
@@ -169,9 +169,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>Whether operational alerts should integrate with an external notification channel; remote delivery requires explicit approval.</li>
 </ul>
 <h2 id="handoff">Handoff</h2>
-<p>Recommended next ticket: <strong>001 — Establish reliability/performance/coverage baseline</strong>.</p>
+<p>Open frontier tickets: 11. Blocked tickets: 3.</p>
+<p>Recommended next ticket: <strong>002 — Add daily-driver health snapshot command</strong>. The baseline showed that <code>active</code> services and <code>/doctor</code> success are not enough; the operator needs one redaction-safe command that also reports journal churn, queue state, and storage headroom.</p>
 <p>Copy into a fresh session:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/001-baseline-failure-budget.md.
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/002-daily-driver-health-snapshot.md.
 </code></pre></div>
   </article>
   <div class="md-footer">
