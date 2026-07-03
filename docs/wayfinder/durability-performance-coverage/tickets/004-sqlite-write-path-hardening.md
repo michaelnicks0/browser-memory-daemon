@@ -1,7 +1,7 @@
 # Harden SQLite write-path policy
 
 ## Status
-blocked
+open
 
 ## Question
 After a stress harness exists, which SQLite write paths still need transaction-boundary changes, WAL/busy-timeout policy, idempotent startup/backfill handling, or background-worker isolation to eliminate lock failures under daily-driver load?
@@ -21,7 +21,7 @@ task
 ## Blocks / blocked by
 
 - Blocks: high-confidence durability claim for the daily-driver path.
-- Blocked by: ticket 003.
+- Blocked by: none. Ticket 003 added `./scripts/run-concurrency-stress.sh` as the focused red/green harness.
 
 ## Resolution
 

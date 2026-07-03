@@ -7,17 +7,18 @@
 - **Non-goals for this map:** no cloud vector DB/LLM upload, no default Chrome profile automation, no publishing/pushing, no native-messaging rewrite unless a later ticket proves it is the next bottleneck.
 - **Standing constraints:** runtime data stays under XDG paths, not the repo; captured page text is untrusted evidence; tests must not use Michael's daily Chrome profile; architecture-impacting decisions require `docs/architecture/adr/` inspection and likely an ADR.
 - **Inspected context:** `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/STATUS.md`, `docs/TESTS.md`, `docs/test-plan.md`, `docs/api.md`, `docs/USER_GUIDE.md`, `docs/architecture/adr/README.md`, `scripts/install-daily-driver.sh`, `scripts/run-real-chrome-e2e.sh`, `pyproject.toml`, `extension/package.json`.
-- **Current baseline from inspected docs:** 84 static tests across 16 files: 61 daemon pytest tests and 23 extension `node:test` tests. Source/test line snapshot from ticket 001: daemon source 4,360 LOC vs daemon tests 1,939 LOC; extension source 2,138 LOC vs extension tests 371 LOC.
+- **Current baseline from inspected docs:** 86 static tests across 17 files: 63 daemon pytest tests and 23 extension `node:test` tests. Source/test line snapshot from ticket 001: daemon source 4,360 LOC vs daemon tests 1,939 LOC; extension source 2,138 LOC vs extension tests 371 LOC.
 - **Relevant accepted ADRs:** local-first Windows Chrome ⇄ WSL boundary, text-first SQLite/FTS5 + blobs, durable lazy media sidecars, real Chrome e2e as verification authority, C4 model as canonical architecture, generated docs as derived artifacts.
 
 ## Decisions so far
 
 - [001 — Establish reliability/performance/coverage baseline](tickets/001-baseline-failure-budget.md) — baseline captured 2026-07-03 UTC: full gate passed, live daily-driver services and DB integrity were OK, media-worker journal history exposed a resolved no-space start-failure class, and read-model endpoints need deterministic benchmark budgets.
 - [002 — Add daily-driver health snapshot command](tickets/002-daily-driver-health-snapshot.md) — added `daily-driver-health` plus `scripts/daily-driver-health.sh`, a redaction-safe aggregate over services, loopback, journals, DB freshness, media queue, storage headroom, and extension artifacts.
+- [003 — Build deterministic concurrency stress harness](tickets/003-concurrency-stress-harness.md) — added a temp-runtime stress harness for concurrent captures, lifecycle events, reads, media blob uploads, and media-worker passes against one SQLite DB.
 
 ## Frontier
 
-- [003 — Build deterministic concurrency stress harness](tickets/003-concurrency-stress-harness.md) — produce a repeatable load test for captures, lifecycle events, search, media uploads, and media-worker passes.
+- [004 — Harden SQLite write-path policy](tickets/004-sqlite-write-path-hardening.md) — now unblocked by the stress harness; use it to identify any remaining transaction, WAL/busy-timeout, startup/backfill, or worker-isolation hardening.
 - [005 — Expand HTTP API contract coverage](tickets/005-http-api-contract-coverage.md) — cover auth, malformed input, method/route errors, limits, and response consistency across endpoints.
 - [006 — Expand media-worker lifecycle invariant coverage](tickets/006-media-worker-invariants.md) — prove task leases, retries, stale recovery, terminal classification, and idempotent blob writes.
 - [007 — Expand extension service-worker resilience coverage](tickets/007-extension-service-worker-resilience.md) — test daemon-down/offline, queue persistence, retry/backoff, pause/rule controls, and token/config behavior.
@@ -30,7 +31,6 @@
 
 ## Blocked
 
-- [004 — Harden SQLite write-path policy](tickets/004-sqlite-write-path-hardening.md) — blocked by ticket 003's stress harness so fixes have a tight red/green loop.
 - [010 — Optimize read-model query/index performance](tickets/010-read-model-query-performance.md) — blocked by ticket 009's benchmark harness and budgets.
 - [014 — Add coverage gates and requirements traceability enforcement](tickets/014-coverage-gates-traceability.md) — blocked by at least one coverage-expansion ticket; ticket 001 baseline is complete.
 
@@ -45,12 +45,12 @@
 
 ## Handoff
 
-Open frontier tickets: 10. Blocked tickets: 3.
+Open frontier tickets: 10. Blocked tickets: 2.
 
-Recommended next ticket: **003 — Build deterministic concurrency stress harness**. Ticket 002 now gives the operator a compact health command; the next durability bottleneck is a repeatable contention harness before SQLite write-path hardening.
+Recommended next ticket: **004 — Harden SQLite write-path policy**. Ticket 003 now supplies the red/green contention harness needed to make SQLite write-path changes safely.
 
 Copy into a fresh session:
 
 ```text
-Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/003-concurrency-stress-harness.md.
+Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/004-sqlite-write-path-hardening.md.
 ```

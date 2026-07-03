@@ -126,7 +126,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
   <article class="md-body">
 <h1 id="build-deterministic-concurrency-stress-harness">Build deterministic concurrency stress harness</h1>
 <h2 id="status">Status</h2>
-<p>open</p>
+<p>closed</p>
 <h2 id="question">Question</h2>
 <p>Can we create a deterministic stress harness that reproduces daily-driver contention classes: concurrent captures, lifecycle events, search/detail reads, media blob uploads, and media-worker passes against the same SQLite DB?</p>
 <h2 id="type">Type</h2>
@@ -146,9 +146,28 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>Blocked by: none. Ticket 001 baseline is complete.</li>
 </ul>
 <h2 id="resolution">Resolution</h2>
-<p>Pending.</p>
+<p>Resolved by adding a bounded deterministic stress harness:</p>
+<ul>
+<li>Added <code>daemon/src/browser_memory_daemon/concurrency_stress.py</code> with an isolated-runtime runner that starts the loopback daemon on an ephemeral port and drives one SQLite database from multiple concurrent work classes.</li>
+<li>Added <code>scripts/run-concurrency-stress.sh</code> as the operator/dev entry point. By default it uses a temporary runtime root and synthetic data, so it does not mutate daily-driver storage.</li>
+<li>The harness covers concurrent <code>/capture</code> writes, <code>/visit-events</code> lifecycle writes, <code>/search</code> + <code>/recent</code> + <code>/documents/{id}</code> + queue-status reads, raw media blob uploads, and direct media-worker <code>run_once</code> passes through separate SQLite connections.</li>
+<li>The JSON report exits non-zero if any operation fails, SQLite <code>PRAGMA integrity_check</code> is not <code>ok</code>, chunks are missing FTS rows, expected synthetic documents/visit events are absent, or operation phases fail.</li>
+<li>Added e2e coverage for the Python runner and CLI-style module entry point.</li>
+<li>Updated <code>docs/TESTS.md</code> with stress-harness purpose, command, knobs, and the warning not to point it at daily-driver runtime data unless intentional.</li>
+<li>Inspected the ADR index. No ADR was added because this is an additive verification harness over existing HTTP/SQLite/media-worker boundaries, not a change to the canonical verification authority, interfaces, schema, storage, or privacy posture.</li>
+</ul>
+<p>Verification evidence:</p>
+<ul>
+<li><code>/tmp/browser-memory-daemon-verify-venv/bin/python -m pytest -q daemon/tests/e2e/test_concurrency_stress.py</code> passed.</li>
+<li><code>./scripts/run-concurrency-stress.sh --captures 4 --reader-rounds 4 --media-worker-runs 2 --max-workers 8 --timeout 20</code> passed with <code>ok=True</code>, <code>status=ok</code>, 4 captures, 14 mixed operations, 4 documents, 4 visit events, and SQLite <code>integrity_check=ok</code>.</li>
+<li><code>python3.11 -m py_compile daemon/src/browser_memory_daemon/concurrency_stress.py</code> passed.</li>
+<li><code>bash -n scripts/run-concurrency-stress.sh</code> passed.</li>
+<li><code>python scripts/generate_test_inventory.py --check</code> passed after inventory update to 86 tests / 17 files.</li>
+</ul>
 <h2 id="new-tickets-fog-updates">New tickets / fog updates</h2>
-<p>Pending. If deterministic reproduction is hard, keep the harness as a high-repetition flake amplifier and document reproduction rate.</p>
+<ul>
+<li>Ticket 004 is unblocked and should use <code>./scripts/run-concurrency-stress.sh</code> as the focused red/green gate for SQLite write-path hardening.</li>
+</ul>
   </article>
   <div class="md-footer">
     Rendered from <code>docs/wayfinder/durability-performance-coverage/tickets/003-concurrency-stress-harness.md</code> — the Markdown file is the canonical,

@@ -132,17 +132,18 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li><strong>Non-goals for this map:</strong> no cloud vector DB/LLM upload, no default Chrome profile automation, no publishing/pushing, no native-messaging rewrite unless a later ticket proves it is the next bottleneck.</li>
 <li><strong>Standing constraints:</strong> runtime data stays under XDG paths, not the repo; captured page text is untrusted evidence; tests must not use Michael's daily Chrome profile; architecture-impacting decisions require <code>docs/architecture/adr/</code> inspection and likely an ADR.</li>
 <li><strong>Inspected context:</strong> <code>AGENTS.md</code>, <code>docs/ARCHITECTURE.md</code>, <code>docs/STATUS.md</code>, <code>docs/TESTS.md</code>, <code>docs/test-plan.md</code>, <code>docs/api.md</code>, <code>docs/USER_GUIDE.md</code>, <code>docs/architecture/adr/README.md</code>, <code>scripts/install-daily-driver.sh</code>, <code>scripts/run-real-chrome-e2e.sh</code>, <code>pyproject.toml</code>, <code>extension/package.json</code>.</li>
-<li><strong>Current baseline from inspected docs:</strong> 84 static tests across 16 files: 61 daemon pytest tests and 23 extension <code>node:test</code> tests. Source/test line snapshot from ticket 001: daemon source 4,360 LOC vs daemon tests 1,939 LOC; extension source 2,138 LOC vs extension tests 371 LOC.</li>
+<li><strong>Current baseline from inspected docs:</strong> 86 static tests across 17 files: 63 daemon pytest tests and 23 extension <code>node:test</code> tests. Source/test line snapshot from ticket 001: daemon source 4,360 LOC vs daemon tests 1,939 LOC; extension source 2,138 LOC vs extension tests 371 LOC.</li>
 <li><strong>Relevant accepted ADRs:</strong> local-first Windows Chrome ⇄ WSL boundary, text-first SQLite/FTS5 + blobs, durable lazy media sidecars, real Chrome e2e as verification authority, C4 model as canonical architecture, generated docs as derived artifacts.</li>
 </ul>
 <h2 id="decisions-so-far">Decisions so far</h2>
 <ul>
 <li><a href="tickets/001-baseline-failure-budget.html">001 — Establish reliability/performance/coverage baseline</a> — baseline captured 2026-07-03 UTC: full gate passed, live daily-driver services and DB integrity were OK, media-worker journal history exposed a resolved no-space start-failure class, and read-model endpoints need deterministic benchmark budgets.</li>
 <li><a href="tickets/002-daily-driver-health-snapshot.html">002 — Add daily-driver health snapshot command</a> — added <code>daily-driver-health</code> plus <code>scripts/daily-driver-health.sh</code>, a redaction-safe aggregate over services, loopback, journals, DB freshness, media queue, storage headroom, and extension artifacts.</li>
+<li><a href="tickets/003-concurrency-stress-harness.html">003 — Build deterministic concurrency stress harness</a> — added a temp-runtime stress harness for concurrent captures, lifecycle events, reads, media blob uploads, and media-worker passes against one SQLite DB.</li>
 </ul>
 <h2 id="frontier">Frontier</h2>
 <ul>
-<li><a href="tickets/003-concurrency-stress-harness.html">003 — Build deterministic concurrency stress harness</a> — produce a repeatable load test for captures, lifecycle events, search, media uploads, and media-worker passes.</li>
+<li><a href="tickets/004-sqlite-write-path-hardening.html">004 — Harden SQLite write-path policy</a> — now unblocked by the stress harness; use it to identify any remaining transaction, WAL/busy-timeout, startup/backfill, or worker-isolation hardening.</li>
 <li><a href="tickets/005-http-api-contract-coverage.html">005 — Expand HTTP API contract coverage</a> — cover auth, malformed input, method/route errors, limits, and response consistency across endpoints.</li>
 <li><a href="tickets/006-media-worker-invariants.html">006 — Expand media-worker lifecycle invariant coverage</a> — prove task leases, retries, stale recovery, terminal classification, and idempotent blob writes.</li>
 <li><a href="tickets/007-extension-service-worker-resilience.html">007 — Expand extension service-worker resilience coverage</a> — test daemon-down/offline, queue persistence, retry/backoff, pause/rule controls, and token/config behavior.</li>
@@ -155,7 +156,6 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </ul>
 <h2 id="blocked">Blocked</h2>
 <ul>
-<li><a href="tickets/004-sqlite-write-path-hardening.html">004 — Harden SQLite write-path policy</a> — blocked by ticket 003's stress harness so fixes have a tight red/green loop.</li>
 <li><a href="tickets/010-read-model-query-performance.html">010 — Optimize read-model query/index performance</a> — blocked by ticket 009's benchmark harness and budgets.</li>
 <li><a href="tickets/014-coverage-gates-traceability.html">014 — Add coverage gates and requirements traceability enforcement</a> — blocked by at least one coverage-expansion ticket; ticket 001 baseline is complete.</li>
 </ul>
@@ -169,10 +169,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>Whether operational alerts should integrate with an external notification channel; remote delivery requires explicit approval.</li>
 </ul>
 <h2 id="handoff">Handoff</h2>
-<p>Open frontier tickets: 10. Blocked tickets: 3.</p>
-<p>Recommended next ticket: <strong>003 — Build deterministic concurrency stress harness</strong>. Ticket 002 now gives the operator a compact health command; the next durability bottleneck is a repeatable contention harness before SQLite write-path hardening.</p>
+<p>Open frontier tickets: 10. Blocked tickets: 2.</p>
+<p>Recommended next ticket: <strong>004 — Harden SQLite write-path policy</strong>. Ticket 003 now supplies the red/green contention harness needed to make SQLite write-path changes safely.</p>
 <p>Copy into a fresh session:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/003-concurrency-stress-harness.md.
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/004-sqlite-write-path-hardening.md.
 </code></pre></div>
   </article>
   <div class="md-footer">

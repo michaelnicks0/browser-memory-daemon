@@ -126,7 +126,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
   <article class="md-body">
 <h1 id="harden-sqlite-write-path-policy">Harden SQLite write-path policy</h1>
 <h2 id="status">Status</h2>
-<p>blocked</p>
+<p>open</p>
 <h2 id="question">Question</h2>
 <p>After a stress harness exists, which SQLite write paths still need transaction-boundary changes, WAL/busy-timeout policy, idempotent startup/backfill handling, or background-worker isolation to eliminate lock failures under daily-driver load?</p>
 <h2 id="type">Type</h2>
@@ -143,7 +143,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <h2 id="blocks-blocked-by">Blocks / blocked by</h2>
 <ul>
 <li>Blocks: high-confidence durability claim for the daily-driver path.</li>
-<li>Blocked by: ticket 003.</li>
+<li>Blocked by: none. Ticket 003 added <code>./scripts/run-concurrency-stress.sh</code> as the focused red/green harness.</li>
 </ul>
 <h2 id="resolution">Resolution</h2>
 <p>Pending.</p>

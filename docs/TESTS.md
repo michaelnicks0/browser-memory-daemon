@@ -5,7 +5,7 @@
 > **Runtime:** Python **3.11+** (`pyproject.toml` requires `>=3.11`). Use `BMD_PYTHON=/path/to/python3.11` when the host `python3` is older.
 
 <!-- BEGIN GENERATED:inventory-summary -->
-> **Current inventory:** 84 static test functions across 16 files — 61 daemon pytest tests + 23 extension node:test tests.
+> **Current inventory:** 86 static test functions across 17 files — 63 daemon pytest tests + 23 extension node:test tests.
 <!-- END GENERATED:inventory-summary -->
 
 ---
@@ -39,10 +39,34 @@ git diff --check -- .
 
 ---
 
+## Durability/concurrency stress harness
+
+Use this bounded local stress harness before changing SQLite write paths, media-worker leases, capture transaction boundaries, or request-handler DB behavior:
+
+```bash
+./scripts/run-concurrency-stress.sh
+```
+
+The harness uses a temporary isolated runtime root by default. It drives concurrent public HTTP captures, lifecycle events, search/detail reads, media blob uploads, and media-worker `run_once` passes against one SQLite database. It prints JSON and exits non-zero if any operation fails, SQLite `integrity_check` is not `ok`, chunks are missing FTS rows, or expected synthetic rows are absent.
+
+Useful knobs:
+
+```bash
+./scripts/run-concurrency-stress.sh \
+  --captures 24 \
+  --reader-rounds 24 \
+  --media-worker-runs 8 \
+  --max-workers 32
+```
+
+Use `--runtime-root PATH` only for explicit fixture roots; do not point the stress harness at the daily-driver runtime data unless you intentionally want to mutate it.
+
+---
+
 ## Generated test inventory
 
 <!-- BEGIN GENERATED:audit-run -->
-Latest inventory: **84 static test functions** across **16 files** (61 daemon pytest; 23 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
+Latest inventory: **86 static test functions** across **17 files** (63 daemon pytest; 23 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
 <!-- END GENERATED:audit-run -->
 
 ### Per-file counts
@@ -52,6 +76,7 @@ Latest inventory: **84 static test functions** across **16 files** (61 daemon py
 |---|---|---:|
 | `daemon/tests/e2e/test_admin_api.py` | pytest | 3 |
 | `daemon/tests/e2e/test_cli_admin.py` | pytest | 1 |
+| `daemon/tests/e2e/test_concurrency_stress.py` | pytest | 2 |
 | `daemon/tests/e2e/test_http_api.py` | pytest | 3 |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | 19 |
 | `daemon/tests/integration/test_media_worker.py` | pytest | 15 |
@@ -66,7 +91,7 @@ Latest inventory: **84 static test functions** across **16 files** (61 daemon py
 | `extension/tests/unit/media_queue.test.js` | node:test | 5 |
 | `extension/tests/unit/queue.test.js` | node:test | 1 |
 | `extension/tests/unit/shared.test.js` | node:test | 2 |
-| **Total** |  | **84** |
+| **Total** |  | **86** |
 <!-- END GENERATED:per-file-counts -->
 
 <details>
@@ -79,6 +104,8 @@ Latest inventory: **84 static test functions** across **16 files** (61 daemon py
 | `daemon/tests/e2e/test_admin_api.py` | pytest | `(module)` | `test_policy_rule_blocks_future_capture_and_can_be_deleted` | 121 | Policy rule blocks future capture and can be deleted. |
 | `daemon/tests/e2e/test_admin_api.py` | pytest | `(module)` | `test_url_prefix_policy_rule_applies_in_all_mode_without_blocking_all_localhost` | 163 | Url prefix policy rule applies in all mode without blocking all localhost. |
 | `daemon/tests/e2e/test_cli_admin.py` | pytest | `(module)` | `test_cli_admin_commands` | 34 | Cli admin commands. |
+| `daemon/tests/e2e/test_concurrency_stress.py` | pytest | `(module)` | `test_concurrency_stress_harness_exercises_shared_sqlite_db` | 6 | Concurrency stress harness exercises shared sqlite db. |
+| `daemon/tests/e2e/test_concurrency_stress.py` | pytest | `(module)` | `test_concurrency_stress_cli_prints_json_for_explicit_runtime` | 36 | Concurrency stress cli prints json for explicit runtime. |
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_skips_legacy_media_backfill_on_request` | 46 | Http capture skips legacy media backfill on request. |
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_media_fetch_raw_upload_and_purge_rehydrate_controls` | 79 | Http media fetch raw upload and purge rehydrate controls. |
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_search_forget_round_trip` | 148 | Http capture search forget round trip. |
