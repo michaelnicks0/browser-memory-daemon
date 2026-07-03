@@ -215,6 +215,7 @@ status_reason  = cache-evicted:global-oldest
 | `visit_events` | Metadata-only lifecycle segments. |
 | `snapshots` | Distinct text versions per document. |
 | `chunks` / `chunks_fts` | Searchable text chunks and exact FTS index. |
+| SQLite WAL sidecars (`*.sqlite3-wal`, `*.sqlite3-shm`) | Expected live companions for concurrent local reads/writes; see ADR-0014. |
 | `media_artifacts` | Related image/video refs, current blob status, provenance, purge state. |
 | `media_fetch_tasks` | Durable daemon-public media backfill leases/retries/status. |
 | `privacy_rules` | Explicit local block rules applied in every policy mode. |

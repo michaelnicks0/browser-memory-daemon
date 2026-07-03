@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Map — browser-memory-daemon</title>
+<title>0014-Use-Wal-And-Bounded-Sqlite-Contention-Policy — browser-memory-daemon</title>
 <style>
 :root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
@@ -121,62 +121,126 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <div class="wrap">
   <div class="docbar">
     <a class="home" href="../../../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
-    <span class="crumb">/ <b>docs/wayfinder/durability-performance-coverage/map.md</b></span>
+    <span class="crumb">/ <b>docs/architecture/adr/0014-use-wal-and-bounded-sqlite-contention-policy.md</b></span>
   </div>
   <article class="md-body">
-<h1 id="wayfinder-map-browser-memory-daemon-durability-performance-and-coverage">Wayfinder Map: Browser Memory Daemon Durability, Performance, and Coverage</h1>
-<h2 id="notes">Notes</h2>
+<hr />
+<p>id: ADR-0014
+status: accepted
+date: 2026-07-03
+decider: Operator
+scope: repo
+backfilled: false
+supersedes: []
+superseded_by: []
+related:
+  - docs/wayfinder/durability-performance-coverage/tickets/004-sqlite-write-path-hardening.md
+  - daemon/src/browser_memory_daemon/db.py
+  - daemon/src/browser_memory_daemon/app.py
+  - daemon/src/browser_memory_daemon/media.py
+  - daemon/src/browser_memory_daemon/concurrency_stress.py
+verification:
+  - /tmp/browser-memory-daemon-verify-venv/bin/python -m pytest -q daemon/tests/unit/test_db.py daemon/tests/e2e/test_concurrency_stress.py
+  - /tmp/browser-memory-daemon-verify-venv/bin/python -m pytest -q daemon/tests/integration/test_media_worker.py::test_concurrent_media_blob_writes_use_distinct_temp_files
+  - ./scripts/run-concurrency-stress.sh --captures 24 --reader-rounds 24 --media-worker-runs 8 --max-workers 32 --timeout 60 --no-fail
+  - ./scripts/run-concurrency-stress.sh --captures 80 --reader-rounds 80 --media-worker-runs 24 --max-workers 64 --timeout 90 --no-fail</p>
+<hr />
+<h1 id="adr-0014-use-wal-and-bounded-sqlite-contention-policy">ADR-0014: Use WAL and Bounded SQLite Contention Policy</h1>
+<h2 id="context">Context</h2>
+<p>Browser Memory Daemon uses SQLite/FTS5 as the authoritative local store. The daily-driver path has multiple writers and near-writers: Chrome capture requests, lifecycle events, media blob uploads, read endpoints that record audit rows, and the daemon-public media worker.</p>
+<p>The durability Wayfinder baseline retained SQLite WAL mode as the intended concurrency mode, and ticket 003 added a stress harness that exercises capture, lifecycle, read, media upload, and media-worker work against one SQLite database. Ticket 004 used that harness to harden the implementation instead of leaving WAL and startup behavior as operator lore.</p>
+<h2 id="decision">Decision</h2>
+<p>We will enforce a boring SQLite contention policy in code:</p>
 <ul>
-<li><strong>Foggy goal:</strong> make Browser Memory Daemon more durable under daily-driver failures, faster/measurably performant, and substantially better covered by tests and operational consistency checks.</li>
-<li><strong>Assumptions:</strong> repo-local Markdown is the tracker; no GitHub/Linear/Kanban remote state. Windows Chrome remains the browser surface; WSL remains durable storage owner. <code>policy_mode=all</code> remains the daily-driver default unless a later ADR supersedes it.</li>
-<li><strong>Non-goals for this map:</strong> no cloud vector DB/LLM upload, no default Chrome profile automation, no publishing/pushing, no native-messaging rewrite unless a later ticket proves it is the next bottleneck.</li>
-<li><strong>Standing constraints:</strong> runtime data stays under XDG paths, not the repo; captured page text is untrusted evidence; tests must not use Michael's daily Chrome profile; architecture-impacting decisions require <code>docs/architecture/adr/</code> inspection and likely an ADR.</li>
-<li><strong>Inspected context:</strong> <code>AGENTS.md</code>, <code>docs/ARCHITECTURE.md</code>, <code>docs/STATUS.md</code>, <code>docs/TESTS.md</code>, <code>docs/test-plan.md</code>, <code>docs/api.md</code>, <code>docs/USER_GUIDE.md</code>, <code>docs/architecture/adr/README.md</code>, <code>scripts/install-daily-driver.sh</code>, <code>scripts/run-real-chrome-e2e.sh</code>, <code>pyproject.toml</code>, <code>extension/package.json</code>.</li>
-<li><strong>Current baseline from inspected docs:</strong> 88 static tests across 17 files: 65 daemon pytest tests and 23 extension <code>node:test</code> tests. Source/test line snapshot from ticket 001: daemon source 4,360 LOC vs daemon tests 1,939 LOC; extension source 2,138 LOC vs extension tests 371 LOC.</li>
-<li><strong>Relevant accepted ADRs:</strong> local-first Windows Chrome ⇄ WSL boundary, text-first SQLite/FTS5 + blobs, durable lazy media sidecars, real Chrome e2e as verification authority, C4 model as canonical architecture, generated docs as derived artifacts.</li>
+<li>initialize Browser Memory databases with <code>PRAGMA journal_mode = WAL</code>;</li>
+<li>keep every connection on a 30-second SQLite busy timeout;</li>
+<li>set connection <code>PRAGMA synchronous = NORMAL</code>, matching the usual WAL durability/performance tradeoff for a local single-operator daemon;</li>
+<li>avoid request-time schema/backfill DDL after startup by marking the initialized DB path ready inside the daemon process;</li>
+<li>use a bounded larger loopback listen backlog for stress bursts so the contention harness reaches SQLite instead of failing at TCP accept backlog.</li>
+<li>use per-write temporary media blob filenames before atomic replace, so concurrent browser/worker writes for the same artifact do not share one temp path.</li>
 </ul>
-<h2 id="decisions-so-far">Decisions so far</h2>
+<p>This does not change the storage schema, privacy posture, API contract, or local-first boundary. It makes the existing SQLite storage decision explicit and testable.</p>
+<h2 id="decision-drivers">Decision drivers</h2>
 <ul>
-<li><a href="tickets/001-baseline-failure-budget.html">001 — Establish reliability/performance/coverage baseline</a> — baseline captured 2026-07-03 UTC: full gate passed, live daily-driver services and DB integrity were OK, media-worker journal history exposed a resolved no-space start-failure class, and read-model endpoints need deterministic benchmark budgets.</li>
-<li><a href="tickets/002-daily-driver-health-snapshot.html">002 — Add daily-driver health snapshot command</a> — added <code>daily-driver-health</code> plus <code>scripts/daily-driver-health.sh</code>, a redaction-safe aggregate over services, loopback, journals, DB freshness, media queue, storage headroom, and extension artifacts.</li>
-<li><a href="tickets/003-concurrency-stress-harness.html">003 — Build deterministic concurrency stress harness</a> — added a temp-runtime stress harness for concurrent captures, lifecycle events, reads, media blob uploads, and media-worker passes against one SQLite DB.</li>
-<li><a href="tickets/004-sqlite-write-path-hardening.html">004 — Harden SQLite write-path policy</a> — enforced WAL/synchronous/busy-timeout pragmas, skipped repeated request-time DB initialization after startup, increased loopback listen backlog, isolated concurrent media temp writes, and recorded ADR-0014.</li>
+<li>WAL allows readers and writers to coexist better than rollback journals for this daemon's read-heavy recall path.</li>
+<li>Daily-driver captures should not wait on repeated schema DDL or legacy media-task backfill scans.</li>
+<li>Media-worker and browser requests should wait briefly for a busy writer instead of surfacing transient <code>database is locked</code> failures.</li>
+<li>The stress harness should test the database contention boundary, not collapse first at the HTTP server listen queue.</li>
+<li>Browser-side uploads and daemon-worker backfills can race on the same media artifact; file staging must not fail before SQLite can reconcile the final artifact row.</li>
+<li>The policy must remain local, inspectable, and dependency-free.</li>
 </ul>
-<h2 id="frontier">Frontier</h2>
+<h2 id="options-considered">Options considered</h2>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Pros</th>
+<th>Cons</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Leave WAL as manual/operator state</td>
+<td>No code change</td>
+<td>New DBs can silently use rollback journal mode; future agents cannot rely on the baseline</td>
+<td>Rejected</td>
+</tr>
+<tr>
+<td>Set WAL and busy timeout in code</td>
+<td>Local, boring, directly verifiable</td>
+<td>WAL creates sidecar <code>-wal</code>/<code>-shm</code> files that backup/runbooks must tolerate</td>
+<td>Chosen</td>
+</tr>
+<tr>
+<td>Move to a client/server DB</td>
+<td>Stronger concurrent writer model</td>
+<td>Violates boring local dependency posture and is unnecessary for current load</td>
+<td>Rejected</td>
+</tr>
+<tr>
+<td>Run schema/backfill on every request</td>
+<td>Self-heals missing DB state</td>
+<td>Adds avoidable write/DDL contention on hot paths</td>
+<td>Rejected</td>
+</tr>
+</tbody>
+</table>
+<h2 id="consequences">Consequences</h2>
 <ul>
-<li><a href="tickets/005-http-api-contract-coverage.html">005 — Expand HTTP API contract coverage</a> — cover auth, malformed input, method/route errors, limits, and response consistency across endpoints.</li>
-<li><a href="tickets/006-media-worker-invariants.html">006 — Expand media-worker lifecycle invariant coverage</a> — prove task leases, retries, stale recovery, terminal classification, and idempotent blob writes.</li>
-<li><a href="tickets/007-extension-service-worker-resilience.html">007 — Expand extension service-worker resilience coverage</a> — test daemon-down/offline, queue persistence, retry/backoff, pause/rule controls, and token/config behavior.</li>
-<li><a href="tickets/008-real-chrome-e2e-matrix.html">008 — Expand real Chrome e2e matrix</a> — turn the real-browser authority into a broader policy/control/surface matrix without touching daily Chrome.</li>
-<li><a href="tickets/009-performance-benchmark-harness.html">009 — Add performance benchmark harness and budgets</a> — measure ingest/search/timeline/detail/media-worker behavior on synthetic scalable datasets.</li>
-<li><a href="tickets/011-installer-token-artifact-consistency.html">011 — Harden installer/token/Windows artifact consistency</a> — make daily-driver install/refresh more testable and self-validating.</li>
-<li><a href="tickets/012-retention-compaction-backup-design.html">012 — Design retention, compaction, and backup posture</a> — now unblocked by the baseline; use current DB/media/headroom evidence plus explicit operator thresholds.</li>
-<li><a href="tickets/013-ui-dashboard-smoke-coverage.html">013 — Add local UI smoke coverage</a> — add dashboard bootstrap/API rendering checks beyond static asset serving.</li>
-<li><a href="tickets/015-storage-headroom-service-start-budget.html">015 — Add storage-headroom and service-start failure budget checks</a> — turn the no-space systemd failure class into preflight/health checks and a journal budget.</li>
+<li>Positive: new runtime databases consistently enter WAL mode during initialization.</li>
+<li>Positive: request hot paths skip repeated schema/backfill initialization after server startup.</li>
+<li>Positive: the stress harness can run larger bursts without connection resets from the default listen backlog.</li>
+<li>Positive: concurrent media writes for the same artifact no longer collide on a deterministic <code>.tmp</code> pathname.</li>
+<li>Positive: busy writers have an explicit wait budget before an operational error surfaces.</li>
+<li>Negative: WAL sidecar files are now an intentional runtime artifact; backup and cleanup tooling must treat <code>*.sqlite3-wal</code> and <code>*.sqlite3-shm</code> as normal live SQLite companions.</li>
+<li>Neutral: this does not remove SQLite's single-writer model; future write-heavy bottlenecks still need focused measurement before larger storage changes.</li>
 </ul>
-<h2 id="blocked">Blocked</h2>
+<h2 id="verification-validation">Verification / validation</h2>
 <ul>
-<li><a href="tickets/010-read-model-query-performance.html">010 — Optimize read-model query/index performance</a> — blocked by ticket 009's benchmark harness and budgets.</li>
-<li><a href="tickets/014-coverage-gates-traceability.html">014 — Add coverage gates and requirements traceability enforcement</a> — blocked by at least one coverage-expansion ticket; ticket 001 baseline is complete.</li>
+<li>Verification: <code>daemon/tests/unit/test_db.py</code> checks the busy timeout, <code>journal_mode=wal</code>, <code>foreign_keys=ON</code>, and <code>synchronous=NORMAL</code> on an initialized DB.</li>
+<li>Verification: <code>daemon/tests/e2e/test_concurrency_stress.py</code> covers the stress runner and CLI entry point.</li>
+<li>Verification: <code>daemon/tests/integration/test_media_worker.py::test_concurrent_media_blob_writes_use_distinct_temp_files</code> covers concurrent same-artifact blob writes.</li>
+<li>Verification: <code>./scripts/run-concurrency-stress.sh --captures 80 --reader-rounds 80 --media-worker-runs 24 --max-workers 64 --timeout 90 --no-fail</code> passed with 80 captures, 264 mixed operations, 80 documents, 80 visit events, 80 succeeded media tasks, and SQLite <code>integrity_check=ok</code>.</li>
+<li>Validation: Browser Memory can keep using local SQLite/FTS5 under the daily-driver concurrency envelope without introducing a server DB or cloud dependency.</li>
 </ul>
-<h2 id="fog">Fog</h2>
+<h2 id="revisit-triggers">Revisit triggers</h2>
 <ul>
-<li>Whether long-running soak tests should be local-only scripts, scheduled Hermes jobs, or manual release gates.</li>
-<li>Exact retention policy thresholds for full DB/text storage versus media cache; this likely needs operator preference plus storage-growth evidence.</li>
-<li>Whether native messaging should remain a later hardening lane or become a near-term reliability requirement after loopback/SQLite hardening.</li>
-<li>Whether performance budgets should gate every PR/session or stay advisory because Windows Chrome e2e is comparatively heavy.</li>
-<li>Whether dashboard behavior should be tested with a browser automation dependency or a lower-dependency DOM/static harness.</li>
-<li>Whether operational alerts should integrate with an external notification channel; remote delivery requires explicit approval.</li>
+<li>Supersede this ADR if sustained daily-driver evidence shows SQLite busy waits are still a material reliability bottleneck.</li>
+<li>Supersede this ADR before replacing SQLite/FTS5 with a client/server database or queue-backed write service.</li>
+<li>Revisit backup docs if retention/backup tooling does not correctly handle WAL sidecars.</li>
 </ul>
-<h2 id="handoff">Handoff</h2>
-<p>Open frontier tickets: 9. Blocked tickets: 2.</p>
-<p>Recommended next ticket: <strong>005 — Expand HTTP API contract coverage</strong>. Ticket 004 closed the core SQLite contention policy; the next useful coverage slice is API contract behavior around auth, malformed input, routes, and limits.</p>
-<p>Copy into a fresh session:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/005-http-api-contract-coverage.md.
-</code></pre></div>
+<h2 id="references">References</h2>
+<ul>
+<li><code>docs/wayfinder/durability-performance-coverage/tickets/004-sqlite-write-path-hardening.md</code></li>
+<li><code>daemon/src/browser_memory_daemon/db.py</code></li>
+<li><code>daemon/src/browser_memory_daemon/app.py</code></li>
+<li><code>daemon/src/browser_memory_daemon/media.py</code></li>
+<li><code>daemon/src/browser_memory_daemon/concurrency_stress.py</code></li>
+</ul>
   </article>
   <div class="md-footer">
-    Rendered from <code>docs/wayfinder/durability-performance-coverage/map.md</code> — the Markdown file is the canonical,
+    Rendered from <code>docs/architecture/adr/0014-use-wal-and-bounded-sqlite-contention-policy.md</code> — the Markdown file is the canonical,
     version-controlled source. This HTML is generated (regenerate with
     <code>scripts/render_docs.py</code>); do not hand-edit.
   </div>

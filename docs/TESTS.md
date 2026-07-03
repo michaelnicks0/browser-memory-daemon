@@ -5,7 +5,7 @@
 > **Runtime:** Python **3.11+** (`pyproject.toml` requires `>=3.11`). Use `BMD_PYTHON=/path/to/python3.11` when the host `python3` is older.
 
 <!-- BEGIN GENERATED:inventory-summary -->
-> **Current inventory:** 86 static test functions across 17 files — 63 daemon pytest tests + 23 extension node:test tests.
+> **Current inventory:** 88 static test functions across 17 files — 65 daemon pytest tests + 23 extension node:test tests.
 <!-- END GENERATED:inventory-summary -->
 
 ---
@@ -66,7 +66,7 @@ Use `--runtime-root PATH` only for explicit fixture roots; do not point the stre
 ## Generated test inventory
 
 <!-- BEGIN GENERATED:audit-run -->
-Latest inventory: **86 static test functions** across **17 files** (63 daemon pytest; 23 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
+Latest inventory: **88 static test functions** across **17 files** (65 daemon pytest; 23 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
 <!-- END GENERATED:audit-run -->
 
 ### Per-file counts
@@ -79,10 +79,10 @@ Latest inventory: **86 static test functions** across **17 files** (63 daemon py
 | `daemon/tests/e2e/test_concurrency_stress.py` | pytest | 2 |
 | `daemon/tests/e2e/test_http_api.py` | pytest | 3 |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | 19 |
-| `daemon/tests/integration/test_media_worker.py` | pytest | 15 |
+| `daemon/tests/integration/test_media_worker.py` | pytest | 16 |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | 5 |
 | `daemon/tests/unit/test_daily_driver_health.py` | pytest | 2 |
-| `daemon/tests/unit/test_db.py` | pytest | 1 |
+| `daemon/tests/unit/test_db.py` | pytest | 2 |
 | `daemon/tests/unit/test_normalize.py` | pytest | 4 |
 | `daemon/tests/unit/test_policy.py` | pytest | 6 |
 | `daemon/tests/unit/test_policy_store.py` | pytest | 2 |
@@ -91,7 +91,7 @@ Latest inventory: **86 static test functions** across **17 files** (63 daemon py
 | `extension/tests/unit/media_queue.test.js` | node:test | 5 |
 | `extension/tests/unit/queue.test.js` | node:test | 1 |
 | `extension/tests/unit/shared.test.js` | node:test | 2 |
-| **Total** |  | **86** |
+| **Total** |  | **88** |
 <!-- END GENERATED:per-file-counts -->
 
 <details>
@@ -106,9 +106,9 @@ Latest inventory: **86 static test functions** across **17 files** (63 daemon py
 | `daemon/tests/e2e/test_cli_admin.py` | pytest | `(module)` | `test_cli_admin_commands` | 34 | Cli admin commands. |
 | `daemon/tests/e2e/test_concurrency_stress.py` | pytest | `(module)` | `test_concurrency_stress_harness_exercises_shared_sqlite_db` | 6 | Concurrency stress harness exercises shared sqlite db. |
 | `daemon/tests/e2e/test_concurrency_stress.py` | pytest | `(module)` | `test_concurrency_stress_cli_prints_json_for_explicit_runtime` | 36 | Concurrency stress cli prints json for explicit runtime. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_skips_legacy_media_backfill_on_request` | 46 | Http capture skips legacy media backfill on request. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_media_fetch_raw_upload_and_purge_rehydrate_controls` | 79 | Http media fetch raw upload and purge rehydrate controls. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_search_forget_round_trip` | 148 | Http capture search forget round trip. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_skips_request_time_db_initialization_after_startup` | 46 | Http capture skips request time db initialization after startup. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_media_fetch_raw_upload_and_purge_rehydrate_controls` | 78 | Http media fetch raw upload and purge rehydrate controls. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_search_forget_round_trip` | 147 | Http capture search forget round trip. |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_ingest_search_redact_and_forget` | 16 | Ingest search redact and forget. |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_metadata_redacted_before_fts_and_forget_by_original_url` | 41 | Metadata redacted before fts and forget by original url. |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_url_path_secret_redacted_and_not_searchable` | 64 | Url path secret redacted and not searchable. |
@@ -128,21 +128,22 @@ Latest inventory: **86 static test functions** across **17 files** (63 daemon py
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_changed_content_creates_new_snapshot_under_same_document` | 468 | Changed content creates new snapshot under same document. |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_schema_has_planned_core_tables` | 510 | Schema has planned core tables. |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_capture_payload_rejects_bad_timestamp` | 519 | Capture payload rejects bad timestamp. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_processes_data_url_task_and_marks_success` | 15 | Media worker processes data url task and marks success. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_tasks_are_seeded_when_existing_unresolved_refs_have_no_task` | 38 | Media worker tasks are seeded when existing unresolved refs have no task. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_marks_pending_task_succeeded_when_artifact_already_stored` | 61 | Media worker marks pending task succeeded when artifact already stored. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_rehydrates_purged_cache_when_source_still_fetchable` | 90 | Media worker rehydrates purged cache when source still fetchable. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_normalizes_terminal_failed_artifacts` | 117 | Media worker normalizes terminal failed artifacts. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_reclassifies_legacy_blob_video_skips_as_references` | 168 | Media worker reclassifies legacy blob video skips as references. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_stores_hls_master_playlist_as_video_mp4` | 249 | Media worker stores hls master playlist as video mp4. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_requeues_legacy_hls_video_unsupported_skips` | 276 | Media worker requeues legacy hls video unsupported skips. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_requeues_snapshot_budget_skips_after_cap_raise` | 307 | Media worker requeues snapshot budget skips after cap raise. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_requeues_storage_budget_skips_after_cap_raise` | 338 | Media worker requeues storage budget skips after cap raise. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_stores_hls_audio_rendition_sidecar` | 368 | Media worker stores hls audio rendition sidecar. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_requeues_legacy_hls_audio_rendition_refs` | 395 | Media worker requeues legacy hls audio rendition refs. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_requeues_cdp_hls_manifest_refs` | 424 | Media worker requeues cdp hls manifest refs. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_marks_blob_video_refs_covered_by_cdp_bytes` | 465 | Media worker marks blob video refs covered by cdp bytes. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_classifies_uncovered_blob_video_refs_as_opaque` | 516 | Media worker classifies uncovered blob video refs as opaque. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_processes_data_url_task_and_marks_success` | 17 | Media worker processes data url task and marks success. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_tasks_are_seeded_when_existing_unresolved_refs_have_no_task` | 40 | Media worker tasks are seeded when existing unresolved refs have no task. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_marks_pending_task_succeeded_when_artifact_already_stored` | 63 | Media worker marks pending task succeeded when artifact already stored. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_concurrent_media_blob_writes_use_distinct_temp_files` | 92 | Concurrent media blob writes use distinct temp files. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_rehydrates_purged_cache_when_source_still_fetchable` | 134 | Media worker rehydrates purged cache when source still fetchable. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_normalizes_terminal_failed_artifacts` | 161 | Media worker normalizes terminal failed artifacts. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_reclassifies_legacy_blob_video_skips_as_references` | 212 | Media worker reclassifies legacy blob video skips as references. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_stores_hls_master_playlist_as_video_mp4` | 293 | Media worker stores hls master playlist as video mp4. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_requeues_legacy_hls_video_unsupported_skips` | 320 | Media worker requeues legacy hls video unsupported skips. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_requeues_snapshot_budget_skips_after_cap_raise` | 351 | Media worker requeues snapshot budget skips after cap raise. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_requeues_storage_budget_skips_after_cap_raise` | 382 | Media worker requeues storage budget skips after cap raise. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_stores_hls_audio_rendition_sidecar` | 412 | Media worker stores hls audio rendition sidecar. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_requeues_legacy_hls_audio_rendition_refs` | 439 | Media worker requeues legacy hls audio rendition refs. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_requeues_cdp_hls_manifest_refs` | 468 | Media worker requeues cdp hls manifest refs. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_marks_blob_video_refs_covered_by_cdp_bytes` | 509 | Media worker marks blob video refs covered by cdp bytes. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_classifies_uncovered_blob_video_refs_as_opaque` | 560 | Media worker classifies uncovered blob video refs as opaque. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_updates_dwell_and_is_idempotent` | 9 | Visit lifecycle event updates dwell and is idempotent. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_overlapping_lifecycle_events_do_not_double_count_dwell` | 67 | Overlapping lifecycle events do not double count dwell. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_can_attach_to_latest_visit_by_url` | 114 | Visit lifecycle event can attach to latest visit by url. |
@@ -151,6 +152,7 @@ Latest inventory: **86 static test functions** across **17 files** (63 daemon py
 | `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_snapshot_is_aggregate_and_redaction_safe` | 27 | Daily driver health snapshot is aggregate and redaction safe. |
 | `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_missing_extension_token` | 100 | Daily driver health detects missing extension token. |
 | `daemon/tests/unit/test_db.py` | pytest | `(module)` | `test_connect_uses_extended_busy_timeout` | 5 | Connect uses extended busy timeout. |
+| `daemon/tests/unit/test_db.py` | pytest | `(module)` | `test_init_db_enforces_wal_and_connection_pragmas` | 12 | Init db enforces wal and connection pragmas. |
 | `daemon/tests/unit/test_normalize.py` | pytest | `(module)` | `test_normalize_url_removes_tracking_fragment_default_port_and_sorts_query` | 4 | Normalize url removes tracking fragment default port and sorts query. |
 | `daemon/tests/unit/test_normalize.py` | pytest | `(module)` | `test_normalize_url_preserves_meaningful_duplicate_query_values` | 11 | Normalize url preserves meaningful duplicate query values. |
 | `daemon/tests/unit/test_normalize.py` | pytest | `(module)` | `test_normalize_url_removes_empty_default_path_only_for_missing_path` | 18 | Normalize url removes empty default path only for missing path. |

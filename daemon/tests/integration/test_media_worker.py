@@ -1,13 +1,15 @@
 from contextlib import contextmanager
+from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import base64
+import io
 import json
 import threading
 
 from browser_memory_daemon.config import load_config
 from browser_memory_daemon.db import connect, init_db
 from browser_memory_daemon.ingest import ingest_capture
-from browser_memory_daemon.media import media_artifacts_for_snapshot, purge_media_cache, store_media_artifact
+from browser_memory_daemon.media import media_artifacts_for_snapshot, purge_media_cache, store_media_artifact, store_media_blob_stream
 from browser_memory_daemon.media_worker import normalize_cdp_covered_blob_video_refs, normalize_cdp_hls_manifest_refs, normalize_hls_audio_renditions, normalize_hls_video_skips, normalize_legacy_blob_video_skips, normalize_opaque_blob_video_refs, normalize_snapshot_budget_skips, normalize_storage_budget_skips, normalize_terminal_failed_artifacts, run_once
 from browser_memory_daemon.models import CapturePayload
 
@@ -85,6 +87,48 @@ def test_media_worker_marks_pending_task_succeeded_when_artifact_already_stored(
         assert task["last_error"] is None
         assert task["lease_owner"] is None
         assert task["lease_until"] is None
+
+
+def test_concurrent_media_blob_writes_use_distinct_temp_files(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    payload = CapturePayload.from_dict(
+        {
+            "url": "https://example.com/concurrent-blob-writes",
+            "title": "Concurrent Blob Writes",
+            "text": "Readable concurrent media blob body.",
+            "media_artifacts": [{"media_type": "image", "source_url": "https://example.com/concurrent.png", "mime_type": "image/png"}],
+        },
+        allow_any_url=True,
+    )
+    with connect(cfg.db_path) as conn:
+        result = ingest_capture(conn, cfg, payload)
+        media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
+
+    def upload(content: bytes):
+        with connect(cfg.db_path) as conn:
+            return store_media_blob_stream(
+                conn,
+                cfg,
+                media["id"],
+                io.BytesIO(content),
+                headers={
+                    "Content-Type": "image/png",
+                    "X-BMD-Document-ID": result["document_id"],
+                    "X-BMD-Snapshot-ID": result["snapshot_id"],
+                },
+                content_length=len(content),
+            )
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        results = list(executor.map(upload, [b"first-upload", b"second-upload"]))
+
+    assert [item["stored"] for item in results] == [True, True]
+    with connect(cfg.db_path) as conn:
+        row = conn.execute("SELECT file_path, capture_status FROM media_artifacts WHERE id = ?", (media["id"],)).fetchone()
+    assert row["capture_status"] == "stored"
+    assert open(row["file_path"], "rb").read() in {b"first-upload", b"second-upload"}
+    assert not list((cfg.media_root / ".tmp").glob(f"{media['id']}*"))
 
 
 def test_media_worker_rehydrates_purged_cache_when_source_still_fetchable(tmp_path):

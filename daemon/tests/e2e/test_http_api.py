@@ -43,7 +43,7 @@ def binary_request(method, url, token="test-token", body=b"", content_type="appl
         return response.status, json.loads(response.read().decode() or "{}")
 
 
-def test_http_capture_skips_legacy_media_backfill_on_request(tmp_path, monkeypatch):
+def test_http_capture_skips_request_time_db_initialization_after_startup(tmp_path, monkeypatch):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", host="127.0.0.1", port=0, policy_mode="all")
     cfg = replace(cfg, media_fetch_on_capture=False)
     seed_calls = []
@@ -62,8 +62,8 @@ def test_http_capture_skips_legacy_media_backfill_on_request(tmp_path, monkeypat
         status, stored = request("POST", f"{base}/capture", body={
             "visit_id": "http-no-backfill-1",
             "url": "https://example.org/no-backfill",
-            "title": "No per-request backfill",
-            "text": "Capture requests should not reseed legacy media tasks.",
+            "title": "No per-request init",
+            "text": "Capture requests should not rerun schema or reseed legacy media tasks.",
         })
         assert status == 201
         assert stored["stored"] is True
@@ -72,8 +72,7 @@ def test_http_capture_skips_legacy_media_backfill_on_request(tmp_path, monkeypat
         thread.join(timeout=5)
 
     assert seed_calls[0] is True
-    assert False in seed_calls
-    assert seed_calls.count(True) == 1
+    assert seed_calls == [True]
 
 
 def test_http_media_fetch_raw_upload_and_purge_rehydrate_controls(tmp_path):

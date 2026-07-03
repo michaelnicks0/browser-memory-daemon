@@ -755,6 +755,10 @@ status_reason  = cache-evicted:global-oldest
 <td>Searchable text chunks and exact FTS index.</td>
 </tr>
 <tr>
+<td>SQLite WAL sidecars (<code>*.sqlite3-wal</code>, <code>*.sqlite3-shm</code>)</td>
+<td>Expected live companions for concurrent local reads/writes; see ADR-0014.</td>
+</tr>
+<tr>
 <td><code>media_artifacts</code></td>
 <td>Related image/video refs, current blob status, provenance, purge state.</td>
 </tr>

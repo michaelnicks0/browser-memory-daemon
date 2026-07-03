@@ -126,7 +126,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
   <article class="md-body">
 <h1 id="harden-sqlite-write-path-policy">Harden SQLite write-path policy</h1>
 <h2 id="status">Status</h2>
-<p>open</p>
+<p>closed</p>
 <h2 id="question">Question</h2>
 <p>After a stress harness exists, which SQLite write paths still need transaction-boundary changes, WAL/busy-timeout policy, idempotent startup/backfill handling, or background-worker isolation to eliminate lock failures under daily-driver load?</p>
 <h2 id="type">Type</h2>
@@ -146,9 +146,27 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>Blocked by: none. Ticket 003 added <code>./scripts/run-concurrency-stress.sh</code> as the focused red/green harness.</li>
 </ul>
 <h2 id="resolution">Resolution</h2>
-<p>Pending.</p>
+<p>Resolved by making the SQLite contention policy explicit and executable:</p>
+<ul>
+<li><code>daemon/src/browser_memory_daemon/db.py</code> now initializes runtime DBs with <code>PRAGMA journal_mode = WAL</code>, keeps the 30-second busy timeout, enables foreign keys, and sets <code>PRAGMA synchronous = NORMAL</code> on connections.</li>
+<li><code>daemon/src/browser_memory_daemon/app.py</code> now marks DB paths initialized after daemon startup so hot request handlers do not rerun schema creation or legacy media-task backfill. If a DB path is not ready/missing, handlers still lazily initialize it with <code>seed_media_tasks=False</code> under a process lock.</li>
+<li>The loopback server now uses a bounded larger request backlog (<code>REQUEST_QUEUE_SIZE = 128</code>) and daemon request threads, preventing high-burst stress runs from failing at TCP accept backlog before reaching SQLite.</li>
+<li><code>daemon/src/browser_memory_daemon/media.py</code> now uses a unique temporary file name for each media blob write before atomic replace, preventing concurrent browser-upload/daemon-worker writes for the same artifact from colliding on one deterministic temp path.</li>
+<li><code>daemon/tests/unit/test_db.py</code> now verifies WAL, busy timeout, foreign keys, and synchronous mode on initialized DBs.</li>
+<li><code>daemon/tests/integration/test_media_worker.py</code> now covers concurrent same-artifact media blob writes.</li>
+<li><code>docs/architecture/adr/0014-use-wal-and-bounded-sqlite-contention-policy.md</code> records the WAL/busy-timeout/startup-initialization decision. <code>docs/ARCHITECTURE.md</code> now treats SQLite WAL sidecars as expected runtime artifacts.</li>
+</ul>
+<p>Evidence gathered:</p>
+<ul>
+<li>Pre-hardening stress with <code>./scripts/run-concurrency-stress.sh --captures 24 --reader-rounds 24 --media-worker-runs 8 --max-workers 32 --timeout 60 --no-fail</code> reported connection resets before all captures reached the daemon, proving the harness could fail before exercising SQLite.</li>
+<li>After hardening, the same 24-capture stress passed with <code>ok=True</code>, 24 captures, 80 mixed operations, 24 documents, 24 visit events, 24 succeeded media tasks, and SQLite <code>integrity_check=ok</code>.</li>
+<li>A higher 80-capture stress passed with <code>ok=True</code>, 80 captures, 264 mixed operations, 80 documents, 80 visit events, 80 succeeded media tasks, and SQLite <code>integrity_check=ok</code>.</li>
+<li>Focused tests passed: <code>/tmp/browser-memory-daemon-verify-venv/bin/python -m pytest -q daemon/tests/unit/test_db.py daemon/tests/e2e/test_http_api.py::test_http_capture_skips_request_time_db_initialization_after_startup daemon/tests/e2e/test_concurrency_stress.py daemon/tests/integration/test_media_worker.py::test_concurrent_media_blob_writes_use_distinct_temp_files</code>.</li>
+</ul>
 <h2 id="new-tickets-fog-updates">New tickets / fog updates</h2>
-<p>Pending. If WAL/pragma policy becomes a durable architecture decision, create or supersede an ADR.</p>
+<ul>
+<li>No new ticket. Ticket 012 should include WAL sidecar handling when it designs backup/retention posture.</li>
+</ul>
   </article>
   <div class="md-footer">
     Rendered from <code>docs/wayfinder/durability-performance-coverage/tickets/004-sqlite-write-path-hardening.md</code> — the Markdown file is the canonical,

@@ -21,6 +21,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0011](0011-enable-cdp-recorder-by-default-with-disable-control.md) | accepted | Enable the CDP recorder by default for X/Twitter video completeness while preserving an operator disable control for banner-free browsing. |
 | [ADR-0012](0012-bootstrap-local-ui-token-from-daemon.md) | accepted | Bootstrap the local dashboard token from the daemon-served `/ui` HTML so the UI opens populated while memory/admin APIs remain bearer-authenticated. |
 | [ADR-0013](0013-generated-publish-docs.md) | accepted | Use generated high-level docs and HTML companions for publish-ready documentation while keeping Markdown canonical. |
+| [ADR-0014](0014-use-wal-and-bounded-sqlite-contention-policy.md) | accepted | Use WAL, busy-timeout, startup-only DB initialization, and bounded loopback backlog as the SQLite contention policy. |
 
 ## Backfilled decision history
 

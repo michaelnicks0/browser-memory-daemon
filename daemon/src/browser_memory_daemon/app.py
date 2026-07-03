@@ -28,6 +28,23 @@ from .search import search_memory
 
 
 UI_ROOT = Path(__file__).resolve().parents[3] / "ui"
+REQUEST_QUEUE_SIZE = 128
+_DB_READY_LOCK = threading.Lock()
+_DB_READY_PATHS: set[Path] = set()
+
+
+class MemoryHTTPServer(ThreadingHTTPServer):
+    daemon_threads = True
+    request_queue_size = REQUEST_QUEUE_SIZE
+
+
+def _db_ready_key(config: RuntimeConfig) -> Path:
+    return config.db_path.resolve()
+
+
+def _mark_db_ready(config: RuntimeConfig) -> None:
+    with _DB_READY_LOCK:
+        _DB_READY_PATHS.add(_db_ready_key(config))
 
 
 def _origin_allowed(origin: str) -> bool:
@@ -158,7 +175,14 @@ def _ensure_db(config: RuntimeConfig) -> None:
     # Request handlers still ensure the schema exists, but they must not run the
     # legacy media-task backfill on every capture/event. That backfill can scan
     # and write thousands of rows and contend with the media worker.
-    init_db(config, seed_media_tasks=False)
+    key = _db_ready_key(config)
+    if key in _DB_READY_PATHS and config.db_path.exists():
+        return
+    with _DB_READY_LOCK:
+        if key in _DB_READY_PATHS and config.db_path.exists():
+            return
+        init_db(config, seed_media_tasks=False)
+        _DB_READY_PATHS.add(key)
 
 
 def _background_fetch_pending_media(config: RuntimeConfig, *, snapshot_id: str, limit: int) -> None:
@@ -569,4 +593,5 @@ def make_handler(config: RuntimeConfig):
 
 def make_server(config: RuntimeConfig) -> ThreadingHTTPServer:
     init_db(config)
-    return ThreadingHTTPServer((config.host, config.port), make_handler(config))
+    _mark_db_ready(config)
+    return MemoryHTTPServer((config.host, config.port), make_handler(config))

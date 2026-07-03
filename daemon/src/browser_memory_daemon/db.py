@@ -11,6 +11,7 @@ from .config import RuntimeConfig
 
 SCHEMA_PATH = Path(__file__).with_name("schema.sql")
 SQLITE_BUSY_TIMEOUT_MS = 30_000
+SQLITE_SYNCHRONOUS = "NORMAL"
 
 
 def connect(db_path: Path) -> sqlite3.Connection:
@@ -18,12 +19,15 @@ def connect(db_path: Path) -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute(f"PRAGMA busy_timeout = {SQLITE_BUSY_TIMEOUT_MS}")
     conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute(f"PRAGMA synchronous = {SQLITE_SYNCHRONOUS}")
     return conn
 
 
 def init_db(config: RuntimeConfig, *, seed_media_tasks: bool = True) -> None:
     config.ensure_dirs()
     with connect(config.db_path) as conn:
+        conn.execute("PRAGMA journal_mode = WAL")
+        conn.execute(f"PRAGMA synchronous = {SQLITE_SYNCHRONOUS}")
         conn.executescript(SCHEMA_PATH.read_text())
         conn.execute(
             "INSERT OR IGNORE INTO sources(id, source_type, source_name) VALUES (?, ?, ?)",

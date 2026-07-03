@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 import re
 import sqlite3
+import uuid
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import unquote_to_bytes, urljoin, urlsplit
@@ -1122,7 +1123,7 @@ def _write_media_blob(config: RuntimeConfig, artifact_id: str, mime_type: str, s
     tmp_root = config.media_root / ".tmp"
     tmp_root.mkdir(parents=True, exist_ok=True)
     target.parent.mkdir(parents=True, exist_ok=True)
-    tmp = tmp_root / f"{artifact_id}{extension}.tmp"
+    tmp = tmp_root / f"{artifact_id}.{uuid.uuid4().hex}{extension}.tmp"
     tmp.write_bytes(content)
     tmp.replace(target)
     return str(target)
