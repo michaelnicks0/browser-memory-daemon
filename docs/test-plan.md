@@ -51,19 +51,19 @@ python scripts/generate_showcase.py --spec scripts/showcase.spec.json --check
 python scripts/render_docs.py --repo . --slug browser-memory-daemon --check
 ```
 
-`run-real-chrome-e2e.sh` uses Windows Chrome for Testing because branded Chrome 137+ no longer reliably honors command-line `--load-extension` automation. It honors `BMD_PYTHON` for the WSL daemon and DB probes.
+`run-real-chrome-e2e.sh` uses Windows Chrome for Testing because branded Chrome 137+ no longer reliably honors command-line `--load-extension` automation. It honors `BMD_PYTHON` for the WSL daemon and DB probes. By default it runs the `all strict` matrix; set `BMD_REAL_CHROME_POLICY_MODE=<mode>` for a single debugging run or `BMD_REAL_CHROME_MATRIX_MODES="all strict balanced recall"` for an extended local matrix.
 
 ---
 
 ## Mode-specific e2e
 
-Default all-mode:
+Default matrix (`all` + `strict`):
 
 ```bash
 BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-real-chrome-e2e.sh
 ```
 
-Strict-mode regression:
+Single strict-mode debugging run:
 
 ```bash
 BMD_PYTHON="${BMD_PYTHON:-python}" BMD_REAL_CHROME_POLICY_MODE=strict ./scripts/run-real-chrome-e2e.sh

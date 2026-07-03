@@ -24,7 +24,7 @@ python -m pytest -q
 # Extension tests and build.
 cd extension && npm test && npm run build
 
-# Real Windows Chrome-family e2e.
+# Real Windows Chrome-family e2e. Default matrix runs `all` and `strict`.
 BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-real-chrome-e2e.sh
 
 # Full local gate. `run-e2e.sh` honors BMD_PYTHON, then falls back to python3.11.
@@ -35,7 +35,7 @@ BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-e2e.sh
 git diff --check -- .
 ```
 
-`./scripts/run-e2e.sh` runs daemon tests, extension tests/build, real Chrome e2e unless `BMD_SKIP_REAL_CHROME_E2E=1`, secret scan, and whitespace check.
+`./scripts/run-e2e.sh` runs daemon tests, extension tests/build, the real Chrome e2e matrix unless `BMD_SKIP_REAL_CHROME_E2E=1`, secret scan, and whitespace check.
 
 ---
 
@@ -211,15 +211,27 @@ Latest inventory: **100 static test functions** across **18 files** (73 daemon p
 
 | Mode | Daemon unit/integration | Extension unit | Real Chrome e2e |
 |---|---|---|---|
-| `all` | Allows formerly blocked URL surfaces unless explicitly blocked; stores unredacted fixture secrets. | Does not apply built-in URL blocks; still skips hidden/form/editable/script/style/no-script DOM text. | Default e2e expects banking and localhost fixtures searchable while hidden/form text stays absent. |
+| `all` | Allows formerly blocked URL surfaces unless explicitly blocked; stores unredacted fixture secrets. | Does not apply built-in URL blocks; still skips hidden/form/editable/script/style/no-script DOM text. | Default e2e matrix expects banking and localhost fixtures searchable while hidden/form text stays absent, explicit URL-prefix blocks stay absent, pause skips capture, media sidecars store, and lifecycle queues drain. |
 | `recall` | Allows profile/settings and known domains; blocks incognito/internal schemes; redacts. | Allows broad `http(s)`; blocks browser/internal schemes. | Optional via `BMD_REAL_CHROME_POLICY_MODE=recall`. |
 | `balanced` | Allows normal profile/settings; blocks known high-risk domains/private hosts/query secrets; redacts. | Same class in extension prefilter. | Optional via `BMD_REAL_CHROME_POLICY_MODE=balanced`. |
-| `strict` | Legacy broad keyword/domain/path/query blocks; redacts. | Legacy URL/DOM skip behavior. | Optional via `BMD_REAL_CHROME_POLICY_MODE=strict`. |
+| `strict` | Legacy broad keyword/domain/path/query blocks; redacts. | Legacy URL/DOM skip behavior. | Default e2e matrix expects banking/private localhost fixtures absent while allowed/SPAs/media/lifecycle still work. |
 
-Run a real-browser e2e in a non-default mode:
+Run the default all+strict real-browser matrix:
+
+```bash
+BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-real-chrome-e2e.sh
+```
+
+Run one mode while debugging:
 
 ```bash
 BMD_PYTHON="${BMD_PYTHON:-python}" BMD_REAL_CHROME_POLICY_MODE=strict ./scripts/run-real-chrome-e2e.sh
+```
+
+Run a custom matrix:
+
+```bash
+BMD_PYTHON="${BMD_PYTHON:-python}" BMD_REAL_CHROME_MATRIX_MODES="all strict balanced recall" ./scripts/run-real-chrome-e2e.sh
 ```
 
 ---

@@ -126,7 +126,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
   <article class="md-body">
 <h1 id="expand-real-chrome-e2e-matrix">Expand real Chrome e2e matrix</h1>
 <h2 id="status">Status</h2>
-<p>open</p>
+<p>closed</p>
 <h2 id="question">Question</h2>
 <p>Can the real Chrome for Testing e2e cover the critical policy modes, pause/control states, explicit block rules, media sidecars, and lifecycle surfaces without touching the daily-driver Chrome profile?</p>
 <h2 id="type">Type</h2>
@@ -145,9 +145,25 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>Blocked by: none; ticket 001 preferred.</li>
 </ul>
 <h2 id="resolution">Resolution</h2>
-<p>Pending.</p>
+<p>Closed in this slice. <code>scripts/run-real-chrome-e2e.sh</code> now runs an isolated Chrome for Testing matrix for <code>all</code> and <code>strict</code> by default, while preserving <code>BMD_REAL_CHROME_POLICY_MODE=&lt;mode&gt;</code> for single-mode debugging and <code>BMD_REAL_CHROME_MATRIX_MODES=...</code> for extended local matrices. The wrapper chooses free loopback port bases per matrix leg so sequential runs do not collide with stale local ports.</p>
+<p>The real-browser scenario now also proves pause/control and explicit block-rule behavior, not only default capture:</p>
+<ul>
+<li><code>capturePaused=true</code> skips injection/capture and leaves the paused fixture absent from search;</li>
+<li>a daemon URL-prefix block rule prevents an otherwise allowed page from becoming searchable;</li>
+<li><code>all</code> mode still stores sensitive-domain and localhost/private fixtures;</li>
+<li><code>strict</code> mode excludes sensitive-domain and localhost/private fixtures;</li>
+<li>allowed, SPA, public/cookie media, <code>blob:</code> media, lifecycle telemetry, and queue drainage remain covered in each matrix leg.</li>
+</ul>
+<p>Evidence:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span>/tmp/browser-memory-daemon-verify-venv/bin/python<span style="color: #F8F8F2"> BMD_REAL_CHROME_MATRIX_MODES</span><span style="color: #FF4689">=</span>all<span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
+<span style="color: #959077"># passed: all-mode pause, explicit block, media, lifecycle, queue, and DB-count assertions</span>
+
+<span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span>/tmp/browser-memory-daemon-verify-venv/bin/python<span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
+<span style="color: #959077"># passed: default all + strict Chrome for Testing matrix</span>
+</code></pre></div>
+
 <h2 id="new-tickets-fog-updates">New tickets / fog updates</h2>
-<p>Pending. If the matrix becomes slow/flaky, create a follow-up ticket to split smoke vs exhaustive e2e gates.</p>
+<p>No new ticket. The default two-leg matrix remained stable in focused verification; keep the existing fog item about splitting smoke vs exhaustive e2e only if future runtime/flakiness becomes unacceptable.</p>
   </article>
   <div class="md-footer">
     Rendered from <code>docs/wayfinder/durability-performance-coverage/tickets/008-real-chrome-e2e-matrix.md</code> — the Markdown file is the canonical,

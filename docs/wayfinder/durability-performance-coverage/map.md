@@ -20,10 +20,10 @@
 - [016 — Shorten transaction boundaries and capture idempotency](tickets/016-shorten-transaction-boundaries-and-idempotency.md) — staged clean-text writes before short capture transactions, made duplicate captures/chunks/FTS idempotent, enforced semantic policy-rule uniqueness, and recorded ADR-0015.
 - [005 — Expand HTTP API contract coverage](tickets/005-http-api-contract-coverage.md) — covered JSON auth/error/malformed/unknown-method behavior, limit bounds, and duplicate policy-rule HTTP semantics.
 - [007 — Expand extension service-worker resilience coverage](tickets/007-extension-service-worker-resilience.md) — added a mocked-Chrome service-worker harness proving daemon-down queue persistence, pause/token/rule controls, and media-upload retry blob retention.
+- [008 — Expand real Chrome e2e matrix](tickets/008-real-chrome-e2e-matrix.md) — default Chrome for Testing e2e now runs `all` + `strict` and covers pause, explicit URL-prefix block, media, lifecycle, queue drainage, and mode-specific sensitive/local expectations.
 
 ## Frontier
 
-- [008 — Expand real Chrome e2e matrix](tickets/008-real-chrome-e2e-matrix.md) — turn the real-browser authority into a broader policy/control/surface matrix without touching daily Chrome.
 - [009 — Add performance benchmark harness and budgets](tickets/009-performance-benchmark-harness.md) — measure ingest/search/timeline/detail/media-worker behavior on synthetic scalable datasets.
 - [011 — Harden installer/token/Windows artifact consistency](tickets/011-installer-token-artifact-consistency.md) — make daily-driver install/refresh more testable and self-validating.
 - [012 — Design retention, compaction, and backup posture](tickets/012-retention-compaction-backup-design.md) — now unblocked by the baseline; use current DB/media/headroom evidence plus explicit operator thresholds.
@@ -46,12 +46,12 @@
 
 ## Handoff
 
-Open frontier tickets: 7. Blocked tickets: 1.
+Open frontier tickets: 6. Blocked tickets: 1.
 
-Recommended next ticket: **008 — Expand real Chrome e2e matrix**. Service-worker resilience now has unit coverage; the next coverage gap is broadening the isolated Chrome for Testing e2e matrix.
+Recommended next ticket: **009 — Add performance benchmark harness and budgets**. Real-browser coverage now spans the core mode/control matrix; the next blocker is generating benchmark evidence so 010 can proceed.
 
 Copy into a fresh session:
 
 ```text
-Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/008-real-chrome-e2e-matrix.md.
+Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/009-performance-benchmark-harness.md.
 ```

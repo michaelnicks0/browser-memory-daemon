@@ -149,7 +149,7 @@ python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </spa
 <span style="color: #959077"># Extension tests and build.</span>
 <span style="color: #F8F8F2">cd </span>extension<span style="color: #F8F8F2"> </span><span style="color: #FF4689">&amp;&amp;</span><span style="color: #F8F8F2"> </span>npm<span style="color: #F8F8F2"> test </span><span style="color: #FF4689">&amp;&amp;</span><span style="color: #F8F8F2"> </span>npm<span style="color: #F8F8F2"> </span>run<span style="color: #F8F8F2"> </span>build
 
-<span style="color: #959077"># Real Windows Chrome-family e2e.</span>
+<span style="color: #959077"># Real Windows Chrome-family e2e. Default matrix runs `all` and `strict`.</span>
 <span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
 
 <span style="color: #959077"># Full local gate. `run-e2e.sh` honors BMD_PYTHON, then falls back to python3.11.</span>
@@ -160,7 +160,7 @@ python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </spa
 git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span>--check<span style="color: #F8F8F2"> </span>--<span style="color: #F8F8F2"> </span>.
 </code></pre></div>
 
-<p><code>./scripts/run-e2e.sh</code> runs daemon tests, extension tests/build, real Chrome e2e unless <code>BMD_SKIP_REAL_CHROME_E2E=1</code>, secret scan, and whitespace check.</p>
+<p><code>./scripts/run-e2e.sh</code> runs daemon tests, extension tests/build, the real Chrome e2e matrix unless <code>BMD_SKIP_REAL_CHROME_E2E=1</code>, secret scan, and whitespace check.</p>
 <hr />
 <h2 id="durabilityconcurrency-stress-harness">Durability/concurrency stress harness</h2>
 <p>Use this bounded local stress harness before changing SQLite write paths, media-worker leases, capture transaction boundaries, or request-handler DB behavior:</p>
@@ -419,7 +419,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <td><code>all</code></td>
 <td>Allows formerly blocked URL surfaces unless explicitly blocked; stores unredacted fixture secrets.</td>
 <td>Does not apply built-in URL blocks; still skips hidden/form/editable/script/style/no-script DOM text.</td>
-<td>Default e2e expects banking and localhost fixtures searchable while hidden/form text stays absent.</td>
+<td>Default e2e matrix expects banking and localhost fixtures searchable while hidden/form text stays absent, explicit URL-prefix blocks stay absent, pause skips capture, media sidecars store, and lifecycle queues drain.</td>
 </tr>
 <tr>
 <td><code>recall</code></td>
@@ -437,12 +437,20 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <td><code>strict</code></td>
 <td>Legacy broad keyword/domain/path/query blocks; redacts.</td>
 <td>Legacy URL/DOM skip behavior.</td>
-<td>Optional via <code>BMD_REAL_CHROME_POLICY_MODE=strict</code>.</td>
+<td>Default e2e matrix expects banking/private localhost fixtures absent while allowed/SPAs/media/lifecycle still work.</td>
 </tr>
 </tbody>
 </table>
-<p>Run a real-browser e2e in a non-default mode:</p>
+<p>Run the default all+strict real-browser matrix:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
+</code></pre></div>
+
+<p>Run one mode while debugging:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> BMD_REAL_CHROME_POLICY_MODE</span><span style="color: #FF4689">=</span>strict<span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
+</code></pre></div>
+
+<p>Run a custom matrix:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> BMD_REAL_CHROME_MATRIX_MODES</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;all strict balanced recall&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
 </code></pre></div>
 
 <hr />

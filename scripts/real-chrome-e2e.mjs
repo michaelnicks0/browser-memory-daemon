@@ -30,6 +30,8 @@ const pythonBin = process.env.BMD_PYTHON || 'python3';
 const visibleNeedle = `BMD_REAL_CHROME_VISIBLE_${runId.replace(/[^A-Za-z0-9]/g, '_')}`;
 const hiddenNeedle = `BMD_REAL_CHROME_HIDDEN_${runId.replace(/[^A-Za-z0-9]/g, '_')}`;
 const blockedNeedle = `BMD_REAL_CHROME_BLOCKED_${runId.replace(/[^A-Za-z0-9]/g, '_')}`;
+const explicitBlockNeedle = `BMD_REAL_CHROME_EXPLICIT_BLOCK_${runId.replace(/[^A-Za-z0-9]/g, '_')}`;
+const pausedNeedle = `BMD_REAL_CHROME_PAUSED_${runId.replace(/[^A-Za-z0-9]/g, '_')}`;
 const localNeedle = `BMD_REAL_CHROME_LOCAL_${runId.replace(/[^A-Za-z0-9]/g, '_')}`;
 const spaNeedle = `BMD_REAL_CHROME_SPA_${runId.replace(/[^A-Za-z0-9]/g, '_')}`;
 const blobVideoNeedle = `BMD_REAL_CHROME_BLOB_VIDEO_${runId.replace(/[^A-Za-z0-9]/g, '_')}`;
@@ -40,6 +42,8 @@ const allowedUrl = `http://bmd-allowed.test:${pagePort}/allowed`;
 const blobVideoUrl = `http://bmd-allowed.test:${pagePort}/blob-video`;
 const spaUrl = `http://bmd-allowed.test:${pagePort}/spa`;
 const blockedUrl = `http://bank.example.test:${pagePort}/blocked`;
+const explicitBlockedUrl = `http://bmd-allowed.test:${pagePort}/explicit-blocked`;
+const pausedUrl = `http://bmd-allowed.test:${pagePort}/paused`;
 const localUrl = `http://127.0.0.1:${pagePort}/local`;
 const daemonUrl = `http://127.0.0.1:${daemonPort}`;
 const cdpUrl = `http://127.0.0.1:${cdpPort}`;
@@ -160,6 +164,17 @@ async function daemonSearch(query) {
   return body.results || [];
 }
 
+async function daemonPost(pathname, body) {
+  const response = await fetch(`${daemonUrl}${pathname}`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const payload = await response.json();
+  if (!response.ok) fail(`daemon POST ${pathname} failed ${response.status}: ${JSON.stringify(payload)}`);
+  return payload;
+}
+
 async function waitForSearchHit(query, timeoutMs = 15000) {
   const started = Date.now();
   let results = [];
@@ -169,6 +184,12 @@ async function waitForSearchHit(query, timeoutMs = 15000) {
     await sleep(500);
   }
   fail(`search did not find expected query ${query}; last result count=${results.length}`);
+}
+
+async function assertSearchAbsent(query, label, settleMs = 2000) {
+  await sleep(settleMs);
+  const results = await daemonSearch(query);
+  if (results.length !== 0) fail(`${label} unexpectedly became searchable: ${JSON.stringify(results)}`);
 }
 
 function startPageServer() {
@@ -223,6 +244,14 @@ function startPageServer() {
     </main>
   </body>
 </html>`);
+      return;
+    }
+    if (url.pathname === '/explicit-blocked') {
+      res.end(`<!doctype html><title>Explicit block fixture</title><body>Explicit policy block proof ${explicitBlockNeedle}</body>`);
+      return;
+    }
+    if (url.pathname === '/paused') {
+      res.end(`<!doctype html><title>Paused capture fixture</title><body>Paused capture proof ${pausedNeedle}</body>`);
       return;
     }
     if (url.pathname === '/spa' || url.pathname === '/spa/route-two') {
@@ -723,6 +752,33 @@ async function runScenario() {
   const { storageSessionId } = await configureExtensionStorage(browserCdp);
   await sleep(1000);
 
+  await evaluate(
+    browserCdp,
+    storageSessionId,
+    `chrome.storage.local.set({capturePaused: true}).then(() => 'ok')`,
+    { awaitPromise: true }
+  );
+  await openPageAndWait(browserCdp, pausedUrl);
+  const pausedInjection = await triggerExtensionInjection(browserCdp, storageSessionId, pausedUrl);
+  if (!pausedInjection.skipped || pausedInjection.reason !== 'paused') {
+    fail(`paused capture control did not skip injection: ${JSON.stringify(pausedInjection)}`);
+  }
+  await assertSearchAbsent(pausedNeedle, 'paused capture fixture');
+  await evaluate(
+    browserCdp,
+    storageSessionId,
+    `chrome.storage.local.set({capturePaused: false}).then(() => 'ok')`,
+    { awaitPromise: true }
+  );
+  log('pause/resume control skipped capture without storing the paused fixture');
+
+  const explicitRule = await daemonPost('/policy/rules', { rule_type: 'url-prefix', pattern: explicitBlockedUrl, action: 'block' });
+  log(`created explicit URL-prefix block rule ${explicitRule.rule?.id || explicitRule.id || 'unknown'}`);
+  await openPageAndWait(browserCdp, explicitBlockedUrl);
+  await triggerExtensionInjection(browserCdp, storageSessionId, explicitBlockedUrl);
+  await assertSearchAbsent(explicitBlockNeedle, 'explicit policy block fixture');
+  log('explicit URL-prefix block rule prevented storage in real Chrome e2e');
+
   await openPageAndWait(browserCdp, allowedUrl);
   await triggerExtensionInjection(browserCdp, storageSessionId, allowedUrl);
   let visibleResults;
@@ -827,10 +883,14 @@ async function runScenario() {
     blobVideoUrl,
     spaUrl,
     blockedUrl,
+    explicitBlockedUrl,
+    pausedUrl,
     localUrl,
     visibleNeedle,
     blobVideoNeedle,
     hiddenNeedle,
+    explicitBlockNeedle,
+    pausedNeedle,
     spaNeedle,
     blockedNeedle,
     localNeedle,

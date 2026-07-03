@@ -145,10 +145,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li><a href="tickets/016-shorten-transaction-boundaries-and-idempotency.html">016 — Shorten transaction boundaries and capture idempotency</a> — staged clean-text writes before short capture transactions, made duplicate captures/chunks/FTS idempotent, enforced semantic policy-rule uniqueness, and recorded ADR-0015.</li>
 <li><a href="tickets/005-http-api-contract-coverage.html">005 — Expand HTTP API contract coverage</a> — covered JSON auth/error/malformed/unknown-method behavior, limit bounds, and duplicate policy-rule HTTP semantics.</li>
 <li><a href="tickets/007-extension-service-worker-resilience.html">007 — Expand extension service-worker resilience coverage</a> — added a mocked-Chrome service-worker harness proving daemon-down queue persistence, pause/token/rule controls, and media-upload retry blob retention.</li>
+<li><a href="tickets/008-real-chrome-e2e-matrix.html">008 — Expand real Chrome e2e matrix</a> — default Chrome for Testing e2e now runs <code>all</code> + <code>strict</code> and covers pause, explicit URL-prefix block, media, lifecycle, queue drainage, and mode-specific sensitive/local expectations.</li>
 </ul>
 <h2 id="frontier">Frontier</h2>
 <ul>
-<li><a href="tickets/008-real-chrome-e2e-matrix.html">008 — Expand real Chrome e2e matrix</a> — turn the real-browser authority into a broader policy/control/surface matrix without touching daily Chrome.</li>
 <li><a href="tickets/009-performance-benchmark-harness.html">009 — Add performance benchmark harness and budgets</a> — measure ingest/search/timeline/detail/media-worker behavior on synthetic scalable datasets.</li>
 <li><a href="tickets/011-installer-token-artifact-consistency.html">011 — Harden installer/token/Windows artifact consistency</a> — make daily-driver install/refresh more testable and self-validating.</li>
 <li><a href="tickets/012-retention-compaction-backup-design.html">012 — Design retention, compaction, and backup posture</a> — now unblocked by the baseline; use current DB/media/headroom evidence plus explicit operator thresholds.</li>
@@ -170,10 +170,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>Whether operational alerts should integrate with an external notification channel; remote delivery requires explicit approval.</li>
 </ul>
 <h2 id="handoff">Handoff</h2>
-<p>Open frontier tickets: 7. Blocked tickets: 1.</p>
-<p>Recommended next ticket: <strong>008 — Expand real Chrome e2e matrix</strong>. Service-worker resilience now has unit coverage; the next coverage gap is broadening the isolated Chrome for Testing e2e matrix.</p>
+<p>Open frontier tickets: 6. Blocked tickets: 1.</p>
+<p>Recommended next ticket: <strong>009 — Add performance benchmark harness and budgets</strong>. Real-browser coverage now spans the core mode/control matrix; the next blocker is generating benchmark evidence so 010 can proceed.</p>
 <p>Copy into a fresh session:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/008-real-chrome-e2e-matrix.md.
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/009-performance-benchmark-harness.md.
 </code></pre></div>
   </article>
   <div class="md-footer">

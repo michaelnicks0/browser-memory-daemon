@@ -38,7 +38,7 @@ The project needs fast unit/integration tests, but the browser boundary must be 
 
 We will treat real Windows Chrome-family e2e as the verification authority for extension-to-WSL behavior.
 
-The primary gate remains `./scripts/run-e2e.sh`, which runs daemon tests, extension unit tests/build, real Chrome e2e unless explicitly skipped, secret scan, and whitespace checks. `scripts/run-real-chrome-e2e.sh` / `scripts/real-chrome-e2e.mjs` use Chrome for Testing by default because branded Chrome can ignore command-line unpacked-extension automation. Non-all policy modes remain separately smokeable with `BMD_REAL_CHROME_POLICY_MODE`.
+The primary gate remains `./scripts/run-e2e.sh`, which runs daemon tests, extension unit tests/build, the real Chrome e2e matrix unless explicitly skipped, secret scan, and whitespace checks. `scripts/run-real-chrome-e2e.sh` / `scripts/real-chrome-e2e.mjs` use Chrome for Testing by default because branded Chrome can ignore command-line unpacked-extension automation. The default real-browser matrix runs `all` plus `strict`; single-mode debugging remains available with `BMD_REAL_CHROME_POLICY_MODE`, and broader local matrices remain available with `BMD_REAL_CHROME_MATRIX_MODES`.
 
 ## Decision drivers
 
@@ -76,8 +76,8 @@ The primary gate remains `./scripts/run-e2e.sh`, which runs daemon tests, extens
 
 ## Verification / validation
 
-- Verification: `scripts/run-e2e.sh` runs daemon pytest through `BMD_PYTHON`/Python 3.11+, extension `npm test` and `npm run build`, real Chrome e2e by default, secret scan, and `git diff --check -- .`.
-- Verification: `scripts/real-chrome-e2e.mjs` asserts real search hits, hidden/form/editable absence, all-mode sensitive/local fixtures, SPA route capture, media storage, queue drainage, DB counts, and lifecycle telemetry.
+- Verification: `scripts/run-e2e.sh` runs daemon pytest through `BMD_PYTHON`/Python 3.11+, extension `npm test` and `npm run build`, the real Chrome e2e matrix by default, secret scan, and `git diff --check -- .`.
+- Verification: `scripts/real-chrome-e2e.mjs` asserts real search hits, hidden/form/editable absence, pause-state skip behavior, explicit URL-prefix block behavior, all-mode sensitive/local fixtures, strict-mode sensitive/local exclusion, SPA route capture, media storage, queue drainage, DB counts, and lifecycle telemetry.
 - Verification: `docs/TESTS.md` and `docs/test-plan.md` list the primary gates and requirement coverage.
 - Backfill hygiene verification passed on 2026-06-14: ADR lint, repo Markdown fence check, `git diff --check -- .`, `./scripts/secret-scan.sh`, and `BMD_SKIP_REAL_CHROME_E2E=1 ./scripts/run-e2e.sh` using a temporary Python 3.11 shim.
 - Validation: architecture-impacting browser/daemon changes can be accepted only after the real boundary is exercised or an explicit skip/blocker is reported.

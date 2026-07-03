@@ -156,7 +156,7 @@ verification:
 <p>The project needs fast unit/integration tests, but the browser boundary must be validated in a real Chrome-family runtime.</p>
 <h2 id="decision">Decision</h2>
 <p>We will treat real Windows Chrome-family e2e as the verification authority for extension-to-WSL behavior.</p>
-<p>The primary gate remains <code>./scripts/run-e2e.sh</code>, which runs daemon tests, extension unit tests/build, real Chrome e2e unless explicitly skipped, secret scan, and whitespace checks. <code>scripts/run-real-chrome-e2e.sh</code> / <code>scripts/real-chrome-e2e.mjs</code> use Chrome for Testing by default because branded Chrome can ignore command-line unpacked-extension automation. Non-all policy modes remain separately smokeable with <code>BMD_REAL_CHROME_POLICY_MODE</code>.</p>
+<p>The primary gate remains <code>./scripts/run-e2e.sh</code>, which runs daemon tests, extension unit tests/build, the real Chrome e2e matrix unless explicitly skipped, secret scan, and whitespace checks. <code>scripts/run-real-chrome-e2e.sh</code> / <code>scripts/real-chrome-e2e.mjs</code> use Chrome for Testing by default because branded Chrome can ignore command-line unpacked-extension automation. The default real-browser matrix runs <code>all</code> plus <code>strict</code>; single-mode debugging remains available with <code>BMD_REAL_CHROME_POLICY_MODE</code>, and broader local matrices remain available with <code>BMD_REAL_CHROME_MATRIX_MODES</code>.</p>
 <h2 id="decision-drivers">Decision drivers</h2>
 <ul>
 <li>MV3 behavior can pass unit tests while failing in real Chrome.</li>
@@ -221,8 +221,8 @@ verification:
 </ul>
 <h2 id="verification-validation">Verification / validation</h2>
 <ul>
-<li>Verification: <code>scripts/run-e2e.sh</code> runs daemon pytest through <code>BMD_PYTHON</code>/Python 3.11+, extension <code>npm test</code> and <code>npm run build</code>, real Chrome e2e by default, secret scan, and <code>git diff --check -- .</code>.</li>
-<li>Verification: <code>scripts/real-chrome-e2e.mjs</code> asserts real search hits, hidden/form/editable absence, all-mode sensitive/local fixtures, SPA route capture, media storage, queue drainage, DB counts, and lifecycle telemetry.</li>
+<li>Verification: <code>scripts/run-e2e.sh</code> runs daemon pytest through <code>BMD_PYTHON</code>/Python 3.11+, extension <code>npm test</code> and <code>npm run build</code>, the real Chrome e2e matrix by default, secret scan, and <code>git diff --check -- .</code>.</li>
+<li>Verification: <code>scripts/real-chrome-e2e.mjs</code> asserts real search hits, hidden/form/editable absence, pause-state skip behavior, explicit URL-prefix block behavior, all-mode sensitive/local fixtures, strict-mode sensitive/local exclusion, SPA route capture, media storage, queue drainage, DB counts, and lifecycle telemetry.</li>
 <li>Verification: <code>docs/TESTS.md</code> and <code>docs/test-plan.md</code> list the primary gates and requirement coverage.</li>
 <li>Backfill hygiene verification passed on 2026-06-14: ADR lint, repo Markdown fence check, <code>git diff --check -- .</code>, <code>./scripts/secret-scan.sh</code>, and <code>BMD_SKIP_REAL_CHROME_E2E=1 ./scripts/run-e2e.sh</code> using a temporary Python 3.11 shim.</li>
 <li>Validation: architecture-impacting browser/daemon changes can be accepted only after the real boundary is exercised or an explicit skip/blocker is reported.</li>

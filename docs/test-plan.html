@@ -248,14 +248,14 @@ python<span style="color: #F8F8F2"> </span>scripts/generate_showcase.py<span sty
 python<span style="color: #F8F8F2"> </span>scripts/render_docs.py<span style="color: #F8F8F2"> </span>--repo<span style="color: #F8F8F2"> </span>.<span style="color: #F8F8F2"> </span>--slug<span style="color: #F8F8F2"> </span>browser-memory-daemon<span style="color: #F8F8F2"> </span>--check
 </code></pre></div>
 
-<p><code>run-real-chrome-e2e.sh</code> uses Windows Chrome for Testing because branded Chrome 137+ no longer reliably honors command-line <code>--load-extension</code> automation. It honors <code>BMD_PYTHON</code> for the WSL daemon and DB probes.</p>
+<p><code>run-real-chrome-e2e.sh</code> uses Windows Chrome for Testing because branded Chrome 137+ no longer reliably honors command-line <code>--load-extension</code> automation. It honors <code>BMD_PYTHON</code> for the WSL daemon and DB probes. By default it runs the <code>all strict</code> matrix; set <code>BMD_REAL_CHROME_POLICY_MODE=&lt;mode&gt;</code> for a single debugging run or <code>BMD_REAL_CHROME_MATRIX_MODES="all strict balanced recall"</code> for an extended local matrix.</p>
 <hr />
 <h2 id="mode-specific-e2e">Mode-specific e2e</h2>
-<p>Default all-mode:</p>
+<p>Default matrix (<code>all</code> + <code>strict</code>):</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
 </code></pre></div>
 
-<p>Strict-mode regression:</p>
+<p>Single strict-mode debugging run:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> BMD_REAL_CHROME_POLICY_MODE</span><span style="color: #FF4689">=</span>strict<span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
 </code></pre></div>
 
