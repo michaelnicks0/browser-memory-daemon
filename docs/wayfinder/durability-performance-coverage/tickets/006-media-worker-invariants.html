@@ -133,9 +133,12 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <p>task</p>
 <h2 id="inputs-links">Inputs / links</h2>
 <ul>
+<li>Subagent audit <code>deleg_26f18a8a</code>, 2026-07-02</li>
 <li><code>daemon/src/browser_memory_daemon/media_worker.py</code></li>
 <li><code>daemon/src/browser_memory_daemon/media.py</code></li>
+<li><code>daemon/src/browser_memory_daemon/app.py</code> (<code>fetch_pending_media_artifacts</code> call paths)</li>
 <li><code>daemon/tests/integration/test_media_worker.py</code></li>
+<li><code>daemon/tests/e2e/test_concurrency_stress.py</code></li>
 <li><code>docs/media-artifacts.md</code></li>
 <li><code>docs/ARCHITECTURE.md#durable-media-sidecar-architecture</code></li>
 </ul>
@@ -146,6 +149,13 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </ul>
 <h2 id="resolution">Resolution</h2>
 <p>Pending.</p>
+<h2 id="scope-notes-from-late-ticket-004-audit">Scope notes from late ticket-004 audit</h2>
+<ul>
+<li>Direct/background media fetches launched from <code>app.py</code> bypass the <code>media_fetch_tasks</code> lease model and can race with browser uploads, manual fetch controls, and <code>media_worker.run_once</code>.</li>
+<li>Media-worker startup/run currently performs broad normalization and task claiming in one write transaction; separate bounded maintenance from hot-path claim/fetch if tests show lock pressure.</li>
+<li>If normalization is moved out of the broad transaction, task claim should become explicitly atomic (<code>BEGIN IMMEDIATE</code>/guarded <code>UPDATE ... RETURNING</code> or equivalent rowcount-verified claim).</li>
+<li>Coverage should include <code>media_fetch_on_capture=True</code>, not only the stress harness default path that disables per-capture daemon fetches.</li>
+</ul>
 <h2 id="new-tickets-fog-updates">New tickets / fog updates</h2>
 <p>Pending. If task-state semantics change, inspect ADR-0005 and decide whether to supersede/update docs.</p>
   </article>

@@ -4,7 +4,7 @@
 blocked
 
 ## Question
-Given benchmark output and query plans, which read-model paths need indexes, pagination, bounded detail payloads, or query rewrites to remain fast as the SQLite DB grows?
+Given benchmark output and query plans, which read-model paths need indexes, pagination, bounded detail payloads, query rewrites, or reduced synchronous audit writes to remain fast as the SQLite DB grows?
 
 ## Type
 task
@@ -16,6 +16,10 @@ task
 - `daemon/src/browser_memory_daemon/search.py`
 - `daemon/src/browser_memory_daemon/schema.sql`
 - `docs/api.md`
+
+## Scope notes from late ticket-004 audit
+
+- Search, recent, timeline, detail, doctor, and queue/status reads synchronously insert audit rows today. Benchmark and decide whether read-audit writes should be sampled, disabled for high-frequency reads, or moved to an async/batched writer.
 
 ## Blocks / blocked by
 

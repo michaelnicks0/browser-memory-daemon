@@ -17,6 +17,7 @@ research
 - `daemon/src/browser_memory_daemon/schema.sql`
 - `daemon/src/browser_memory_daemon/forget.py`
 - Baseline DB/media growth evidence from ticket 001
+- ADR-0014 SQLite WAL sidecar policy (`*.sqlite3-wal`, `*.sqlite3-shm` are expected live runtime companions)
 
 ## Blocks / blocked by
 
@@ -29,4 +30,4 @@ Pending.
 
 ## New tickets / fog updates
 
-Pending. This is likely ADR-worthy because it affects storage, deletion, backup, and operator data-retention semantics.
+Pending. This is likely ADR-worthy because it affects storage, deletion, backup, WAL checkpoint/sidecar handling, and operator data-retention semantics.

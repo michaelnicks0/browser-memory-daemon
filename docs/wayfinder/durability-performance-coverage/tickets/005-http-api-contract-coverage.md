@@ -13,6 +13,7 @@ task
 
 - `docs/api.md`
 - `daemon/src/browser_memory_daemon/app.py`
+- `daemon/src/browser_memory_daemon/policy_store.py`
 - `daemon/tests/e2e/test_http_api.py`
 - `daemon/tests/e2e/test_admin_api.py`
 
@@ -27,4 +28,4 @@ Pending.
 
 ## New tickets / fog updates
 
-Pending. If endpoint behavior is underspecified, update `docs/api.md` with the contract proven by tests.
+Pending. If endpoint behavior is underspecified, update `docs/api.md` with the contract proven by tests. Include duplicate policy-rule creation semantics if this ticket touches rule endpoints; a late ticket-004 audit noted concurrent identical creates can duplicate rows without a semantic uniqueness constraint.

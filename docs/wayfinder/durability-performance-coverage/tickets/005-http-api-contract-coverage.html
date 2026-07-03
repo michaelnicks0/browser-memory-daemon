@@ -135,6 +135,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <ul>
 <li><code>docs/api.md</code></li>
 <li><code>daemon/src/browser_memory_daemon/app.py</code></li>
+<li><code>daemon/src/browser_memory_daemon/policy_store.py</code></li>
 <li><code>daemon/tests/e2e/test_http_api.py</code></li>
 <li><code>daemon/tests/e2e/test_admin_api.py</code></li>
 </ul>
@@ -146,7 +147,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <h2 id="resolution">Resolution</h2>
 <p>Pending.</p>
 <h2 id="new-tickets-fog-updates">New tickets / fog updates</h2>
-<p>Pending. If endpoint behavior is underspecified, update <code>docs/api.md</code> with the contract proven by tests.</p>
+<p>Pending. If endpoint behavior is underspecified, update <code>docs/api.md</code> with the contract proven by tests. Include duplicate policy-rule creation semantics if this ticket touches rule endpoints; a late ticket-004 audit noted concurrent identical creates can duplicate rows without a semantic uniqueness constraint.</p>
   </article>
   <div class="md-footer">
     Rendered from <code>docs/wayfinder/durability-performance-coverage/tickets/005-http-api-contract-coverage.md</code> — the Markdown file is the canonical,

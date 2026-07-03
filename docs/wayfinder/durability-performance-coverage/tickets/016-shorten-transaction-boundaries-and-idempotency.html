@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>012-Retention-Compaction-Backup-Design — browser-memory-daemon</title>
+<title>016-Shorten-Transaction-Boundaries-And-Idempotency — browser-memory-daemon</title>
 <style>
 :root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
@@ -121,38 +121,53 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <div class="wrap">
   <div class="docbar">
     <a class="home" href="../../../../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
-    <span class="crumb">/ <b>docs/wayfinder/durability-performance-coverage/tickets/012-retention-compaction-backup-design.md</b></span>
+    <span class="crumb">/ <b>docs/wayfinder/durability-performance-coverage/tickets/016-shorten-transaction-boundaries-and-idempotency.md</b></span>
   </div>
   <article class="md-body">
-<h1 id="design-retention-compaction-and-backup-posture">Design retention, compaction, and backup posture</h1>
+<h1 id="shorten-transaction-boundaries-and-capture-idempotency">Shorten transaction boundaries and capture idempotency</h1>
 <h2 id="status">Status</h2>
 <p>open</p>
 <h2 id="question">Question</h2>
-<p>What retention, compaction, export, and backup posture should Browser Memory Daemon adopt for long-term high-volume use while preserving local-first recall and deletion semantics?</p>
+<p>Can capture, media-blob, forget/purge, and policy-rule write paths be made shorter and idempotent enough that filesystem work or duplicate requests do not hold SQLite writer locks longer than necessary or surface avoidable uniqueness/contention failures?</p>
 <h2 id="type">Type</h2>
-<p>research</p>
+<p>task</p>
 <h2 id="inputs-links">Inputs / links</h2>
 <ul>
-<li><code>docs/STATUS.md#pending-roadmap-lanes</code></li>
-<li><code>docs/ARCHITECTURE.md#storage-model</code></li>
-<li><code>docs/api.md#media-artifact-apis</code></li>
-<li><code>daemon/src/browser_memory_daemon/schema.sql</code></li>
+<li>Subagent audit <code>deleg_26f18a8a</code>, 2026-07-02</li>
+<li><code>daemon/src/browser_memory_daemon/ingest.py</code></li>
+<li><code>daemon/src/browser_memory_daemon/media.py</code></li>
 <li><code>daemon/src/browser_memory_daemon/forget.py</code></li>
-<li>Baseline DB/media growth evidence from ticket 001</li>
-<li>ADR-0014 SQLite WAL sidecar policy (<code>*.sqlite3-wal</code>, <code>*.sqlite3-shm</code> are expected live runtime companions)</li>
+<li><code>daemon/src/browser_memory_daemon/policy_store.py</code></li>
+<li><code>daemon/src/browser_memory_daemon/schema.sql</code></li>
+<li><code>daemon/tests/e2e/test_concurrency_stress.py</code></li>
+<li><code>docs/architecture/adr/0014-use-wal-and-bounded-sqlite-contention-policy.md</code></li>
 </ul>
 <h2 id="blocks-blocked-by">Blocks / blocked by</h2>
 <ul>
-<li>Blocks: retention implementation tickets and any backup/export feature.</li>
-<li>Blocked by: none. Ticket 001 provides current DB/media/headroom evidence; likely ADR-worthy.</li>
+<li>Blocks: sustained high-volume capture durability and cleaner future retention/backup work.</li>
+<li>Blocked by: none. Ticket 004's stress harness and WAL policy are available; ticket 009's benchmark harness would improve sizing evidence but is not required for a first idempotency slice.</li>
+</ul>
+<h2 id="scope-notes-from-late-ticket-004-audit">Scope notes from late ticket-004 audit</h2>
+<ul>
+<li>File I/O occurs inside or adjacent to write transactions in capture/text blob staging, media blob budget/eviction paths, purge/forget loops, and related DB updates.</li>
+<li>Capture duplicate/idempotency handling still has check-then-insert edges around snapshots/chunks/FTS rows.</li>
+<li>Policy-rule creation can create concurrent duplicates because <code>privacy_rules</code> has no uniqueness guard over rule semantics.</li>
+<li>Ticket 004 already fixed same-artifact media temp-path collisions; this ticket should avoid reopening that slice unless tests expose a related class.</li>
+</ul>
+<h2 id="candidate-verification">Candidate verification</h2>
+<ul>
+<li>Add focused duplicate-capture/concurrent-capture tests that exercise the same URL/text/snapshot under parallel requests.</li>
+<li>Add policy-rule duplicate tests and schema/UPSERT behavior if uniqueness is introduced.</li>
+<li>Extend <code>./scripts/run-concurrency-stress.sh</code> or add a focused harness mode if the fix changes capture/forget/media side-effect sequencing.</li>
+<li>Run <code>BMD_PYTHON=/tmp/browser-memory-daemon-verify-venv/bin/python ./scripts/run-e2e.sh</code> after implementation.</li>
 </ul>
 <h2 id="resolution">Resolution</h2>
 <p>Pending.</p>
 <h2 id="new-tickets-fog-updates">New tickets / fog updates</h2>
-<p>Pending. This is likely ADR-worthy because it affects storage, deletion, backup, WAL checkpoint/sidecar handling, and operator data-retention semantics.</p>
+<p>Pending. If transaction sequencing changes deletion, media retention, or backup expectations, inspect ADR-0004/ADR-0005/ADR-0014 and update or supersede docs as needed.</p>
   </article>
   <div class="md-footer">
-    Rendered from <code>docs/wayfinder/durability-performance-coverage/tickets/012-retention-compaction-backup-design.md</code> — the Markdown file is the canonical,
+    Rendered from <code>docs/wayfinder/durability-performance-coverage/tickets/016-shorten-transaction-boundaries-and-idempotency.md</code> — the Markdown file is the canonical,
     version-controlled source. This HTML is generated (regenerate with
     <code>scripts/render_docs.py</code>); do not hand-edit.
   </div>

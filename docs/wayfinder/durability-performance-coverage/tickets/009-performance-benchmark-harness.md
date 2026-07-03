@@ -15,6 +15,7 @@ prototype
 - `daemon/src/browser_memory_daemon/search.py`
 - `daemon/src/browser_memory_daemon/ops.py`
 - `daemon/src/browser_memory_daemon/media_worker.py`
+- `daemon/src/browser_memory_daemon/app.py` read endpoints that synchronously write audit rows
 - `daemon/tests/`
 - `docs/ARCHITECTURE.md#storage-model`
 
@@ -29,4 +30,4 @@ Pending.
 
 ## New tickets / fog updates
 
-Pending. Keep benchmarks synthetic and deterministic; do not use captured live text as fixture input.
+Pending. Keep benchmarks synthetic and deterministic; do not use captured live text as fixture input. Include read-endpoint audit-write overhead, media-worker normalization/maintenance sweeps, and WAL/DB sidecar growth in benchmark output if practical.

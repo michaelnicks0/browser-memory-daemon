@@ -128,7 +128,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <h2 id="status">Status</h2>
 <p>blocked</p>
 <h2 id="question">Question</h2>
-<p>Given benchmark output and query plans, which read-model paths need indexes, pagination, bounded detail payloads, or query rewrites to remain fast as the SQLite DB grows?</p>
+<p>Given benchmark output and query plans, which read-model paths need indexes, pagination, bounded detail payloads, query rewrites, or reduced synchronous audit writes to remain fast as the SQLite DB grows?</p>
 <h2 id="type">Type</h2>
 <p>task</p>
 <h2 id="inputs-links">Inputs / links</h2>
@@ -138,6 +138,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li><code>daemon/src/browser_memory_daemon/search.py</code></li>
 <li><code>daemon/src/browser_memory_daemon/schema.sql</code></li>
 <li><code>docs/api.md</code></li>
+</ul>
+<h2 id="scope-notes-from-late-ticket-004-audit">Scope notes from late ticket-004 audit</h2>
+<ul>
+<li>Search, recent, timeline, detail, doctor, and queue/status reads synchronously insert audit rows today. Benchmark and decide whether read-audit writes should be sampled, disabled for high-frequency reads, or moved to an async/batched writer.</li>
 </ul>
 <h2 id="blocks-blocked-by">Blocks / blocked by</h2>
 <ul>

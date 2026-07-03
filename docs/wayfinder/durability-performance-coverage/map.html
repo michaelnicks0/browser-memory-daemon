@@ -153,6 +153,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li><a href="tickets/012-retention-compaction-backup-design.html">012 — Design retention, compaction, and backup posture</a> — now unblocked by the baseline; use current DB/media/headroom evidence plus explicit operator thresholds.</li>
 <li><a href="tickets/013-ui-dashboard-smoke-coverage.html">013 — Add local UI smoke coverage</a> — add dashboard bootstrap/API rendering checks beyond static asset serving.</li>
 <li><a href="tickets/015-storage-headroom-service-start-budget.html">015 — Add storage-headroom and service-start failure budget checks</a> — turn the no-space systemd failure class into preflight/health checks and a journal budget.</li>
+<li><a href="tickets/016-shorten-transaction-boundaries-and-idempotency.html">016 — Shorten transaction boundaries and capture idempotency</a> — follow up late ticket-004 audit findings on filesystem work near writer locks, duplicate capture idempotency, and policy-rule uniqueness.</li>
 </ul>
 <h2 id="blocked">Blocked</h2>
 <ul>
@@ -169,10 +170,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>Whether operational alerts should integrate with an external notification channel; remote delivery requires explicit approval.</li>
 </ul>
 <h2 id="handoff">Handoff</h2>
-<p>Open frontier tickets: 9. Blocked tickets: 2.</p>
-<p>Recommended next ticket: <strong>005 — Expand HTTP API contract coverage</strong>. Ticket 004 closed the core SQLite contention policy; the next useful coverage slice is API contract behavior around auth, malformed input, routes, and limits.</p>
+<p>Open frontier tickets: 10. Blocked tickets: 2.</p>
+<p>Recommended next ticket: <strong>006 — Expand media-worker lifecycle invariant coverage</strong>. Ticket 004 closed the core SQLite contention policy, but the late subagent audit flagged higher-risk remaining media isolation/lease behavior that fits ticket 006.</p>
 <p>Copy into a fresh session:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/005-http-api-contract-coverage.md.
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/006-media-worker-invariants.md.
 </code></pre></div>
   </article>
   <div class="md-footer">

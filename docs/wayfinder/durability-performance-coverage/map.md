@@ -28,6 +28,7 @@
 - [012 — Design retention, compaction, and backup posture](tickets/012-retention-compaction-backup-design.md) — now unblocked by the baseline; use current DB/media/headroom evidence plus explicit operator thresholds.
 - [013 — Add local UI smoke coverage](tickets/013-ui-dashboard-smoke-coverage.md) — add dashboard bootstrap/API rendering checks beyond static asset serving.
 - [015 — Add storage-headroom and service-start failure budget checks](tickets/015-storage-headroom-service-start-budget.md) — turn the no-space systemd failure class into preflight/health checks and a journal budget.
+- [016 — Shorten transaction boundaries and capture idempotency](tickets/016-shorten-transaction-boundaries-and-idempotency.md) — follow up late ticket-004 audit findings on filesystem work near writer locks, duplicate capture idempotency, and policy-rule uniqueness.
 
 ## Blocked
 
@@ -45,12 +46,12 @@
 
 ## Handoff
 
-Open frontier tickets: 9. Blocked tickets: 2.
+Open frontier tickets: 10. Blocked tickets: 2.
 
-Recommended next ticket: **005 — Expand HTTP API contract coverage**. Ticket 004 closed the core SQLite contention policy; the next useful coverage slice is API contract behavior around auth, malformed input, routes, and limits.
+Recommended next ticket: **006 — Expand media-worker lifecycle invariant coverage**. Ticket 004 closed the core SQLite contention policy, but the late subagent audit flagged higher-risk remaining media isolation/lease behavior that fits ticket 006.
 
 Copy into a fresh session:
 
 ```text
-Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/005-http-api-contract-coverage.md.
+Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/006-media-worker-invariants.md.
 ```
