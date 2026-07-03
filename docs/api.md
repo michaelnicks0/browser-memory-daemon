@@ -246,7 +246,7 @@ Current explicit rules are block-only:
 }
 ```
 
-Rules narrow capture in every policy mode, including `all`. Use `domain` for host/subdomain blocks and `url-prefix` for scoped local ports or paths, such as `http://127.0.0.1:32400/`.
+Rules narrow capture in every policy mode, including `all`. Use `domain` for host/subdomain blocks and `url-prefix` for scoped local ports or paths, such as `http://127.0.0.1:32400/`. Rule creation is semantic-idempotent: duplicate `(rule_type, normalized pattern, action)` requests return the existing rule instead of creating parallel rows.
 
 ---
 

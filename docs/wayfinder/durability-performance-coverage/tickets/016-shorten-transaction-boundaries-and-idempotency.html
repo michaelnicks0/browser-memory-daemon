@@ -126,7 +126,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
   <article class="md-body">
 <h1 id="shorten-transaction-boundaries-and-capture-idempotency">Shorten transaction boundaries and capture idempotency</h1>
 <h2 id="status">Status</h2>
-<p>open</p>
+<p>closed</p>
 <h2 id="question">Question</h2>
 <p>Can capture, media-blob, forget/purge, and policy-rule write paths be made shorter and idempotent enough that filesystem work or duplicate requests do not hold SQLite writer locks longer than necessary or surface avoidable uniqueness/contention failures?</p>
 <h2 id="type">Type</h2>
@@ -162,9 +162,27 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>Run <code>BMD_PYTHON=/tmp/browser-memory-daemon-verify-venv/bin/python ./scripts/run-e2e.sh</code> after implementation.</li>
 </ul>
 <h2 id="resolution">Resolution</h2>
-<p>Pending.</p>
+<p>Closed in this slice. The durable write paths now converge duplicate work and avoid broad file I/O while active SQLite writer transactions are open:</p>
+<ul>
+<li>Capture writes stage clean-text files through unique temporary paths before the DB transaction, insert deterministic snapshot/chunk rows with <code>INSERT OR IGNORE</code>, and only add FTS rows when their owning chunk was newly inserted.</li>
+<li>Concurrent duplicate captures for the same normalized URL/text now produce one document, one snapshot, one chunk, one FTS row, and one visit per request.</li>
+<li>Media cache eviction/purge and forget now collect filesystem candidates separately from DB row updates so unlink work is not performed inside broad writer transactions.</li>
+<li>Policy rules now enforce semantic uniqueness on <code>(rule_type, normalized pattern, action)</code> with a migration-safe duplicate cleanup before creating <code>idx_privacy_rules_semantics</code>; concurrent duplicate creates return the same existing rule.</li>
+<li>ADR-0015 records the schema/write-path decision and its orphan-cleanup revisit trigger.</li>
+</ul>
+<p>Evidence:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>/tmp/browser-memory-daemon-verify-venv/bin/python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pytest<span style="color: #F8F8F2"> </span>-q<span style="color: #F8F8F2"> </span>daemon/tests/integration/test_ingest_search_forget.py<span style="color: #F8F8F2"> </span>daemon/tests/integration/test_media_worker.py<span style="color: #F8F8F2"> </span>daemon/tests/unit/test_policy_store.py<span style="color: #F8F8F2"> </span>daemon/tests/unit/test_db.py<span style="color: #F8F8F2"> </span>daemon/tests/e2e/test_http_api.py
+<span style="color: #959077"># 48 passed</span>
+
+./scripts/run-concurrency-stress.sh<span style="color: #F8F8F2"> </span>--captures<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">80</span><span style="color: #F8F8F2"> </span>--reader-rounds<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">80</span><span style="color: #F8F8F2"> </span>--media-worker-runs<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">24</span><span style="color: #F8F8F2"> </span>--max-workers<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">64</span><span style="color: #F8F8F2"> </span>--timeout<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">90</span><span style="color: #F8F8F2"> </span>--no-fail
+<span style="color: #959077"># ok=true; captures 80/80; mixed 264/264; integrity_check=ok; media_task_statuses={&quot;succeeded&quot;: 80}</span>
+
+<span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span>/tmp/browser-memory-daemon-verify-venv/bin/python<span style="color: #F8F8F2"> </span>./scripts/run-e2e.sh
+<span style="color: #959077"># pytest passed; extension node:test 23/23; extension build; real Chrome for Testing e2e ok; secret scan passed</span>
+</code></pre></div>
+
 <h2 id="new-tickets-fog-updates">New tickets / fog updates</h2>
-<p>Pending. If transaction sequencing changes deletion, media retention, or backup expectations, inspect ADR-0004/ADR-0005/ADR-0014 and update or supersede docs as needed.</p>
+<p>No new ticket from this slice. ADR-0015 explicitly leaves orphan cleanup/retention semantics as a revisit trigger for ticket 012 rather than expanding ticket 016 into retention implementation.</p>
   </article>
   <div class="md-footer">
     Rendered from <code>docs/wayfinder/durability-performance-coverage/tickets/016-shorten-transaction-boundaries-and-idempotency.md</code> — the Markdown file is the canonical,

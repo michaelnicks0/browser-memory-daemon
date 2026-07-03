@@ -371,6 +371,8 @@ def _evict_oldest_media_rows(conn: sqlite3.Connection, config: RuntimeConfig, ro
     evicted = 0
     missing_files = 0
     skipped_paths = 0
+    updates: list[tuple[str, str]] = []
+    paths_to_unlink: list[Path] = []
     for row in rows:
         if bytes_to_free > 0 and freed_bytes >= bytes_to_free:
             break
@@ -393,20 +395,31 @@ def _evict_oldest_media_rows(conn: sqlite3.Connection, config: RuntimeConfig, ro
                     size = int(resolved.stat().st_size)
                 except OSError:
                     size = 0
-            resolved.unlink()
+            paths_to_unlink.append(resolved)
             evicted += 1
         else:
             missing_files += 1
             evicted += 1
         freed_bytes += max(0, size)
-        conn.execute(
-            """
-            UPDATE media_artifacts
-            SET file_path = '', capture_status = 'purged', status_reason = ?
-            WHERE id = ?
-            """,
-            (reason, row["id"]),
-        )
+        updates.append((reason, row["id"]))
+    if updates:
+        with conn:
+            conn.executemany(
+                """
+                UPDATE media_artifacts
+                SET file_path = '', capture_status = 'purged', status_reason = ?
+                WHERE id = ?
+                """,
+                updates,
+            )
+    for resolved in paths_to_unlink:
+        try:
+            if resolved.exists():
+                resolved.unlink()
+            else:
+                missing_files += 1
+        except OSError:
+            missing_files += 1
     return {"evicted": evicted, "missing_files": missing_files, "skipped_paths": skipped_paths, "bytes": freed_bytes}
 
 
@@ -1567,6 +1580,7 @@ def purge_media_cache(conn: sqlite3.Connection, config: RuntimeConfig, scope: di
         selected_bytes += size
     purged = 0
     missing = 0
+    paths_to_unlink: list[Path] = []
     if not dry_run:
         with conn:
             for row, resolved, _size in selected:
@@ -1575,8 +1589,7 @@ def purge_media_cache(conn: sqlite3.Connection, config: RuntimeConfig, scope: di
                         ensure_media_fetch_task(conn, row["id"], worker_kind="daemon-public", status="pending", force_reset=True)
                     continue
                 if resolved.exists():
-                    resolved.unlink()
-                    purged += 1
+                    paths_to_unlink.append(resolved)
                 else:
                     missing += 1
                 conn.execute(
@@ -1589,6 +1602,15 @@ def purge_media_cache(conn: sqlite3.Connection, config: RuntimeConfig, scope: di
                 )
                 if rehydrate and _media_fetch_supported(row["source_url"] or ""):
                     ensure_media_fetch_task(conn, row["id"], worker_kind="daemon-public", status="pending", force_reset=True)
+        for resolved in paths_to_unlink:
+            try:
+                if resolved.exists():
+                    resolved.unlink()
+                    purged += 1
+                else:
+                    missing += 1
+            except OSError:
+                missing += 1
     return {
         "dry_run": dry_run,
         "rehydrate": rehydrate,

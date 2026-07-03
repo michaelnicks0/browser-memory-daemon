@@ -23,6 +23,23 @@ def _document_ids_for_url(conn: sqlite3.Connection, url: str) -> list[str]:
     return [row["id"] for row in rows if row["id"]]
 
 
+def _unlink_existing(paths: list[Path]) -> int:
+    unlinked = 0
+    seen: set[str] = set()
+    for path in paths:
+        key = str(path)
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        try:
+            if path.exists():
+                path.unlink()
+                unlinked += 1
+        except OSError:
+            continue
+    return unlinked
+
+
 def forget(conn: sqlite3.Connection, *, domain: str | None = None, url: str | None = None) -> dict:
     if not domain and not url:
         raise ValueError("forget requires domain or url")
@@ -52,16 +69,15 @@ def forget(conn: sqlite3.Connection, *, domain: str | None = None, url: str | No
         "redactions": 0,
         "feedback_events": 0,
     }
+    media_paths: list[Path] = []
+    clean_text_paths: list[Path] = []
     with conn:
         for document_id in document_ids:
             snapshot_rows = conn.execute("SELECT id, cleaned_text_path FROM snapshots WHERE document_id = ?", (document_id,)).fetchall()
             media_rows = conn.execute("SELECT id, file_path FROM media_artifacts WHERE document_id = ?", (document_id,)).fetchall()
             for media in media_rows:
                 if media["file_path"]:
-                    path = Path(media["file_path"])
-                    if path.exists():
-                        path.unlink()
-                        counts["media_blobs"] += 1
+                    media_paths.append(Path(media["file_path"]))
             counts["media_artifacts"] += conn.execute("DELETE FROM media_artifacts WHERE document_id = ?", (document_id,)).rowcount
             chunk_rows = conn.execute("SELECT id FROM chunks WHERE document_id = ?", (document_id,)).fetchall()
             for chunk in chunk_rows:
@@ -72,10 +88,7 @@ def forget(conn: sqlite3.Connection, *, domain: str | None = None, url: str | No
             for snap in snapshot_rows:
                 counts["redactions"] += conn.execute("DELETE FROM redactions WHERE snapshot_id = ?", (snap["id"],)).rowcount
                 if snap["cleaned_text_path"]:
-                    path = Path(snap["cleaned_text_path"])
-                    if path.exists():
-                        path.unlink()
-                        counts["blobs"] += 1
+                    clean_text_paths.append(Path(snap["cleaned_text_path"]))
             counts["chunks"] += conn.execute("DELETE FROM chunks WHERE document_id = ?", (document_id,)).rowcount
             counts["snapshots"] += conn.execute("DELETE FROM snapshots WHERE document_id = ?", (document_id,)).rowcount
             counts["visit_events"] += conn.execute(
@@ -93,7 +106,10 @@ def forget(conn: sqlite3.Connection, *, domain: str | None = None, url: str | No
                     counts["visit_events"] += conn.execute("DELETE FROM visit_events WHERE id = ?", (event["id"],)).rowcount
         else:
             counts["visit_events"] += conn.execute("DELETE FROM visit_events WHERE normalized_url = ?", (scope["url"],)).rowcount
-        receipt_id = str(uuid.uuid4())
+    counts["media_blobs"] = _unlink_existing(media_paths)
+    counts["blobs"] = _unlink_existing(clean_text_paths)
+    receipt_id = str(uuid.uuid4())
+    with conn:
         conn.execute(
             "INSERT INTO deletion_receipts(id, scope_json, counts_json) VALUES (?, ?, ?)",
             (receipt_id, json.dumps(scope, sort_keys=True), json.dumps(counts, sort_keys=True)),

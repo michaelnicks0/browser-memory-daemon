@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Map — browser-memory-daemon</title>
+<title>0015-Use-Idempotent-Local-Write-Paths — browser-memory-daemon</title>
 <style>
 :root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
@@ -121,63 +121,111 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <div class="wrap">
   <div class="docbar">
     <a class="home" href="../../../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
-    <span class="crumb">/ <b>docs/wayfinder/durability-performance-coverage/map.md</b></span>
+    <span class="crumb">/ <b>docs/architecture/adr/0015-use-idempotent-local-write-paths.md</b></span>
   </div>
   <article class="md-body">
-<h1 id="wayfinder-map-browser-memory-daemon-durability-performance-and-coverage">Wayfinder Map: Browser Memory Daemon Durability, Performance, and Coverage</h1>
-<h2 id="notes">Notes</h2>
+<hr />
+<p>id: ADR-0015
+status: accepted
+date: 2026-07-03
+decider: Operator
+scope: repo
+backfilled: false
+supersedes: []
+superseded_by: []
+related:
+  - docs/wayfinder/durability-performance-coverage/tickets/016-shorten-transaction-boundaries-and-idempotency.md
+  - daemon/src/browser_memory_daemon/ingest.py
+  - daemon/src/browser_memory_daemon/media.py
+  - daemon/src/browser_memory_daemon/forget.py
+  - daemon/src/browser_memory_daemon/policy_store.py
+  - daemon/src/browser_memory_daemon/schema.sql
+verification:
+  - /tmp/browser-memory-daemon-verify-venv/bin/python -m pytest -q daemon/tests/integration/test_ingest_search_forget.py daemon/tests/integration/test_media_worker.py daemon/tests/unit/test_policy_store.py daemon/tests/unit/test_db.py daemon/tests/e2e/test_http_api.py
+  - ./scripts/run-concurrency-stress.sh --captures 80 --reader-rounds 80 --media-worker-runs 24 --max-workers 64 --timeout 90 --no-fail
+  - BMD_PYTHON=/tmp/browser-memory-daemon-verify-venv/bin/python ./scripts/run-e2e.sh</p>
+<hr />
+<h1 id="adr-0015-use-idempotent-local-write-paths">ADR-0015: Use Idempotent Local Write Paths</h1>
+<h2 id="context">Context</h2>
+<p>Browser Memory Daemon has several local write paths that can repeat or overlap under normal daily-driver behavior: Chrome may send duplicate captures, media bytes can arrive through browser upload and daemon worker paths, operators can repeat policy-rule requests, and forget/cache operations touch both SQLite rows and WSL-local files.</p>
+<p>ADR-0014 accepted SQLite WAL plus a bounded busy-timeout policy, but WAL does not remove SQLite's single-writer model. Avoidable duplicate inserts, check-then-insert races, or file I/O performed while a write transaction is open can still extend writer-lock duration or surface transient failures.</p>
+<h2 id="decision">Decision</h2>
+<p>We will keep SQLite/FTS5 and local filesystem storage, but make hot local write paths idempotent and keep filesystem byte work outside short SQLite write transactions where safe:</p>
 <ul>
-<li><strong>Foggy goal:</strong> make Browser Memory Daemon more durable under daily-driver failures, faster/measurably performant, and substantially better covered by tests and operational consistency checks.</li>
-<li><strong>Assumptions:</strong> repo-local Markdown is the tracker; no GitHub/Linear/Kanban remote state. Windows Chrome remains the browser surface; WSL remains durable storage owner. <code>policy_mode=all</code> remains the daily-driver default unless a later ADR supersedes it.</li>
-<li><strong>Non-goals for this map:</strong> no cloud vector DB/LLM upload, no default Chrome profile automation, no publishing/pushing, no native-messaging rewrite unless a later ticket proves it is the next bottleneck.</li>
-<li><strong>Standing constraints:</strong> runtime data stays under XDG paths, not the repo; captured page text is untrusted evidence; tests must not use Michael's daily Chrome profile; architecture-impacting decisions require <code>docs/architecture/adr/</code> inspection and likely an ADR.</li>
-<li><strong>Inspected context:</strong> <code>AGENTS.md</code>, <code>docs/ARCHITECTURE.md</code>, <code>docs/STATUS.md</code>, <code>docs/TESTS.md</code>, <code>docs/test-plan.md</code>, <code>docs/api.md</code>, <code>docs/USER_GUIDE.md</code>, <code>docs/architecture/adr/README.md</code>, <code>scripts/install-daily-driver.sh</code>, <code>scripts/run-real-chrome-e2e.sh</code>, <code>pyproject.toml</code>, <code>extension/package.json</code>.</li>
-<li><strong>Current baseline from inspected docs:</strong> 88 static tests across 17 files: 65 daemon pytest tests and 23 extension <code>node:test</code> tests. Source/test line snapshot from ticket 001: daemon source 4,360 LOC vs daemon tests 1,939 LOC; extension source 2,138 LOC vs extension tests 371 LOC.</li>
-<li><strong>Relevant accepted ADRs:</strong> local-first Windows Chrome ⇄ WSL boundary, text-first SQLite/FTS5 + blobs, durable lazy media sidecars, real Chrome e2e as verification authority, C4 model as canonical architecture, generated docs as derived artifacts.</li>
+<li>captures stage clean-text files through unique temporary paths before the DB transaction and use <code>INSERT OR IGNORE</code> for deterministic snapshot/chunk IDs;</li>
+<li>FTS rows are inserted only when their owning chunk row is newly inserted, preventing duplicate FTS entries for repeated snapshot IDs;</li>
+<li>media blob writes continue to stage bytes before row updates, and cache purge/eviction/forget paths avoid unlinking files while holding broad write transactions;</li>
+<li>explicit local policy rules are unique by normalized <code>(rule_type, pattern, action)</code> and duplicate creates return the existing semantic rule.</li>
 </ul>
-<h2 id="decisions-so-far">Decisions so far</h2>
+<h2 id="decision-drivers">Decision drivers</h2>
 <ul>
-<li><a href="tickets/001-baseline-failure-budget.html">001 — Establish reliability/performance/coverage baseline</a> — baseline captured 2026-07-03 UTC: full gate passed, live daily-driver services and DB integrity were OK, media-worker journal history exposed a resolved no-space start-failure class, and read-model endpoints need deterministic benchmark budgets.</li>
-<li><a href="tickets/002-daily-driver-health-snapshot.html">002 — Add daily-driver health snapshot command</a> — added <code>daily-driver-health</code> plus <code>scripts/daily-driver-health.sh</code>, a redaction-safe aggregate over services, loopback, journals, DB freshness, media queue, storage headroom, and extension artifacts.</li>
-<li><a href="tickets/003-concurrency-stress-harness.html">003 — Build deterministic concurrency stress harness</a> — added a temp-runtime stress harness for concurrent captures, lifecycle events, reads, media blob uploads, and media-worker passes against one SQLite DB.</li>
-<li><a href="tickets/004-sqlite-write-path-hardening.html">004 — Harden SQLite write-path policy</a> — enforced WAL/synchronous/busy-timeout pragmas, skipped repeated request-time DB initialization after startup, increased loopback listen backlog, isolated concurrent media temp writes, and recorded ADR-0014.</li>
-<li><a href="tickets/006-media-worker-invariants.html">006 — Expand media-worker lifecycle invariant coverage</a> — routed manual/background media fetch through the durable task lease path and covered active/stale leases, retry backoff, idempotent stored rows, and <code>media_fetch_on_capture=True</code>.</li>
-<li><a href="tickets/016-shorten-transaction-boundaries-and-idempotency.html">016 — Shorten transaction boundaries and capture idempotency</a> — staged clean-text writes before short capture transactions, made duplicate captures/chunks/FTS idempotent, enforced semantic policy-rule uniqueness, and recorded ADR-0015.</li>
+<li>Duplicate captures should be safe and cheap: one document, many visits, one snapshot/chunk/FTS set for identical content.</li>
+<li>Browser uploads, daemon media workers, purge, and forget should not keep SQLite writer locks open during avoidable filesystem work.</li>
+<li>Explicit block rules are operator policy, so duplicate semantic rules should converge rather than create ambiguous rows.</li>
+<li>The fix should remain local, boring, and migration-safe for existing runtime databases.</li>
 </ul>
-<h2 id="frontier">Frontier</h2>
+<h2 id="options-considered">Options considered</h2>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Pros</th>
+<th>Cons</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Leave check-then-insert behavior</td>
+<td>No migration</td>
+<td>Duplicate/concurrent requests can create avoidable errors or duplicate policy rows</td>
+<td>Rejected</td>
+</tr>
+<tr>
+<td>Add deterministic idempotent writes and semantic uniqueness</td>
+<td>Local, testable, preserves SQLite</td>
+<td>Adds a migration/dedup step for old duplicate policy rules</td>
+<td>Chosen</td>
+</tr>
+<tr>
+<td>Introduce a server queue/write service</td>
+<td>Stronger serialization model</td>
+<td>Larger architecture change, unnecessary for current evidence</td>
+<td>Rejected</td>
+</tr>
+</tbody>
+</table>
+<h2 id="consequences">Consequences</h2>
 <ul>
-<li><a href="tickets/005-http-api-contract-coverage.html">005 — Expand HTTP API contract coverage</a> — cover auth, malformed input, method/route errors, limits, and response consistency across endpoints.</li>
-<li><a href="tickets/007-extension-service-worker-resilience.html">007 — Expand extension service-worker resilience coverage</a> — test daemon-down/offline, queue persistence, retry/backoff, pause/rule controls, and token/config behavior.</li>
-<li><a href="tickets/008-real-chrome-e2e-matrix.html">008 — Expand real Chrome e2e matrix</a> — turn the real-browser authority into a broader policy/control/surface matrix without touching daily Chrome.</li>
-<li><a href="tickets/009-performance-benchmark-harness.html">009 — Add performance benchmark harness and budgets</a> — measure ingest/search/timeline/detail/media-worker behavior on synthetic scalable datasets.</li>
-<li><a href="tickets/011-installer-token-artifact-consistency.html">011 — Harden installer/token/Windows artifact consistency</a> — make daily-driver install/refresh more testable and self-validating.</li>
-<li><a href="tickets/012-retention-compaction-backup-design.html">012 — Design retention, compaction, and backup posture</a> — now unblocked by the baseline; use current DB/media/headroom evidence plus explicit operator thresholds.</li>
-<li><a href="tickets/013-ui-dashboard-smoke-coverage.html">013 — Add local UI smoke coverage</a> — add dashboard bootstrap/API rendering checks beyond static asset serving.</li>
-<li><a href="tickets/014-coverage-gates-traceability.html">014 — Add coverage gates and requirements traceability enforcement</a> — now unblocked by ticket 006 coverage expansion, but still best near the end after more coverage tickets land.</li>
-<li><a href="tickets/015-storage-headroom-service-start-budget.html">015 — Add storage-headroom and service-start failure budget checks</a> — turn the no-space systemd failure class into preflight/health checks and a journal budget.</li>
+<li>Positive: repeated captures of the same URL/text snapshot converge without duplicate chunks or FTS rows.</li>
+<li>Positive: policy-rule creation is race-safe under concurrent duplicate requests.</li>
+<li>Positive: filesystem byte writes/unlinks are less likely to extend active SQLite writer locks.</li>
+<li>Neutral: clean-text files may be atomically refreshed for an existing deterministic snapshot ID; the bytes are identical for that ID because the ID includes the text hash.</li>
+<li>Neutral: existing duplicate policy rows are deduplicated during schema initialization before the unique index is created.</li>
+<li>Negative: if a post-commit filesystem unlink fails, a media/clean-text file can remain as an orphan under the local data root; retention/backup work should continue to account for orphan cleanup explicitly.</li>
 </ul>
-<h2 id="blocked">Blocked</h2>
+<h2 id="verification-validation">Verification / validation</h2>
 <ul>
-<li><a href="tickets/010-read-model-query-performance.html">010 — Optimize read-model query/index performance</a> — blocked by ticket 009's benchmark harness and budgets.</li>
+<li>Verification: <code>daemon/tests/integration/test_ingest_search_forget.py::test_concurrent_duplicate_capture_is_idempotent_for_snapshot_chunks_and_fts</code> covers concurrent duplicate capture convergence.</li>
+<li>Verification: <code>daemon/tests/unit/test_policy_store.py::test_policy_rule_creation_is_semantically_idempotent_under_concurrency</code> covers duplicate policy rule creation under concurrency.</li>
+<li>Verification: <code>daemon/tests/unit/test_policy_store.py::test_init_db_dedupes_existing_policy_rules_before_unique_index</code> covers migration-safe semantic uniqueness.</li>
+<li>Verification: <code>./scripts/run-concurrency-stress.sh --captures 80 --reader-rounds 80 --media-worker-runs 24 --max-workers 64 --timeout 90 --no-fail</code> passed with 80 captures, 264 mixed operations, SQLite <code>integrity_check=ok</code>, and 80 succeeded media tasks.</li>
+<li>Verification: <code>BMD_PYTHON=/tmp/browser-memory-daemon-verify-venv/bin/python ./scripts/run-e2e.sh</code> passed pytest, extension unit/build, real Chrome for Testing e2e, and secret scan gates.</li>
+<li>Validation: the daily-driver write model remains local SQLite/FTS5 plus XDG/WSL files while reducing avoidable writer-lock duration and duplicate-request failure modes.</li>
 </ul>
-<h2 id="fog">Fog</h2>
+<h2 id="revisit-triggers">Revisit triggers</h2>
 <ul>
-<li>Whether long-running soak tests should be local-only scripts, scheduled Hermes jobs, or manual release gates.</li>
-<li>Exact retention policy thresholds for full DB/text storage versus media cache; this likely needs operator preference plus storage-growth evidence.</li>
-<li>Whether native messaging should remain a later hardening lane or become a near-term reliability requirement after loopback/SQLite hardening.</li>
-<li>Whether performance budgets should gate every PR/session or stay advisory because Windows Chrome e2e is comparatively heavy.</li>
-<li>Whether dashboard behavior should be tested with a browser automation dependency or a lower-dependency DOM/static harness.</li>
-<li>Whether operational alerts should integrate with an external notification channel; remote delivery requires explicit approval.</li>
+<li>Supersede this ADR if future retention/backup work changes deletion/orphan cleanup semantics.</li>
+<li>Supersede this ADR before introducing a dedicated queue service or replacing SQLite as the local write coordinator.</li>
 </ul>
-<h2 id="handoff">Handoff</h2>
-<p>Open frontier tickets: 9. Blocked tickets: 1.</p>
-<p>Recommended next ticket: <strong>005 — Expand HTTP API contract coverage</strong>. Tickets 006 and 016 closed the highest-risk media lease and duplicate-write durability gaps; the next frontier should lock down loopback API contract behavior before more browser/benchmark coverage.</p>
-<p>Copy into a fresh session:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/005-http-api-contract-coverage.md.
-</code></pre></div>
+<h2 id="references">References</h2>
+<ul>
+<li><code>docs/wayfinder/durability-performance-coverage/tickets/016-shorten-transaction-boundaries-and-idempotency.md</code></li>
+<li><code>docs/architecture/adr/0014-use-wal-and-bounded-sqlite-contention-policy.md</code></li>
+</ul>
   </article>
   <div class="md-footer">
-    Rendered from <code>docs/wayfinder/durability-performance-coverage/map.md</code> — the Markdown file is the canonical,
+    Rendered from <code>docs/architecture/adr/0015-use-idempotent-local-write-paths.md</code> — the Markdown file is the canonical,
     version-controlled source. This HTML is generated (regenerate with
     <code>scripts/render_docs.py</code>); do not hand-edit.
   </div>

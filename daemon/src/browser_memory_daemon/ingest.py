@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import sqlite3
+import uuid
 
 from .config import RuntimeConfig
 from .db import audit
@@ -41,6 +42,17 @@ def chunk_text(text: str, *, max_chars: int = 1800) -> list[str]:
     return chunks
 
 
+def _write_clean_text_atomic(clean_path, text: str) -> None:
+    clean_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = clean_path.with_name(f".{clean_path.name}.{uuid.uuid4().hex}.tmp")
+    try:
+        tmp_path.write_text(text, encoding="utf-8")
+        tmp_path.replace(clean_path)
+    finally:
+        if tmp_path.exists():
+            tmp_path.unlink()
+
+
 def _prepare_storage_values(config: RuntimeConfig, payload: CapturePayload) -> tuple[str, str, str, str, int, list[str]]:
     if config.policy_mode == POLICY_MODE_ALL:
         safe_url = payload.url
@@ -77,6 +89,10 @@ def ingest_capture(conn: sqlite3.Connection, config: RuntimeConfig, payload: Cap
     chunks = chunk_text(stored_text)
     media_refs = parse_media_refs(payload.media_artifacts, max_refs=config.max_media_artifacts_per_capture)
 
+    snapshot_exists_before = conn.execute("SELECT 1 FROM snapshots WHERE id = ?", (snapshot_id,)).fetchone() is not None
+    if not snapshot_exists_before:
+        _write_clean_text_atomic(clean_path, stored_text)
+
     with conn:
         conn.execute(
             """
@@ -110,45 +126,44 @@ def ingest_capture(conn: sqlite3.Connection, config: RuntimeConfig, payload: Cap
                 int(payload.is_incognito),
             ),
         )
-        snapshot_exists = conn.execute("SELECT 1 FROM snapshots WHERE id = ?", (snapshot_id,)).fetchone() is not None
-        if not snapshot_exists:
-            clean_path.parent.mkdir(parents=True, exist_ok=True)
-            clean_path.write_text(stored_text, encoding="utf-8")
-            conn.execute(
-                """
-                INSERT INTO snapshots(
-                  id, document_id, visit_id, captured_at, content_type, extraction_method,
-                  text_hash, cleaned_text_path, privacy_class, redaction_count
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    snapshot_id,
-                    document_id,
-                    payload.visit_id,
-                    payload.captured_at,
-                    payload.content_type,
-                    payload.extraction_method,
-                    digest,
-                    str(clean_path),
-                    config.policy_mode,
-                    redaction_count,
-                ),
-            )
+        snapshot_cursor = conn.execute(
+            """
+            INSERT OR IGNORE INTO snapshots(
+              id, document_id, visit_id, captured_at, content_type, extraction_method,
+              text_hash, cleaned_text_path, privacy_class, redaction_count
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                snapshot_id,
+                document_id,
+                payload.visit_id,
+                payload.captured_at,
+                payload.content_type,
+                payload.extraction_method,
+                digest,
+                str(clean_path),
+                config.policy_mode,
+                redaction_count,
+            ),
+        )
+        snapshot_created = bool(snapshot_cursor.rowcount)
+        if snapshot_created:
             for label in redaction_classes:
                 conn.execute(
-                    "INSERT INTO redactions(id, snapshot_id, redaction_class, redaction_count) VALUES (?, ?, ?, ?)",
+                    "INSERT OR IGNORE INTO redactions(id, snapshot_id, redaction_class, redaction_count) VALUES (?, ?, ?, ?)",
                     (stable_id("red", f"{snapshot_id}:{label}"), snapshot_id, label, redaction_count),
                 )
             for idx, chunk in enumerate(chunks):
                 chunk_id = stable_id("chunk", f"{snapshot_id}:{idx}:{chunk[:64]}")
-                conn.execute(
-                    "INSERT INTO chunks(id, snapshot_id, document_id, chunk_index, text, title, url) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                chunk_cursor = conn.execute(
+                    "INSERT OR IGNORE INTO chunks(id, snapshot_id, document_id, chunk_index, text, title, url) VALUES (?, ?, ?, ?, ?, ?, ?)",
                     (chunk_id, snapshot_id, document_id, idx, chunk, safe_title, safe_url),
                 )
-                conn.execute(
-                    "INSERT INTO chunks_fts(chunk_id, document_id, snapshot_id, title, url, text) VALUES (?, ?, ?, ?, ?, ?)",
-                    (chunk_id, document_id, snapshot_id, safe_title, safe_url, chunk),
-                )
+                if chunk_cursor.rowcount:
+                    conn.execute(
+                        "INSERT INTO chunks_fts(chunk_id, document_id, snapshot_id, title, url, text) VALUES (?, ?, ?, ?, ?, ?)",
+                        (chunk_id, document_id, snapshot_id, safe_title, safe_url, chunk),
+                    )
         media_ref_count = record_media_references(
             conn,
             config,
@@ -165,8 +180,8 @@ def ingest_capture(conn: sqlite3.Connection, config: RuntimeConfig, payload: Cap
                 "document_id": document_id,
                 "snapshot_id": snapshot_id,
                 "visit_id": payload.visit_id,
-                "snapshot_created": not snapshot_exists,
-                "chunk_count": 0 if snapshot_exists else len(chunks),
+                "snapshot_created": snapshot_created,
+                "chunk_count": len(chunks) if snapshot_created else 0,
                 "media_ref_count": media_ref_count,
                 "redaction_count": redaction_count,
                 "redaction_classes": redaction_classes,
@@ -179,8 +194,8 @@ def ingest_capture(conn: sqlite3.Connection, config: RuntimeConfig, payload: Cap
         "document_id": document_id,
         "snapshot_id": snapshot_id,
         "visit_id": payload.visit_id,
-        "snapshot_created": not snapshot_exists,
-        "chunk_count": 0 if snapshot_exists else len(chunks),
+        "snapshot_created": snapshot_created,
+        "chunk_count": len(chunks) if snapshot_created else 0,
         "media_ref_count": media_ref_count,
         "media_artifacts": [
             {

@@ -17,10 +17,10 @@
 - [003 — Build deterministic concurrency stress harness](tickets/003-concurrency-stress-harness.md) — added a temp-runtime stress harness for concurrent captures, lifecycle events, reads, media blob uploads, and media-worker passes against one SQLite DB.
 - [004 — Harden SQLite write-path policy](tickets/004-sqlite-write-path-hardening.md) — enforced WAL/synchronous/busy-timeout pragmas, skipped repeated request-time DB initialization after startup, increased loopback listen backlog, isolated concurrent media temp writes, and recorded ADR-0014.
 - [006 — Expand media-worker lifecycle invariant coverage](tickets/006-media-worker-invariants.md) — routed manual/background media fetch through the durable task lease path and covered active/stale leases, retry backoff, idempotent stored rows, and `media_fetch_on_capture=True`.
+- [016 — Shorten transaction boundaries and capture idempotency](tickets/016-shorten-transaction-boundaries-and-idempotency.md) — staged clean-text writes before short capture transactions, made duplicate captures/chunks/FTS idempotent, enforced semantic policy-rule uniqueness, and recorded ADR-0015.
 
 ## Frontier
 
-- [016 — Shorten transaction boundaries and capture idempotency](tickets/016-shorten-transaction-boundaries-and-idempotency.md) — follow up late ticket-004 audit findings on filesystem work near writer locks, duplicate capture idempotency, and policy-rule uniqueness.
 - [005 — Expand HTTP API contract coverage](tickets/005-http-api-contract-coverage.md) — cover auth, malformed input, method/route errors, limits, and response consistency across endpoints.
 - [007 — Expand extension service-worker resilience coverage](tickets/007-extension-service-worker-resilience.md) — test daemon-down/offline, queue persistence, retry/backoff, pause/rule controls, and token/config behavior.
 - [008 — Expand real Chrome e2e matrix](tickets/008-real-chrome-e2e-matrix.md) — turn the real-browser authority into a broader policy/control/surface matrix without touching daily Chrome.
@@ -46,12 +46,12 @@
 
 ## Handoff
 
-Open frontier tickets: 10. Blocked tickets: 1.
+Open frontier tickets: 9. Blocked tickets: 1.
 
-Recommended next ticket: **016 — Shorten transaction boundaries and capture idempotency**. Ticket 006 closed the media lease/frontier risk; the next highest-leverage durability item is shortening capture/file/DB write boundaries and proving duplicate-request behavior.
+Recommended next ticket: **005 — Expand HTTP API contract coverage**. Tickets 006 and 016 closed the highest-risk media lease and duplicate-write durability gaps; the next frontier should lock down loopback API contract behavior before more browser/benchmark coverage.
 
 Copy into a fresh session:
 
 ```text
-Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/016-shorten-transaction-boundaries-and-idempotency.md.
+Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/005-http-api-contract-coverage.md.
 ```

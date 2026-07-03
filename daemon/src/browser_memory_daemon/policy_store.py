@@ -46,20 +46,21 @@ def create_policy_rule(conn: sqlite3.Connection, *, rule_type: str, pattern: str
     if selected_action not in VALID_ACTIONS:
         raise ValueError("only block policy rules are supported in this phase")
     normalized_pattern = normalize_rule_pattern(selected_type, pattern)
-    existing = conn.execute(
-        "SELECT id, rule_type, pattern, action, created_at FROM privacy_rules WHERE rule_type = ? AND pattern = ? AND action = ?",
-        (selected_type, normalized_pattern, selected_action),
-    ).fetchone()
-    if existing:
-        return dict(existing)
     rule_id = str(uuid.uuid4())
     with conn:
-        conn.execute(
-            "INSERT INTO privacy_rules(id, rule_type, pattern, action) VALUES (?, ?, ?, ?)",
+        cursor = conn.execute(
+            "INSERT OR IGNORE INTO privacy_rules(id, rule_type, pattern, action) VALUES (?, ?, ?, ?)",
             (rule_id, selected_type, normalized_pattern, selected_action),
         )
-        audit(conn, "policy.rule.created", {"rule_id": rule_id, "rule_type": selected_type, "action": selected_action})
-    return {"id": rule_id, "rule_type": selected_type, "pattern": normalized_pattern, "action": selected_action}
+        row = conn.execute(
+            "SELECT id, rule_type, pattern, action, created_at FROM privacy_rules WHERE rule_type = ? AND pattern = ? AND action = ?",
+            (selected_type, normalized_pattern, selected_action),
+        ).fetchone()
+        if cursor.rowcount:
+            audit(conn, "policy.rule.created", {"rule_id": rule_id, "rule_type": selected_type, "action": selected_action})
+    if not row:
+        raise RuntimeError("policy rule was not created")
+    return dict(row)
 
 
 def delete_policy_rule(conn: sqlite3.Connection, rule_id: str) -> dict:

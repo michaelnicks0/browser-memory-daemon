@@ -218,7 +218,7 @@ status_reason  = cache-evicted:global-oldest
 | SQLite WAL sidecars (`*.sqlite3-wal`, `*.sqlite3-shm`) | Expected live companions for concurrent local reads/writes; see ADR-0014. |
 | `media_artifacts` | Related image/video refs, current blob status, provenance, purge state. |
 | `media_fetch_tasks` | Durable daemon-public media backfill leases/retries/status. |
-| `privacy_rules` | Explicit local block rules applied in every policy mode. |
+| `privacy_rules` | Explicit local block rules applied in every policy mode; `(rule_type, pattern, action)` is unique after normalization. |
 | `audit_events` | Metadata-only operational audit. |
 | `deletion_receipts` | Forget receipts and counts. |
 | `~/.local/share/browser-memory-daemon/blobs/clean-text/` | Stored text snapshots. |

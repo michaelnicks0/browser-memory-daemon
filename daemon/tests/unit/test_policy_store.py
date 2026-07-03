@@ -1,10 +1,11 @@
 import sqlite3
+from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
-from browser_memory_daemon.db import init_db
-from browser_memory_daemon.policy_store import create_policy_rule, evaluate_policy_rules, normalize_rule_pattern
 from browser_memory_daemon.config import load_config
+from browser_memory_daemon.db import connect, init_db
+from browser_memory_daemon.policy_store import create_policy_rule, evaluate_policy_rules, normalize_rule_pattern
 
 
 def _conn(tmp_path):
@@ -42,3 +43,40 @@ def test_url_prefix_rule_scopes_to_port_and_path(tmp_path):
         assert evaluate_policy_rules(conn, "http://localhost:32400/web/index.html").allowed is True
     finally:
         conn.close()
+
+
+def test_policy_rule_creation_is_semantically_idempotent_under_concurrency(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token")
+    init_db(cfg)
+
+    def create_once(_idx: int) -> dict:
+        with connect(cfg.db_path) as conn:
+            return create_policy_rule(conn, rule_type="domain", pattern="Example.COM.", action="block")
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        rules = list(executor.map(create_once, range(8)))
+
+    assert {rule["id"] for rule in rules} == {rules[0]["id"]}
+    assert all(rule["pattern"] == "example.com" for rule in rules)
+    with connect(cfg.db_path) as conn:
+        rows = conn.execute("SELECT id, rule_type, pattern, action FROM privacy_rules").fetchall()
+        assert len(rows) == 1
+        assert dict(rows[0]) == {"id": rules[0]["id"], "rule_type": "domain", "pattern": "example.com", "action": "block"}
+
+
+def test_init_db_dedupes_existing_policy_rules_before_unique_index(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token")
+    init_db(cfg)
+    with connect(cfg.db_path) as conn:
+        conn.execute("DROP INDEX IF EXISTS idx_privacy_rules_semantics")
+        conn.execute("INSERT INTO privacy_rules(id, rule_type, pattern, action) VALUES ('rule-a', 'domain', 'duplicate.example', 'block')")
+        conn.execute("INSERT INTO privacy_rules(id, rule_type, pattern, action) VALUES ('rule-b', 'domain', 'duplicate.example', 'block')")
+        conn.commit()
+
+    init_db(cfg)
+    with connect(cfg.db_path) as conn:
+        rows = conn.execute("SELECT id, rule_type, pattern, action FROM privacy_rules WHERE pattern = 'duplicate.example'").fetchall()
+        assert len(rows) == 1
+        assert rows[0]["id"] == "rule-a"
+        with pytest.raises(sqlite3.IntegrityError):
+            conn.execute("INSERT INTO privacy_rules(id, rule_type, pattern, action) VALUES ('rule-c', 'domain', 'duplicate.example', 'block')")

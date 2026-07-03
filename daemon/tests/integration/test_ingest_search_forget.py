@@ -1,4 +1,5 @@
 import base64
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 import io
 
@@ -463,6 +464,49 @@ def test_repeat_capture_dedupes_snapshot_but_adds_visit(tmp_path):
         rows = search_memory(conn, "low-noise", limit=5)
         assert len(rows) == 1
         assert rows[0]["document_id"] == first_result["document_id"]
+
+
+def test_concurrent_duplicate_capture_is_idempotent_for_snapshot_chunks_and_fts(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="strict")
+    init_db(cfg)
+
+    def capture(idx: int) -> dict:
+        payload = CapturePayload.from_dict(
+            {
+                "visit_id": f"concurrent-duplicate-{idx}",
+                "url": "https://example.com/concurrent-duplicate?utm_source=worker",
+                "title": f"Concurrent Duplicate {idx}",
+                "text": "Concurrent duplicate body text with IDEMPOTENT_CAPTURE_NEEDLE.",
+                "captured_at": f"2026-06-08T12:00:{idx:02d}Z",
+            }
+        )
+        with connect(cfg.db_path) as conn:
+            return ingest_capture(conn, cfg, payload)
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        results = list(executor.map(capture, range(8)))
+
+    assert {item["document_id"] for item in results} == {results[0]["document_id"]}
+    assert {item["snapshot_id"] for item in results} == {results[0]["snapshot_id"]}
+    assert sum(1 for item in results if item["snapshot_created"]) == 1
+    assert sum(item["chunk_count"] for item in results) == 1
+    with connect(cfg.db_path) as conn:
+        counts = dict(
+            conn.execute(
+                """
+                SELECT
+                  (SELECT COUNT(*) FROM documents) AS documents,
+                  (SELECT COUNT(*) FROM visits) AS visits,
+                  (SELECT COUNT(*) FROM snapshots) AS snapshots,
+                  (SELECT COUNT(*) FROM chunks) AS chunks,
+                  (SELECT COUNT(*) FROM chunks_fts) AS chunks_fts
+                """
+            ).fetchone()
+        )
+        assert counts == {"documents": 1, "visits": 8, "snapshots": 1, "chunks": 1, "chunks_fts": 1}
+        assert len(search_memory(conn, "IDEMPOTENT_CAPTURE_NEEDLE", limit=10)) == 1
+    clean_files = list(cfg.clean_text_root.glob(f"{results[0]['snapshot_id']}*.txt"))
+    assert clean_files == [cfg.clean_text_root / f"{results[0]['snapshot_id']}.txt"]
 
 
 def test_changed_content_creates_new_snapshot_under_same_document(tmp_path):

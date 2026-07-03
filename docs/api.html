@@ -454,7 +454,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <span style="color: #F8F8F2">}</span>
 </code></pre></div>
 
-<p>Rules narrow capture in every policy mode, including <code>all</code>. Use <code>domain</code> for host/subdomain blocks and <code>url-prefix</code> for scoped local ports or paths, such as <code>http://127.0.0.1:32400/</code>.</p>
+<p>Rules narrow capture in every policy mode, including <code>all</code>. Use <code>domain</code> for host/subdomain blocks and <code>url-prefix</code> for scoped local ports or paths, such as <code>http://127.0.0.1:32400/</code>. Rule creation is semantic-idempotent: duplicate <code>(rule_type, normalized pattern, action)</code> requests return the existing rule instead of creating parallel rows.</p>
 <hr />
 <h2 id="policy-evaluate-response">Policy evaluate response</h2>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">{</span>
