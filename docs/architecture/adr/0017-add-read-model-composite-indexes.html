@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Readme — browser-memory-daemon</title>
+<title>0017-Add-Read-Model-Composite-Indexes — browser-memory-daemon</title>
 <style>
 :root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
@@ -121,178 +121,110 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <div class="wrap">
   <div class="docbar">
     <a class="home" href="../../../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
-    <span class="crumb">/ <b>docs/architecture/adr/README.md</b></span>
+    <span class="crumb">/ <b>docs/architecture/adr/0017-add-read-model-composite-indexes.md</b></span>
   </div>
   <article class="md-body">
-<h1 id="architecture-decision-records">Architecture Decision Records</h1>
-<blockquote>
-<p>Purpose: preserve the reasoning behind architecture, design, interface, dependency, policy, and Hermes workflow decisions that future agents must understand before changing this repo.</p>
-</blockquote>
-<p>ADRs live in this repo because Browser Memory Daemon is architecture-heavy and agent-maintained. Chat history, memory, and commit messages are not sufficient paper trails for long-lived design choices.</p>
-<h2 id="index">Index</h2>
+<hr />
+<p>id: ADR-0017
+status: accepted
+date: 2026-07-03
+decider: Operator
+scope: repo
+backfilled: false
+supersedes: []
+superseded_by: []
+related:
+  - docs/wayfinder/durability-performance-coverage/tickets/010-read-model-query-performance.md
+  - docs/architecture/adr/0016-use-deterministic-synthetic-performance-benchmarks.md
+verification:
+  - /tmp/browser-memory-daemon-verify-venv/bin/python -m pytest -q daemon/tests/e2e/test_read_model_indexes.py daemon/tests/e2e/test_performance_benchmarks.py
+  - ./scripts/run-performance-benchmarks.sh --json --runtime-root /tmp/bmd-010-after --captures 1000 --read-repetitions 3 --media-every 10 --media-worker-limit 100 &gt;/tmp/bmd_010_after.json</p>
+<hr />
+<h1 id="adr-0017-add-composite-indexes-for-read-model-ordering">ADR-0017: Add composite indexes for read-model ordering</h1>
+<h2 id="context">Context</h2>
+<p>Ticket 009 added deterministic performance benchmark output. Ticket 010 used that output and SQLite query plans to inspect read-model paths. The 1,000-capture synthetic benchmark showed <code>recent</code>, <code>timeline</code>, and detail reads were still fast, but query plans exposed avoidable scans and temporary order B-trees on hot read paths:</p>
+<ul>
+<li>recent/timeline used <code>idx_visits_captured_at</code> and still needed ordering work for <code>blocked</code>, <code>captured_at</code>, and <code>created_at</code>;</li>
+<li>correlated latest-snapshot lookups used <code>idx_snapshots_document_id</code> plus a temporary order B-tree;</li>
+<li>first-chunk and snapshot detail paths scanned <code>chunks</code> or sorted via temporary B-trees;</li>
+<li>document detail scans/sorts visits, snapshots, chunks, and lifecycle events by document/visit plus time ordering.</li>
+</ul>
+<h2 id="decision">Decision</h2>
+<p>We will add idempotent composite SQLite indexes that match the read-model filter and order shapes for recent, timeline, document detail, snapshot detail, lifecycle detail, media queue status, and correlated latest-snapshot/first-chunk subqueries.</p>
+<p>We will not change API pagination, detail payload limits, or read-audit write semantics in this slice because benchmark evidence showed audit-write overhead was small compared with query-shape costs, and API limit contracts were already bounded.</p>
+<h2 id="decision-drivers">Decision drivers</h2>
+<ul>
+<li>Query plans should avoid full scans and temporary B-trees for common ordered read paths.</li>
+<li>Existing APIs should preserve response shapes and bounded limit behavior.</li>
+<li>Indexes must be additive and safe for existing local SQLite databases via <code>CREATE INDEX IF NOT EXISTS</code>.</li>
+<li>Ticket 010 needs before/after benchmark evidence, not speculative tuning.</li>
+</ul>
+<h2 id="options-considered">Options considered</h2>
 <table>
 <thead>
 <tr>
-<th>ADR</th>
-<th>Status</th>
-<th>Decision</th>
+<th>Option</th>
+<th>Pros</th>
+<th>Cons</th>
+<th>Verdict</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a href="0001-use-repo-local-architecture-decision-records.html">ADR-0001</a></td>
-<td>accepted</td>
-<td>Use repo-local Markdown ADRs for architecture-significant changes.</td>
+<td>Add composite indexes for observed query shapes</td>
+<td>Minimal API risk, clear query-plan improvement, automatic for existing DBs.</td>
+<td>Adds DB file size and ingest write maintenance cost.</td>
+<td>Chosen.</td>
 </tr>
 <tr>
-<td><a href="0002-keep-browser-memory-local-across-windows-chrome-and-wsl.html">ADR-0002</a></td>
-<td>accepted</td>
-<td>Keep browser memory local across Windows Chrome and the WSL daemon.</td>
+<td>Rewrite recent/timeline queries with materialized read models</td>
+<td>Could reduce correlated subqueries further.</td>
+<td>Larger design/schema change without current benchmark need.</td>
+<td>Rejected for this slice.</td>
 </tr>
 <tr>
-<td><a href="0003-use-all-policy-mode-as-daily-driver-default.html">ADR-0003</a></td>
-<td>superseded</td>
-<td>Use <code>all</code> policy mode as the daily-driver default. Superseded by ADR-0009.</td>
+<td>Sample/disable read-audit writes</td>
+<td>Could reduce write pressure on read endpoints.</td>
+<td>Benchmark overhead was sub-millisecond; changes audit contract.</td>
+<td>Rejected for this slice.</td>
 </tr>
 <tr>
-<td><a href="0004-use-text-first-sqlite-fts5-and-blob-storage.html">ADR-0004</a></td>
-<td>accepted</td>
-<td>Use text-first SQLite/FTS5 and WSL-local blob storage.</td>
-</tr>
-<tr>
-<td><a href="0005-use-durable-lazy-media-sidecars-with-bounded-cache.html">ADR-0005</a></td>
-<td>accepted</td>
-<td>Use durable lazy media sidecars with a bounded disposable cache.</td>
-</tr>
-<tr>
-<td><a href="0006-use-forget-cascade-with-deletion-receipts.html">ADR-0006</a></td>
-<td>accepted</td>
-<td>Use forget/delete cascades with deletion receipts.</td>
-</tr>
-<tr>
-<td><a href="0007-use-real-chrome-e2e-as-verification-authority.html">ADR-0007</a></td>
-<td>accepted</td>
-<td>Use real Chrome / Chrome for Testing e2e as the verification authority.</td>
-</tr>
-<tr>
-<td><a href="0008-use-c4-structurizr-as-canonical-architecture-model.html">ADR-0008</a></td>
-<td>accepted</td>
-<td>Use C4/Structurizr under <code>docs/architecture/</code> as the canonical architecture model.</td>
-</tr>
-<tr>
-<td><a href="0009-apply-explicit-block-rules-in-all-mode.html">ADR-0009</a></td>
-<td>accepted</td>
-<td>Apply explicit local block rules in <code>all</code> mode while preserving the daily-driver default.</td>
-</tr>
-<tr>
-<td><a href="0010-disable-cdp-recorder-by-default.html">ADR-0010</a></td>
-<td>superseded</td>
-<td>Disable the CDP recorder by default so daily Chrome avoids the native debugging banner while preserving opt-in X/Twitter video recovery. Superseded by ADR-0011.</td>
-</tr>
-<tr>
-<td><a href="0011-enable-cdp-recorder-by-default-with-disable-control.html">ADR-0011</a></td>
-<td>accepted</td>
-<td>Enable the CDP recorder by default for X/Twitter video completeness while preserving an operator disable control for banner-free browsing.</td>
-</tr>
-<tr>
-<td><a href="0012-bootstrap-local-ui-token-from-daemon.html">ADR-0012</a></td>
-<td>accepted</td>
-<td>Bootstrap the local dashboard token from the daemon-served <code>/ui</code> HTML so the UI opens populated while memory/admin APIs remain bearer-authenticated.</td>
-</tr>
-<tr>
-<td><a href="0013-generated-publish-docs.html">ADR-0013</a></td>
-<td>accepted</td>
-<td>Use generated high-level docs and HTML companions for publish-ready documentation while keeping Markdown canonical.</td>
-</tr>
-<tr>
-<td><a href="0014-use-wal-and-bounded-sqlite-contention-policy.html">ADR-0014</a></td>
-<td>accepted</td>
-<td>Use WAL, busy-timeout, startup-only DB initialization, and bounded loopback backlog as the SQLite contention policy.</td>
-</tr>
-<tr>
-<td><a href="0015-use-idempotent-local-write-paths.html">ADR-0015</a></td>
-<td>accepted</td>
-<td>Use idempotent local write paths for duplicate captures, media/cache filesystem work, and semantic policy-rule uniqueness.</td>
-</tr>
-<tr>
-<td><a href="0016-use-deterministic-synthetic-performance-benchmarks.html">ADR-0016</a></td>
-<td>accepted</td>
-<td>Use deterministic synthetic benchmarks as advisory performance evidence before read-model/index tuning.</td>
-</tr>
-<tr>
-<td><a href="0017-add-read-model-composite-indexes.html">ADR-0017</a></td>
-<td>accepted</td>
-<td>Add composite SQLite indexes for measured read-model ordering paths.</td>
+<td>Add pagination/detail contract changes</td>
+<td>Could bound worst-case payloads harder.</td>
+<td>Current server-side limits already bound hot endpoints; API contract churn not justified by evidence.</td>
+<td>Rejected for this slice.</td>
 </tr>
 </tbody>
 </table>
-<h2 id="backfilled-decision-history">Backfilled decision history</h2>
-<p>ADR-0002 through ADR-0008 are historical backfills recorded on 2026-06-14 from repo docs, code, tests, and git history. They did not introduce new runtime behavior; they document already-accepted architecture decisions so future changes can cite, comply with, or supersede them.</p>
-<p>Backfill verification run on 2026-06-14:</p>
+<h2 id="consequences">Consequences</h2>
 <ul>
-<li>ADR lint and repo Markdown fence check passed.</li>
-<li><code>git diff --check -- .</code> passed.</li>
-<li><code>./scripts/secret-scan.sh</code> passed.</li>
-<li><code>BMD_SKIP_REAL_CHROME_E2E=1 ./scripts/run-e2e.sh</code> passed using a temporary Python 3.11 shim because the host <code>python3</code> is Python 3.8 while this repo declares <code>requires-python = "&gt;=3.11"</code>.</li>
+<li>Positive: recent/timeline/detail query plans use targeted indexes instead of avoidable scans/sorts.</li>
+<li>Positive: ticket 010 closes without changing API response contracts or audit semantics.</li>
+<li>Positive: future agents can rerun <code>scripts/run-performance-benchmarks.sh</code> to compare read-model changes.</li>
+<li>Neutral / operational: existing databases receive the new indexes at the next DB initialization path.</li>
+<li>Negative: DB size grows modestly because each capture/update maintains more indexes.</li>
 </ul>
-<h2 id="when-to-create-or-supersede-an-adr">When to create or supersede an ADR</h2>
-<p>Create or supersede an ADR when a change affects:</p>
+<h2 id="verification-validation">Verification / validation</h2>
 <ul>
-<li>component boundaries or ownership;</li>
-<li>Chrome extension ↔ WSL daemon interfaces;</li>
-<li>API, CLI, schema, event, or storage contracts;</li>
-<li>capture policy, redaction, security, privacy, or deletion semantics;</li>
-<li>major dependency/platform/provider choices;</li>
-<li>media sidecar, worker, cache, lifecycle, or recall architecture;</li>
-<li>verification strategy or real-browser e2e boundary;</li>
-<li>recurring Hermes/agent workflow for maintaining this repo.</li>
+<li>Verification: <code>daemon/tests/e2e/test_read_model_indexes.py</code> asserts the intended query shapes use the new composite indexes.</li>
+<li>Verification: before/after 1,000-capture synthetic benchmark showed <code>recent</code> p95 improve from 2.829 ms to 0.436 ms, <code>timeline</code> p95 from 9.534 ms to 1.337 ms, and <code>document_detail</code> p95 from 0.420 ms to 0.169 ms on this WSL host.</li>
+<li>Validation: read-audit write behavior and API contracts remained unchanged while the measured read-model bottleneck moved from scans/sorts to indexed lookups.</li>
 </ul>
-<p>Do not create an ADR for trivial bug fixes, mechanical refactors, test-only cleanup, or completed-task logs.</p>
-<h2 id="status-values">Status values</h2>
-<table>
-<thead>
-<tr>
-<th>Status</th>
-<th>Meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>proposed</code></td>
-<td>Drafted but not yet accepted by Operator / project direction.</td>
-</tr>
-<tr>
-<td><code>accepted</code></td>
-<td>Active decision; future changes should comply.</td>
-</tr>
-<tr>
-<td><code>rejected</code></td>
-<td>Considered and intentionally not chosen.</td>
-</tr>
-<tr>
-<td><code>deprecated</code></td>
-<td>Still historical, but no longer recommended.</td>
-</tr>
-<tr>
-<td><code>superseded</code></td>
-<td>Replaced by a later ADR; keep the old record intact and link both ways.</td>
-</tr>
-</tbody>
-</table>
-<h2 id="agent-workflow">Agent workflow</h2>
-<ol>
-<li>Inspect <code>AGENTS.md</code>, <code>docs/README.md</code>, and this ADR index before architecture-impacting work.</li>
-<li>Search existing ADRs for related decisions.</li>
-<li>If changing an accepted decision, create a new ADR and mark the older one <code>superseded</code>; do not materially rewrite accepted history.</li>
-<li>Keep ADRs short and cite real repo evidence, commands, tests, issues, commits, or research docs.</li>
-<li>Record verification/validation evidence after checks run.</li>
-<li>Commit the ADR with the implementation/design slice it governs.</li>
-</ol>
-<h2 id="template">Template</h2>
-<p>Use <a href="template.html"><code>template.md</code></a> for new ADRs.</p>
+<h2 id="revisit-triggers">Revisit triggers</h2>
+<ul>
+<li>Supersede this ADR if daily-driver or larger synthetic benchmarks show doctor/integrity checks, media queue status, or FTS search becoming the limiting read surfaces.</li>
+<li>Supersede this ADR if a materialized read model replaces correlated latest-snapshot/first-chunk lookups.</li>
+<li>Revisit if index maintenance measurably hurts ingest/write contention under concurrency stress.</li>
+</ul>
+<h2 id="references">References</h2>
+<ul>
+<li><code>docs/wayfinder/durability-performance-coverage/tickets/010-read-model-query-performance.md</code></li>
+<li><code>daemon/src/browser_memory_daemon/schema.sql</code></li>
+<li><code>/tmp/bmd_010_before.json</code> and <code>/tmp/bmd_010_after.json</code> benchmark outputs from the ticket 010 session</li>
+</ul>
   </article>
   <div class="md-footer">
-    Rendered from <code>docs/architecture/adr/README.md</code> — the Markdown file is the canonical,
+    Rendered from <code>docs/architecture/adr/0017-add-read-model-composite-indexes.md</code> — the Markdown file is the canonical,
     version-controlled source. This HTML is generated (regenerate with
     <code>scripts/render_docs.py</code>); do not hand-edit.
   </div>

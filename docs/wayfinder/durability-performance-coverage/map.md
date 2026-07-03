@@ -22,10 +22,10 @@
 - [007 — Expand extension service-worker resilience coverage](tickets/007-extension-service-worker-resilience.md) — added a mocked-Chrome service-worker harness proving daemon-down queue persistence, pause/token/rule controls, and media-upload retry blob retention.
 - [008 — Expand real Chrome e2e matrix](tickets/008-real-chrome-e2e-matrix.md) — default Chrome for Testing e2e now runs `all` + `strict` and covers pause, explicit URL-prefix block, media, lifecycle, queue drainage, and mode-specific sensitive/local expectations.
 - [009 — Add performance benchmark harness and budgets](tickets/009-performance-benchmark-harness.md) — added deterministic synthetic JSON/human benchmarks for ingest, read surfaces with audit-write overhead, media-worker selection/run, sidecar growth, and advisory budgets; recorded ADR-0016.
+- [010 — Optimize read-model query/index performance](tickets/010-read-model-query-performance.md) — added measured composite SQLite indexes for recent/timeline/detail/media queue read ordering, preserved API/audit contracts, and recorded ADR-0017.
 
 ## Frontier
 
-- [010 — Optimize read-model query/index performance](tickets/010-read-model-query-performance.md) — now unblocked by ticket 009 benchmark output; use before/after benchmark JSON and query plans to justify changes.
 - [011 — Harden installer/token/Windows artifact consistency](tickets/011-installer-token-artifact-consistency.md) — make daily-driver install/refresh more testable and self-validating.
 - [012 — Design retention, compaction, and backup posture](tickets/012-retention-compaction-backup-design.md) — now unblocked by the baseline; use current DB/media/headroom evidence plus explicit operator thresholds.
 - [013 — Add local UI smoke coverage](tickets/013-ui-dashboard-smoke-coverage.md) — add dashboard bootstrap/API rendering checks beyond static asset serving.
@@ -47,12 +47,12 @@ None.
 
 ## Handoff
 
-Open frontier tickets: 6. Blocked tickets: 0.
+Open frontier tickets: 5. Blocked tickets: 0.
 
-Recommended next ticket: **010 — Optimize read-model query/index performance**. Ticket 009 now produces benchmark evidence; the next step is to use before/after JSON and query plans to tune only proven slow read paths.
+Recommended next ticket: **011 — Harden installer/token/Windows artifact consistency**. Performance/read-model work now has benchmark evidence and measured indexes; the next gap is making daily-driver install/refresh artifacts self-validating without touching live Chrome profile JSON.
 
 Copy into a fresh session:
 
 ```text
-Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/010-read-model-query-performance.md.
+Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/011-installer-token-artifact-consistency.md.
 ```

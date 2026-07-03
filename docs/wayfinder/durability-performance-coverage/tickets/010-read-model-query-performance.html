@@ -126,7 +126,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
   <article class="md-body">
 <h1 id="optimize-read-model-query-and-index-performance">Optimize read-model query and index performance</h1>
 <h2 id="status">Status</h2>
-<p>blocked</p>
+<p>closed</p>
 <h2 id="question">Question</h2>
 <p>Given benchmark output and query plans, which read-model paths need indexes, pagination, bounded detail payloads, query rewrites, or reduced synchronous audit writes to remain fast as the SQLite DB grows?</p>
 <h2 id="type">Type</h2>
@@ -146,12 +146,95 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <h2 id="blocks-blocked-by">Blocks / blocked by</h2>
 <ul>
 <li>Blocks: long-term daily-driver performance and UI responsiveness.</li>
-<li>Blocked by: ticket 009.</li>
+<li>Blocked by: none; ticket 009 is closed and provides synthetic benchmark output.</li>
 </ul>
 <h2 id="resolution">Resolution</h2>
-<p>Pending.</p>
+<p>Closed in this slice. Used ticket 009's synthetic benchmark harness plus SQLite <code>EXPLAIN QUERY PLAN</code> output to target read-model index gaps without changing API contracts.</p>
+<p>Added composite read-path indexes in <code>schema.sql</code>:</p>
+<ul>
+<li><code>idx_visits_blocked_captured_created</code> for <code>/recent</code> and <code>/timeline</code> filter/order shape;</li>
+<li><code>idx_visits_document_captured_created</code> for document detail visit ordering;</li>
+<li><code>idx_snapshots_document_captured_created</code> for latest-snapshot and document detail snapshot ordering;</li>
+<li><code>idx_chunks_snapshot_chunk_index</code> and <code>idx_chunks_document_snapshot_chunk_index</code> for first-chunk, snapshot detail, and document chunk ordering;</li>
+<li><code>idx_visit_events_visit_ended_created</code> and <code>idx_visit_events_document_ended_created</code> for lifecycle detail ordering;</li>
+<li><code>idx_media_artifacts_status_created</code> for ordered media queue status checks.</li>
+</ul>
+<p>No API pagination/detail semantics changed. Read-audit writes stayed synchronous because benchmark evidence showed sub-millisecond overhead estimates; the measured issue was scan/sort query shape, not audit insertion.</p>
+<p>Before/after evidence on a 1,000-capture synthetic dataset:</p>
+<table>
+<thead>
+<tr>
+<th>Surface</th>
+<th style="text-align: right;">Before p95</th>
+<th style="text-align: right;">After p95</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>recent</code> with audit</td>
+<td style="text-align: right;">2.829 ms</td>
+<td style="text-align: right;">0.436 ms</td>
+<td>now uses <code>idx_visits_blocked_captured_created</code> plus indexed subqueries</td>
+</tr>
+<tr>
+<td><code>timeline</code> with audit</td>
+<td style="text-align: right;">9.534 ms</td>
+<td style="text-align: right;">1.337 ms</td>
+<td>now uses the same blocked/time index</td>
+</tr>
+<tr>
+<td><code>document_detail</code> with audit</td>
+<td style="text-align: right;">0.420 ms</td>
+<td style="text-align: right;">0.169 ms</td>
+<td>visits/snapshots/chunks use document-order indexes</td>
+</tr>
+<tr>
+<td><code>snapshot_detail</code> with audit</td>
+<td style="text-align: right;">0.217 ms</td>
+<td style="text-align: right;">0.150 ms</td>
+<td>chunks use <code>idx_chunks_snapshot_chunk_index</code></td>
+</tr>
+<tr>
+<td><code>search</code> with audit</td>
+<td style="text-align: right;">0.829 ms</td>
+<td style="text-align: right;">0.809 ms</td>
+<td>FTS path was already fine</td>
+</tr>
+<tr>
+<td><code>media_queue_status</code> with audit</td>
+<td style="text-align: right;">0.355 ms</td>
+<td style="text-align: right;">0.346 ms</td>
+<td>no material bottleneck</td>
+</tr>
+<tr>
+<td><code>doctor</code> with audit</td>
+<td style="text-align: right;">29.355 ms</td>
+<td style="text-align: right;">31.336 ms</td>
+<td>integrity/storage sweep, not a hot UI read path</td>
+</tr>
+</tbody>
+</table>
+<p>Query-plan evidence after indexing:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>recent: SEARCH visits USING INDEX idx_visits_blocked_captured_created (blocked=?)
+timeline: SEARCH visits USING INDEX idx_visits_blocked_captured_created (blocked=? AND captured_at&gt;? AND captured_at&lt;?)
+latest snapshot: SEARCH snapshots USING INDEX idx_snapshots_document_captured_created (document_id=?)
+first/snapshot chunks: SEARCH chunks USING INDEX idx_chunks_snapshot_chunk_index (snapshot_id=?)
+document visits: SEARCH visits USING INDEX idx_visits_document_captured_created (document_id=?)
+document chunks: SEARCH chunks USING INDEX idx_chunks_document_snapshot_chunk_index (document_id=?)
+</code></pre></div>
+
+<p>Evidence commands:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>/tmp/browser-memory-daemon-verify-venv/bin/python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pytest<span style="color: #F8F8F2"> </span>-q<span style="color: #F8F8F2"> </span>daemon/tests/e2e/test_read_model_indexes.py<span style="color: #F8F8F2"> </span>daemon/tests/e2e/test_performance_benchmarks.py
+<span style="color: #959077"># 3 passed</span>
+
+./scripts/run-performance-benchmarks.sh<span style="color: #F8F8F2"> </span>--json<span style="color: #F8F8F2"> </span>--runtime-root<span style="color: #F8F8F2"> </span>/tmp/bmd-010-before<span style="color: #F8F8F2"> </span>--captures<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">1000</span><span style="color: #F8F8F2"> </span>--read-repetitions<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">3</span><span style="color: #F8F8F2"> </span>--media-every<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">10</span><span style="color: #F8F8F2"> </span>--media-worker-limit<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">100</span><span style="color: #F8F8F2"> </span>&gt;/tmp/bmd_010_before.json
+./scripts/run-performance-benchmarks.sh<span style="color: #F8F8F2"> </span>--json<span style="color: #F8F8F2"> </span>--runtime-root<span style="color: #F8F8F2"> </span>/tmp/bmd-010-after<span style="color: #F8F8F2"> </span>--captures<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">1000</span><span style="color: #F8F8F2"> </span>--read-repetitions<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">3</span><span style="color: #F8F8F2"> </span>--media-every<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">10</span><span style="color: #F8F8F2"> </span>--media-worker-limit<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">100</span><span style="color: #F8F8F2"> </span>&gt;/tmp/bmd_010_after.json
+</code></pre></div>
+
+<p>Recorded ADR-0017 for the additive schema/index decision.</p>
 <h2 id="new-tickets-fog-updates">New tickets / fog updates</h2>
-<p>Pending. If API pagination contracts change, update <code>docs/api.md</code> and consider an ADR if interface semantics materially change.</p>
+<p>No new ticket. API pagination contracts did not change. Keep read-audit sampling/async writes as future fog only if larger benchmarks or daily-driver evidence show audit writes becoming a measurable bottleneck.</p>
   </article>
   <div class="md-footer">
     Rendered from <code>docs/wayfinder/durability-performance-coverage/tickets/010-read-model-query-performance.md</code> — the Markdown file is the canonical,

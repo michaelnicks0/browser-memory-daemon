@@ -209,18 +209,26 @@ CREATE TABLE IF NOT EXISTS deletion_receipts (
 
 CREATE INDEX IF NOT EXISTS idx_documents_domain ON documents(domain);
 CREATE INDEX IF NOT EXISTS idx_visits_captured_at ON visits(captured_at);
+CREATE INDEX IF NOT EXISTS idx_visits_blocked_captured_created ON visits(blocked, captured_at DESC, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_visits_document_captured_created ON visits(document_id, captured_at DESC, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_visits_normalized_url ON visits(normalized_url);
 CREATE INDEX IF NOT EXISTS idx_visit_events_visit_id ON visit_events(visit_id);
 CREATE INDEX IF NOT EXISTS idx_visit_events_document_id ON visit_events(document_id);
+CREATE INDEX IF NOT EXISTS idx_visit_events_visit_ended_created ON visit_events(visit_id, event_ended_at DESC, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_visit_events_document_ended_created ON visit_events(document_id, event_ended_at DESC, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_visit_events_normalized_url ON visit_events(normalized_url);
 CREATE INDEX IF NOT EXISTS idx_visit_events_event_ended_at ON visit_events(event_ended_at);
 CREATE INDEX IF NOT EXISTS idx_snapshots_document_id ON snapshots(document_id);
+CREATE INDEX IF NOT EXISTS idx_snapshots_document_captured_created ON snapshots(document_id, captured_at DESC, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_media_artifacts_document_id ON media_artifacts(document_id);
 CREATE INDEX IF NOT EXISTS idx_media_artifacts_snapshot_id ON media_artifacts(snapshot_id);
 CREATE INDEX IF NOT EXISTS idx_media_artifacts_content_sha256 ON media_artifacts(content_sha256);
 CREATE INDEX IF NOT EXISTS idx_media_artifacts_capture_status ON media_artifacts(capture_status);
+CREATE INDEX IF NOT EXISTS idx_media_artifacts_status_created ON media_artifacts(capture_status, created_at DESC, id);
 CREATE INDEX IF NOT EXISTS idx_media_fetch_tasks_status_next ON media_fetch_tasks(status, next_attempt_at, priority);
 CREATE INDEX IF NOT EXISTS idx_media_fetch_tasks_artifact ON media_fetch_tasks(artifact_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_privacy_rules_semantics ON privacy_rules(rule_type, pattern, action);
 CREATE INDEX IF NOT EXISTS idx_chunks_document_id ON chunks(document_id);
+CREATE INDEX IF NOT EXISTS idx_chunks_document_snapshot_chunk_index ON chunks(document_id, snapshot_id, chunk_index);
+CREATE INDEX IF NOT EXISTS idx_chunks_snapshot_chunk_index ON chunks(snapshot_id, chunk_index);
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
