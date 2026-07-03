@@ -206,6 +206,11 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Pretty JSON.</td>
 </tr>
 <tr>
+<td><code>daily-driver-health [--journal-since WINDOW] [--extension-dir PATH] [--powershell PATH] [--skip-windows-loopback] [--no-fail]</code></td>
+<td>Redaction-safe daily-driver snapshot across services, loopback, journals, DB freshness, media queue, storage, and extension artifact state.</td>
+<td>Pretty JSON. Exits non-zero on hard errors unless <code>--no-fail</code> is set.</td>
+</tr>
+<tr>
 <td><code>recent --limit N</code></td>
 <td>Recent captures.</td>
 <td>Pretty JSON list.</td>
@@ -281,6 +286,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>HTTP <code>401</code>; CLI surfaces exception/non-zero.</td>
 </tr>
 <tr>
+<td><code>daily-driver-health</code> hard error</td>
+<td>Prints JSON with <code>ok=false</code> and exits <code>1</code>; use <code>--no-fail</code> for report-only collection.</td>
+</tr>
+<tr>
 <td>Bad capture payload</td>
 <td>HTTP <code>400</code> with JSON error.</td>
 </tr>
@@ -309,6 +318,14 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">PYTHONPATH</span><span style="color: #FF4689">=</span>daemon/src<span style="color: #F8F8F2"> </span>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span>--token<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;</span><span style="color: #66D9EF">$(</span>tr<span style="color: #F8F8F2"> </span>-d<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&#39;\r\n&#39;</span><span style="color: #F8F8F2"> </span>&lt;<span style="color: #F8F8F2"> </span>~/.config/browser-memory-daemon/token<span style="color: #66D9EF">)</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span>search<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;example&quot;</span><span style="color: #F8F8F2"> </span>--limit<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">10</span>
+</code></pre></div>
+
+<p>Run the aggregate daily-driver health snapshot:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>./scripts/daily-driver-health.sh
+</code></pre></div>
+
+<p>Report-only mode for diagnostics without failing the shell command:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>./scripts/daily-driver-health.sh<span style="color: #F8F8F2"> </span>--no-fail
 </code></pre></div>
 
 <p>Add block rules:</p>

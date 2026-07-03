@@ -132,7 +132,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </blockquote>
 <!-- BEGIN GENERATED:inventory-summary -->
 <blockquote>
-<p><strong>Current inventory:</strong> 82 static test functions across 15 files — 59 daemon pytest tests + 23 extension node:test tests.</p>
+<p><strong>Current inventory:</strong> 84 static test functions across 16 files — 61 daemon pytest tests + 23 extension node:test tests.</p>
 </blockquote>
 <!-- END GENERATED:inventory-summary -->
 
@@ -164,7 +164,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <hr />
 <h2 id="generated-test-inventory">Generated test inventory</h2>
 <!-- BEGIN GENERATED:audit-run -->
-<p>Latest inventory: <strong>82 static test functions</strong> across <strong>15 files</strong> (59 daemon pytest; 23 extension node:test). Regenerate with <code>python3.11 scripts/generate_test_inventory.py --write</code>; enforce with <code>--check</code>. Counts are source-level test functions, not pytest parametrized case expansions.</p>
+<p>Latest inventory: <strong>84 static test functions</strong> across <strong>16 files</strong> (61 daemon pytest; 23 extension node:test). Regenerate with <code>python3.11 scripts/generate_test_inventory.py --write</code>; enforce with <code>--check</code>. Counts are source-level test functions, not pytest parametrized case expansions.</p>
 <!-- END GENERATED:audit-run -->
 
 <h3 id="per-file-counts">Per-file counts</h3>
@@ -207,6 +207,11 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <td><code>daemon/tests/integration/test_visit_lifecycle.py</code></td>
 <td>pytest</td>
 <td style="text-align: right;">5</td>
+</tr>
+<tr>
+<td><code>daemon/tests/unit/test_daily_driver_health.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">2</td>
 </tr>
 <tr>
 <td><code>daemon/tests/unit/test_db.py</code></td>
@@ -256,7 +261,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <tr>
 <td><strong>Total</strong></td>
 <td></td>
-<td style="text-align: right;"><strong>82</strong></td>
+<td style="text-align: right;"><strong>84</strong></td>
 </tr>
 </tbody>
 </table>
@@ -271,7 +276,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 | `daemon/tests/e2e/test_admin_api.py` | pytest | `(module)` | `test_admin_read_apis_and_ui_assets` | 57 | Admin read apis and ui assets. |
 | `daemon/tests/e2e/test_admin_api.py` | pytest | `(module)` | `test_policy_rule_blocks_future_capture_and_can_be_deleted` | 121 | Policy rule blocks future capture and can be deleted. |
 | `daemon/tests/e2e/test_admin_api.py` | pytest | `(module)` | `test_url_prefix_policy_rule_applies_in_all_mode_without_blocking_all_localhost` | 163 | Url prefix policy rule applies in all mode without blocking all localhost. |
-| `daemon/tests/e2e/test_cli_admin.py` | pytest | `(module)` | `test_cli_admin_commands` | 33 | Cli admin commands. |
+| `daemon/tests/e2e/test_cli_admin.py` | pytest | `(module)` | `test_cli_admin_commands` | 34 | Cli admin commands. |
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_skips_legacy_media_backfill_on_request` | 46 | Http capture skips legacy media backfill on request. |
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_media_fetch_raw_upload_and_purge_rehydrate_controls` | 79 | Http media fetch raw upload and purge rehydrate controls. |
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_search_forget_round_trip` | 148 | Http capture search forget round trip. |
@@ -314,6 +319,8 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_can_attach_to_latest_visit_by_url` | 114 | Visit lifecycle event can attach to latest visit by url. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_without_matching_visit_stores_metadata_only` | 146 | Visit lifecycle event without matching visit stores metadata only. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_validates_ranges` | 168 | Visit lifecycle event validates ranges. |
+| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_snapshot_is_aggregate_and_redaction_safe` | 27 | Daily driver health snapshot is aggregate and redaction safe. |
+| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_missing_extension_token` | 100 | Daily driver health detects missing extension token. |
 | `daemon/tests/unit/test_db.py` | pytest | `(module)` | `test_connect_uses_extended_busy_timeout` | 5 | Connect uses extended busy timeout. |
 | `daemon/tests/unit/test_normalize.py` | pytest | `(module)` | `test_normalize_url_removes_tracking_fragment_default_port_and_sorts_query` | 4 | Normalize url removes tracking fragment default port and sorts query. |
 | `daemon/tests/unit/test_normalize.py` | pytest | `(module)` | `test_normalize_url_preserves_meaningful_duplicate_query_values` | 11 | Normalize url preserves meaningful duplicate query values. |
@@ -400,25 +407,31 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <h2 id="daily-driver-smoke-checklist">Daily-driver smoke checklist</h2>
 <p>After <code>./scripts/install-daily-driver.sh</code> and Chrome extension reload:</p>
 <ol>
-<li>Confirm daemon:</li>
+<li>Confirm aggregate daily-driver health:</li>
+</ol>
+<p><code>bash
+   ./scripts/daily-driver-health.sh</code></p>
+<p>The JSON should include <code>ok=true</code>. It is redaction-safe: it reports service state, loopback health, journal counts/sanitized templates, DB freshness/counts, media queue counts, storage headroom, and extension artifact state without dumping captured page text or token values.</p>
+<ol start="2">
+<li>If the aggregate command reports an error, isolate daemon state:</li>
 </ol>
 <p><code>bash
    systemctl --user is-active browser-memory-daemon.service
    systemctl --user is-active browser-memory-media-worker.service
    PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
      --token "$(tr -d '\r\n' &lt; ~/.config/browser-memory-daemon/token)" doctor</code></p>
-<ol start="2">
-<li>Confirm Windows loopback:</li>
+<ol start="3">
+<li>If needed, isolate Windows loopback:</li>
 </ol>
 <p><code>bash
    /mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe \
      -NoProfile -Command "Invoke-RestMethod http://127.0.0.1:8765/health | ConvertTo-Json -Compress"</code></p>
-<ol start="3">
+<ol start="4">
 <li>Confirm popup shows:</li>
 </ol>
 <p><code>text
    mode=all paused=false</code></p>
-<ol start="4">
+<ol start="5">
 <li>Browse a synthetic/harmless page and search for a unique visible string.</li>
 <li>If no capture appears, check popup pause state first.</li>
 </ol>

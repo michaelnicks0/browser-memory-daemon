@@ -20,7 +20,7 @@ task
 ## Blocks / blocked by
 
 - Blocks: reliable operator refresh and future token rotation work.
-- Blocked by: ticket 001 preferred; ticket 002 health snapshot may supply reusable checks.
+- Blocked by: none. Ticket 002 supplies reusable health/artifact checks.
 
 ## Resolution
 

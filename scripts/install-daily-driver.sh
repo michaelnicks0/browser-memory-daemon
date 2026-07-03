@@ -198,6 +198,9 @@ WSL services:
   journalctl --user -u browser-memory-daemon.service -f
   journalctl --user -u browser-memory-media-worker.service -f
 
+Aggregate health snapshot:
+  $ROOT/scripts/daily-driver-health.sh
+
 Chrome manual load/reload step still required by Chrome:
   chrome://extensions → Browser Memory Daemon → Reload
 EOF

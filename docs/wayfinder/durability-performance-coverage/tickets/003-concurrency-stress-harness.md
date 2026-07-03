@@ -21,7 +21,7 @@ prototype
 ## Blocks / blocked by
 
 - Blocks: ticket 004 SQLite write-path hardening.
-- Blocked by: ticket 001 baseline.
+- Blocked by: none. Ticket 001 baseline is complete.
 
 ## Resolution
 

@@ -39,6 +39,7 @@ Global defaults:
 | `serve` | Start the loopback daemon. | Human startup line; process stays running. |
 | `health` | Fetch `/health`. | Raw JSON string. |
 | `doctor` | Fetch `/doctor`. | Pretty JSON. |
+| `daily-driver-health [--journal-since WINDOW] [--extension-dir PATH] [--powershell PATH] [--skip-windows-loopback] [--no-fail]` | Redaction-safe daily-driver snapshot across services, loopback, journals, DB freshness, media queue, storage, and extension artifact state. | Pretty JSON. Exits non-zero on hard errors unless `--no-fail` is set. |
 | `recent --limit N` | Recent captures. | Pretty JSON list. |
 | `timeline [--date YYYY-MM-DD] [--after ISO] [--before ISO] [--limit N]` | Capture timeline. | Pretty JSON. |
 | `document DOCUMENT_ID` | Document details. | Pretty JSON. |
@@ -59,6 +60,7 @@ Global defaults:
 |---|---|
 | Missing production token | `load_config` raises and CLI exits non-zero. |
 | Unauthorized API call | HTTP `401`; CLI surfaces exception/non-zero. |
+| `daily-driver-health` hard error | Prints JSON with `ok=false` and exits `1`; use `--no-fail` for report-only collection. |
 | Bad capture payload | HTTP `400` with JSON error. |
 | Blocked capture by static policy or explicit local rule | HTTP `200`, `{"stored": false, "blocked": true, "reason": "..."}`. |
 | `all` mode capture | Stores unredacted payload when payload is otherwise parseable. |
@@ -81,6 +83,18 @@ Search daily-driver memory:
 PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
   search "example" --limit 10
+```
+
+Run the aggregate daily-driver health snapshot:
+
+```bash
+./scripts/daily-driver-health.sh
+```
+
+Report-only mode for diagnostics without failing the shell command:
+
+```bash
+./scripts/daily-driver-health.sh --no-fail
 ```
 
 Add block rules:

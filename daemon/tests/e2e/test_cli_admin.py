@@ -3,6 +3,7 @@ import threading
 
 import pytest
 
+import browser_memory_daemon.cli as cli_module
 from browser_memory_daemon.app import make_server
 from browser_memory_daemon.cli import main
 from browser_memory_daemon.config import load_config
@@ -30,7 +31,7 @@ def _last_json(capsys):
     return json.loads(out)
 
 
-def test_cli_admin_commands(cli_server, capsys):
+def test_cli_admin_commands(cli_server, capsys, monkeypatch):
     assert main(_base_args(cli_server) + [
         "capture-fixture",
         "--url",
@@ -67,3 +68,16 @@ def test_cli_admin_commands(cli_server, capsys):
     prefix_rule = _last_json(capsys)
     assert prefix_rule["rule"]["rule_type"] == "url-prefix"
     assert prefix_rule["rule"]["pattern"] == "http://127.0.0.1:32400/"
+
+    def fake_daily_driver_health_snapshot(cfg, *, extension_dir, journal_since, include_windows_loopback, powershell):
+        assert cfg.api_token == "test-token"
+        assert extension_dir == "/tmp/bmd-extension"
+        assert journal_since == "24 hours ago"
+        assert include_windows_loopback is False
+        assert powershell is None
+        return {"ok": True, "summary": {"status": "ok", "errors": [], "warnings": []}}
+
+    monkeypatch.setattr(cli_module, "daily_driver_health_snapshot", fake_daily_driver_health_snapshot)
+    assert main(_base_args(cli_server) + ["daily-driver-health", "--skip-windows-loopback", "--extension-dir", "/tmp/bmd-extension"]) == 0
+    daily_driver_health = _last_json(capsys)
+    assert daily_driver_health["ok"] is True

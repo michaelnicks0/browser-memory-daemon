@@ -5,7 +5,7 @@
 > **Runtime:** Python **3.11+** (`pyproject.toml` requires `>=3.11`). Use `BMD_PYTHON=/path/to/python3.11` when the host `python3` is older.
 
 <!-- BEGIN GENERATED:inventory-summary -->
-> **Current inventory:** 82 static test functions across 15 files — 59 daemon pytest tests + 23 extension node:test tests.
+> **Current inventory:** 84 static test functions across 16 files — 61 daemon pytest tests + 23 extension node:test tests.
 <!-- END GENERATED:inventory-summary -->
 
 ---
@@ -42,7 +42,7 @@ git diff --check -- .
 ## Generated test inventory
 
 <!-- BEGIN GENERATED:audit-run -->
-Latest inventory: **82 static test functions** across **15 files** (59 daemon pytest; 23 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
+Latest inventory: **84 static test functions** across **16 files** (61 daemon pytest; 23 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
 <!-- END GENERATED:audit-run -->
 
 ### Per-file counts
@@ -56,6 +56,7 @@ Latest inventory: **82 static test functions** across **15 files** (59 daemon py
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | 19 |
 | `daemon/tests/integration/test_media_worker.py` | pytest | 15 |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | 5 |
+| `daemon/tests/unit/test_daily_driver_health.py` | pytest | 2 |
 | `daemon/tests/unit/test_db.py` | pytest | 1 |
 | `daemon/tests/unit/test_normalize.py` | pytest | 4 |
 | `daemon/tests/unit/test_policy.py` | pytest | 6 |
@@ -65,7 +66,7 @@ Latest inventory: **82 static test functions** across **15 files** (59 daemon py
 | `extension/tests/unit/media_queue.test.js` | node:test | 5 |
 | `extension/tests/unit/queue.test.js` | node:test | 1 |
 | `extension/tests/unit/shared.test.js` | node:test | 2 |
-| **Total** |  | **82** |
+| **Total** |  | **84** |
 <!-- END GENERATED:per-file-counts -->
 
 <details>
@@ -77,7 +78,7 @@ Latest inventory: **82 static test functions** across **15 files** (59 daemon py
 | `daemon/tests/e2e/test_admin_api.py` | pytest | `(module)` | `test_admin_read_apis_and_ui_assets` | 57 | Admin read apis and ui assets. |
 | `daemon/tests/e2e/test_admin_api.py` | pytest | `(module)` | `test_policy_rule_blocks_future_capture_and_can_be_deleted` | 121 | Policy rule blocks future capture and can be deleted. |
 | `daemon/tests/e2e/test_admin_api.py` | pytest | `(module)` | `test_url_prefix_policy_rule_applies_in_all_mode_without_blocking_all_localhost` | 163 | Url prefix policy rule applies in all mode without blocking all localhost. |
-| `daemon/tests/e2e/test_cli_admin.py` | pytest | `(module)` | `test_cli_admin_commands` | 33 | Cli admin commands. |
+| `daemon/tests/e2e/test_cli_admin.py` | pytest | `(module)` | `test_cli_admin_commands` | 34 | Cli admin commands. |
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_skips_legacy_media_backfill_on_request` | 46 | Http capture skips legacy media backfill on request. |
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_media_fetch_raw_upload_and_purge_rehydrate_controls` | 79 | Http media fetch raw upload and purge rehydrate controls. |
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_search_forget_round_trip` | 148 | Http capture search forget round trip. |
@@ -120,6 +121,8 @@ Latest inventory: **82 static test functions** across **15 files** (59 daemon py
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_can_attach_to_latest_visit_by_url` | 114 | Visit lifecycle event can attach to latest visit by url. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_without_matching_visit_stores_metadata_only` | 146 | Visit lifecycle event without matching visit stores metadata only. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_validates_ranges` | 168 | Visit lifecycle event validates ranges. |
+| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_snapshot_is_aggregate_and_redaction_safe` | 27 | Daily driver health snapshot is aggregate and redaction safe. |
+| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_missing_extension_token` | 100 | Daily driver health detects missing extension token. |
 | `daemon/tests/unit/test_db.py` | pytest | `(module)` | `test_connect_uses_extended_busy_timeout` | 5 | Connect uses extended busy timeout. |
 | `daemon/tests/unit/test_normalize.py` | pytest | `(module)` | `test_normalize_url_removes_tracking_fragment_default_port_and_sorts_query` | 4 | Normalize url removes tracking fragment default port and sorts query. |
 | `daemon/tests/unit/test_normalize.py` | pytest | `(module)` | `test_normalize_url_preserves_meaningful_duplicate_query_values` | 11 | Normalize url preserves meaningful duplicate query values. |
@@ -183,7 +186,15 @@ BMD_PYTHON="${BMD_PYTHON:-python}" BMD_REAL_CHROME_POLICY_MODE=strict ./scripts/
 
 After `./scripts/install-daily-driver.sh` and Chrome extension reload:
 
-1. Confirm daemon:
+1. Confirm aggregate daily-driver health:
+
+   ```bash
+   ./scripts/daily-driver-health.sh
+   ```
+
+   The JSON should include `ok=true`. It is redaction-safe: it reports service state, loopback health, journal counts/sanitized templates, DB freshness/counts, media queue counts, storage headroom, and extension artifact state without dumping captured page text or token values.
+
+2. If the aggregate command reports an error, isolate daemon state:
 
    ```bash
    systemctl --user is-active browser-memory-daemon.service
@@ -192,21 +203,21 @@ After `./scripts/install-daily-driver.sh` and Chrome extension reload:
      --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" doctor
    ```
 
-2. Confirm Windows loopback:
+3. If needed, isolate Windows loopback:
 
    ```bash
    /mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe \
      -NoProfile -Command "Invoke-RestMethod http://127.0.0.1:8765/health | ConvertTo-Json -Compress"
    ```
 
-3. Confirm popup shows:
+4. Confirm popup shows:
 
    ```text
    mode=all paused=false
    ```
 
-4. Browse a synthetic/harmless page and search for a unique visible string.
-5. If no capture appears, check popup pause state first.
+5. Browse a synthetic/harmless page and search for a unique visible string.
+6. If no capture appears, check popup pause state first.
 
 ---
 

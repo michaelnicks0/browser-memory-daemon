@@ -7,16 +7,16 @@
 - **Non-goals for this map:** no cloud vector DB/LLM upload, no default Chrome profile automation, no publishing/pushing, no native-messaging rewrite unless a later ticket proves it is the next bottleneck.
 - **Standing constraints:** runtime data stays under XDG paths, not the repo; captured page text is untrusted evidence; tests must not use Michael's daily Chrome profile; architecture-impacting decisions require `docs/architecture/adr/` inspection and likely an ADR.
 - **Inspected context:** `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/STATUS.md`, `docs/TESTS.md`, `docs/test-plan.md`, `docs/api.md`, `docs/USER_GUIDE.md`, `docs/architecture/adr/README.md`, `scripts/install-daily-driver.sh`, `scripts/run-real-chrome-e2e.sh`, `pyproject.toml`, `extension/package.json`.
-- **Current baseline from inspected docs:** 82 static tests across 15 files: 59 daemon pytest tests and 23 extension `node:test` tests. Source/test line snapshot: daemon source 4,360 LOC vs daemon tests 1,939 LOC; extension source 2,138 LOC vs extension tests 371 LOC.
+- **Current baseline from inspected docs:** 84 static tests across 16 files: 61 daemon pytest tests and 23 extension `node:test` tests. Source/test line snapshot from ticket 001: daemon source 4,360 LOC vs daemon tests 1,939 LOC; extension source 2,138 LOC vs extension tests 371 LOC.
 - **Relevant accepted ADRs:** local-first Windows Chrome ⇄ WSL boundary, text-first SQLite/FTS5 + blobs, durable lazy media sidecars, real Chrome e2e as verification authority, C4 model as canonical architecture, generated docs as derived artifacts.
 
 ## Decisions so far
 
 - [001 — Establish reliability/performance/coverage baseline](tickets/001-baseline-failure-budget.md) — baseline captured 2026-07-03 UTC: full gate passed, live daily-driver services and DB integrity were OK, media-worker journal history exposed a resolved no-space start-failure class, and read-model endpoints need deterministic benchmark budgets.
+- [002 — Add daily-driver health snapshot command](tickets/002-daily-driver-health-snapshot.md) — added `daily-driver-health` plus `scripts/daily-driver-health.sh`, a redaction-safe aggregate over services, loopback, journals, DB freshness, media queue, storage headroom, and extension artifacts.
 
 ## Frontier
 
-- [002 — Add daily-driver health snapshot command](tickets/002-daily-driver-health-snapshot.md) — create one redaction-safe operator command/report for services, loopback, journals, DB freshness, queues, and extension artifact state.
 - [003 — Build deterministic concurrency stress harness](tickets/003-concurrency-stress-harness.md) — produce a repeatable load test for captures, lifecycle events, search, media uploads, and media-worker passes.
 - [005 — Expand HTTP API contract coverage](tickets/005-http-api-contract-coverage.md) — cover auth, malformed input, method/route errors, limits, and response consistency across endpoints.
 - [006 — Expand media-worker lifecycle invariant coverage](tickets/006-media-worker-invariants.md) — prove task leases, retries, stale recovery, terminal classification, and idempotent blob writes.
@@ -45,12 +45,12 @@
 
 ## Handoff
 
-Open frontier tickets: 11. Blocked tickets: 3.
+Open frontier tickets: 10. Blocked tickets: 3.
 
-Recommended next ticket: **002 — Add daily-driver health snapshot command**. The baseline showed that `active` services and `/doctor` success are not enough; the operator needs one redaction-safe command that also reports journal churn, queue state, and storage headroom.
+Recommended next ticket: **003 — Build deterministic concurrency stress harness**. Ticket 002 now gives the operator a compact health command; the next durability bottleneck is a repeatable contention harness before SQLite write-path hardening.
 
 Copy into a fresh session:
 
 ```text
-Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/002-daily-driver-health-snapshot.md.
+Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/003-concurrency-stress-harness.md.
 ```

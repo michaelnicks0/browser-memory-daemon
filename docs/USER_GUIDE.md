@@ -42,6 +42,16 @@ Use Python 3.11+ for CLI/dev commands. If the host `python3` is older, run `pyth
 
 ## Daily-driver state checks
 
+One redaction-safe snapshot command covers WSL services, loopback health from WSL and Windows, recent systemd journal warning/error counts, SQLite integrity/freshness/counts, media-queue aggregates, storage headroom, and the Windows extension artifact state:
+
+```bash
+./scripts/daily-driver-health.sh
+```
+
+The command prints JSON and exits non-zero when a hard health error is present. It does **not** dump captured page text, snippets, cookies, bearer tokens, raw captured URLs, or extension token values. Warnings such as due media retries are reported in `summary.warnings` while still producing a zero exit when the stack is otherwise healthy.
+
+Manual spot checks, if you need to isolate a layer:
+
 ```bash
 systemctl --user is-active browser-memory-daemon.service
 systemctl --user is-active browser-memory-media-worker.service

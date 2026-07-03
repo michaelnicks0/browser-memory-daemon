@@ -8,6 +8,7 @@ import urllib.request
 
 from .app import make_server
 from .config import load_config
+from .daily_driver_health import daily_driver_health_snapshot
 from .db import connect, init_db
 from .media import purge_media_cache
 from .media_worker import run_loop as run_media_worker_loop, run_once as run_media_worker_once
@@ -34,6 +35,12 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("serve")
     sub.add_parser("health")
     sub.add_parser("doctor")
+    daily_health = sub.add_parser("daily-driver-health")
+    daily_health.add_argument("--journal-since", default="24 hours ago")
+    daily_health.add_argument("--extension-dir")
+    daily_health.add_argument("--powershell")
+    daily_health.add_argument("--skip-windows-loopback", action="store_true")
+    daily_health.add_argument("--no-fail", action="store_true")
     recent = sub.add_parser("recent")
     recent.add_argument("--limit", type=int, default=25)
     timeline = sub.add_parser("timeline")
@@ -132,6 +139,16 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "doctor":
         print(json.dumps(_request("GET", f"{base}/doctor", token=cfg.api_token), indent=2))
         return 0
+    if args.command == "daily-driver-health":
+        result = daily_driver_health_snapshot(
+            cfg,
+            extension_dir=args.extension_dir,
+            journal_since=args.journal_since,
+            include_windows_loopback=not args.skip_windows_loopback,
+            powershell=args.powershell,
+        )
+        print(json.dumps(result, indent=2))
+        return 0 if (args.no_fail or result.get("ok")) else 1
     if args.command == "policy-rules":
         if args.block_domain and args.block_url_prefix:
             parser.error("policy-rules accepts only one of --block-domain or --block-url-prefix")

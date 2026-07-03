@@ -126,7 +126,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
   <article class="md-body">
 <h1 id="add-daily-driver-health-snapshot-command">Add daily-driver health snapshot command</h1>
 <h2 id="status">Status</h2>
-<p>open</p>
+<p>closed</p>
 <h2 id="question">Question</h2>
 <p>Can the repo provide one redaction-safe command that proves the daily-driver stack is healthy without manually stitching together systemd, Windows loopback, DB freshness, queue, and extension-artifact checks?</p>
 <h2 id="type">Type</h2>
@@ -147,9 +147,29 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>Blocked by: ticket 001 preferred, but can proceed independently if scoped to existing health evidence.</li>
 </ul>
 <h2 id="resolution">Resolution</h2>
-<p>Pending.</p>
+<p>Resolved by adding a redaction-safe daily-driver health snapshot surface:</p>
+<ul>
+<li>Added <code>daily-driver-health</code> to the Python CLI.</li>
+<li>Added <code>scripts/daily-driver-health.sh</code> so the operator can run one command without manually copying the token.</li>
+<li>Snapshot output covers WSL <code>/health</code>, optional Windows PowerShell loopback health, systemd user-unit state, sanitized journal warning/error aggregates, read-only SQLite integrity/count/freshness checks, media queue aggregates, storage headroom, and Windows extension artifact/token-default/policy-default checks.</li>
+<li>Output intentionally excludes captured page text, snippets, cookies, bearer token values, raw captured URLs, media source URLs, and extension API token values.</li>
+<li>The command exits non-zero on hard errors (<code>ok=false</code>) and supports <code>--no-fail</code> for report-only collection.</li>
+<li>Updated <code>docs/USER_GUIDE.md</code>, <code>docs/CLI_UX_CONTRACT.md</code>, <code>docs/TESTS.md</code>, and <code>scripts/install-daily-driver.sh</code> to make the snapshot the primary daily-driver check.</li>
+<li>Inspected the ADR index. No ADR was added because this is an additive operator CLI/runbook surface over existing boundaries and data stores, not a change to capture, auth, storage, schema, policy, or component ownership semantics.</li>
+</ul>
+<p>Verification evidence:</p>
+<ul>
+<li><code>/tmp/browser-memory-daemon-verify-venv/bin/python -m pytest -q daemon/tests/unit/test_daily_driver_health.py daemon/tests/e2e/test_cli_admin.py</code> passed.</li>
+<li><code>/tmp/browser-memory-daemon-verify-venv/bin/python -m pytest -q</code> passed.</li>
+<li><code>python scripts/generate_test_inventory.py --check</code> passed after inventory update to 84 tests / 16 files.</li>
+<li><code>python3.11 -m py_compile daemon/src/browser_memory_daemon/daily_driver_health.py daemon/src/browser_memory_daemon/cli.py</code> passed.</li>
+<li><code>bash -n scripts/daily-driver-health.sh scripts/install-daily-driver.sh</code> passed.</li>
+<li>Live smoke: <code>./scripts/daily-driver-health.sh --journal-since '1 hour ago'</code> returned exit 0 with <code>ok=True</code>, <code>status=warning</code>, WSL loopback OK, Windows loopback OK, DB OK, extension artifact OK, and one non-fatal media-queue retry warning.</li>
+</ul>
 <h2 id="new-tickets-fog-updates">New tickets / fog updates</h2>
-<p>Pending. If this becomes an API/CLI contract change, inspect ADRs and decide whether an ADR update is needed.</p>
+<ul>
+<li>Ticket 011 can reuse the snapshot checks for installer/token/artifact validation and is no longer waiting on ticket 002.</li>
+</ul>
   </article>
   <div class="md-footer">
     Rendered from <code>docs/wayfinder/durability-performance-coverage/tickets/002-daily-driver-health-snapshot.md</code> — the Markdown file is the canonical,
