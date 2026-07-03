@@ -53,6 +53,7 @@ def test_ui_dashboard_shell_serves_bootstrap_and_core_panels(server):
     assert bootstrap["api_token"] == "test-token"
     assert bootstrap["policy_mode"] == "strict"
     assert bootstrap["storage_root"]
+    assert bootstrap["blob_root"]
 
     status, content_type, js = raw_request("GET", f"{server}/ui/app.js", token=None)
     assert status == 200

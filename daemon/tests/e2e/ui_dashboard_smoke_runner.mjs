@@ -128,6 +128,7 @@ async function testDaemonBootstrapInitialEmptyState() {
       api_token: 'test-token',
       policy_mode: 'all',
       storage_root: '/tmp/bmd-ui-smoke',
+      blob_root: '/mnt/nas/bmd-blobs',
     },
     fetchImpl: async (url, options = {}) => {
       calls.push({url, headers: options.headers || {}});
@@ -145,6 +146,7 @@ async function testDaemonBootstrapInitialEmptyState() {
   assert.equal(elements.get('#token').value, 'test-token');
   assert.match(elements.get('#token-status').textContent, /Loaded from this daemon/);
   assert.match(elements.get('#token-status').textContent, /policy=all/);
+  assert.match(elements.get('#token-status').textContent, /blobs=\/mnt\/nas\/bmd-blobs/);
   assert.equal(elements.get('#recent').textContent, 'No captures.');
   assert.equal(elements.get('#timeline').textContent, 'No captures for that date.');
   assert.equal(elements.get('#policy-rules').textContent, 'No policy rules.');
@@ -179,6 +181,7 @@ async function testInitialApiErrorRendersPanelErrorState() {
       api_token: 'test-token',
       policy_mode: 'all',
       storage_root: '/tmp/bmd-ui-smoke',
+      blob_root: '/mnt/nas/bmd-blobs',
     },
     fetchImpl: async (url, options = {}) => {
       calls.push({url, headers: options.headers || {}});

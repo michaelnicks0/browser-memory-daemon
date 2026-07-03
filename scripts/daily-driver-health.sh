@@ -11,6 +11,13 @@ else
 fi
 
 CFG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/browser-memory-daemon"
+ENV_FILE="${BMD_ENV_FILE:-$CFG_DIR/env}"
+if [ -f "$ENV_FILE" ]; then
+  set -a
+  # shellcheck disable=SC1090
+  . "$ENV_FILE"
+  set +a
+fi
 TOKEN_FILE="${BMD_TOKEN_FILE:-$CFG_DIR/token}"
 if [ ! -s "$TOKEN_FILE" ]; then
   echo "Browser Memory Daemon token file missing or empty: $TOKEN_FILE" >&2

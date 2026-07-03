@@ -17,6 +17,7 @@ fi
 EXT_DIR="${BMD_WINDOWS_EXTENSION_DIR:-/mnt/c/Users/${WIN_USER}/AppData/Local/browser-memory-daemon/extension}"
 CFG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/browser-memory-daemon"
 DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/browser-memory-daemon"
+BLOB_DIR="${BMD_BLOB_ROOT:-$DATA_DIR/blobs}"
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/browser-memory-daemon"
 UNIT_DIR="$HOME/.config/systemd/user"
 TOKEN_FILE="$CFG_DIR/token"
@@ -84,6 +85,7 @@ Resolved inputs:
   Host/port: $HOST:$PORT
   Config dir: $CFG_DIR
   Data dir: $DATA_DIR
+  Blob dir: $BLOB_DIR
   State dir: $STATE_DIR
   Token file: $TOKEN_FILE
   Environment file: $ENV_FILE
@@ -92,9 +94,9 @@ Resolved inputs:
   Windows extension artifact dir: $EXT_DIR
 
 Install/refresh would:
-  - create protected WSL config/data/state directories;
+  - create protected WSL config/data/state directories plus the configured blob root;
   - create or reuse the token file, or rotate it if BMD_ROTATE_TOKEN=1;
-  - write the protected EnvironmentFile with BMD_API_TOKEN and BMD_POLICY_MODE;
+  - write the protected EnvironmentFile with BMD_API_TOKEN, BMD_POLICY_MODE, and BMD_BLOB_ROOT;
   - write systemd user units that read the EnvironmentFile instead of passing tokens in ExecStart;
   - build extension/dist, copy it to the Windows-local artifact dir, and patch token/policy defaults there;
   - daemon-reload, enable/restart both user services, then verify WSL and Windows loopback health.
@@ -106,6 +108,15 @@ EOF
 fi
 
 if [ "$MODE" = "check" ]; then
+  if [ -f "$ENV_FILE" ]; then
+    set -a
+    # shellcheck disable=SC1090
+    . "$ENV_FILE"
+    set +a
+    HOST="${BMD_HOST:-$HOST}"
+    PORT="${BMD_PORT:-$PORT}"
+    POLICY_MODE="${BMD_POLICY_MODE:-$POLICY_MODE}"
+  fi
   if [ ! -s "$TOKEN_FILE" ]; then
     echo "Browser Memory Daemon token file missing or empty: $TOKEN_FILE" >&2
     exit 1
@@ -117,7 +128,7 @@ if [ "$MODE" = "check" ]; then
       daily-driver-health --extension-dir "$EXT_DIR"
 fi
 
-mkdir -p "$CFG_DIR" "$DATA_DIR" "$STATE_DIR" "$UNIT_DIR" "$EXT_DIR"
+mkdir -p "$CFG_DIR" "$DATA_DIR" "$BLOB_DIR" "$STATE_DIR" "$UNIT_DIR" "$EXT_DIR"
 chmod 700 "$CFG_DIR"
 
 if [ "${BMD_ROTATE_TOKEN:-0}" = "1" ] || [ ! -s "$TOKEN_FILE" ]; then
@@ -141,6 +152,7 @@ BMD_HOST=$HOST
 BMD_PORT=$PORT
 BMD_API_TOKEN=$TOKEN
 BMD_POLICY_MODE=$POLICY_MODE
+BMD_BLOB_ROOT=$BLOB_DIR
 BMD_MEDIA_WORKER_INTERVAL=${BMD_MEDIA_WORKER_INTERVAL:-30}
 BMD_MEDIA_WORKER_LIMIT=${BMD_MEDIA_WORKER_LIMIT:-25}
 PYTHONPATH=$ROOT/daemon/src

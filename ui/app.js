@@ -293,7 +293,7 @@ function wire() {
   els.token.value = state.token;
   if (els.tokenStatus) {
     if (state.tokenSource === 'daemon') {
-      els.tokenStatus.textContent = `Loaded from this daemon · policy=${bootstrap.policy_mode || 'unknown'} · storage=${bootstrap.storage_root || 'unknown'}`;
+      els.tokenStatus.textContent = `Loaded from this daemon · policy=${bootstrap.policy_mode || 'unknown'} · storage=${bootstrap.storage_root || 'unknown'} · blobs=${bootstrap.blob_root || bootstrap.storage_root || 'unknown'}`;
     } else if (state.tokenSource === 'localStorage') {
       els.tokenStatus.textContent = 'Loaded saved browser override. The daemon can provide the token automatically on refresh.';
     } else {

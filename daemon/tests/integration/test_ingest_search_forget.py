@@ -9,6 +9,7 @@ from browser_memory_daemon.config import load_config
 from browser_memory_daemon.db import connect, init_db
 from browser_memory_daemon.forget import forget
 from browser_memory_daemon.ingest import ingest_capture
+from browser_memory_daemon.blob_migration import migrate_blob_root
 from browser_memory_daemon.media import fetch_pending_media_artifacts, media_artifacts_for_snapshot, media_capture_status_for_fetch_reason, store_media_artifact, store_media_blob_stream
 from browser_memory_daemon.models import CapturePayload
 from browser_memory_daemon.search import search_memory
@@ -181,6 +182,102 @@ def test_media_artifacts_are_related_to_snapshot_not_fts_and_deleted_by_forget(t
         assert receipt["counts"]["media_artifacts"] == 1
         assert receipt["counts"]["media_blobs"] == 1
         assert not media_path.exists()
+
+
+def test_ingest_and_media_write_to_configured_blob_root(tmp_path):
+    runtime_root = tmp_path / "runtime"
+    blob_root = tmp_path / "nas-blobs"
+    cfg = load_config(runtime_root=runtime_root, blob_root=blob_root, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    payload = CapturePayload.from_dict(
+        {
+            "url": "https://example.com/nas-blob-root",
+            "title": "NAS Blob Root",
+            "text": "Readable body for relocated blob root.",
+            "media_artifacts": [{"media_type": "image", "source_url": "https://example.com/nas.png", "mime_type": "image/png"}],
+        },
+        allow_any_url=True,
+    )
+    with connect(cfg.db_path) as conn:
+        result = ingest_capture(conn, cfg, payload)
+        clean_path = cfg.clean_text_root / f"{result['snapshot_id']}.txt"
+        assert cfg.db_path == runtime_root / "browser-memory.sqlite3"
+        assert clean_path.exists()
+        assert not (runtime_root / "blobs").exists()
+
+        stored = store_media_artifact(
+            conn,
+            cfg,
+            {
+                "document_id": result["document_id"],
+                "snapshot_id": result["snapshot_id"],
+                "visit_id": result["visit_id"],
+                "page_url": "https://example.com/nas-blob-root",
+                "media_type": "image",
+                "source_url": "https://example.com/nas.png",
+                "mime_type": "image/png",
+                "content_base64": base64.b64encode(b"nasbytes").decode("ascii"),
+            },
+        )
+        row = conn.execute("SELECT cleaned_text_path FROM snapshots WHERE id = ?", (result["snapshot_id"],)).fetchone()
+        media_row = conn.execute("SELECT file_path FROM media_artifacts WHERE id = ?", (stored["artifact_id"],)).fetchone()
+
+    assert row["cleaned_text_path"] == str(clean_path)
+    assert media_row["file_path"] == str(cfg.media_root / f"{stored['artifact_id']}.png")
+    assert (cfg.media_root / f"{stored['artifact_id']}.png").exists()
+
+
+def test_blob_root_migration_copies_files_and_rewrites_db_paths(tmp_path, monkeypatch):
+    monkeypatch.delenv("BMD_BLOB_ROOT", raising=False)
+    runtime_root = tmp_path / "runtime"
+    nas_root = tmp_path / "nas-blobs"
+    old_cfg = load_config(runtime_root=runtime_root, test_mode=True, token="test-token", policy_mode="all")
+    init_db(old_cfg)
+    payload = CapturePayload.from_dict(
+        {
+            "url": "https://example.com/blob-migration",
+            "title": "Blob Migration",
+            "text": "Readable body before blob migration.",
+            "media_artifacts": [{"media_type": "image", "source_url": "https://example.com/migrate.png", "mime_type": "image/png"}],
+        },
+        allow_any_url=True,
+    )
+    with connect(old_cfg.db_path) as conn:
+        result = ingest_capture(conn, old_cfg, payload)
+        stored = store_media_artifact(
+            conn,
+            old_cfg,
+            {
+                "document_id": result["document_id"],
+                "snapshot_id": result["snapshot_id"],
+                "visit_id": result["visit_id"],
+                "page_url": "https://example.com/blob-migration",
+                "media_type": "image",
+                "source_url": "https://example.com/migrate.png",
+                "mime_type": "image/png",
+                "content_base64": base64.b64encode(b"movebytes").decode("ascii"),
+            },
+        )
+
+    old_clean_path = old_cfg.clean_text_root / f"{result['snapshot_id']}.txt"
+    old_media_path = old_cfg.media_root / f"{stored['artifact_id']}.png"
+    new_cfg = load_config(runtime_root=runtime_root, blob_root=nas_root, test_mode=True, token="test-token", policy_mode="all")
+    with connect(new_cfg.db_path) as conn:
+        dry_run = migrate_blob_root(conn, new_cfg)
+        assert dry_run["dry_run"] is True
+        assert dry_run["planned"] == 2
+        executed = migrate_blob_root(conn, new_cfg, execute=True)
+        row = conn.execute("SELECT cleaned_text_path FROM snapshots WHERE id = ?", (result["snapshot_id"],)).fetchone()
+        media_row = conn.execute("SELECT file_path FROM media_artifacts WHERE id = ?", (stored["artifact_id"],)).fetchone()
+
+    assert executed["copied"] == 2
+    assert executed["updated"] == 2
+    assert old_clean_path.exists()
+    assert old_media_path.exists()
+    assert row["cleaned_text_path"] == str(new_cfg.clean_text_root / f"{result['snapshot_id']}.txt")
+    assert media_row["file_path"] == str(new_cfg.media_root / f"{stored['artifact_id']}.png")
+    assert (new_cfg.clean_text_root / f"{result['snapshot_id']}.txt").read_text() == "Readable body before blob migration."
+    assert (new_cfg.media_root / f"{stored['artifact_id']}.png").read_bytes() == b"movebytes"
 
 
 def test_media_artifact_size_gate_skips_oversized_blob(tmp_path):

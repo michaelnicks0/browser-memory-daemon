@@ -132,7 +132,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </blockquote>
 <hr />
 <h2 id="tldr">TL;DR</h2>
-<p>The implementation is <strong>text-first</strong> with optional bounded media blobs. Text/FTS growth remains manageable; media is intentionally cache-like and now has explicit size gates plus purge/rehydrate controls.</p>
+<p>The implementation is <strong>text-first</strong> with optional bounded media blobs. Text/FTS growth remains manageable; media is intentionally cache-like and now has explicit size gates plus purge/rehydrate controls. Blob bytes can be moved to a configured WSL-visible NAS root with <code>BMD_BLOB_ROOT</code> while SQLite/FTS stays under the WSL runtime root.</p>
 <p>Using a representative daily-driver baseline and the daemon's current storage multiplier, the most realistic planning range is:</p>
 <table>
 <thead>

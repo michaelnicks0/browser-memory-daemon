@@ -98,7 +98,7 @@
     },
     {
       "label": "🗄️ WSL store",
-      "sub": "SQLite, FTS5, text/media blobs",
+      "sub": "SQLite, FTS5, NAS-ready blobs",
       "tone": "local"
     },
     {
@@ -194,7 +194,7 @@
       },
       {
         "title": "SQLite/FTS",
-        "sub": "text blobs\nmedia cache",
+        "sub": "text blobs\nmedia cache\nNAS-ready",
         "tone": "local"
       }
     ],
@@ -209,7 +209,7 @@
       }
     ]
   },
-  "boundary_cap": "Runtime data belongs under WSL XDG paths. The repo contains source, docs, generated visuals, and tests — not browser memory, tokens, cookies, or raw captures.",
+  "boundary_cap": "Runtime DB/state belongs under WSL XDG paths; blobs can live under a configured WSL-visible NAS root. The repo contains source, docs, generated visuals, and tests — not browser memory, tokens, cookies, or raw captures.",
   "boundary_note": "The default <b>all</b> mode is an operator-selected recall posture: no daemon redaction and no built-in URL filtering. Explicit local block rules still apply. See <a href=\"docs/security-model.html\">security-model</a> for the full contract.",
   "docmap_intro": "This page is the visual front door. Markdown stays canonical; the linked HTML pages are generated companions for polished browser reading.",
   "docmap": [

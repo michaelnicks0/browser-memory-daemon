@@ -14,7 +14,7 @@ Windows Chrome unpacked extension
      - browser-memory-daemon.service
      - browser-memory-media-worker.service
   → ~/.local/share/browser-memory-daemon/browser-memory.sqlite3
-  → ~/.local/share/browser-memory-daemon/blobs/{clean-text,media}/
+  → ${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}/{clean-text,media}/
 ```
 
 The daemon is persistent in WSL. Chrome still requires **Load unpacked** / **Reload** through Chrome's UI because branded Chrome rejects direct profile JSON extension transplants.
@@ -32,8 +32,9 @@ The daemon is persistent in WSL. Chrome still requires **Load unpacked** / **Rel
 | systemd daemon unit | `~/.config/systemd/user/browser-memory-daemon.service` |
 | systemd media worker unit | `~/.config/systemd/user/browser-memory-media-worker.service` |
 | SQLite DB | `~/.local/share/browser-memory-daemon/browser-memory.sqlite3` |
-| Clean-text blobs | `~/.local/share/browser-memory-daemon/blobs/clean-text/` |
-| Media blobs | `~/.local/share/browser-memory-daemon/blobs/media/` |
+| Blob root | `${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}` |
+| Clean-text blobs | `${BMD_BLOB_ROOT}/clean-text/` |
+| Media blobs | `${BMD_BLOB_ROOT}/media/` |
 | Audit log | `~/.local/state/browser-memory-daemon/audit.jsonl` |
 
 ---
@@ -51,7 +52,7 @@ The installer:
 2. builds the MV3 extension;
 3. copies it to the Windows-local extension directory;
 4. creates or reuses the daemon token;
-5. writes protected WSL env with `BMD_API_TOKEN`, `BMD_POLICY_MODE`, and `PYTHONPATH`;
+5. writes protected WSL env with `BMD_API_TOKEN`, `BMD_POLICY_MODE`, `BMD_BLOB_ROOT`, and `PYTHONPATH`;
 6. writes/enables/restarts `systemd --user` daemon and media-worker services whose `ExecStart` values do not carry token material;
 7. preconfigures the Windows extension copy with token and policy mode;
 8. verifies WSL and Windows loopback health.
@@ -67,6 +68,30 @@ Read-only installed-state check, with no rebuild/copy/unit writes/restarts:
 ```bash
 ./scripts/install-daily-driver.sh --check
 ```
+
+To place blobs on a WSL-mounted NAS dataset while keeping SQLite/WAL local:
+
+```bash
+BMD_BLOB_ROOT=/mnt/nas/browser-memory-daemon/blobs \
+  BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
+```
+
+`BMD_BLOB_ROOT` affects only clean-text/media blob files. The SQLite DB, WAL/SHM sidecars, token/env files, audit state, and systemd units remain under WSL XDG paths.
+
+The mount only needs to be a normal WSL-visible filesystem path. Prefer NFS for simple kernel-mounted NAS storage when it works in the local WSL/network boundary; SSHFS is an acceptable fallback for blob payloads because SQLite/WAL stays local.
+
+For an existing install, migrate DB-referenced blob paths after copying/writing to the new root:
+
+```bash
+systemctl --user stop browser-memory-media-worker.service browser-memory-daemon.service
+BMD_BLOB_ROOT=/mnt/nas/browser-memory-daemon/blobs \
+  PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
+  blob-root migrate --execute
+BMD_BLOB_ROOT=/mnt/nas/browser-memory-daemon/blobs \
+  BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
+```
+
+The migration command is dry-run by default. `--execute` copies files and rewrites DB paths; add `--remove-source` only after verifying the NAS-backed copy and live daemon behavior.
 
 Rotate token and refresh extension copy:
 

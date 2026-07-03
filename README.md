@@ -16,7 +16,7 @@ Windows Chrome extension
   → browser lazy media sidecar: credentialed fetch + raw blob upload
   → CDP/HLS media sidecar: X/Twitter video manifests + segment backfill
   → WSL daemon policy mode + durable public media worker
-  → SQLite + FTS5 + text/media blobs under WSL runtime paths
+  → SQLite + FTS5 under WSL runtime paths + text/media blobs under the configured blob root
   → CLI / local UI / search / timeline / detail / forget / doctor
 ```
 

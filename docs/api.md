@@ -65,6 +65,7 @@ Missing or invalid bearer tokens return `401`; malformed JSON and invalid payloa
   "ok": true,
   "version": "0.1.0",
   "storage_root": "/home/<user>/.local/share/browser-memory-daemon",
+  "blob_root": "/mnt/nas/browser-memory-daemon/blobs",
   "capture_enabled": true,
   "policy_mode": "all"
 }

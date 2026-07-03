@@ -2,7 +2,7 @@
 
 > **Audience:** operator and future agents.
 > **Status:** accepted design posture; implementation is split into follow-up tickets.
-> **Scope:** Browser Memory Daemon WSL-owned runtime data, SQLite/FTS5/WAL sidecars, clean-text blobs, media sidecars, backup/export boundaries, and forget/deletion semantics.
+> **Scope:** Browser Memory Daemon WSL-owned runtime data, SQLite/FTS5/WAL sidecars, configurable clean-text/media blob root, backup/export boundaries, and forget/deletion semantics.
 
 ---
 
@@ -16,12 +16,12 @@ This design does **not** add automatic age-based deletion yet. That would be a s
 
 ## Mission / ConOps
 
-Browser Memory Daemon exists to provide local-first browser recall from Windows Chrome with durable WSL storage. Long-term operation needs enough storage hygiene to avoid SQLite/media growth surprises without undermining recall or deletion receipts.
+Browser Memory Daemon exists to provide local-first browser recall from Windows Chrome with durable WSL storage and a configurable WSL-visible blob root. Long-term operation needs enough storage hygiene to avoid SQLite/media growth surprises without undermining recall or deletion receipts.
 
 Operational sequence:
 
 1. Chrome and the daemon keep writing visits, snapshots, FTS chunks, audit rows, lifecycle events, media refs, and bounded media blobs.
-2. Health checks expose headroom, DB/WAL/media sizes, and worker churn without dumping captured content.
+2. Health checks expose headroom, DB/WAL/blob/media sizes, and worker churn without dumping captured content.
 3. A future maintenance command performs dry-run-first checkpoint/optimize/audit/optional-compaction work under local runtime paths.
 4. A future backup/export command creates a local bundle or snapshot with a manifest and explicit inclusion/exclusion choices.
 5. Forget remains a live-store deletion operation; backup lifecycle must be documented and eventually automatable separately.
@@ -32,7 +32,7 @@ Operational sequence:
 
 | Evidence | Current fact |
 |---|---|
-| Ticket 001 live baseline | DB ~350.74 MiB, clean text ~22.46 MiB, media blobs ~11.54 GiB, WAL 0 bytes at probe time, WSL `/` had ~477 GiB free. |
+| Ticket 001 live baseline | DB ~350.74 MiB, clean text ~22.46 MiB, media blobs ~11.54 GiB, WAL 0 bytes at probe time, WSL `/` had ~477 GiB free. The blob root is now separately configurable for NAS placement. |
 | Ticket 009 synthetic benchmark | Machine-readable benchmark reports DB/WAL/media sidecar size output and advisory budgets. |
 | Ticket 015 health budget | Daily-driver health now reports storage `headroom.status`, systemd restart budgets, and service-start failure budgets. |
 | ADR-0014 | SQLite WAL sidecars (`*.sqlite3-wal`, `*.sqlite3-shm`) are expected live companions, not junk files. |
@@ -66,7 +66,7 @@ Rationale: `policy_mode=all` is an intentional maximum-recall posture. Silent te
 ### 2. Media bytes
 
 - Preserve media rows, hashes, statuses, and provenance as durable evidence alongside snapshots.
-- Continue treating media blobs under `blobs/media/` as a cache bounded by artifact/snapshot/domain/global gates.
+- Continue treating media blobs under `${BMD_BLOB_ROOT}/media/` as a cache bounded by artifact/snapshot/domain/global gates.
 - Prefer purge/rehydrate over permanent media metadata deletion.
 - Keep OCR/media-derived indexing out of this design; it belongs to a later media-enrichment lane.
 
@@ -99,8 +99,8 @@ A complete local backup/export should include:
 |---|---:|---|
 | SQLite DB snapshot | ✅ | Use online backup / quiesced copy, not a naked live DB copy. |
 | SQLite WAL/SHM sidecars | Conditional | Include only for raw quiesced/live filesystem snapshots; not needed for `VACUUM INTO` / online backup output. |
-| `blobs/clean-text/` | ✅ | Needed if snapshot detail should keep external cleaned-text files. |
-| `blobs/media/` | Optional | Large cache; include only when operator wants binary media completeness. Refs remain in DB either way. |
+| `${BMD_BLOB_ROOT}/clean-text/` | ✅ | Needed if snapshot detail should keep external cleaned-text files. If this root is NAS-mounted, the backup/export command should record that source path explicitly. |
+| `${BMD_BLOB_ROOT}/media/` | Optional | Large cache; include only when operator wants binary media completeness. Refs remain in DB either way. |
 | Manifest JSON | ✅ | Counts, byte sizes, created-at, repo/version, policy mode, hashes for files copied. No secrets. |
 | Token/env/unit files | ❌ by default | Sensitive and reinstallable. Back up only through an explicit secrets-aware operator path. |
 | Windows extension copy | ❌ | Rebuild/copy from repo plus token/env; do not treat as durable memory. |

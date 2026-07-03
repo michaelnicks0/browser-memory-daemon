@@ -47,11 +47,11 @@ workspace "Browser Memory Daemon" "C4 architecture model for the local-first Win
                 tags "Database", "Data Store"
             }
 
-            cleanTextBlobStore = container "Clean Text Blob Store" "Filesystem store for snapshot text blobs under WSL XDG data paths." "WSL filesystem" {
+            cleanTextBlobStore = container "Clean Text Blob Store" "Filesystem store for snapshot text blobs under the configured WSL-visible blob root." "WSL or NAS-mounted filesystem" {
                 tags "Data Store"
             }
 
-            mediaBlobCache = container "Media Blob Cache" "Bounded and disposable filesystem cache for stored image/video/audio blobs with purge/rehydrate semantics that preserve media refs, hashes, status reasons, and provenance when bytes are absent or purged." "WSL filesystem" {
+            mediaBlobCache = container "Media Blob Cache" "Bounded and disposable filesystem cache for stored image/video/audio blobs under the configured WSL-visible blob root, with purge/rehydrate semantics that preserve media refs, hashes, status reasons, and provenance when bytes are absent or purged." "WSL or NAS-mounted filesystem" {
                 tags "Data Store"
             }
 
@@ -136,12 +136,14 @@ workspace "Browser Memory Daemon" "C4 architecture model for the local-first Win
                     wslCliNode = deploymentNode "WSL shell" "Operator shell for CLI commands and verification." "Bash + Python" {
                         containerInstance cli
                     }
-                    xdgData = deploymentNode "WSL XDG runtime data paths" "Durable data under ~/.config, ~/.local/share, and ~/.local/state, outside the repo." "WSL filesystem" {
+                    xdgData = deploymentNode "WSL XDG runtime data paths" "Durable DB/config/state under ~/.config, ~/.local/share, and ~/.local/state, outside the repo." "WSL filesystem" {
                         containerInstance sqliteDatabase
-                        containerInstance cleanTextBlobStore
-                        containerInstance mediaBlobCache
                         tokenFile = infrastructureNode "Protected token/env files" "~/.config/browser-memory-daemon/token and env supply the daemon token and policy mode." "Filesystem, chmod 600/700"
                         auditLog = infrastructureNode "Audit log" "~/.local/state/browser-memory-daemon/audit.jsonl stores metadata-only operational events." "JSON Lines"
+                    }
+                    nasBlobRoot = deploymentNode "WSL-mounted NAS blob root" "Configured BMD_BLOB_ROOT mount for clean-text and media blob files." "NAS mount of TrueNAS ZFS dataset" {
+                        containerInstance cleanTextBlobStore
+                        containerInstance mediaBlobCache
                     }
                 }
             }

@@ -126,14 +126,15 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
   <article class="md-body">
 <hr />
 <p>id: ADR-0004
-status: accepted
+status: superseded
 date: 2026-06-14
 decision_date: 2026-06-08
 decider: Operator
 scope: repo
 backfilled: true
 supersedes: []
-superseded_by: []
+superseded_by:
+  - ADR-0021
 related:
   - docs/ARCHITECTURE.md
   - docs/storage-growth-model.md
@@ -149,7 +150,7 @@ verification:
 <hr />
 <h1 id="adr-0004-use-text-first-sqlitefts5-and-blob-storage">ADR-0004: Use Text-First SQLite/FTS5 and Blob Storage</h1>
 <h2 id="context">Context</h2>
-<p>This ADR backfills a decision that existed before the ADR workflow was added.</p>
+<p>This ADR backfills a decision that existed before the ADR workflow was added. ADR-0021 supersedes the blob placement portion by making blob storage configurable for NAS-backed daily-driver deployments while preserving the text-first SQLite/FTS5 model.</p>
 <p>Browser Memory Daemon needs exact local recall with inspectable storage, modest operational complexity, and a durable data model that supports search, detail pages, timeline, lifecycle metadata, deletion, media refs, and future extensions.</p>
 <p>The implementation intentionally starts with captured text, chunks, FTS5, and local blob files. It does not start with semantic embeddings, screenshots, full HTML, cloud vector stores, or a browser-history-only model.</p>
 <h2 id="decision">Decision</h2>
@@ -236,8 +237,11 @@ verification:
 <li>Supersede this ADR if SQLite/FTS5 becomes the performance or scale bottleneck.</li>
 <li>Supersede this ADR if retention/export/backup changes require a materially different storage layout.</li>
 </ul>
+<h2 id="supersession">Supersession</h2>
+<p>ADR-0021 keeps this ADR's text-first SQLite/FTS5 decision but replaces the fixed WSL-local blob placement with a configurable <code>BMD_BLOB_ROOT</code> that can point at a WSL-mounted NAS dataset.</p>
 <h2 id="references">References</h2>
 <ul>
+<li><code>docs/architecture/adr/0021-use-configurable-nas-blob-root-with-local-sqlite.md</code></li>
 <li><code>docs/ARCHITECTURE.md#storage-model</code></li>
 <li><code>docs/storage-growth-model.md</code></li>
 <li><code>daemon/src/browser_memory_daemon/schema.sql</code></li>

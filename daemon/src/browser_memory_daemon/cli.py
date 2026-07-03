@@ -7,6 +7,7 @@ import urllib.parse
 import urllib.request
 
 from .app import make_server
+from .blob_migration import migrate_blob_root
 from .config import load_config
 from .daily_driver_health import daily_driver_health_snapshot
 from .db import connect, init_db
@@ -30,6 +31,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--port", type=int, default=None)
     parser.add_argument("--token", default=None)
     parser.add_argument("--runtime-root", default=None)
+    parser.add_argument("--blob-root", default=None)
     parser.add_argument("--policy-mode", choices=["all", "recall", "balanced", "strict"], default=None)
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("serve")
@@ -86,6 +88,12 @@ def main(argv: list[str] | None = None) -> int:
     rehydrate.add_argument("--document-id")
     rehydrate.add_argument("--snapshot-id")
     rehydrate.add_argument("--limit", type=int, default=100)
+    blob = sub.add_parser("blob-root")
+    blob_sub = blob.add_subparsers(dest="blob_command", required=True)
+    migrate = blob_sub.add_parser("migrate")
+    migrate.add_argument("--from-root", default=None)
+    migrate.add_argument("--execute", action="store_true")
+    migrate.add_argument("--remove-source", action="store_true")
     args = parser.parse_args(argv)
 
     cfg = load_config(
@@ -94,6 +102,7 @@ def main(argv: list[str] | None = None) -> int:
         token=args.token,
         policy_mode=args.policy_mode,
         runtime_root=args.runtime_root,
+        blob_root=args.blob_root,
         test_mode=False,
     )
     base = f"http://{cfg.host}:{cfg.port}"
@@ -193,6 +202,12 @@ def main(argv: list[str] | None = None) -> int:
             with connect(cfg.db_path) as conn:
                 purge_media_cache(conn, cfg, body)
                 print(json.dumps(run_media_worker_once(conn, cfg, limit=args.limit), indent=2))
+            return 0
+    if args.command == "blob-root":
+        init_db(cfg)
+        if args.blob_command == "migrate":
+            with connect(cfg.db_path) as conn:
+                print(json.dumps(migrate_blob_root(conn, cfg, source_root=args.from_root, execute=args.execute, remove_source=args.remove_source), indent=2))
             return 0
     if args.command == "capture-fixture":
         print(json.dumps(_request("POST", f"{base}/capture", token=cfg.api_token, body={"url": args.url, "title": args.title, "text": args.text}), indent=2))

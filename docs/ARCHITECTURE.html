@@ -155,7 +155,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Storage owner</td>
-<td>WSL daemon. Chrome profile is not the durable memory store.</td>
+<td>WSL daemon owns the DB and paths; blob bytes may live under a configured WSL-mounted NAS root. Chrome profile is not the durable memory store.</td>
 </tr>
 <tr>
 <td>Search model</td>
@@ -204,7 +204,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 </tbody>
 </table>
-<p>The fast path is text-first: page text, lifecycle metadata, and media references are captured before any media bytes are fetched. Media sidecars run later in Chrome or the daemon, media bytes are bounded and disposable, and all durable memory remains under WSL-owned storage.</p>
+<p>The fast path is text-first: page text, lifecycle metadata, and media references are captured before any media bytes are fetched. Media sidecars run later in Chrome or the daemon, media bytes are bounded and disposable, and all durable memory remains local under WSL-owned SQLite plus configured WSL-visible blob storage.</p>
 <hr />
 <h2 id="requirements-trace">Requirements trace</h2>
 <table>
@@ -226,8 +226,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td>REQ-002</td>
 <td>Keep durable data out of repo and Chrome profile.</td>
-<td><code>RuntimeConfig</code>, XDG paths, <code>.gitignore</code></td>
-<td><code>doctor</code>, secret scan, runtime-root tests</td>
+<td><code>RuntimeConfig</code>, XDG paths, configurable blob root, <code>.gitignore</code></td>
+<td><code>doctor</code>, secret scan, runtime/blob-root tests</td>
 </tr>
 <tr>
 <td>REQ-003</td>
@@ -779,12 +779,12 @@ status_reason  = cache-evicted:global-oldest
 <td>Forget receipts and counts.</td>
 </tr>
 <tr>
-<td><code>~/.local/share/browser-memory-daemon/blobs/clean-text/</code></td>
-<td>Stored text snapshots.</td>
+<td><code>${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}/clean-text/</code></td>
+<td>Stored text snapshots. Daily-driver deployments may point this at a WSL-mounted NAS dataset.</td>
 </tr>
 <tr>
-<td><code>~/.local/share/browser-memory-daemon/blobs/media/</code></td>
-<td>Stored media blobs; purgeable cache.</td>
+<td><code>${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}/media/</code></td>
+<td>Stored media blobs; purgeable cache. Daily-driver deployments may point this at a WSL-mounted NAS dataset.</td>
 </tr>
 </tbody>
 </table>

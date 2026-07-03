@@ -219,7 +219,7 @@ def _loopback_health(base_url: str, urlopen: UrlOpen) -> dict[str, Any]:
         "url": url,
         "status_code": status,
         "elapsed_ms": round((time.perf_counter() - started) * 1000, 3),
-        "health": _select_keys(payload, ("ok", "capture_enabled", "policy_mode", "storage_root", "version")),
+        "health": _select_keys(payload, ("ok", "capture_enabled", "policy_mode", "storage_root", "blob_root", "version")),
     }
 
 
@@ -256,7 +256,7 @@ def _windows_loopback_health(
         "exit_code": result.exit_code,
     }
     if payload is not None:
-        output["health"] = _select_keys(payload, ("ok", "capture_enabled", "policy_mode", "storage_root", "version"))
+        output["health"] = _select_keys(payload, ("ok", "capture_enabled", "policy_mode", "storage_root", "blob_root", "version"))
     if parse_error:
         output["error"] = parse_error
     elif result.exit_code != 0:
@@ -448,6 +448,7 @@ def _storage_status(config: RuntimeConfig, extension_dir: Path | None) -> dict[s
     paths = {
         "config_root": config.config_root,
         "data_root": config.data_root,
+        "blob_root": config.blob_root,
         "state_root": config.state_root,
         "clean_text_root": config.clean_text_root,
         "media_root": config.media_root,

@@ -137,7 +137,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
      - browser-memory-daemon.service
      - browser-memory-media-worker.service
   → ~/.local/share/browser-memory-daemon/browser-memory.sqlite3
-  → ~/.local/share/browser-memory-daemon/blobs/{clean-text,media}/
+  → ${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}/{clean-text,media}/
 </code></pre></div>
 
 <p>The daemon is persistent in WSL. Chrome still requires <strong>Load unpacked</strong> / <strong>Reload</strong> through Chrome's UI because branded Chrome rejects direct profile JSON extension transplants.</p>
@@ -180,12 +180,16 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td><code>~/.local/share/browser-memory-daemon/browser-memory.sqlite3</code></td>
 </tr>
 <tr>
+<td>Blob root</td>
+<td><code>${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}</code></td>
+</tr>
+<tr>
 <td>Clean-text blobs</td>
-<td><code>~/.local/share/browser-memory-daemon/blobs/clean-text/</code></td>
+<td><code>${BMD_BLOB_ROOT}/clean-text/</code></td>
 </tr>
 <tr>
 <td>Media blobs</td>
-<td><code>~/.local/share/browser-memory-daemon/blobs/media/</code></td>
+<td><code>${BMD_BLOB_ROOT}/media/</code></td>
 </tr>
 <tr>
 <td>Audit log</td>
@@ -205,7 +209,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>builds the MV3 extension;</li>
 <li>copies it to the Windows-local extension directory;</li>
 <li>creates or reuses the daemon token;</li>
-<li>writes protected WSL env with <code>BMD_API_TOKEN</code>, <code>BMD_POLICY_MODE</code>, and <code>PYTHONPATH</code>;</li>
+<li>writes protected WSL env with <code>BMD_API_TOKEN</code>, <code>BMD_POLICY_MODE</code>, <code>BMD_BLOB_ROOT</code>, and <code>PYTHONPATH</code>;</li>
 <li>writes/enables/restarts <code>systemd --user</code> daemon and media-worker services whose <code>ExecStart</code> values do not carry token material;</li>
 <li>preconfigures the Windows extension copy with token and policy mode;</li>
 <li>verifies WSL and Windows loopback health.</li>
@@ -218,6 +222,23 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>./scripts/install-daily-driver.sh<span style="color: #F8F8F2"> </span>--check
 </code></pre></div>
 
+<p>To place blobs on a WSL-mounted NAS dataset while keeping SQLite/WAL local:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_BLOB_ROOT</span><span style="color: #FF4689">=</span>/mnt/nas/browser-memory-daemon/blobs<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  BMD_POLICY_MODE</span><span style="color: #FF4689">=</span>all<span style="color: #F8F8F2"> </span>./scripts/install-daily-driver.sh
+</code></pre></div>
+
+<p><code>BMD_BLOB_ROOT</code> affects only clean-text/media blob files. The SQLite DB, WAL/SHM sidecars, token/env files, audit state, and systemd units remain under WSL XDG paths.</p>
+<p>The mount only needs to be a normal WSL-visible filesystem path. Prefer NFS for simple kernel-mounted NAS storage when it works in the local WSL/network boundary; SSHFS is an acceptable fallback for blob payloads because SQLite/WAL stays local.</p>
+<p>For an existing install, migrate DB-referenced blob paths after copying/writing to the new root:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>systemctl<span style="color: #F8F8F2"> </span>--user<span style="color: #F8F8F2"> </span>stop<span style="color: #F8F8F2"> </span>browser-memory-media-worker.service<span style="color: #F8F8F2"> </span>browser-memory-daemon.service
+<span style="color: #F8F8F2">BMD_BLOB_ROOT</span><span style="color: #FF4689">=</span>/mnt/nas/browser-memory-daemon/blobs<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  PYTHONPATH</span><span style="color: #FF4689">=</span>daemon/src<span style="color: #F8F8F2"> </span>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>blob-root<span style="color: #F8F8F2"> </span>migrate<span style="color: #F8F8F2"> </span>--execute
+<span style="color: #F8F8F2">BMD_BLOB_ROOT</span><span style="color: #FF4689">=</span>/mnt/nas/browser-memory-daemon/blobs<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  BMD_POLICY_MODE</span><span style="color: #FF4689">=</span>all<span style="color: #F8F8F2"> </span>./scripts/install-daily-driver.sh
+</code></pre></div>
+
+<p>The migration command is dry-run by default. <code>--execute</code> copies files and rewrites DB paths; add <code>--remove-source</code> only after verifying the NAS-backed copy and live daemon behavior.</p>
 <p>Rotate token and refresh extension copy:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_ROTATE_TOKEN</span><span style="color: #FF4689">=</span><span style="color: #AE81FF">1</span><span style="color: #F8F8F2"> BMD_POLICY_MODE</span><span style="color: #FF4689">=</span>all<span style="color: #F8F8F2"> </span>./scripts/install-daily-driver.sh
 </code></pre></div>

@@ -15,7 +15,7 @@ The system shall enable Operator to reconstruct recently viewed web content by c
 | Operator | Operator only. |
 | Browser surface | Windows Chrome daily-driver profile plus Chrome for Testing in e2e. |
 | Capture path | MV3 extension → service worker → authenticated localhost HTTP. |
-| Storage owner | WSL daemon. Chrome profile is not the durable memory store. |
+| Storage owner | WSL daemon owns the DB and paths; blob bytes may live under a configured WSL-mounted NAS root. Chrome profile is not the durable memory store. |
 | Search model | Exact SQLite FTS5 first. No embeddings yet. |
 | Default policy posture | `all`: no daemon redaction or URL policy filtering, maximum recall, DOM extraction skip retained. |
 | Deletion model | Forget by domain/URL with deletion receipts. |
@@ -33,7 +33,7 @@ Read the diagram as three contracts plus one operating surface:
 | Solid green | Local authenticated ingest and storage. | The WSL daemon applies policy, writes SQLite/FTS rows and clean-text blobs, and serves token-gated read/delete APIs. |
 | Dashed violet | Lazy media and operator/test control. | Browser/daemon sidecars fetch media bytes later; CLI, local dashboard, and real Chrome e2e exercise the same local surfaces. |
 
-The fast path is text-first: page text, lifecycle metadata, and media references are captured before any media bytes are fetched. Media sidecars run later in Chrome or the daemon, media bytes are bounded and disposable, and all durable memory remains under WSL-owned storage.
+The fast path is text-first: page text, lifecycle metadata, and media references are captured before any media bytes are fetched. Media sidecars run later in Chrome or the daemon, media bytes are bounded and disposable, and all durable memory remains local under WSL-owned SQLite plus configured WSL-visible blob storage.
 
 ---
 
@@ -42,7 +42,7 @@ The fast path is text-first: page text, lifecycle metadata, and media references
 | ID | Requirement | Implementation | Verification |
 |---|---|---|---|
 | REQ-001 | Capture Chrome page text into WSL. | `extension/src/*`, `/capture`, `ingest.py` | `scripts/run-real-chrome-e2e.sh` |
-| REQ-002 | Keep durable data out of repo and Chrome profile. | `RuntimeConfig`, XDG paths, `.gitignore` | `doctor`, secret scan, runtime-root tests |
+| REQ-002 | Keep durable data out of repo and Chrome profile. | `RuntimeConfig`, XDG paths, configurable blob root, `.gitignore` | `doctor`, secret scan, runtime/blob-root tests |
 | REQ-003 | Service worker owns daemon communication. | `service_worker.js` | extension unit tests + real e2e |
 | REQ-004 | Authenticated loopback API. | `app.py`, bearer token | HTTP e2e unauthorized test |
 | REQ-005 | Adjustable capture policy modes. | `policy.py`, `extractor.js`, options/popup | daemon + extension unit tests |
@@ -221,8 +221,8 @@ status_reason  = cache-evicted:global-oldest
 | `privacy_rules` | Explicit local block rules applied in every policy mode; `(rule_type, pattern, action)` is unique after normalization. |
 | `audit_events` | Metadata-only operational audit. |
 | `deletion_receipts` | Forget receipts and counts. |
-| `~/.local/share/browser-memory-daemon/blobs/clean-text/` | Stored text snapshots. |
-| `~/.local/share/browser-memory-daemon/blobs/media/` | Stored media blobs; purgeable cache. |
+| `${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}/clean-text/` | Stored text snapshots. Daily-driver deployments may point this at a WSL-mounted NAS dataset. |
+| `${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}/media/` | Stored media blobs; purgeable cache. Daily-driver deployments may point this at a WSL-mounted NAS dataset. |
 
 Retention/backup posture is governed by [`retention-compaction-backup.md`](retention-compaction-backup.md) and ADR-0019: text/FTS recall remains durable by default, media bytes remain bounded cache, and backups must be WAL-aware local bundles or snapshots with explicit manifests.
 

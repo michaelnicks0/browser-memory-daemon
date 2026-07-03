@@ -272,6 +272,7 @@ def doctor(config: RuntimeConfig, conn: sqlite3.Connection) -> dict[str, Any]:
         "paths": {
             "config_root": str(config.config_root),
             "data_root": str(config.data_root),
+            "blob_root": str(config.blob_root),
             "state_root": str(config.state_root),
             "db_path": str(config.db_path),
             "clean_text_root": str(config.clean_text_root),

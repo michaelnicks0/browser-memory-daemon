@@ -177,7 +177,7 @@ The daily-driver daemon embeds the current token into the `/ui` HTML bootstrap, 
 
 ## Media cache controls
 
-Text/FTS rows are the durable recall source. Media blobs are a bounded cache under `~/.local/share/browser-memory-daemon/blobs/media/`; artifact refs remain even if blobs are purged.
+Text/FTS rows are the durable recall source. Media blobs are a bounded cache under `${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}/media/`; artifact refs remain even if blobs are purged.
 
 Dry-run a domain purge:
 

@@ -89,6 +89,7 @@ def _ui_bootstrap_script(config: RuntimeConfig) -> str:
         "api_token": config.api_token,
         "policy_mode": config.policy_mode,
         "storage_root": str(config.data_root),
+        "blob_root": str(config.blob_root),
     }
     # JSON script bodies are still parsed as HTML script text; escape closing
     # tags so a future non-url-safe token value cannot terminate the script.
@@ -240,6 +241,7 @@ def make_handler(config: RuntimeConfig):
                         "ok": True,
                         "version": __version__,
                         "storage_root": str(config.data_root),
+                        "blob_root": str(config.blob_root),
                         "capture_enabled": True,
                         "policy_mode": config.policy_mode,
                     },

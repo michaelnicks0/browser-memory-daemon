@@ -1,13 +1,14 @@
 ---
 id: ADR-0004
-status: accepted
+status: superseded
 date: 2026-06-14
 decision_date: 2026-06-08
 decider: Operator
 scope: repo
 backfilled: true
 supersedes: []
-superseded_by: []
+superseded_by:
+  - ADR-0021
 related:
   - docs/ARCHITECTURE.md
   - docs/storage-growth-model.md
@@ -26,7 +27,7 @@ verification:
 
 ## Context
 
-This ADR backfills a decision that existed before the ADR workflow was added.
+This ADR backfills a decision that existed before the ADR workflow was added. ADR-0021 supersedes the blob placement portion by making blob storage configurable for NAS-backed daily-driver deployments while preserving the text-first SQLite/FTS5 model.
 
 Browser Memory Daemon needs exact local recall with inspectable storage, modest operational complexity, and a durable data model that supports search, detail pages, timeline, lifecycle metadata, deletion, media refs, and future extensions.
 
@@ -92,8 +93,13 @@ Embeddings, full HTML snapshots, screenshots, and richer retention/compaction ar
 - Supersede this ADR if SQLite/FTS5 becomes the performance or scale bottleneck.
 - Supersede this ADR if retention/export/backup changes require a materially different storage layout.
 
+## Supersession
+
+ADR-0021 keeps this ADR's text-first SQLite/FTS5 decision but replaces the fixed WSL-local blob placement with a configurable `BMD_BLOB_ROOT` that can point at a WSL-mounted NAS dataset.
+
 ## References
 
+- `docs/architecture/adr/0021-use-configurable-nas-blob-root-with-local-sqlite.md`
 - `docs/ARCHITECTURE.md#storage-model`
 - `docs/storage-growth-model.md`
 - `daemon/src/browser_memory_daemon/schema.sql`

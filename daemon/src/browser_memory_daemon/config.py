@@ -19,6 +19,7 @@ class RuntimeConfig:
     policy_mode: str = DEFAULT_POLICY_MODE
     config_root: Path = Path.home() / ".config" / APP_NAME
     data_root: Path = Path.home() / ".local" / "share" / APP_NAME
+    blob_root: Path = Path.home() / ".local" / "share" / APP_NAME / "blobs"
     state_root: Path = Path.home() / ".local" / "state" / APP_NAME
     max_payload_bytes: int = 2_000_000
     max_media_payload_bytes: int = 40_000_000
@@ -41,22 +42,22 @@ class RuntimeConfig:
 
     @property
     def clean_text_root(self) -> Path:
-        return self.data_root / "blobs" / "clean-text"
+        return self.blob_root / "clean-text"
 
     @property
     def raw_html_root(self) -> Path:
-        return self.data_root / "blobs" / "raw-html"
+        return self.blob_root / "raw-html"
 
     @property
     def media_root(self) -> Path:
-        return self.data_root / "blobs" / "media"
+        return self.blob_root / "media"
 
     @property
     def audit_log_path(self) -> Path:
         return self.state_root / "audit.jsonl"
 
     def ensure_dirs(self) -> None:
-        for path in [self.config_root, self.data_root, self.state_root, self.clean_text_root, self.media_root]:
+        for path in [self.config_root, self.data_root, self.blob_root, self.state_root, self.clean_text_root, self.media_root]:
             path.mkdir(parents=True, exist_ok=True)
         if self.raw_html_enabled:
             self.raw_html_root.mkdir(parents=True, exist_ok=True)
@@ -97,9 +98,11 @@ def load_config(
     token: str | None = None,
     policy_mode: str | None = None,
     runtime_root: str | Path | None = None,
+    blob_root: str | Path | None = None,
     test_mode: bool = False,
 ) -> RuntimeConfig:
     env_root = os.environ.get("BMD_RUNTIME_ROOT")
+    env_blob_root = os.environ.get("BMD_BLOB_ROOT")
     selected_root = Path(runtime_root or env_root).expanduser() if (runtime_root or env_root) else None
     api_token = token if token is not None else os.environ.get("BMD_API_TOKEN", "")
     if test_mode and not api_token:
@@ -114,6 +117,8 @@ def load_config(
         data_root = Path.home() / ".local" / "share" / APP_NAME
         config_root = Path.home() / ".config" / APP_NAME
         state_root = Path.home() / ".local" / "state" / APP_NAME
+    blob_root_value = blob_root if blob_root is not None else env_blob_root
+    selected_blob_root = Path(blob_root_value).expanduser() if blob_root_value else data_root / "blobs"
     selected_port = port if port is not None else int(os.environ.get("BMD_PORT", DEFAULT_PORT))
     selected_policy_mode = normalize_policy_mode(policy_mode or os.environ.get("BMD_POLICY_MODE") or DEFAULT_POLICY_MODE)
     cfg = RuntimeConfig(
@@ -123,6 +128,7 @@ def load_config(
         policy_mode=selected_policy_mode,
         config_root=config_root,
         data_root=data_root,
+        blob_root=selected_blob_root,
         state_root=state_root,
         max_payload_bytes=_env_int("BMD_MAX_PAYLOAD_BYTES", RuntimeConfig.max_payload_bytes),
         max_media_payload_bytes=_env_int("BMD_MAX_MEDIA_PAYLOAD_BYTES", RuntimeConfig.max_media_payload_bytes),

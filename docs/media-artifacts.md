@@ -75,8 +75,10 @@ Key fields:
 Binary files live under:
 
 ```text
-~/.local/share/browser-memory-daemon/blobs/media/
+${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}/media/
 ```
+
+Daily-driver deployments can set `BMD_BLOB_ROOT` to a WSL-mounted NAS dataset while leaving SQLite, WAL, config, state, and service units on the WSL filesystem.
 
 ---
 
@@ -167,7 +169,7 @@ X-BMD-Document-ID: doc_...
 X-BMD-Snapshot-ID: snap_...
 ```
 
-The daemon size/MIME/cache gates the blob, writes through `blobs/media/.tmp`, then atomically renames to the final file.
+The daemon size/MIME/cache gates the blob, writes through `${BMD_BLOB_ROOT}/media/.tmp`, then atomically renames to the final file.
 
 ### Compatibility JSON artifact upload
 
