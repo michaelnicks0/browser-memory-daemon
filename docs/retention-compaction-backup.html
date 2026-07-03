@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Retention-Compaction-Backup — browser-memory-daemon</title>
+<style>
+:root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;color:var(--text);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,ui-sans-serif,system-ui,sans-serif;background:radial-gradient(1100px 520px at 78% -8%,rgba(59,130,246,.22),transparent 60%),radial-gradient(820px 480px at 6% 4%,rgba(82,212,255,.12),transparent 55%),radial-gradient(700px 700px at 92% 96%,rgba(91,225,156,.08),transparent 55%),var(--bg);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:30px 22px 70px}
+a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
+code{font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:#08152b;border:1px solid var(--line);border-radius:6px;padding:.1em .42em;color:#d6e6ff}
+h1,h2,h3{letter-spacing:-.02em;margin:0}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;color:var(--cyan);font-weight:700;letter-spacing:.16em;text-transform:uppercase;font-size:.72rem}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--cyan);box-shadow:0 0 16px 2px rgba(82,212,255,.85);animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.7)}}
+.hero{position:relative;border:1px solid var(--line2);border-radius:26px;padding:38px 36px 30px;margin-bottom:18px;background:linear-gradient(165deg,rgba(31,52,92,.55),rgba(10,20,38,.7));box-shadow:0 30px 90px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.05);overflow:hidden}
+.hero h1{font-size:clamp(2.3rem,5.2vw,3.9rem);line-height:1.02;margin:14px 0 12px}
+.hero h1 .g{background:linear-gradient(92deg,var(--cyan),var(--blue) 55%,var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p.lead{color:#cfe0f7;font-size:1.12rem;max-width:62ch;margin:0 0 8px}
+.hero .sub{color:var(--muted);max-width:64ch}
+.pillbar{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.pill{display:inline-flex;align-items:center;gap:7px;font-size:.82rem;color:#dce8fb;background:rgba(11,22,42,.7);border:1px solid var(--line2);border-radius:999px;padding:7px 13px}
+.pill b{color:#fff}.pill .k{width:7px;height:7px;border-radius:50%}
+.k.live{background:var(--amber)}.k.local{background:var(--green)}.k.priv{background:var(--rose)}.k.blue{background:var(--blue)}
+.metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin:18px 0 6px}
+.metric{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015));border:1px solid var(--line);border-radius:16px;padding:15px 14px;text-align:center}
+.metric .n{font-size:1.85rem;font-weight:800;letter-spacing:-.03em;background:linear-gradient(180deg,#fff,#bcd2f2);-webkit-background-clip:text;background-clip:text;color:transparent}
+.metric .l{display:block;color:var(--dim);font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;margin-top:3px}
+@media(max-width:880px){.metrics{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:520px){.metrics{grid-template-columns:repeat(2,1fr)}}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0 26px}
+.toc a{font-size:.84rem;color:#cfe0f7;border:1px solid var(--line2);background:rgba(10,20,38,.6);border-radius:999px;padding:8px 14px}
+.toc a:hover{border-color:var(--cyan);text-decoration:none;color:#fff}
+section.block{margin:30px 0}
+.block>h2{font-size:1.5rem;margin-bottom:6px;display:flex;align-items:center;gap:11px}
+.block>h2 .num{font-size:.8rem;color:var(--ink);background:linear-gradient(180deg,var(--cyan),var(--blue));width:26px;height:26px;border-radius:8px;display:inline-grid;place-items:center;font-weight:800}
+.block>p.intro{color:var(--muted);max-width:74ch;margin:6px 0 16px}
+.card{background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.012));border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:0 18px 50px rgba(0,0,0,.3)}
+.figure{border:1px solid var(--line);border-radius:20px;background:radial-gradient(700px 300px at 50% 0,rgba(35,60,105,.4),rgba(8,17,33,.6));padding:24px;overflow:hidden}
+.figure svg{display:block;width:100%;height:auto}
+.cap{color:var(--dim);font-size:.82rem;text-align:center;margin-top:12px}
+.lanes{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:820px){.lanes{grid-template-columns:1fr}}
+.lane{position:relative;border:1px solid var(--line2);border-radius:18px;padding:20px;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.01));transition:transform .15s ease,border-color .15s ease}
+.lane:hover{transform:translateY(-3px);border-color:var(--cyan)}
+.lane .tag{font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;font-weight:700}
+.lane.exec .tag{color:var(--violet)}.lane.user .tag{color:var(--green)}.lane.maint .tag{color:var(--amber)}
+.lane h3{font-size:1.16rem;margin:8px 0 6px}.lane p{color:var(--muted);font-size:.9rem;margin:0 0 14px}
+.lane .go{font-size:.86rem;font-weight:600}
+.lane .ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;margin-bottom:6px;border:1px solid var(--line2);font-size:1.2rem}
+.lane.exec .ic{background:rgba(183,155,255,.13)}.lane.user .ic{background:rgba(91,225,156,.13)}.lane.maint .ic{background:rgba(255,180,84,.13)}
+table{width:100%;border-collapse:collapse;margin-top:6px;font-size:.9rem}
+th,td{text-align:left;padding:11px 13px;border-bottom:1px solid var(--line)}
+th{color:var(--dim);font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700}
+tr:last-child td{border-bottom:0}td b{color:#fff}
+.note{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line2);border-left:3px solid var(--cyan);border-radius:12px;padding:14px 16px;background:rgba(10,20,38,.5);color:#cfe0f7;font-size:.9rem;margin-top:14px}
+.note .i{font-size:1.1rem;line-height:1.2}
+footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);color:var(--dim);font-size:.82rem}
+.prov{margin-top:8px;color:#8aa0bd}.prov code{font-size:11.5px}
+.featgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px}
+.feat{background:linear-gradient(180deg,rgba(20,32,54,.7),rgba(12,21,38,.6));border:1px solid var(--line);border-radius:16px;padding:18px}
+.feat .fic{font-size:1.4rem;margin-bottom:8px}
+.feat h3{font-size:1.02rem;margin:0 0 6px;color:#eaf2ff}
+.feat p{margin:0;color:#b8c8e4;font-size:.9rem;line-height:1.55}
+ol.flow{list-style:none;margin:0;padding:0}
+ol.flow li{display:flex;gap:14px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line)}
+ol.flow li:last-child{border-bottom:0}
+ol.flow .fstep{flex:0 0 auto;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:.92rem;color:#06101f;background:linear-gradient(135deg,var(--cyan),var(--blue))}
+ol.flow .fwrap{display:flex;flex-direction:column;gap:2px}
+ol.flow .fwrap b{color:#eaf2ff;font-size:.98rem}
+ol.flow .fwrap span{color:#aebfdc;font-size:.88rem;line-height:1.5}
+table.cmdtable{width:100%;border-collapse:collapse;font-size:.86rem}
+table.cmdtable th,table.cmdtable td{text-align:left;padding:9px 12px;border:1px solid var(--line);vertical-align:top}
+table.cmdtable th{background:rgba(35,60,105,.4);color:#dbe8ff;font-weight:700}
+table.cmdtable tr:nth-child(even) td{background:rgba(255,255,255,.018)}
+table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:#08152b;border:1px solid var(--line);border-radius:5px;padding:.08em .38em;color:#d6e6ff;white-space:nowrap}
+@media(max-width:760px){.featgrid{grid-template-columns:1fr}}
+
+.docbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:14px;padding:12px 20px;margin:-30px -22px 24px;background:rgba(8,15,28,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line2)}
+.docbar a.home{display:inline-flex;align-items:center;gap:8px;font-weight:700;color:var(--cyan);font-size:.9rem}
+.docbar .crumb{color:var(--dim);font-size:.84rem}
+.docbar .crumb b{color:var(--text)}
+.md-body{max-width:none}
+.md-body h1{font-size:2.1rem;margin:6px 0 14px;letter-spacing:-.02em}
+.md-body h2{font-size:1.5rem;margin:30px 0 10px;padding-bottom:7px;border-bottom:1px solid var(--line);letter-spacing:-.02em}
+.md-body h3{font-size:1.2rem;margin:22px 0 8px}
+.md-body h4{font-size:1.02rem;margin:18px 0 6px;color:#cfe0f7}
+.md-body p{color:#cdd9ee;margin:10px 0}
+.md-body ul,.md-body ol{color:#cdd9ee;padding-left:24px}
+.md-body li{margin:5px 0}
+.md-body a{color:var(--cyan)}
+.md-body strong{color:#fff}
+.md-body blockquote{margin:14px 0;padding:10px 16px;border-left:3px solid var(--blue);background:rgba(10,20,38,.55);border-radius:0 10px 10px 0;color:#bcd0ec}
+.md-body code{font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:#08152b;border:1px solid var(--line);border-radius:6px;padding:.1em .42em;color:#d6e6ff}
+.md-body pre{background:#070f1f;border:1px solid var(--line);border-radius:12px;padding:16px 18px;overflow:auto;margin:14px 0}
+.md-body pre code{background:none;border:0;padding:0;color:#d6e6ff;font-size:12.5px;line-height:1.6}
+.md-body table{width:100%;border-collapse:collapse;margin:16px 0;font-size:.88rem}
+.md-body th,.md-body td{text-align:left;padding:9px 12px;border:1px solid var(--line)}
+.md-body th{background:rgba(35,60,105,.4);color:#dbe8ff;font-weight:700}
+.md-body tr:nth-child(even) td{background:rgba(255,255,255,.018)}
+.md-body hr{border:0;border-top:1px solid var(--line);margin:26px 0}
+.md-body .mmd{margin:18px 0;padding:16px;border:1px solid var(--line);border-radius:16px;background:radial-gradient(700px 280px at 50% 0,rgba(35,60,105,.32),rgba(8,17,33,.55))}
+.md-body .mmd-scroll{overflow-x:auto;overflow-y:hidden;text-align:center}
+.md-body .mmd:not(.wide) .mmd-scroll{text-align:center}
+.md-body .mmd.wide .mmd-scroll{text-align:left}
+.md-body .mmd svg{height:auto;display:inline-block}
+.md-body .mmd-hint{font:600 11px/1.4 ui-sans-serif,system-ui;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;opacity:.8}
+.md-body .mmd-scroll::-webkit-scrollbar{height:9px}
+.md-body .mmd-scroll::-webkit-scrollbar-thumb{background:var(--line2);border-radius:6px}
+.md-body .mmd-scroll::-webkit-scrollbar-track{background:transparent}
+.md-body .codehilite{background:#070f1f;border:1px solid var(--line);border-radius:12px;margin:14px 0}
+.md-body .codehilite pre{border:0;margin:0;background:none}
+.md-footer{margin-top:42px;padding-top:18px;border-top:1px solid var(--line);color:var(--dim);font-size:.82rem}
+.md-footer code{font-size:11.5px}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="docbar">
+    <a class="home" href="../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
+    <span class="crumb">/ <b>docs/retention-compaction-backup.md</b></span>
+  </div>
+  <article class="md-body">
+<h1 id="retention-compaction-export-and-backup-posture">Retention, Compaction, Export, and Backup Posture</h1>
+<blockquote>
+<p><strong>Audience:</strong> operator and future agents.
+<strong>Status:</strong> accepted design posture; implementation is split into follow-up tickets.
+<strong>Scope:</strong> Browser Memory Daemon WSL-owned runtime data, SQLite/FTS5/WAL sidecars, clean-text blobs, media sidecars, backup/export boundaries, and forget/deletion semantics.</p>
+</blockquote>
+<hr />
+<h2 id="bottom-line">Bottom line</h2>
+<p>Browser Memory Daemon should preserve text/FTS recall by default and treat media bytes as a bounded disposable cache. Backups must be local, explicit, manifest-backed, and WAL-aware. Forget deletes the current live store; any backup made before the forget can still contain forgotten data until backup retention/pruning removes it.</p>
+<p>This design does <strong>not</strong> add automatic age-based deletion yet. That would be a separate operator-approved retention policy because the daily-driver default is maximum local recall.</p>
+<hr />
+<h2 id="mission-conops">Mission / ConOps</h2>
+<p>Browser Memory Daemon exists to provide local-first browser recall from Windows Chrome with durable WSL storage. Long-term operation needs enough storage hygiene to avoid SQLite/media growth surprises without undermining recall or deletion receipts.</p>
+<p>Operational sequence:</p>
+<ol>
+<li>Chrome and the daemon keep writing visits, snapshots, FTS chunks, audit rows, lifecycle events, media refs, and bounded media blobs.</li>
+<li>Health checks expose headroom, DB/WAL/media sizes, and worker churn without dumping captured content.</li>
+<li>A future maintenance command performs dry-run-first checkpoint/optimize/audit/optional-compaction work under local runtime paths.</li>
+<li>A future backup/export command creates a local bundle or snapshot with a manifest and explicit inclusion/exclusion choices.</li>
+<li>Forget remains a live-store deletion operation; backup lifecycle must be documented and eventually automatable separately.</li>
+</ol>
+<hr />
+<h2 id="evidence-baseline">Evidence baseline</h2>
+<table>
+<thead>
+<tr>
+<th>Evidence</th>
+<th>Current fact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ticket 001 live baseline</td>
+<td>DB ~350.74 MiB, clean text ~22.46 MiB, media blobs ~11.54 GiB, WAL 0 bytes at probe time, WSL <code>/</code> had ~477 GiB free.</td>
+</tr>
+<tr>
+<td>Ticket 009 synthetic benchmark</td>
+<td>Machine-readable benchmark reports DB/WAL/media sidecar size output and advisory budgets.</td>
+</tr>
+<tr>
+<td>Ticket 015 health budget</td>
+<td>Daily-driver health now reports storage <code>headroom.status</code>, systemd restart budgets, and service-start failure budgets.</td>
+</tr>
+<tr>
+<td>ADR-0014</td>
+<td>SQLite WAL sidecars (<code>*.sqlite3-wal</code>, <code>*.sqlite3-shm</code>) are expected live companions, not junk files.</td>
+</tr>
+<tr>
+<td>Current forget path</td>
+<td>Deletes DB rows, FTS rows, clean-text files, media rows/files for the live store, then records a deletion receipt.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="requirements">Requirements</h2>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Statement</th>
+<th>Verification / evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RCB-001</td>
+<td>Full text/FTS recall remains durable by default unless the operator explicitly enables a narrower retention policy.</td>
+<td>ADR-0019; no automatic text expiration in this design.</td>
+</tr>
+<tr>
+<td>RCB-002</td>
+<td>Media blobs remain a bounded, disposable cache while media refs/provenance remain durable.</td>
+<td>ADR-0005 and current media cache gates.</td>
+</tr>
+<tr>
+<td>RCB-003</td>
+<td>SQLite backup/compaction handling must respect WAL sidecars and avoid copying an inconsistent live database.</td>
+<td>ADR-0014; future backup command ticket.</td>
+</tr>
+<tr>
+<td>RCB-004</td>
+<td>Maintenance/export tools must be local-only and redaction-safe by default.</td>
+<td>Future tickets require dry-run/manifest tests and secret scan.</td>
+</tr>
+<tr>
+<td>RCB-005</td>
+<td>Forget semantics must distinguish live-store deletion from historical backup copies.</td>
+<td>This doc and ADR-0019; future backup retention ticket.</td>
+</tr>
+<tr>
+<td>RCB-006</td>
+<td>Any destructive retention, purge, compaction, or backup-prune action must have dry-run output before execute.</td>
+<td>Follow-up implementation tickets.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="recommended-posture">Recommended posture</h2>
+<h3 id="1-default-retention">1. Default retention</h3>
+<ul>
+<li>Keep <code>documents</code>, <code>visits</code>, <code>visit_events</code>, <code>snapshots</code>, <code>chunks</code>, <code>chunks_fts</code>, <code>audit_events</code>, and <code>deletion_receipts</code> indefinitely by default.</li>
+<li>Do not add an automatic age-based full-text retention job in this design slice.</li>
+<li>Later policy can add explicit operator-selected scopes such as domain, age, profile, or media-only retention, but default local recall stays complete.</li>
+</ul>
+<p>Rationale: <code>policy_mode=all</code> is an intentional maximum-recall posture. Silent text expiration would surprise the operator more than growth, especially while DB size is still modest relative to host headroom.</p>
+<h3 id="2-media-bytes">2. Media bytes</h3>
+<ul>
+<li>Preserve media rows, hashes, statuses, and provenance as durable evidence alongside snapshots.</li>
+<li>Continue treating media blobs under <code>blobs/media/</code> as a cache bounded by artifact/snapshot/domain/global gates.</li>
+<li>Prefer purge/rehydrate over permanent media metadata deletion.</li>
+<li>Keep OCR/media-derived indexing out of this design; it belongs to a later media-enrichment lane.</li>
+</ul>
+<h3 id="3-sqlite-wal-and-checkpoint-handling">3. SQLite WAL and checkpoint handling</h3>
+<ul>
+<li><code>memory.sqlite3</code>, <code>memory.sqlite3-wal</code>, and <code>memory.sqlite3-shm</code> are one live SQLite unit while services are running.</li>
+<li>Do <strong>not</strong> delete <code>-wal</code> or <code>-shm</code> files manually.</li>
+<li>For a consistent local backup, prefer one of:</li>
+<li>SQLite online backup API / <code>VACUUM INTO</code> to a backup DB path; or</li>
+<li>stop/quiesce daemon + worker services, copy <code>memory.sqlite3</code> plus live sidecars if present, then restart.</li>
+<li>Maintenance may run <code>PRAGMA wal_checkpoint(PASSIVE)</code> online. <code>TRUNCATE</code> checkpoint or <code>VACUUM</code> should be maintenance-window work with enough free space and no competing writers.</li>
+</ul>
+<h3 id="4-compaction-maintenance">4. Compaction / maintenance</h3>
+<p>Future maintenance command should be dry-run-first and local-only:</p>
+<ol>
+<li>report DB file, WAL file, clean-text, media, and filesystem headroom sizes;</li>
+<li>run/read <code>PRAGMA integrity_check</code> and FTS consistency checks;</li>
+<li>optionally run <code>PRAGMA optimize</code> and FTS optimize;</li>
+<li>checkpoint WAL safely;</li>
+<li>audit orphaned clean-text/media files and missing blob paths;</li>
+<li>optionally produce a compacted DB copy with <code>VACUUM INTO</code> when headroom is sufficient;</li>
+<li>never dump captured text, raw URLs, tokens, or cookies in logs.</li>
+</ol>
+<h3 id="5-backupexport-boundaries">5. Backup/export boundaries</h3>
+<p>A complete local backup/export should include:</p>
+<table>
+<thead>
+<tr>
+<th>Artifact</th>
+<th style="text-align: right;">Include by default?</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SQLite DB snapshot</td>
+<td style="text-align: right;">✅</td>
+<td>Use online backup / quiesced copy, not a naked live DB copy.</td>
+</tr>
+<tr>
+<td>SQLite WAL/SHM sidecars</td>
+<td style="text-align: right;">Conditional</td>
+<td>Include only for raw quiesced/live filesystem snapshots; not needed for <code>VACUUM INTO</code> / online backup output.</td>
+</tr>
+<tr>
+<td><code>blobs/clean-text/</code></td>
+<td style="text-align: right;">✅</td>
+<td>Needed if snapshot detail should keep external cleaned-text files.</td>
+</tr>
+<tr>
+<td><code>blobs/media/</code></td>
+<td style="text-align: right;">Optional</td>
+<td>Large cache; include only when operator wants binary media completeness. Refs remain in DB either way.</td>
+</tr>
+<tr>
+<td>Manifest JSON</td>
+<td style="text-align: right;">✅</td>
+<td>Counts, byte sizes, created-at, repo/version, policy mode, hashes for files copied. No secrets.</td>
+</tr>
+<tr>
+<td>Token/env/unit files</td>
+<td style="text-align: right;">❌ by default</td>
+<td>Sensitive and reinstallable. Back up only through an explicit secrets-aware operator path.</td>
+</tr>
+<tr>
+<td>Windows extension copy</td>
+<td style="text-align: right;">❌</td>
+<td>Rebuild/copy from repo plus token/env; do not treat as durable memory.</td>
+</tr>
+<tr>
+<td>Chrome profile</td>
+<td style="text-align: right;">❌</td>
+<td>Out of scope; tests must not mutate/copy the daily-driver profile.</td>
+</tr>
+</tbody>
+</table>
+<p>Export is not a publishing workflow. It stays on local filesystem paths unless the operator explicitly approves a destination.</p>
+<h3 id="6-forget-and-backups">6. Forget and backups</h3>
+<p>Current forget guarantees live-store deletion from:</p>
+<ul>
+<li>DB rows and FTS rows;</li>
+<li>clean-text files referenced by deleted snapshots;</li>
+<li>media artifact rows and local media files;</li>
+<li>deletion receipt recording.</li>
+</ul>
+<p>Backups are different. A backup created before a forget may still contain the forgotten data. Therefore:</p>
+<ul>
+<li>forget responses and docs should not imply retroactive backup erasure;</li>
+<li>backup bundles need timestamps/manifests so the operator can identify pre-forget copies;</li>
+<li>a future backup retention/prune path should allow deleting old local backup bundles after sensitive forgets;</li>
+<li>if legal/operational semantics ever require backup erasure, that is a separate hard requirement and likely a new ADR.</li>
+</ul>
+<hr />
+<h2 id="v-model-traceability">V-model traceability</h2>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Logical component</th>
+<th>Future implementation unit</th>
+<th>Verification gate</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RCB-001</td>
+<td>Retention policy</td>
+<td>Retention config + dry-run sweep report</td>
+<td>Unit/e2e proving default keeps text; explicit sweep requires <code>--execute</code>.</td>
+</tr>
+<tr>
+<td>RCB-002</td>
+<td>Media cache</td>
+<td>Existing media purge/rehydrate controls</td>
+<td>Existing media tests plus future orphan audit.</td>
+</tr>
+<tr>
+<td>RCB-003</td>
+<td>WAL-aware backup</td>
+<td>Backup/export command</td>
+<td>Test online backup while WAL exists; restore opens with <code>integrity_check=ok</code>.</td>
+</tr>
+<tr>
+<td>RCB-004</td>
+<td>Redaction-safe maintenance</td>
+<td>Maintenance report serializer</td>
+<td>Golden tests asserting no raw captured text/URLs/tokens.</td>
+</tr>
+<tr>
+<td>RCB-005</td>
+<td>Forget/backup boundary</td>
+<td>Docs + manifest metadata</td>
+<td>Forget test plus backup manifest timestamp/prune tests.</td>
+</tr>
+<tr>
+<td>RCB-006</td>
+<td>Dry-run before destructive work</td>
+<td>CLI/API command guards</td>
+<td>CLI tests for no mutation in dry-run and mutation only with <code>--execute</code>.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="split-follow-up-tickets">Split follow-up tickets</h2>
+<p>This design intentionally stops before implementation. Follow-ups:</p>
+<ul>
+<li><code>017-retention-maintenance-command.md</code> — dry-run/execute maintenance command for checkpoint/optimize/orphan audit/optional compacted copy.</li>
+<li><code>018-local-backup-export-command.md</code> — local backup/export bundle with manifest, restore smoke, and backup/forget caveats.</li>
+</ul>
+<p>These are split follow-ups, not blockers for closing the current durability/performance/coverage queue.</p>
+<hr />
+<h2 id="revisit-triggers">Revisit triggers</h2>
+<p>Revisit this posture if:</p>
+<ul>
+<li>DB/text growth becomes the dominant headroom pressure rather than media cache growth;</li>
+<li>a retention policy becomes operator-approved for age/domain/profile scopes;</li>
+<li>backups need to satisfy stronger deletion/legal erasure semantics;</li>
+<li>Browser Memory moves away from SQLite/FTS5/WAL;</li>
+<li>media OCR/captioning adds new derived-data stores.</li>
+</ul>
+  </article>
+  <div class="md-footer">
+    Rendered from <code>docs/retention-compaction-backup.md</code> — the Markdown file is the canonical,
+    version-controlled source. This HTML is generated (regenerate with
+    <code>scripts/render_docs.py</code>); do not hand-edit.
+  </div>
+</div>
+</body>
+</html>

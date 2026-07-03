@@ -48,7 +48,7 @@ This means:
 |---|---:|---|
 | Native messaging transport | Later | HTTP loopback is working; native messaging can reduce network-like surface later. |
 | Semantic/vector search | Later, explicit approval required | Exact FTS remains current source of truth. |
-| Retention policies/export/backup | Medium | Needed before long-term high-volume use. |
+| Retention policies/export/backup | Medium | Design posture accepted in `docs/retention-compaction-backup.md`; implementation split into deferred maintenance and backup/export tickets. |
 | MCP/Hermes integration | Later | Should treat captured text as untrusted evidence. |
 | Rich policy rules | Medium | Future allow/redact/metadata-only modes; current explicit rules are block-only and apply in every mode, including `all`. |
 | Reconciliation for orphan lifecycle events | Low/medium | Some media/dynamic pages can send lifecycle before capture attaches. |
@@ -64,7 +64,7 @@ This means:
 | Chrome internal pages may not inject. | Platform limit; e2e covers web pages. |
 | Branded Chrome automation ignores unpacked extension flags. | E2E uses Chrome for Testing. Daily driver uses manual Load unpacked/reload. |
 | Extension token is copied into Windows-local unpacked extension artifact. | Token is generated in WSL, never committed, and can rotate. |
-| SQLite can grow over time. | Media blobs have size/cache gates plus purge/rehydrate controls; no retention/compaction job yet for the full DB/text store. |
+| SQLite can grow over time. | Media blobs have size/cache gates plus purge/rehydrate controls; ADR-0019 keeps text durable by default and splits maintenance/backup/export implementation into follow-up tickets. |
 | Captured text may contain prompt injection. | UI/CLI treat it as evidence; future agents must not follow page instructions. |
 
 ---

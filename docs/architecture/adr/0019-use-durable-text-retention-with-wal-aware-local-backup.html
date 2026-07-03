@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Readme — browser-memory-daemon</title>
+<title>0019-Use-Durable-Text-Retention-With-Wal-Aware-Local-Backup — browser-memory-daemon</title>
 <style>
 :root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
@@ -120,200 +120,127 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <body>
 <div class="wrap">
   <div class="docbar">
-    <a class="home" href="../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
-    <span class="crumb">/ <b>docs/README.md</b></span>
+    <a class="home" href="../../../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
+    <span class="crumb">/ <b>docs/architecture/adr/0019-use-durable-text-retention-with-wal-aware-local-backup.md</b></span>
   </div>
   <article class="md-body">
-<h1 id="browser-memory-daemon-docs-reading-path">Browser Memory Daemon Docs — Reading Path</h1>
-<blockquote>
-<p><strong>Audience:</strong> Operator and future agents maintaining the Windows Chrome → WSL browser-memory stack.
-<strong>Status:</strong> ✅ Publish-ready doc set with executive brief, user guide, generated HTML companions, architecture, diagrams, CLI/API, tests, deployment, and status pages.
-<strong>Data boundary:</strong> Live browser memory stays under WSL runtime paths, never in this repo.</p>
-</blockquote>
 <hr />
-<h2 id="start-here">Start here</h2>
+<p>id: ADR-0019
+status: accepted
+date: 2026-07-03
+decider: Operator
+scope: repo
+backfilled: false
+supersedes: []
+superseded_by: []
+related:
+  - docs/retention-compaction-backup.md
+  - docs/wayfinder/durability-performance-coverage/tickets/012-retention-compaction-backup-design.md
+  - docs/architecture/adr/0014-use-wal-and-bounded-sqlite-contention-policy.md
+  - docs/architecture/adr/0018-enforce-daily-driver-headroom-and-start-budgets.md
+verification:
+  - /tmp/browser-memory-daemon-verify-venv/bin/python scripts/render_docs.py --repo . --slug browser-memory-daemon --check
+  - /tmp/browser-memory-daemon-verify-venv/bin/python scripts/generate_test_inventory.py --check
+  - /tmp/browser-memory-daemon-verify-venv/bin/python scripts/generate_showcase.py --spec scripts/showcase.spec.json --check
+  - ./scripts/secret-scan.sh</p>
+<hr />
+<h1 id="adr-0019-use-durable-text-retention-with-wal-aware-local-backup-and-disposable-media-cache">ADR-0019: Use durable text retention with WAL-aware local backup and disposable media cache</h1>
+<h2 id="context">Context</h2>
+<p>Browser Memory Daemon stores daily-driver browser recall in WSL-owned SQLite/FTS5 plus clean-text and media blob sidecars. Ticket 001 showed the live DB/text store was modest relative to host headroom, while media blobs were materially larger and a prior no-space/service-start failure class had already occurred. ADR-0014 made WAL sidecars expected runtime companions, and ADR-0018 added explicit storage headroom and service-start health budgets.</p>
+<p>The remaining design question is how to preserve high-value local recall while adding retention, compaction, export, and backup posture that future agents can implement without breaking forget semantics or copying inconsistent SQLite state.</p>
+<h2 id="decision">Decision</h2>
+<p>We will use this storage posture:</p>
+<ol>
+<li><strong>Durable text by default:</strong> keep documents, visits, lifecycle events, snapshots, chunks, FTS rows, audit rows, and deletion receipts indefinitely unless the operator explicitly enables a narrower retention policy later.</li>
+<li><strong>Disposable media cache:</strong> keep media refs/provenance durable but treat media blob bytes as bounded cache managed by existing/future purge and rehydration controls.</li>
+<li><strong>WAL-aware backups:</strong> backup/export must use SQLite online backup / <code>VACUUM INTO</code> or a quiesced copy that respects <code>memory.sqlite3</code>, <code>memory.sqlite3-wal</code>, and <code>memory.sqlite3-shm</code> as one live unit.</li>
+<li><strong>Dry-run-first maintenance:</strong> retention, compaction, checkpoint, orphan audit, and backup/export tools must produce redaction-safe dry-run output before destructive or large-copy execution.</li>
+<li><strong>Forget/live-store boundary:</strong> forget deletes current live DB/blob state and records receipts; backups made before forget may still contain forgotten data until backup retention/pruning removes them.</li>
+</ol>
+<h2 id="decision-drivers">Decision drivers</h2>
+<ul>
+<li>Preserve the daily-driver maximum-recall posture and avoid surprising silent text expiration.</li>
+<li>Avoid reintroducing the storage/start-failure class captured in ticket 001.</li>
+<li>Keep every storage operation local, boring, and inspectable.</li>
+<li>Make SQLite WAL handling explicit before backup/export implementation.</li>
+<li>Prevent future docs/API from overstating forget semantics across historical backups.</li>
+</ul>
+<h2 id="options-considered">Options considered</h2>
 <table>
 <thead>
 <tr>
-<th>If you need to...</th>
-<th>Read</th>
+<th>Option</th>
+<th>Pros</th>
+<th>Cons</th>
+<th>Verdict</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Get the polished visual overview</td>
-<td><a href="../browser-memory-daemon-high-level-doc.html"><code>../browser-memory-daemon-high-level-doc.html</code></a></td>
+<td>Auto-delete old text by default</td>
+<td>Controls growth aggressively.</td>
+<td>Violates maximum-recall default and could erase useful history silently.</td>
+<td>Rejected for default posture.</td>
 </tr>
 <tr>
-<td>Understand value, maturity, and risk posture quickly</td>
-<td><a href="EXECUTIVE_BRIEF.html"><code>EXECUTIVE_BRIEF.md</code></a></td>
+<td>Keep all DB/text forever, bound only media bytes</td>
+<td>Preserves recall; matches current DB/media evidence.</td>
+<td>DB can still grow and needs later maintenance/export.</td>
+<td>Chosen.</td>
 </tr>
 <tr>
-<td>Use the system day to day</td>
-<td><a href="USER_GUIDE.html"><code>USER_GUIDE.md</code></a></td>
+<td>Treat media blobs as durable backup-required data</td>
+<td>Maximizes binary completeness.</td>
+<td>Media dominates storage and is intentionally cache-like today.</td>
+<td>Rejected by default; optional backup inclusion is allowed.</td>
 </tr>
 <tr>
-<td>Understand the architecture</td>
-<td><a href="ARCHITECTURE.html"><code>ARCHITECTURE.md</code></a>, <a href="architecture/c4-diagrams.html"><code>architecture/c4-diagrams.md</code></a></td>
+<td>Raw-copy live SQLite files without WAL rules</td>
+<td>Easy to script.</td>
+<td>Can create inconsistent backups or miss WAL contents.</td>
+<td>Rejected.</td>
 </tr>
 <tr>
-<td>Understand architecture/design decision history</td>
-<td><a href="architecture/adr/README.html"><code>architecture/adr/README.md</code></a></td>
-</tr>
-<tr>
-<td>See behavioral Mermaid flows/diagrams</td>
-<td><a href="DIAGRAMS.html"><code>DIAGRAMS.md</code></a></td>
-</tr>
-<tr>
-<td>Call or extend the HTTP API</td>
-<td><a href="api.html"><code>api.md</code></a></td>
-</tr>
-<tr>
-<td>Understand CLI commands and flags</td>
-<td><a href="CLI_UX_CONTRACT.html"><code>CLI_UX_CONTRACT.md</code></a></td>
-</tr>
-<tr>
-<td>Install/refresh daily Chrome</td>
-<td><a href="daily-driver-deployment.html"><code>daily-driver-deployment.md</code></a></td>
-</tr>
-<tr>
-<td>Understand policy/security tradeoffs</td>
-<td><a href="security-model.html"><code>security-model.md</code></a></td>
-</tr>
-<tr>
-<td>Check what is implemented vs pending</td>
-<td><a href="STATUS.html"><code>STATUS.md</code></a></td>
-</tr>
-<tr>
-<td>Model storage growth</td>
-<td><a href="storage-growth-model.html"><code>storage-growth-model.md</code></a></td>
-</tr>
-<tr>
-<td>Understand retention, compaction, export, and backup posture</td>
-<td><a href="retention-compaction-backup.html"><code>retention-compaction-backup.md</code></a></td>
-</tr>
-<tr>
-<td>Understand durable lazy media sidecars</td>
-<td><a href="ARCHITECTURE.html#durable-media-sidecar-architecture"><code>ARCHITECTURE.md</code></a>, <a href="media-artifacts.html"><code>media-artifacts.md</code></a></td>
-</tr>
-<tr>
-<td>Run verification gates</td>
-<td><a href="TESTS.html"><code>TESTS.md</code></a>, <a href="test-plan.html"><code>test-plan.md</code></a></td>
+<td>Online backup / <code>VACUUM INTO</code> or quiesced WAL-aware copy</td>
+<td>Consistent and local.</td>
+<td>Requires implementation care and restore smokes.</td>
+<td>Chosen.</td>
 </tr>
 </tbody>
 </table>
-<hr />
-<h2 id="ownership-map">Ownership map</h2>
-<table>
-<thead>
-<tr>
-<th>Area</th>
-<th>Canonical files</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Publish-ready front door</td>
-<td><code>browser-memory-daemon-high-level-doc.html</code>, <code>scripts/showcase.spec.json</code>, <code>scripts/generate_showcase.py</code></td>
-</tr>
-<tr>
-<td>Markdown-to-HTML companions</td>
-<td><code>scripts/render_docs.py</code>, <code>scripts/mermaid-theme.json</code>, generated <code>*.html</code> siblings</td>
-</tr>
-<tr>
-<td>Generated test inventory</td>
-<td><code>scripts/generate_test_inventory.py</code>, <code>docs/TESTS.md</code> generated regions</td>
-</tr>
-<tr>
-<td>Daemon runtime/config</td>
-<td><code>daemon/src/browser_memory_daemon/config.py</code>, <code>scripts/install-daily-driver.sh</code></td>
-</tr>
-<tr>
-<td>HTTP API and UI serving</td>
-<td><code>daemon/src/browser_memory_daemon/app.py</code>, <code>ui/</code></td>
-</tr>
-<tr>
-<td>Ingest/storage/search/forget</td>
-<td><code>ingest.py</code>, <code>schema.sql</code>, <code>search.py</code>, <code>forget.py</code></td>
-</tr>
-<tr>
-<td>Capture policy modes</td>
-<td><code>policy.py</code>, <code>policy_store.py</code>, <code>extension/src/extractor.js</code>, <code>service_worker.js</code></td>
-</tr>
-<tr>
-<td>Media sidecars</td>
-<td><code>daemon/src/browser_memory_daemon/media.py</code>, <code>media_worker.py</code>, <code>extension/src/media_queue.js</code>, <code>service_worker.js</code></td>
-</tr>
-<tr>
-<td>Chrome extension extraction/bridge</td>
-<td><code>extension/src/extractor.js</code>, <code>content_script.js</code>, <code>service_worker.js</code></td>
-</tr>
-<tr>
-<td>Real browser verification</td>
-<td><code>scripts/real-chrome-e2e.mjs</code>, <code>scripts/run-real-chrome-e2e.sh</code></td>
-</tr>
-<tr>
-<td>Daily-driver install</td>
-<td><code>scripts/install-daily-driver.sh</code>, Chrome Load-unpacked UI</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="current-policy-posture">Current policy posture</h2>
-<p>The daily-driver default is now:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>policy_mode = all
-</code></pre></div>
-
-<p><code>all</code> is intentionally the least restrictive mode: it disables built-in URL/incognito/private-host filtering and redaction, while still applying explicit local block rules. Other modes remain available:</p>
-<table>
-<thead>
-<tr>
-<th>Mode</th>
-<th>Intended use</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>all</code></td>
-<td>Maximum personal recall; no daemon redaction or built-in URL policy filtering; explicit local block rules still apply; DOM extraction still skips hidden/form/editable/script/style/no-script text.</td>
-</tr>
-<tr>
-<td><code>recall</code></td>
-<td>Broad capture with browser/internal scheme and incognito blocks plus redaction.</td>
-</tr>
-<tr>
-<td><code>balanced</code></td>
-<td>Broad capture with known high-risk domain/query/private-host blocks plus redaction.</td>
-</tr>
-<tr>
-<td><code>strict</code></td>
-<td>Legacy broad privacy filtering plus redaction.</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="verification-quickstart">Verification quickstart</h2>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>venv<span style="color: #F8F8F2"> </span>.venv
-.<span style="color: #F8F8F2"> </span>.venv/bin/activate
-python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pip<span style="color: #F8F8F2"> </span>install<span style="color: #F8F8F2"> </span>-r<span style="color: #F8F8F2"> </span>requirements-dev.txt
-<span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-e2e.sh
-python<span style="color: #F8F8F2"> </span>scripts/generate_test_inventory.py<span style="color: #F8F8F2"> </span>--check
-python<span style="color: #F8F8F2"> </span>scripts/generate_showcase.py<span style="color: #F8F8F2"> </span>--spec<span style="color: #F8F8F2"> </span>scripts/showcase.spec.json<span style="color: #F8F8F2"> </span>--check
-python<span style="color: #F8F8F2"> </span>scripts/render_docs.py<span style="color: #F8F8F2"> </span>--repo<span style="color: #F8F8F2"> </span>.<span style="color: #F8F8F2"> </span>--slug<span style="color: #F8F8F2"> </span>browser-memory-daemon<span style="color: #F8F8F2"> </span>--check
-python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pytest<span style="color: #F8F8F2"> </span>-q
-<span style="color: #F8F8F2">cd </span>extension<span style="color: #F8F8F2"> </span><span style="color: #FF4689">&amp;&amp;</span><span style="color: #F8F8F2"> </span>npm<span style="color: #F8F8F2"> test </span><span style="color: #FF4689">&amp;&amp;</span><span style="color: #F8F8F2"> </span>npm<span style="color: #F8F8F2"> </span>run<span style="color: #F8F8F2"> </span>build
-<span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
-./scripts/secret-scan.sh
-git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span>--check<span style="color: #F8F8F2"> </span>--<span style="color: #F8F8F2"> </span>.
-</code></pre></div>
-
-<p>For daily-driver refresh after extension code changes:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_POLICY_MODE</span><span style="color: #FF4689">=</span>all<span style="color: #F8F8F2"> </span>./scripts/install-daily-driver.sh
-<span style="color: #959077"># Then in Chrome: chrome://extensions → Browser Memory Daemon → Reload</span>
-</code></pre></div>
+<h2 id="consequences">Consequences</h2>
+<ul>
+<li>Positive: high-value text/FTS recall remains stable by default.</li>
+<li>Positive: media growth stays governed by cache gates rather than backup expectations.</li>
+<li>Positive: future backup/export work has an explicit include/exclude boundary and restore contract.</li>
+<li>Positive: forget semantics are honest about live store versus historical backups.</li>
+<li>Negative: default text retention still requires monitoring and future maintenance tooling as volume grows.</li>
+<li>Neutral: this ADR does not implement maintenance/export commands; it splits them into follow-up tickets.</li>
+</ul>
+<h2 id="verification-validation">Verification / validation</h2>
+<ul>
+<li>Verification: <code>docs/retention-compaction-backup.md</code> records requirements, backup boundaries, WAL handling, forget interaction, and split follow-up tickets.</li>
+<li>Verification: generated docs and repository hygiene checks must pass in the ticket 012 commit.</li>
+<li>Validation: the design uses ticket 001/009/015 evidence to prioritize media cache bounding and WAL-aware backup before adding any automatic text expiration.</li>
+</ul>
+<h2 id="revisit-triggers">Revisit triggers</h2>
+<ul>
+<li>Supersede if DB/text growth becomes the dominant storage pressure and the operator approves age/domain/profile retention.</li>
+<li>Supersede if backup/export must satisfy stronger legal deletion semantics across historical backups.</li>
+<li>Supersede if SQLite/FTS5/WAL is replaced.</li>
+<li>Revisit after implementing backup/export and observing restore-smoke evidence.</li>
+</ul>
+<h2 id="references">References</h2>
+<ul>
+<li><code>docs/retention-compaction-backup.md</code></li>
+<li><code>docs/wayfinder/durability-performance-coverage/tickets/012-retention-compaction-backup-design.md</code></li>
+<li><code>docs/wayfinder/durability-performance-coverage/tickets/001-baseline-failure-budget.md</code></li>
+<li><code>docs/architecture/adr/0014-use-wal-and-bounded-sqlite-contention-policy.md</code></li>
+<li><code>docs/architecture/adr/0018-enforce-daily-driver-headroom-and-start-budgets.md</code></li>
+</ul>
   </article>
   <div class="md-footer">
-    Rendered from <code>docs/README.md</code> — the Markdown file is the canonical,
+    Rendered from <code>docs/architecture/adr/0019-use-durable-text-retention-with-wal-aware-local-backup.md</code> — the Markdown file is the canonical,
     version-controlled source. This HTML is generated (regenerate with
     <code>scripts/render_docs.py</code>); do not hand-edit.
   </div>

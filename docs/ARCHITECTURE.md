@@ -224,6 +224,8 @@ status_reason  = cache-evicted:global-oldest
 | `~/.local/share/browser-memory-daemon/blobs/clean-text/` | Stored text snapshots. |
 | `~/.local/share/browser-memory-daemon/blobs/media/` | Stored media blobs; purgeable cache. |
 
+Retention/backup posture is governed by [`retention-compaction-backup.md`](retention-compaction-backup.md) and ADR-0019: text/FTS recall remains durable by default, media bytes remain bounded cache, and backups must be WAL-aware local bundles or snapshots with explicit manifests.
+
 ---
 
 ## Trust and safety boundaries
