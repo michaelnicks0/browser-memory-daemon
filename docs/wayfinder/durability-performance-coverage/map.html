@@ -151,10 +151,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li><a href="tickets/011-installer-token-artifact-consistency.html">011 — Harden installer/token/Windows artifact consistency</a> — added non-mutating install dry-run/check modes plus token/env/unit/process-arg/extension artifact health checks without printing token values.</li>
 <li><a href="tickets/015-storage-headroom-service-start-budget.html">015 — Add storage-headroom and service-start failure budget checks</a> — added redaction-safe headroom thresholds plus systemd restart and journal service-start budgets; recorded ADR-0018.</li>
 <li><a href="tickets/012-retention-compaction-backup-design.html">012 — Design retention, compaction, and backup posture</a> — accepted durable-text/default, disposable-media-cache, WAL-aware local backup/export posture; recorded ADR-0019 and split implementation follow-ups 017/018.</li>
+<li><a href="tickets/013-ui-dashboard-smoke-coverage.html">013 — Add local UI smoke coverage</a> — added daemon-served shell/bootstrap checks plus a low-dependency mocked DOM/fetch harness for initial API calls, empty states, no-token state, and panel error rendering.</li>
 </ul>
 <h2 id="frontier">Frontier</h2>
 <ul>
-<li><a href="tickets/013-ui-dashboard-smoke-coverage.html">013 — Add local UI smoke coverage</a> — add dashboard bootstrap/API rendering checks beyond static asset serving.</li>
 <li><a href="tickets/014-coverage-gates-traceability.html">014 — Add coverage gates and requirements traceability enforcement</a> — now unblocked by ticket 006 coverage expansion, but still best near the end after more coverage tickets land.</li>
 </ul>
 <h2 id="split-follow-ups-not-in-current-frontier">Split follow-ups not in current frontier</h2>
@@ -170,14 +170,13 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>Whether default durable-text retention needs age/domain/profile narrowing after long-running storage-growth evidence; ADR-0019 keeps full text by default for now.</li>
 <li>Whether native messaging should remain a later hardening lane or become a near-term reliability requirement after loopback/SQLite hardening.</li>
 <li>Whether performance budgets should gate every PR/session or stay advisory because Windows Chrome e2e is comparatively heavy.</li>
-<li>Whether dashboard behavior should be tested with a browser automation dependency or a lower-dependency DOM/static harness.</li>
 <li>Whether operational alerts should integrate with an external notification channel; remote delivery requires explicit approval.</li>
 </ul>
 <h2 id="handoff">Handoff</h2>
-<p>Open frontier tickets: 2. Blocked tickets: 0. Deferred split follow-ups: 2.</p>
-<p>Recommended next ticket: <strong>013 — Add local UI smoke coverage</strong>. Retention/backup posture is now an accepted design with deferred implementation splits; the next current-frontier gap is deterministic local UI smoke coverage.</p>
+<p>Open frontier tickets: 1. Blocked tickets: 0. Deferred split follow-ups: 2.</p>
+<p>Recommended next ticket: <strong>014 — Add coverage gates and requirements traceability enforcement</strong>. UI smoke coverage is now deterministic; the remaining current-frontier gap is deciding measured coverage/traceability enforcement after the coverage expansion tickets.</p>
 <p>Copy into a fresh session:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/013-ui-dashboard-smoke-coverage.md.
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/014-coverage-gates-traceability.md.
 </code></pre></div>
   </article>
   <div class="md-footer">

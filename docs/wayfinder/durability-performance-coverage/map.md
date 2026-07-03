@@ -26,10 +26,10 @@
 - [011 — Harden installer/token/Windows artifact consistency](tickets/011-installer-token-artifact-consistency.md) — added non-mutating install dry-run/check modes plus token/env/unit/process-arg/extension artifact health checks without printing token values.
 - [015 — Add storage-headroom and service-start failure budget checks](tickets/015-storage-headroom-service-start-budget.md) — added redaction-safe headroom thresholds plus systemd restart and journal service-start budgets; recorded ADR-0018.
 - [012 — Design retention, compaction, and backup posture](tickets/012-retention-compaction-backup-design.md) — accepted durable-text/default, disposable-media-cache, WAL-aware local backup/export posture; recorded ADR-0019 and split implementation follow-ups 017/018.
+- [013 — Add local UI smoke coverage](tickets/013-ui-dashboard-smoke-coverage.md) — added daemon-served shell/bootstrap checks plus a low-dependency mocked DOM/fetch harness for initial API calls, empty states, no-token state, and panel error rendering.
 
 ## Frontier
 
-- [013 — Add local UI smoke coverage](tickets/013-ui-dashboard-smoke-coverage.md) — add dashboard bootstrap/API rendering checks beyond static asset serving.
 - [014 — Add coverage gates and requirements traceability enforcement](tickets/014-coverage-gates-traceability.md) — now unblocked by ticket 006 coverage expansion, but still best near the end after more coverage tickets land.
 
 ## Split follow-ups not in current frontier
@@ -47,17 +47,16 @@ None.
 - Whether default durable-text retention needs age/domain/profile narrowing after long-running storage-growth evidence; ADR-0019 keeps full text by default for now.
 - Whether native messaging should remain a later hardening lane or become a near-term reliability requirement after loopback/SQLite hardening.
 - Whether performance budgets should gate every PR/session or stay advisory because Windows Chrome e2e is comparatively heavy.
-- Whether dashboard behavior should be tested with a browser automation dependency or a lower-dependency DOM/static harness.
 - Whether operational alerts should integrate with an external notification channel; remote delivery requires explicit approval.
 
 ## Handoff
 
-Open frontier tickets: 2. Blocked tickets: 0. Deferred split follow-ups: 2.
+Open frontier tickets: 1. Blocked tickets: 0. Deferred split follow-ups: 2.
 
-Recommended next ticket: **013 — Add local UI smoke coverage**. Retention/backup posture is now an accepted design with deferred implementation splits; the next current-frontier gap is deterministic local UI smoke coverage.
+Recommended next ticket: **014 — Add coverage gates and requirements traceability enforcement**. UI smoke coverage is now deterministic; the remaining current-frontier gap is deciding measured coverage/traceability enforcement after the coverage expansion tickets.
 
 Copy into a fresh session:
 
 ```text
-Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/013-ui-dashboard-smoke-coverage.md.
+Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/014-coverage-gates-traceability.md.
 ```

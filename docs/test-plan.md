@@ -27,7 +27,7 @@
 | REQ-014 cited results | `/search`, `/documents/{id}`, `/snapshots/{id}` expose source metadata, snapshot IDs, snippets/text. |
 | REQ-015 extension controls | popup/options support pause, health, dashboard, block/forget domain, policy mode. |
 | REQ-015A daily-driver install consistency | `daemon/tests/e2e/test_daily_driver_install.py` and `daemon/tests/unit/test_daily_driver_health.py` cover non-mutating installer dry-run, protected token/env files, service process-argument secrecy, unit expectations, and extension token matching. |
-| REQ-016 local UI | admin API tests verify `/ui` asset serving and UI-backed API surfaces. |
+| REQ-016 local UI | admin API tests verify `/ui` asset serving and UI-backed API surfaces; `daemon/tests/e2e/test_ui_dashboard_smoke.py` verifies token bootstrap parsing, core panels, empty/error states, and initial dashboard API calls through a low-dependency DOM harness. |
 | REQ-017 CLI | `daemon/tests/e2e/test_cli_admin.py` covers read/admin commands. |
 | REQ-018 audit logging | API paths write metadata-only audit events. |
 | REQ-019 doctor | `/doctor` and CLI doctor verify DB integrity, FTS consistency, paths, counts, and policy mode. |

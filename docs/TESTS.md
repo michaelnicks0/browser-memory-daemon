@@ -5,7 +5,7 @@
 > **Runtime:** Python **3.11+** (`pyproject.toml` requires `>=3.11`). Use `BMD_PYTHON=/path/to/python3.11` when the host `python3` is older.
 
 <!-- BEGIN GENERATED:inventory-summary -->
-> **Current inventory:** 106 static test functions across 21 files — 79 daemon pytest tests + 27 extension node:test tests.
+> **Current inventory:** 109 static test functions across 22 files — 82 daemon pytest tests + 27 extension node:test tests.
 <!-- END GENERATED:inventory-summary -->
 
 ---
@@ -71,7 +71,7 @@ Use `--runtime-root PATH` only for explicit fixture roots; do not point the stre
 ## Generated test inventory
 
 <!-- BEGIN GENERATED:audit-run -->
-Latest inventory: **106 static test functions** across **21 files** (79 daemon pytest; 27 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
+Latest inventory: **109 static test functions** across **22 files** (82 daemon pytest; 27 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
 <!-- END GENERATED:audit-run -->
 
 ### Per-file counts
@@ -86,6 +86,7 @@ Latest inventory: **106 static test functions** across **21 files** (79 daemon p
 | `daemon/tests/e2e/test_http_api.py` | pytest | 5 |
 | `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | 2 |
 | `daemon/tests/e2e/test_read_model_indexes.py` | pytest | 1 |
+| `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | 3 |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | 20 |
 | `daemon/tests/integration/test_media_worker.py` | pytest | 19 |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | 5 |
@@ -100,7 +101,7 @@ Latest inventory: **106 static test functions** across **21 files** (79 daemon p
 | `extension/tests/unit/queue.test.js` | node:test | 1 |
 | `extension/tests/unit/service_worker.test.js` | node:test | 4 |
 | `extension/tests/unit/shared.test.js` | node:test | 2 |
-| **Total** |  | **106** |
+| **Total** |  | **109** |
 <!-- END GENERATED:per-file-counts -->
 
 <details>
@@ -124,6 +125,9 @@ Latest inventory: **106 static test functions** across **21 files** (79 daemon p
 | `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_json_output_is_structured` | 8 | Performance benchmark json output is structured. |
 | `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_human_summary_is_compact` | 44 | Performance benchmark human summary is compact. |
 | `daemon/tests/e2e/test_read_model_indexes.py` | pytest | `(module)` | `test_read_model_ordered_queries_use_schema_indexes` | 12 | Read model ordered queries use schema indexes. |
+| `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | `(module)` | `test_ui_dashboard_shell_serves_bootstrap_and_core_panels` | 37 | Ui dashboard shell serves bootstrap and core panels. |
+| `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | `(module)` | `test_ui_dashboard_static_asset_path_traversal_is_rejected` | 69 | Ui dashboard static asset path traversal is rejected. |
+| `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | `(module)` | `test_ui_dashboard_smoke_runner_executes_bootstrap_empty_and_error_states` | 79 | Ui dashboard smoke runner executes bootstrap empty and error states. |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_ingest_search_redact_and_forget` | 17 | Ingest search redact and forget. |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_metadata_redacted_before_fts_and_forget_by_original_url` | 42 | Metadata redacted before fts and forget by original url. |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_url_path_secret_redacted_and_not_searchable` | 65 | Url path secret redacted and not searchable. |

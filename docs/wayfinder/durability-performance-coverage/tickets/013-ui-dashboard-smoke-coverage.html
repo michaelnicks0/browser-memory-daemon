@@ -126,7 +126,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
   <article class="md-body">
 <h1 id="add-local-ui-dashboard-smoke-coverage">Add local UI dashboard smoke coverage</h1>
 <h2 id="status">Status</h2>
-<p>open</p>
+<p>closed</p>
 <h2 id="question">Question</h2>
 <p>Can the local UI get smoke tests that verify token bootstrap parsing, initial API calls, empty/error states, and core panels without requiring Michael's browser profile?</p>
 <h2 id="type">Type</h2>
@@ -145,9 +145,29 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>Blocked by: none; ticket 001 preferred.</li>
 </ul>
 <h2 id="resolution">Resolution</h2>
-<p>Pending.</p>
+<p>Closed with deterministic local UI smoke coverage:</p>
+<ul>
+<li><code>daemon/tests/e2e/test_ui_dashboard_smoke.py</code> starts the existing daemon test server and verifies <code>/ui</code> serves core dashboard panels plus daemon-injected bootstrap JSON.</li>
+<li>Static <code>/ui/app.js</code> and <code>/ui/style.css</code> are served token-free.</li>
+<li>Static asset path traversal under <code>/ui/</code> is rejected instead of serving arbitrary repo files.</li>
+<li><code>daemon/tests/e2e/ui_dashboard_smoke_runner.mjs</code> executes the real <code>ui/app.js</code> in a low-dependency mocked DOM/fetch harness, proving bootstrap parsing, initial API calls, empty states, no-token state, and per-panel API error rendering without using Michael's browser profile or adding browser automation dependencies.</li>
+</ul>
+<p>Evidence:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>/tmp/browser-memory-daemon-verify-venv/bin/python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pytest<span style="color: #F8F8F2"> </span>-q<span style="color: #F8F8F2"> </span>daemon/tests/e2e/test_ui_dashboard_smoke.py<span style="color: #F8F8F2"> </span>daemon/tests/e2e/test_admin_api.py
+<span style="color: #959077"># 6 passed</span>
+
+<span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span>/tmp/browser-memory-daemon-verify-venv/bin/python<span style="color: #F8F8F2"> </span>./scripts/run-e2e.sh
+<span style="color: #959077"># pytest passed; extension node:test 27/27; extension build; real Chrome for Testing all+strict matrix ok; secret scan passed</span>
+
+/tmp/browser-memory-daemon-verify-venv/bin/python<span style="color: #F8F8F2"> </span>scripts/generate_test_inventory.py<span style="color: #F8F8F2"> </span>--check
+<span style="color: #959077"># 109 tests / 22 files</span>
+
+/tmp/browser-memory-daemon-verify-venv/bin/python<span style="color: #F8F8F2"> </span>scripts/render_docs.py<span style="color: #F8F8F2"> </span>--repo<span style="color: #F8F8F2"> </span>.<span style="color: #F8F8F2"> </span>--slug<span style="color: #F8F8F2"> </span>browser-memory-daemon<span style="color: #F8F8F2"> </span>--check
+<span style="color: #959077"># 78 rendered docs match source</span>
+</code></pre></div>
+
 <h2 id="new-tickets-fog-updates">New tickets / fog updates</h2>
-<p>Pending. Fog remains on whether to use a browser automation dependency or a low-dependency static/DOM harness.</p>
+<p>Resolved the dashboard-harness fog in favor of a low-dependency DOM/fetch smoke harness for this ticket. Full browser UI automation remains unnecessary unless future dashboard behavior needs layout/browser API coverage.</p>
   </article>
   <div class="md-footer">
     Rendered from <code>docs/wayfinder/durability-performance-coverage/tickets/013-ui-dashboard-smoke-coverage.md</code> — the Markdown file is the canonical,
