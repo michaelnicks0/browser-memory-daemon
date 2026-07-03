@@ -206,11 +206,11 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </table>
 <hr />
 <h2 id="daily-driver-state-checks">Daily-driver state checks</h2>
-<p>One redaction-safe snapshot command covers WSL services, loopback health from WSL and Windows, recent systemd journal warning/error counts, SQLite integrity/freshness/counts, media-queue aggregates, storage headroom, protected token/env files, service process-argument secrecy, unit-file expectations, and the Windows extension artifact state:</p>
+<p>One redaction-safe snapshot command covers WSL services, loopback health from WSL and Windows, recent systemd journal warning/error counts and service-start churn budgets, SQLite integrity/freshness/counts, media-queue aggregates, storage headroom thresholds, protected token/env files, service process-argument secrecy, unit-file expectations, and the Windows extension artifact state:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>./scripts/daily-driver-health.sh
 </code></pre></div>
 
-<p>The command prints JSON and exits non-zero when a hard health error is present. It does <strong>not</strong> dump captured page text, snippets, cookies, bearer tokens, raw captured URLs, or extension token values. Warnings such as due media retries are reported in <code>summary.warnings</code> while still producing a zero exit when the stack is otherwise healthy.</p>
+<p>The command prints JSON and exits non-zero when a hard health error is present. It does <strong>not</strong> dump captured page text, snippets, cookies, bearer tokens, raw captured URLs, or extension token values. Warnings such as due media retries are reported in <code>summary.warnings</code> while still producing a zero exit when the stack is otherwise healthy. Default storage thresholds are warning below 5 GB free or 90% used and hard error below 1 GB free or 98% used; restart/start-failure budgets warn at 3 and hard-fail at 10. Override these locally with <code>BMD_HEALTH_HEADROOM_*</code> and <code>BMD_HEALTH_SERVICE_*</code> environment variables when a small VM or test filesystem needs different bounds.</p>
 <p>Manual spot checks, if you need to isolate a layer:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>systemctl<span style="color: #F8F8F2"> </span>--user<span style="color: #F8F8F2"> </span>is-active<span style="color: #F8F8F2"> </span>browser-memory-daemon.service
 systemctl<span style="color: #F8F8F2"> </span>--user<span style="color: #F8F8F2"> </span>is-active<span style="color: #F8F8F2"> </span>browser-memory-media-worker.service

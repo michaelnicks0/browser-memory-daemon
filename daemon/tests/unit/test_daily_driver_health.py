@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+import browser_memory_daemon.daily_driver_health as health
 from browser_memory_daemon.config import load_config
 from browser_memory_daemon.daily_driver_health import CommandResult, daily_driver_health_snapshot
 from browser_memory_daemon.db import connect, init_db
@@ -219,3 +220,62 @@ def test_daily_driver_health_detects_insecure_token_permissions_and_process_args
     assert "daily-driver token file permissions are not owner-only" in snapshot["summary"]["errors"]
     assert "browser-memory-daemon.service appears to expose token material in process arguments" in snapshot["summary"]["errors"]
     assert token not in json.dumps(snapshot, sort_keys=True)
+
+
+def test_daily_driver_health_detects_low_headroom_and_service_start_churn(tmp_path, monkeypatch):
+    cfg = load_config(runtime_root=tmp_path / "runtime", test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    unit_dir = write_install_artifacts(cfg, tmp_path)
+    extension_dir = tmp_path / "extension"
+    (extension_dir / "src").mkdir(parents=True)
+    (extension_dir / "manifest.json").write_text(json.dumps({"manifest_version": 3, "name": "Browser Memory Daemon", "version": "0.1.0"}))
+    for rel in ("src/service_worker.js", "src/options.js", "src/popup.js"):
+        (extension_dir / rel).write_text("const defaults = { apiToken: 'test-token', policyMode: 'all' };\n")
+
+    class FakeUsage:
+        total = 1000
+        free = 5
+
+    monkeypatch.setattr(health.shutil, "disk_usage", lambda _path: FakeUsage())
+    monkeypatch.setattr(health, "HEADROOM_WARNING_BYTES", 100)
+    monkeypatch.setattr(health, "HEADROOM_ERROR_BYTES", 10)
+    monkeypatch.setattr(health, "HEADROOM_WARNING_USED_PERCENT", 90)
+    monkeypatch.setattr(health, "HEADROOM_ERROR_USED_PERCENT", 99)
+    monkeypatch.setattr(health, "SERVICE_RESTART_WARNING_COUNT", 3)
+    monkeypatch.setattr(health, "SERVICE_RESTART_ERROR_COUNT", 10)
+    monkeypatch.setattr(health, "SERVICE_START_WARNING_COUNT", 3)
+    monkeypatch.setattr(health, "SERVICE_START_ERROR_COUNT", 10)
+
+    start_failure_rows = "\n".join(
+        json.dumps({"PRIORITY": "4", "MESSAGE": "Start request repeated too quickly.", "__REALTIME_TIMESTAMP": str(1783037077000000 + index)})
+        for index in range(10)
+    )
+
+    def runner(args, timeout):
+        if args[:3] == ["systemctl", "--user", "show"]:
+            unit = args[3]
+            return CommandResult(args, 0, f"Id={unit}\nLoadState=loaded\nActiveState=active\nSubState=running\nNRestarts=10\nExecMainStatus=0\n")
+        if args[:3] == ["systemctl", "--user", "is-enabled"]:
+            return CommandResult(args, 0, "enabled")
+        if args[:3] == ["systemctl", "--user", "is-active"]:
+            return CommandResult(args, 0, "active")
+        if args[:3] == ["journalctl", "--user", "-u"]:
+            return CommandResult(args, 0, start_failure_rows)
+        raise AssertionError(args)
+
+    snapshot = daily_driver_health_snapshot(
+        cfg,
+        extension_dir=extension_dir,
+        unit_dir=unit_dir,
+        include_windows_loopback=False,
+        runner=runner,
+        urlopen=lambda *args, **kwargs: FakeHealthResponse(),
+    )
+
+    assert snapshot["ok"] is False
+    assert snapshot["storage"]["data_root"]["headroom"]["status"] == "error"
+    assert snapshot["systemd"]["units"]["browser-memory-daemon.service"]["restart_budget"]["status"] == "error"
+    assert snapshot["journals"]["units"]["browser-memory-daemon.service"]["service_start_budget"]["status"] == "error"
+    assert "storage path data_root below hard headroom threshold: 5 bytes free, 99.5% used" in snapshot["summary"]["errors"]
+    assert "browser-memory-daemon.service restart budget exceeded: NRestarts=10" in snapshot["summary"]["errors"]
+    assert "browser-memory-daemon.service service-start budget exceeded: 10 matching journal entries in window" in snapshot["summary"]["errors"]

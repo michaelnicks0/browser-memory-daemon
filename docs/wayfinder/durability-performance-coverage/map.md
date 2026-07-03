@@ -24,10 +24,10 @@
 - [009 — Add performance benchmark harness and budgets](tickets/009-performance-benchmark-harness.md) — added deterministic synthetic JSON/human benchmarks for ingest, read surfaces with audit-write overhead, media-worker selection/run, sidecar growth, and advisory budgets; recorded ADR-0016.
 - [010 — Optimize read-model query/index performance](tickets/010-read-model-query-performance.md) — added measured composite SQLite indexes for recent/timeline/detail/media queue read ordering, preserved API/audit contracts, and recorded ADR-0017.
 - [011 — Harden installer/token/Windows artifact consistency](tickets/011-installer-token-artifact-consistency.md) — added non-mutating install dry-run/check modes plus token/env/unit/process-arg/extension artifact health checks without printing token values.
+- [015 — Add storage-headroom and service-start failure budget checks](tickets/015-storage-headroom-service-start-budget.md) — added redaction-safe headroom thresholds plus systemd restart and journal service-start budgets; recorded ADR-0018.
 
 ## Frontier
 
-- [015 — Add storage-headroom and service-start failure budget checks](tickets/015-storage-headroom-service-start-budget.md) — turn the no-space systemd failure class into preflight/health checks and a journal budget.
 - [012 — Design retention, compaction, and backup posture](tickets/012-retention-compaction-backup-design.md) — now unblocked by the baseline; use current DB/media/headroom evidence plus explicit operator thresholds.
 - [013 — Add local UI smoke coverage](tickets/013-ui-dashboard-smoke-coverage.md) — add dashboard bootstrap/API rendering checks beyond static asset serving.
 - [014 — Add coverage gates and requirements traceability enforcement](tickets/014-coverage-gates-traceability.md) — now unblocked by ticket 006 coverage expansion, but still best near the end after more coverage tickets land.
@@ -47,12 +47,12 @@ None.
 
 ## Handoff
 
-Open frontier tickets: 4. Blocked tickets: 0.
+Open frontier tickets: 3. Blocked tickets: 0.
 
-Recommended next ticket: **015 — Add storage-headroom and service-start failure budget checks**. Installer consistency is now self-validating; the next operational gap is making health/preflight output distinguish low filesystem headroom and service-start churn before daily-driver failures.
+Recommended next ticket: **012 — Design retention, compaction, and backup posture**. Health/preflight now distinguishes low filesystem headroom and service-start churn; the remaining storage work is deciding long-term retention, compaction, checkpoint, export, and backup semantics.
 
 Copy into a fresh session:
 
 ```text
-Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/015-storage-headroom-service-start-budget.md.
+Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/012-retention-compaction-backup-design.md.
 ```

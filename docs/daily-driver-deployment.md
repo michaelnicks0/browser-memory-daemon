@@ -119,7 +119,7 @@ Expected health includes:
 {"ok": true, "capture_enabled": true, "policy_mode": "all"}
 ```
 
-The aggregate health JSON also checks that `~/.config/browser-memory-daemon/token` and `env` are owner-only, that the environment file token matches the token file, that the unit files use the protected `EnvironmentFile`, that service process arguments do not expose token material, and that the Windows extension artifact token defaults match the token file. Token values are not printed.
+The aggregate health JSON also checks storage headroom thresholds, systemd restart budgets, recent service-start failure churn, that `~/.config/browser-memory-daemon/token` and `env` are owner-only, that the environment file token matches the token file, that the unit files use the protected `EnvironmentFile`, that service process arguments do not expose token material, and that the Windows extension artifact token defaults match the token file. Token values are not printed. Defaults warn below 5 GB free or 90% used and hard-fail below 1 GB free or 98% used; restart/start-failure budgets warn at 3 and hard-fail at 10. Override with `BMD_HEALTH_HEADROOM_*` / `BMD_HEALTH_SERVICE_*` only for intentionally small local runtimes.
 
 ---
 

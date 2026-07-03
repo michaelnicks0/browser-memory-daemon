@@ -29,6 +29,14 @@ PRIORITY_LABELS = {
     "3": "error",
     "4": "warning",
 }
+HEADROOM_WARNING_BYTES = int(os.environ.get("BMD_HEALTH_HEADROOM_WARNING_BYTES", "5000000000"))
+HEADROOM_ERROR_BYTES = int(os.environ.get("BMD_HEALTH_HEADROOM_ERROR_BYTES", "1000000000"))
+HEADROOM_WARNING_USED_PERCENT = float(os.environ.get("BMD_HEALTH_HEADROOM_WARNING_USED_PERCENT", "90"))
+HEADROOM_ERROR_USED_PERCENT = float(os.environ.get("BMD_HEALTH_HEADROOM_ERROR_USED_PERCENT", "98"))
+SERVICE_RESTART_WARNING_COUNT = int(os.environ.get("BMD_HEALTH_SERVICE_RESTART_WARNING_COUNT", "3"))
+SERVICE_RESTART_ERROR_COUNT = int(os.environ.get("BMD_HEALTH_SERVICE_RESTART_ERROR_COUNT", "10"))
+SERVICE_START_WARNING_COUNT = int(os.environ.get("BMD_HEALTH_SERVICE_START_WARNING_COUNT", "3"))
+SERVICE_START_ERROR_COUNT = int(os.environ.get("BMD_HEALTH_SERVICE_START_ERROR_COUNT", "10"))
 _RUNTIME_TABLES = (
     "sources",
     "documents",
@@ -159,7 +167,7 @@ def daily_driver_health_snapshot(
     _score_systemd(systemd, errors, warnings)
     _score_journals(journals, errors, warnings)
     _score_database(database, errors, warnings)
-    _score_storage(storage, warnings)
+    _score_storage(storage, errors, warnings)
     _score_install_artifacts(install, errors, warnings)
     _score_extension(extension, errors, warnings)
 
@@ -256,6 +264,17 @@ def _windows_loopback_health(
     return output
 
 
+def _restart_budget(n_restarts: int | None) -> dict[str, Any]:
+    count = int(n_restarts or 0)
+    status = "error" if count >= SERVICE_RESTART_ERROR_COUNT else "warning" if count >= SERVICE_RESTART_WARNING_COUNT else "ok"
+    return {
+        "count": count,
+        "status": status,
+        "warning_threshold": SERVICE_RESTART_WARNING_COUNT,
+        "error_threshold": SERVICE_RESTART_ERROR_COUNT,
+    }
+
+
 def _systemd_status(runner: CommandRunner, *, api_token: str) -> dict[str, Any]:
     units: dict[str, Any] = {}
     available = True
@@ -277,6 +296,7 @@ def _systemd_status(runner: CommandRunner, *, api_token: str) -> dict[str, Any]:
             available = False
         props = _parse_systemctl_show(show.stdout)
         main_pid = _safe_int(props.get("MainPID"))
+        n_restarts = _safe_int(props.get("NRestarts"))
         units[unit] = {
             "ok": show.exit_code == 0 and props.get("LoadState") == "loaded" and props.get("ActiveState") == "active" and active.stdout == "active",
             "fragment_path": props.get("FragmentPath"),
@@ -285,7 +305,8 @@ def _systemd_status(runner: CommandRunner, *, api_token: str) -> dict[str, Any]:
             "sub_state": props.get("SubState"),
             "is_active": active.stdout or active.stderr,
             "is_enabled": enabled.stdout or enabled.stderr,
-            "n_restarts": _safe_int(props.get("NRestarts")),
+            "n_restarts": n_restarts,
+            "restart_budget": _restart_budget(n_restarts),
             "exec_main_status": _safe_int(props.get("ExecMainStatus")),
             "main_pid": main_pid,
             "process_arg_secrecy": _process_arg_secrecy(main_pid, runner, api_token=api_token),
@@ -310,6 +331,7 @@ def _journal_status(runner: CommandRunner, *, since: str) -> dict[str, Any]:
         parsed = _parse_journal_json_lines(result.stdout)
         priority_counts = Counter(str(row.get("PRIORITY", "unknown")) for row in parsed)
         templates = Counter(_sanitize_journal_message(str(row.get("MESSAGE", ""))) for row in parsed)
+        service_start_budget = _service_start_budget(parsed)
         realtime_values = [_safe_int(row.get("__REALTIME_TIMESTAMP")) for row in parsed]
         realtime_values = [value for value in realtime_values if value is not None]
         units[unit] = {
@@ -320,6 +342,7 @@ def _journal_status(runner: CommandRunner, *, since: str) -> dict[str, Any]:
             "priority_counts": dict(sorted(priority_counts.items())),
             "priority_labels": {key: PRIORITY_LABELS.get(key, "unknown") for key in sorted(priority_counts)},
             "error_or_higher_count": sum(count for priority, count in priority_counts.items() if priority.isdigit() and int(priority) <= 3),
+            "service_start_budget": service_start_budget,
             "first_realtime_utc": _realtime_us_to_iso(min(realtime_values)) if realtime_values else None,
             "last_realtime_utc": _realtime_us_to_iso(max(realtime_values)) if realtime_values else None,
             "top_sanitized_messages": [
@@ -331,6 +354,25 @@ def _journal_status(runner: CommandRunner, *, since: str) -> dict[str, Any]:
         if result.exit_code != 0:
             units[unit]["error"] = _sanitize_journal_message(result.stderr or result.stdout or "journalctl failed")
     return {"since": since, "units": units}
+
+
+def _service_start_budget(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    patterns = (
+        "failed to start",
+        "start request repeated too quickly",
+        "failed with result",
+        "no space left on device",
+        "resources",
+    )
+    matching = [row for row in rows if any(pattern in str(row.get("MESSAGE", "")).lower() for pattern in patterns)]
+    count = len(matching)
+    status = "error" if count >= SERVICE_START_ERROR_COUNT else "warning" if count >= SERVICE_START_WARNING_COUNT else "ok"
+    return {
+        "count": count,
+        "status": status,
+        "warning_threshold": SERVICE_START_WARNING_COUNT,
+        "error_threshold": SERVICE_START_ERROR_COUNT,
+    }
 
 
 def _database_status(config: RuntimeConfig) -> dict[str, Any]:
@@ -604,6 +646,12 @@ def _disk_usage(path: Path) -> dict[str, Any]:
     except OSError as exc:
         return {"path": str(path), "exists": path.exists(), "ok": False, "error": _safe_error(exc)}
     used = usage.total - usage.free
+    used_percent = round((used / usage.total) * 100, 2) if usage.total else None
+    headroom_status = "ok"
+    if usage.free < HEADROOM_ERROR_BYTES or (isinstance(used_percent, (int, float)) and used_percent >= HEADROOM_ERROR_USED_PERCENT):
+        headroom_status = "error"
+    elif usage.free < HEADROOM_WARNING_BYTES or (isinstance(used_percent, (int, float)) and used_percent >= HEADROOM_WARNING_USED_PERCENT):
+        headroom_status = "warning"
     return {
         "path": str(path),
         "checked_path": str(target),
@@ -612,7 +660,14 @@ def _disk_usage(path: Path) -> dict[str, Any]:
         "total_bytes": usage.total,
         "used_bytes": used,
         "free_bytes": usage.free,
-        "used_percent": round((used / usage.total) * 100, 2) if usage.total else None,
+        "used_percent": used_percent,
+        "headroom": {
+            "status": headroom_status,
+            "warning_free_bytes": HEADROOM_WARNING_BYTES,
+            "error_free_bytes": HEADROOM_ERROR_BYTES,
+            "warning_used_percent": HEADROOM_WARNING_USED_PERCENT,
+            "error_used_percent": HEADROOM_ERROR_USED_PERCENT,
+        },
     }
 
 
@@ -636,9 +691,11 @@ def _score_systemd(systemd: dict[str, Any], errors: list[str], warnings: list[st
             errors.append(f"{unit} is not active/running")
         if state.get("is_enabled") not in {"enabled", "static"}:
             warnings.append(f"{unit} is not enabled")
-        restarts = state.get("n_restarts")
-        if isinstance(restarts, int) and restarts > 0:
-            warnings.append(f"{unit} reports NRestarts={restarts}")
+        restart_budget = state.get("restart_budget") or {}
+        if restart_budget.get("status") == "error":
+            errors.append(f"{unit} restart budget exceeded: NRestarts={restart_budget.get('count')}")
+        elif restart_budget.get("status") == "warning":
+            warnings.append(f"{unit} restart budget warning: NRestarts={restart_budget.get('count')}")
         process = state.get("process_arg_secrecy") or {}
         if process.get("token_literal_present") or process.get("api_token_assignment_present"):
             errors.append(f"{unit} appears to expose token material in process arguments")
@@ -653,6 +710,11 @@ def _score_journals(journals: dict[str, Any], errors: list[str], warnings: list[
             errors.append(f"{unit} has {state['error_or_higher_count']} journal error-or-higher entries in window")
         elif state.get("warning_or_higher_count", 0) > 0:
             warnings.append(f"{unit} has {state['warning_or_higher_count']} journal warning entries in window")
+        service_budget = state.get("service_start_budget") or {}
+        if service_budget.get("status") == "error":
+            errors.append(f"{unit} service-start budget exceeded: {service_budget.get('count')} matching journal entries in window")
+        elif service_budget.get("status") == "warning":
+            warnings.append(f"{unit} service-start budget warning: {service_budget.get('count')} matching journal entries in window")
 
 
 def _score_database(database: dict[str, Any], errors: list[str], warnings: list[str]) -> None:
@@ -665,16 +727,16 @@ def _score_database(database: dict[str, Any], errors: list[str], warnings: list[
         warnings.append(f"media queue has {media_queue['due_pending_or_retrying']} due pending/retrying tasks")
 
 
-def _score_storage(storage: dict[str, Any], warnings: list[str]) -> None:
+def _score_storage(storage: dict[str, Any], errors: list[str], warnings: list[str]) -> None:
     for name, state in storage.items():
         if not state.get("ok"):
             warnings.append(f"storage path {name} could not be checked")
             continue
-        if state.get("free_bytes", 0) < 1_000_000_000:
-            warnings.append(f"storage path {name} has less than 1GB free")
-        used_percent = state.get("used_percent")
-        if isinstance(used_percent, (int, float)) and used_percent >= 95:
-            warnings.append(f"storage path {name} is {used_percent}% used")
+        headroom = state.get("headroom") or {}
+        if headroom.get("status") == "error":
+            errors.append(f"storage path {name} below hard headroom threshold: {state.get('free_bytes')} bytes free, {state.get('used_percent')}% used")
+        elif headroom.get("status") == "warning":
+            warnings.append(f"storage path {name} below warning headroom threshold: {state.get('free_bytes')} bytes free, {state.get('used_percent')}% used")
 
 
 def _score_install_artifacts(install: dict[str, Any], errors: list[str], warnings: list[str]) -> None:

@@ -42,13 +42,13 @@ Use Python 3.11+ for CLI/dev commands. If the host `python3` is older, run `pyth
 
 ## Daily-driver state checks
 
-One redaction-safe snapshot command covers WSL services, loopback health from WSL and Windows, recent systemd journal warning/error counts, SQLite integrity/freshness/counts, media-queue aggregates, storage headroom, protected token/env files, service process-argument secrecy, unit-file expectations, and the Windows extension artifact state:
+One redaction-safe snapshot command covers WSL services, loopback health from WSL and Windows, recent systemd journal warning/error counts and service-start churn budgets, SQLite integrity/freshness/counts, media-queue aggregates, storage headroom thresholds, protected token/env files, service process-argument secrecy, unit-file expectations, and the Windows extension artifact state:
 
 ```bash
 ./scripts/daily-driver-health.sh
 ```
 
-The command prints JSON and exits non-zero when a hard health error is present. It does **not** dump captured page text, snippets, cookies, bearer tokens, raw captured URLs, or extension token values. Warnings such as due media retries are reported in `summary.warnings` while still producing a zero exit when the stack is otherwise healthy.
+The command prints JSON and exits non-zero when a hard health error is present. It does **not** dump captured page text, snippets, cookies, bearer tokens, raw captured URLs, or extension token values. Warnings such as due media retries are reported in `summary.warnings` while still producing a zero exit when the stack is otherwise healthy. Default storage thresholds are warning below 5 GB free or 90% used and hard error below 1 GB free or 98% used; restart/start-failure budgets warn at 3 and hard-fail at 10. Override these locally with `BMD_HEALTH_HEADROOM_*` and `BMD_HEALTH_SERVICE_*` environment variables when a small VM or test filesystem needs different bounds.
 
 Manual spot checks, if you need to isolate a layer:
 

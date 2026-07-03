@@ -5,7 +5,7 @@
 > **Runtime:** Python **3.11+** (`pyproject.toml` requires `>=3.11`). Use `BMD_PYTHON=/path/to/python3.11` when the host `python3` is older.
 
 <!-- BEGIN GENERATED:inventory-summary -->
-> **Current inventory:** 105 static test functions across 21 files — 78 daemon pytest tests + 27 extension node:test tests.
+> **Current inventory:** 106 static test functions across 21 files — 79 daemon pytest tests + 27 extension node:test tests.
 <!-- END GENERATED:inventory-summary -->
 
 ---
@@ -71,7 +71,7 @@ Use `--runtime-root PATH` only for explicit fixture roots; do not point the stre
 ## Generated test inventory
 
 <!-- BEGIN GENERATED:audit-run -->
-Latest inventory: **105 static test functions** across **21 files** (78 daemon pytest; 27 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
+Latest inventory: **106 static test functions** across **21 files** (79 daemon pytest; 27 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
 <!-- END GENERATED:audit-run -->
 
 ### Per-file counts
@@ -89,7 +89,7 @@ Latest inventory: **105 static test functions** across **21 files** (78 daemon p
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | 20 |
 | `daemon/tests/integration/test_media_worker.py` | pytest | 19 |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | 5 |
-| `daemon/tests/unit/test_daily_driver_health.py` | pytest | 3 |
+| `daemon/tests/unit/test_daily_driver_health.py` | pytest | 4 |
 | `daemon/tests/unit/test_db.py` | pytest | 2 |
 | `daemon/tests/unit/test_normalize.py` | pytest | 4 |
 | `daemon/tests/unit/test_policy.py` | pytest | 6 |
@@ -100,7 +100,7 @@ Latest inventory: **105 static test functions** across **21 files** (78 daemon p
 | `extension/tests/unit/queue.test.js` | node:test | 1 |
 | `extension/tests/unit/service_worker.test.js` | node:test | 4 |
 | `extension/tests/unit/shared.test.js` | node:test | 2 |
-| **Total** |  | **105** |
+| **Total** |  | **106** |
 <!-- END GENERATED:per-file-counts -->
 
 <details>
@@ -168,9 +168,10 @@ Latest inventory: **105 static test functions** across **21 files** (78 daemon p
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_can_attach_to_latest_visit_by_url` | 114 | Visit lifecycle event can attach to latest visit by url. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_without_matching_visit_stores_metadata_only` | 146 | Visit lifecycle event without matching visit stores metadata only. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_validates_ranges` | 168 | Visit lifecycle event validates ranges. |
-| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_snapshot_is_aggregate_and_redaction_safe` | 70 | Daily driver health snapshot is aggregate and redaction safe. |
-| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_missing_extension_token` | 148 | Daily driver health detects missing extension token. |
-| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_insecure_token_permissions_and_process_args` | 182 | Daily driver health detects insecure token permissions and process args. |
+| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_snapshot_is_aggregate_and_redaction_safe` | 71 | Daily driver health snapshot is aggregate and redaction safe. |
+| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_missing_extension_token` | 149 | Daily driver health detects missing extension token. |
+| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_insecure_token_permissions_and_process_args` | 183 | Daily driver health detects insecure token permissions and process args. |
+| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_low_headroom_and_service_start_churn` | 225 | Daily driver health detects low headroom and service start churn. |
 | `daemon/tests/unit/test_db.py` | pytest | `(module)` | `test_connect_uses_extended_busy_timeout` | 5 | Connect uses extended busy timeout. |
 | `daemon/tests/unit/test_db.py` | pytest | `(module)` | `test_init_db_enforces_wal_and_connection_pragmas` | 12 | Init db enforces wal and connection pragmas. |
 | `daemon/tests/unit/test_normalize.py` | pytest | `(module)` | `test_normalize_url_removes_tracking_fragment_default_port_and_sorts_query` | 4 | Normalize url removes tracking fragment default port and sorts query. |

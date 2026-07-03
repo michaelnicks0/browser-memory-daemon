@@ -25,6 +25,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0015](0015-use-idempotent-local-write-paths.md) | accepted | Use idempotent local write paths for duplicate captures, media/cache filesystem work, and semantic policy-rule uniqueness. |
 | [ADR-0016](0016-use-deterministic-synthetic-performance-benchmarks.md) | accepted | Use deterministic synthetic benchmarks as advisory performance evidence before read-model/index tuning. |
 | [ADR-0017](0017-add-read-model-composite-indexes.md) | accepted | Add composite SQLite indexes for measured read-model ordering paths. |
+| [ADR-0018](0018-enforce-daily-driver-headroom-and-start-budgets.md) | accepted | Enforce daily-driver headroom and service-start failure budgets in local health checks. |
 
 ## Backfilled decision history
 
