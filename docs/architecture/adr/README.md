@@ -23,6 +23,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0013](0013-generated-publish-docs.md) | accepted | Use generated high-level docs and HTML companions for publish-ready documentation while keeping Markdown canonical. |
 | [ADR-0014](0014-use-wal-and-bounded-sqlite-contention-policy.md) | accepted | Use WAL, busy-timeout, startup-only DB initialization, and bounded loopback backlog as the SQLite contention policy. |
 | [ADR-0015](0015-use-idempotent-local-write-paths.md) | accepted | Use idempotent local write paths for duplicate captures, media/cache filesystem work, and semantic policy-rule uniqueness. |
+| [ADR-0016](0016-use-deterministic-synthetic-performance-benchmarks.md) | accepted | Use deterministic synthetic benchmarks as advisory performance evidence before read-model/index tuning. |
 
 ## Backfilled decision history
 

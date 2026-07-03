@@ -51,6 +51,14 @@ python scripts/generate_showcase.py --spec scripts/showcase.spec.json --check
 python scripts/render_docs.py --repo . --slug browser-memory-daemon --check
 ```
 
+Advisory performance benchmark:
+
+```bash
+./scripts/run-performance-benchmarks.sh --small --json >/tmp/bmd_benchmark.json
+```
+
+The benchmark uses deterministic synthetic captures and local data/media sidecars only. It reports ingest, read surface, endpoint-style audit-write, media-worker selection/run, storage growth, and advisory budget sections; use its JSON output as the baseline for read-model tuning.
+
 `run-real-chrome-e2e.sh` uses Windows Chrome for Testing because branded Chrome 137+ no longer reliably honors command-line `--load-extension` automation. It honors `BMD_PYTHON` for the WSL daemon and DB probes. By default it runs the `all strict` matrix; set `BMD_REAL_CHROME_POLICY_MODE=<mode>` for a single debugging run or `BMD_REAL_CHROME_MATRIX_MODES="all strict balanced recall"` for an extended local matrix.
 
 ---

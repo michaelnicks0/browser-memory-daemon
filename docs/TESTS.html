@@ -132,7 +132,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </blockquote>
 <!-- BEGIN GENERATED:inventory-summary -->
 <blockquote>
-<p><strong>Current inventory:</strong> 100 static test functions across 18 files — 73 daemon pytest tests + 27 extension node:test tests.</p>
+<p><strong>Current inventory:</strong> 102 static test functions across 19 files — 75 daemon pytest tests + 27 extension node:test tests.</p>
 </blockquote>
 <!-- END GENERATED:inventory-summary -->
 
@@ -152,6 +152,9 @@ python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </spa
 <span style="color: #959077"># Real Windows Chrome-family e2e. Default matrix runs `all` and `strict`.</span>
 <span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
 
+<span style="color: #959077"># Synthetic advisory performance benchmark.</span>
+./scripts/run-performance-benchmarks.sh<span style="color: #F8F8F2"> </span>--small<span style="color: #F8F8F2"> </span>--json<span style="color: #F8F8F2"> </span>&gt;/tmp/bmd_benchmark.json
+
 <span style="color: #959077"># Full local gate. `run-e2e.sh` honors BMD_PYTHON, then falls back to python3.11.</span>
 <span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-e2e.sh
 
@@ -161,6 +164,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 </code></pre></div>
 
 <p><code>./scripts/run-e2e.sh</code> runs daemon tests, extension tests/build, the real Chrome e2e matrix unless <code>BMD_SKIP_REAL_CHROME_E2E=1</code>, secret scan, and whitespace check.</p>
+<p><code>./scripts/run-performance-benchmarks.sh --small --json</code> emits machine-readable synthetic benchmark evidence for ingest, search, recent/timeline/detail, read endpoint audit writes, media-worker task selection/run, and DB/WAL/blob sidecar growth. Budgets are advisory until a later ticket/ADR promotes measured thresholds to hard gates.</p>
 <hr />
 <h2 id="durabilityconcurrency-stress-harness">Durability/concurrency stress harness</h2>
 <p>Use this bounded local stress harness before changing SQLite write paths, media-worker leases, capture transaction boundaries, or request-handler DB behavior:</p>
@@ -180,7 +184,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <hr />
 <h2 id="generated-test-inventory">Generated test inventory</h2>
 <!-- BEGIN GENERATED:audit-run -->
-<p>Latest inventory: <strong>100 static test functions</strong> across <strong>18 files</strong> (73 daemon pytest; 27 extension node:test). Regenerate with <code>python3.11 scripts/generate_test_inventory.py --write</code>; enforce with <code>--check</code>. Counts are source-level test functions, not pytest parametrized case expansions.</p>
+<p>Latest inventory: <strong>102 static test functions</strong> across <strong>19 files</strong> (75 daemon pytest; 27 extension node:test). Regenerate with <code>python3.11 scripts/generate_test_inventory.py --write</code>; enforce with <code>--check</code>. Counts are source-level test functions, not pytest parametrized case expansions.</p>
 <!-- END GENERATED:audit-run -->
 
 <h3 id="per-file-counts">Per-file counts</h3>
@@ -213,6 +217,11 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <td><code>daemon/tests/e2e/test_http_api.py</code></td>
 <td>pytest</td>
 <td style="text-align: right;">5</td>
+</tr>
+<tr>
+<td><code>daemon/tests/e2e/test_performance_benchmarks.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">2</td>
 </tr>
 <tr>
 <td><code>daemon/tests/integration/test_ingest_search_forget.py</code></td>
@@ -287,7 +296,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <tr>
 <td><strong>Total</strong></td>
 <td></td>
-<td style="text-align: right;"><strong>100</strong></td>
+<td style="text-align: right;"><strong>102</strong></td>
 </tr>
 </tbody>
 </table>
@@ -310,6 +319,8 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_search_forget_round_trip` | 162 | Http capture search forget round trip. |
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_api_contract_errors_methods_and_limits_are_json` | 268 | Http api contract errors methods and limits are json. |
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_policy_rule_duplicate_creation_returns_existing_semantic_rule` | 312 | Http policy rule duplicate creation returns existing semantic rule. |
+| `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_json_output_is_structured` | 8 | Performance benchmark json output is structured. |
+| `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_human_summary_is_compact` | 44 | Performance benchmark human summary is compact. |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_ingest_search_redact_and_forget` | 17 | Ingest search redact and forget. |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_metadata_redacted_before_fts_and_forget_by_original_url` | 42 | Metadata redacted before fts and forget by original url. |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_url_path_secret_redacted_and_not_searchable` | 65 | Url path secret redacted and not searchable. |

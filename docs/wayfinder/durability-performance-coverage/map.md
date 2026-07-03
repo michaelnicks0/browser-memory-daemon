@@ -21,10 +21,11 @@
 - [005 — Expand HTTP API contract coverage](tickets/005-http-api-contract-coverage.md) — covered JSON auth/error/malformed/unknown-method behavior, limit bounds, and duplicate policy-rule HTTP semantics.
 - [007 — Expand extension service-worker resilience coverage](tickets/007-extension-service-worker-resilience.md) — added a mocked-Chrome service-worker harness proving daemon-down queue persistence, pause/token/rule controls, and media-upload retry blob retention.
 - [008 — Expand real Chrome e2e matrix](tickets/008-real-chrome-e2e-matrix.md) — default Chrome for Testing e2e now runs `all` + `strict` and covers pause, explicit URL-prefix block, media, lifecycle, queue drainage, and mode-specific sensitive/local expectations.
+- [009 — Add performance benchmark harness and budgets](tickets/009-performance-benchmark-harness.md) — added deterministic synthetic JSON/human benchmarks for ingest, read surfaces with audit-write overhead, media-worker selection/run, sidecar growth, and advisory budgets; recorded ADR-0016.
 
 ## Frontier
 
-- [009 — Add performance benchmark harness and budgets](tickets/009-performance-benchmark-harness.md) — measure ingest/search/timeline/detail/media-worker behavior on synthetic scalable datasets.
+- [010 — Optimize read-model query/index performance](tickets/010-read-model-query-performance.md) — now unblocked by ticket 009 benchmark output; use before/after benchmark JSON and query plans to justify changes.
 - [011 — Harden installer/token/Windows artifact consistency](tickets/011-installer-token-artifact-consistency.md) — make daily-driver install/refresh more testable and self-validating.
 - [012 — Design retention, compaction, and backup posture](tickets/012-retention-compaction-backup-design.md) — now unblocked by the baseline; use current DB/media/headroom evidence plus explicit operator thresholds.
 - [013 — Add local UI smoke coverage](tickets/013-ui-dashboard-smoke-coverage.md) — add dashboard bootstrap/API rendering checks beyond static asset serving.
@@ -33,7 +34,7 @@
 
 ## Blocked
 
-- [010 — Optimize read-model query/index performance](tickets/010-read-model-query-performance.md) — blocked by ticket 009's benchmark harness and budgets.
+None.
 
 ## Fog
 
@@ -46,12 +47,12 @@
 
 ## Handoff
 
-Open frontier tickets: 6. Blocked tickets: 1.
+Open frontier tickets: 6. Blocked tickets: 0.
 
-Recommended next ticket: **009 — Add performance benchmark harness and budgets**. Real-browser coverage now spans the core mode/control matrix; the next blocker is generating benchmark evidence so 010 can proceed.
+Recommended next ticket: **010 — Optimize read-model query/index performance**. Ticket 009 now produces benchmark evidence; the next step is to use before/after JSON and query plans to tune only proven slow read paths.
 
 Copy into a fresh session:
 
 ```text
-Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/009-performance-benchmark-harness.md.
+Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/010-read-model-query-performance.md.
 ```

@@ -126,7 +126,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
   <article class="md-body">
 <h1 id="add-performance-benchmark-harness-and-budgets">Add performance benchmark harness and budgets</h1>
 <h2 id="status">Status</h2>
-<p>open</p>
+<p>closed</p>
 <h2 id="question">Question</h2>
 <p>Can the repo measure ingest, search, recent/timeline/detail, media-worker task selection, and docs/test gates on synthetic datasets with explicit local budgets and machine-readable output?</p>
 <h2 id="type">Type</h2>
@@ -147,9 +147,27 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>Blocked by: none. Ticket 001 provides interim live-system guardrails; this ticket should replace them with deterministic synthetic benchmark output.</li>
 </ul>
 <h2 id="resolution">Resolution</h2>
-<p>Pending.</p>
+<p>Closed in this slice. Added a deterministic, local-only synthetic benchmark harness:</p>
+<ul>
+<li><code>daemon/src/browser_memory_daemon/performance_benchmarks.py</code> generates synthetic captures and measures ingest, search, recent, timeline, document detail, snapshot detail, media queue status, doctor, media-worker task selection, media-worker <code>run_once</code>, and DB/WAL/blob sidecar growth.</li>
+<li><code>scripts/run-performance-benchmarks.sh</code> runs the harness with Python 3.11 when <code>BMD_PYTHON</code> is not set, keeping repo Python requirements intact on hosts where <code>python3</code> is older.</li>
+<li><code>--json</code> emits machine-readable output; default output is a compact human summary.</li>
+<li>The benchmark records endpoint-style read-audit write overhead estimates by measuring direct read calls separately from read calls followed by <code>audit(...)</code> + commit.</li>
+<li>Budgets are explicit and advisory only; ADR-0016 records the rationale for not making them hard gates yet.</li>
+</ul>
+<p>Evidence:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>/tmp/browser-memory-daemon-verify-venv/bin/python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pytest<span style="color: #F8F8F2"> </span>-q<span style="color: #F8F8F2"> </span>daemon/tests/e2e/test_performance_benchmarks.py
+<span style="color: #959077"># 2 passed</span>
+
+./scripts/run-performance-benchmarks.sh<span style="color: #F8F8F2"> </span>--small<span style="color: #F8F8F2"> </span>--json<span style="color: #F8F8F2"> </span>&gt;/tmp/bmd_benchmark.json
+<span style="color: #959077"># ok=True captures=40 chunks=40 media_stored=20 media_failed=0 media_bytes=355 failed_budgets=0</span>
+
+./scripts/run-performance-benchmarks.sh<span style="color: #F8F8F2"> </span>--small
+<span style="color: #959077"># emitted compact human summary with ingest/read/media-worker/storage/advisory-budget lines</span>
+</code></pre></div>
+
 <h2 id="new-tickets-fog-updates">New tickets / fog updates</h2>
-<p>Pending. Keep benchmarks synthetic and deterministic; do not use captured live text as fixture input. Include read-endpoint audit-write overhead, media-worker normalization/maintenance sweeps, and WAL/DB sidecar growth in benchmark output if practical.</p>
+<p>Ticket 010 is unblocked. Keep the existing fog item about whether performance budgets should become hard gates; ADR-0016 says budgets stay advisory until measured evidence supports hard thresholds.</p>
   </article>
   <div class="md-footer">
     Rendered from <code>docs/wayfinder/durability-performance-coverage/tickets/009-performance-benchmark-harness.md</code> — the Markdown file is the canonical,
