@@ -395,6 +395,27 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">{</span><span style="color: #FF4689">&quot;domain&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;x.com&quot;</span><span style="color: #F8F8F2">, </span><span style="color: #FF4689">&quot;limit&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">100</span><span style="color: #F8F8F2">}</span>
 </code></pre></div>
 
+<p>Response summary:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">{</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;attempted&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">1</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;claimed&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">1</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;seeded_tasks&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">0</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;stored&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">1</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;failed&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">0</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;skipped&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">0</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;remaining&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">0</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;results&quot;</span><span style="color: #F8F8F2">: [</span>
+<span style="color: #F8F8F2">    {</span>
+<span style="color: #F8F8F2">      </span><span style="color: #FF4689">&quot;artifact_id&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;media_...&quot;</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">      </span><span style="color: #FF4689">&quot;capture_status&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;stored&quot;</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">      </span><span style="color: #FF4689">&quot;status_reason&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;&quot;</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">      </span><span style="color: #FF4689">&quot;stored&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #66D9EF">true</span>
+<span style="color: #F8F8F2">    }</span>
+<span style="color: #F8F8F2">  ]</span>
+<span style="color: #F8F8F2">}</span>
+</code></pre></div>
+
+<p>Manual and background fetches use the same <code>media_fetch_tasks</code> lease path as the media worker. An actively leased task is not fetched by a competing caller; stale leases are eligible for recovery.</p>
 <p>Queue/cache status:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #ED007E; background-color: #1E0010">GET /media-artifacts/queue-status?limit=50</span>
 <span style="color: #ED007E; background-color: #1E0010">Authorization: Bearer ***</span>

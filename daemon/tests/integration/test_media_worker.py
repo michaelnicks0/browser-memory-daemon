@@ -1,17 +1,53 @@
 from contextlib import contextmanager
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import base64
 import io
 import json
 import threading
+import time
+import urllib.request
 
+from browser_memory_daemon.app import make_server
 from browser_memory_daemon.config import load_config
 from browser_memory_daemon.db import connect, init_db
 from browser_memory_daemon.ingest import ingest_capture
-from browser_memory_daemon.media import media_artifacts_for_snapshot, purge_media_cache, store_media_artifact, store_media_blob_stream
+from browser_memory_daemon.media import claim_media_fetch_tasks, fetch_pending_media_artifacts, media_artifacts_for_snapshot, purge_media_cache, store_media_artifact, store_media_blob_stream
 from browser_memory_daemon.media_worker import normalize_cdp_covered_blob_video_refs, normalize_cdp_hls_manifest_refs, normalize_hls_audio_renditions, normalize_hls_video_skips, normalize_legacy_blob_video_skips, normalize_opaque_blob_video_refs, normalize_snapshot_budget_skips, normalize_storage_budget_skips, normalize_terminal_failed_artifacts, run_once
 from browser_memory_daemon.models import CapturePayload
+
+
+def post_json(url: str, token: str, body: dict) -> tuple[int, dict]:
+    req = urllib.request.Request(url, data=json.dumps(body).encode("utf-8"), method="POST")
+    req.add_header("Authorization", f"Bearer {token}")
+    req.add_header("Content-Type", "application/json")
+    with urllib.request.urlopen(req, timeout=10) as response:
+        return response.status, json.loads(response.read().decode("utf-8") or "{}")
+
+
+@contextmanager
+def http_status_fixture_server(status_code: int, *, content_type: str = "image/png", body: bytes = b""):
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):  # noqa: N802
+            self.send_response(status_code)
+            self.send_header("Content-Type", content_type)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, format, *args):
+            return
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{server.server_port}"
+    finally:
+        server.shutdown()
+        thread.join(timeout=2)
+        server.server_close()
 
 
 def test_media_worker_processes_data_url_task_and_marks_success(tmp_path):
@@ -75,6 +111,9 @@ def test_media_worker_marks_pending_task_succeeded_when_artifact_already_stored(
     with connect(cfg.db_path) as conn:
         ingest_capture(conn, cfg, payload)
         assert run_once(conn, cfg, worker_id="test-worker", limit=10)["stored"] == 1
+        stored_media = conn.execute("SELECT id, file_path FROM media_artifacts").fetchone()
+        stored_path = stored_media["file_path"]
+        stored_bytes = open(stored_path, "rb").read()
         conn.execute(
             "UPDATE media_fetch_tasks SET status = 'pending', last_error = 'stale lease', lease_owner = 'old-worker', lease_until = '2099-01-01T00:00:00Z'"
         )
@@ -87,6 +126,101 @@ def test_media_worker_marks_pending_task_succeeded_when_artifact_already_stored(
         assert task["last_error"] is None
         assert task["lease_owner"] is None
         assert task["lease_until"] is None
+        final_media = conn.execute("SELECT file_path FROM media_artifacts WHERE id = ?", (stored_media["id"],)).fetchone()
+        assert final_media["file_path"] == stored_path
+        assert open(final_media["file_path"], "rb").read() == stored_bytes
+        assert len(list(cfg.media_root.glob(f"{stored_media['id']}*"))) == 1
+
+
+def test_fetch_pending_media_artifacts_respects_active_lease_and_recovers_stale_lease(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    payload = CapturePayload.from_dict(
+        {
+            "url": "https://example.com/manual-fetch-lease",
+            "title": "Manual Fetch Lease",
+            "text": "Readable manual fetch lease body.",
+            "media_artifacts": [{"media_type": "image", "source_url": "data:image/png;base64,iVBORw0KGgo=", "mime_type": "image/png"}],
+        },
+        allow_any_url=True,
+    )
+    with connect(cfg.db_path) as conn:
+        result = ingest_capture(conn, cfg, payload)
+        with conn:
+            claimed = claim_media_fetch_tasks(conn, worker_id="worker-a", limit=1, lease_seconds=300)
+        assert len(claimed) == 1
+
+        fetched = fetch_pending_media_artifacts(conn, cfg, snapshot_id=result["snapshot_id"], limit=10, worker_id="manual-fetch")
+        assert fetched["attempted"] == 0
+        assert fetched["remaining"] == 1
+        active_task = conn.execute("SELECT status, lease_owner, lease_until FROM media_fetch_tasks").fetchone()
+        assert active_task["status"] == "leased"
+        assert active_task["lease_owner"] == "worker-a"
+        assert active_task["lease_until"] is not None
+
+        conn.execute("UPDATE media_fetch_tasks SET lease_until = '2000-01-01T00:00:00Z' WHERE artifact_id = ?", (claimed[0]["id"],))
+        conn.commit()
+        recovered = fetch_pending_media_artifacts(conn, cfg, snapshot_id=result["snapshot_id"], limit=10, worker_id="manual-fetch")
+        assert recovered["attempted"] == 1
+        assert recovered["stored"] == 1
+        assert recovered["remaining"] == 0
+        final_task = conn.execute("SELECT status, attempts, lease_owner, lease_until FROM media_fetch_tasks").fetchone()
+        assert final_task["status"] == "succeeded"
+        assert final_task["attempts"] == 1
+        assert final_task["lease_owner"] is None
+        assert final_task["lease_until"] is None
+
+
+def test_capture_media_fetch_on_capture_background_uses_task_leasing(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", host="127.0.0.1", port=0, policy_mode="all")
+    cfg = replace(cfg, media_fetch_on_capture=True, max_media_fetches_per_capture=1)
+    server = make_server(cfg)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        status, stored = post_json(
+            f"{base}/capture",
+            "test-token",
+            {
+                "visit_id": "media-fetch-on-capture-1",
+                "url": "https://example.com/media-fetch-on-capture",
+                "title": "Media Fetch On Capture",
+                "text": "Readable media fetch on capture body.",
+                "media_artifacts": [{"media_type": "image", "source_url": "data:image/png;base64,iVBORw0KGgo=", "mime_type": "image/png"}],
+            },
+        )
+        assert status == 201
+        assert stored["media_ref_count"] == 1
+
+        deadline = time.time() + 5
+        final_media = None
+        final_task = None
+        final_audit = None
+        while time.time() < deadline:
+            with connect(cfg.db_path) as conn:
+                final_media = conn.execute("SELECT capture_status, file_path FROM media_artifacts").fetchone()
+                final_task = conn.execute("SELECT status, attempts, lease_owner, lease_until FROM media_fetch_tasks").fetchone()
+                final_audit = conn.execute(
+                    "SELECT metadata_json FROM audit_events WHERE event_type = 'media.fetch_pending' ORDER BY created_at DESC LIMIT 1"
+                ).fetchone()
+            if final_media and final_media["capture_status"] == "stored" and final_task and final_task["status"] == "succeeded":
+                break
+            time.sleep(0.05)
+
+        assert final_media is not None
+        assert final_media["capture_status"] == "stored"
+        assert final_media["file_path"]
+        assert final_task is not None
+        assert final_task["status"] == "succeeded"
+        assert final_task["attempts"] == 1
+        assert final_task["lease_owner"] is None
+        assert final_task["lease_until"] is None
+        assert final_audit is not None
+        assert json.loads(final_audit["metadata_json"])["background"] is True
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
 
 
 def test_concurrent_media_blob_writes_use_distinct_temp_files(tmp_path):
@@ -207,6 +341,48 @@ def test_media_worker_normalizes_terminal_failed_artifacts(tmp_path):
         assert task_status_by_url["data:image/png;base64,bad"] == "skipped"
         assert task_status_by_url["https://example.com/missing.png"] == "skipped"
         assert task_status_by_url["https://example.com/rate.png"] == "retrying"
+
+
+def test_media_worker_retry_backoff_releases_lease_and_waits_until_due(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    with http_status_fixture_server(429) as base_url:
+        payload = CapturePayload.from_dict(
+            {
+                "url": "https://example.com/retry-backoff",
+                "title": "Retry Backoff",
+                "text": "Readable worker retry backoff body.",
+                "media_artifacts": [{"media_type": "image", "source_url": f"{base_url}/rate.png", "mime_type": "image/png"}],
+            },
+            allow_any_url=True,
+        )
+        with connect(cfg.db_path) as conn:
+            result = ingest_capture(conn, cfg, payload)
+            first = run_once(conn, cfg, worker_id="test-worker", limit=10)
+            assert first["attempted"] == 1
+            assert first["stored"] == 0
+            media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
+            assert media["capture_status"] == "retrying"
+            assert media["status_reason"] == "fetch-status-429"
+            task = conn.execute("SELECT status, attempts, next_attempt_at, lease_owner, lease_until, last_error FROM media_fetch_tasks").fetchone()
+            assert task["status"] == "retrying"
+            assert task["attempts"] == 1
+            assert task["next_attempt_at"] is not None
+            assert task["lease_owner"] is None
+            assert task["lease_until"] is None
+            assert task["last_error"] == "fetch-status-429"
+
+            second = run_once(conn, cfg, worker_id="test-worker", limit=10)
+            assert second["attempted"] == 0
+            conn.execute("UPDATE media_fetch_tasks SET next_attempt_at = '2000-01-01T00:00:00Z'")
+            conn.commit()
+            third = run_once(conn, cfg, worker_id="test-worker", limit=10)
+            assert third["attempted"] == 1
+            task = conn.execute("SELECT status, attempts, lease_owner, lease_until FROM media_fetch_tasks").fetchone()
+            assert task["status"] == "retrying"
+            assert task["attempts"] == 2
+            assert task["lease_owner"] is None
+            assert task["lease_until"] is None
 
 
 def test_media_worker_reclassifies_legacy_blob_video_skips_as_references(tmp_path):

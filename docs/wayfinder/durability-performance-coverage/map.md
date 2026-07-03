@@ -16,24 +16,24 @@
 - [002 — Add daily-driver health snapshot command](tickets/002-daily-driver-health-snapshot.md) — added `daily-driver-health` plus `scripts/daily-driver-health.sh`, a redaction-safe aggregate over services, loopback, journals, DB freshness, media queue, storage headroom, and extension artifacts.
 - [003 — Build deterministic concurrency stress harness](tickets/003-concurrency-stress-harness.md) — added a temp-runtime stress harness for concurrent captures, lifecycle events, reads, media blob uploads, and media-worker passes against one SQLite DB.
 - [004 — Harden SQLite write-path policy](tickets/004-sqlite-write-path-hardening.md) — enforced WAL/synchronous/busy-timeout pragmas, skipped repeated request-time DB initialization after startup, increased loopback listen backlog, isolated concurrent media temp writes, and recorded ADR-0014.
+- [006 — Expand media-worker lifecycle invariant coverage](tickets/006-media-worker-invariants.md) — routed manual/background media fetch through the durable task lease path and covered active/stale leases, retry backoff, idempotent stored rows, and `media_fetch_on_capture=True`.
 
 ## Frontier
 
+- [016 — Shorten transaction boundaries and capture idempotency](tickets/016-shorten-transaction-boundaries-and-idempotency.md) — follow up late ticket-004 audit findings on filesystem work near writer locks, duplicate capture idempotency, and policy-rule uniqueness.
 - [005 — Expand HTTP API contract coverage](tickets/005-http-api-contract-coverage.md) — cover auth, malformed input, method/route errors, limits, and response consistency across endpoints.
-- [006 — Expand media-worker lifecycle invariant coverage](tickets/006-media-worker-invariants.md) — prove task leases, retries, stale recovery, terminal classification, and idempotent blob writes.
 - [007 — Expand extension service-worker resilience coverage](tickets/007-extension-service-worker-resilience.md) — test daemon-down/offline, queue persistence, retry/backoff, pause/rule controls, and token/config behavior.
 - [008 — Expand real Chrome e2e matrix](tickets/008-real-chrome-e2e-matrix.md) — turn the real-browser authority into a broader policy/control/surface matrix without touching daily Chrome.
 - [009 — Add performance benchmark harness and budgets](tickets/009-performance-benchmark-harness.md) — measure ingest/search/timeline/detail/media-worker behavior on synthetic scalable datasets.
 - [011 — Harden installer/token/Windows artifact consistency](tickets/011-installer-token-artifact-consistency.md) — make daily-driver install/refresh more testable and self-validating.
 - [012 — Design retention, compaction, and backup posture](tickets/012-retention-compaction-backup-design.md) — now unblocked by the baseline; use current DB/media/headroom evidence plus explicit operator thresholds.
 - [013 — Add local UI smoke coverage](tickets/013-ui-dashboard-smoke-coverage.md) — add dashboard bootstrap/API rendering checks beyond static asset serving.
+- [014 — Add coverage gates and requirements traceability enforcement](tickets/014-coverage-gates-traceability.md) — now unblocked by ticket 006 coverage expansion, but still best near the end after more coverage tickets land.
 - [015 — Add storage-headroom and service-start failure budget checks](tickets/015-storage-headroom-service-start-budget.md) — turn the no-space systemd failure class into preflight/health checks and a journal budget.
-- [016 — Shorten transaction boundaries and capture idempotency](tickets/016-shorten-transaction-boundaries-and-idempotency.md) — follow up late ticket-004 audit findings on filesystem work near writer locks, duplicate capture idempotency, and policy-rule uniqueness.
 
 ## Blocked
 
 - [010 — Optimize read-model query/index performance](tickets/010-read-model-query-performance.md) — blocked by ticket 009's benchmark harness and budgets.
-- [014 — Add coverage gates and requirements traceability enforcement](tickets/014-coverage-gates-traceability.md) — blocked by at least one coverage-expansion ticket; ticket 001 baseline is complete.
 
 ## Fog
 
@@ -46,12 +46,12 @@
 
 ## Handoff
 
-Open frontier tickets: 10. Blocked tickets: 2.
+Open frontier tickets: 10. Blocked tickets: 1.
 
-Recommended next ticket: **006 — Expand media-worker lifecycle invariant coverage**. Ticket 004 closed the core SQLite contention policy, but the late subagent audit flagged higher-risk remaining media isolation/lease behavior that fits ticket 006.
+Recommended next ticket: **016 — Shorten transaction boundaries and capture idempotency**. Ticket 006 closed the media lease/frontier risk; the next highest-leverage durability item is shortening capture/file/DB write boundaries and proving duplicate-request behavior.
 
 Copy into a fresh session:
 
 ```text
-Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/006-media-worker-invariants.md.
+Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/016-shorten-transaction-boundaries-and-idempotency.md.
 ```

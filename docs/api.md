@@ -170,6 +170,30 @@ Content-Type: application/json
 {"domain": "x.com", "limit": 100}
 ```
 
+Response summary:
+
+```json
+{
+  "attempted": 1,
+  "claimed": 1,
+  "seeded_tasks": 0,
+  "stored": 1,
+  "failed": 0,
+  "skipped": 0,
+  "remaining": 0,
+  "results": [
+    {
+      "artifact_id": "media_...",
+      "capture_status": "stored",
+      "status_reason": "",
+      "stored": true
+    }
+  ]
+}
+```
+
+Manual and background fetches use the same `media_fetch_tasks` lease path as the media worker. An actively leased task is not fetched by a competing caller; stale leases are eligible for recovery.
+
 Queue/cache status:
 
 ```http
