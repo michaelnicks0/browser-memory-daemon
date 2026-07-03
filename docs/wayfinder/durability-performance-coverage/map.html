@@ -143,10 +143,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li><a href="tickets/004-sqlite-write-path-hardening.html">004 — Harden SQLite write-path policy</a> — enforced WAL/synchronous/busy-timeout pragmas, skipped repeated request-time DB initialization after startup, increased loopback listen backlog, isolated concurrent media temp writes, and recorded ADR-0014.</li>
 <li><a href="tickets/006-media-worker-invariants.html">006 — Expand media-worker lifecycle invariant coverage</a> — routed manual/background media fetch through the durable task lease path and covered active/stale leases, retry backoff, idempotent stored rows, and <code>media_fetch_on_capture=True</code>.</li>
 <li><a href="tickets/016-shorten-transaction-boundaries-and-idempotency.html">016 — Shorten transaction boundaries and capture idempotency</a> — staged clean-text writes before short capture transactions, made duplicate captures/chunks/FTS idempotent, enforced semantic policy-rule uniqueness, and recorded ADR-0015.</li>
+<li><a href="tickets/005-http-api-contract-coverage.html">005 — Expand HTTP API contract coverage</a> — covered JSON auth/error/malformed/unknown-method behavior, limit bounds, and duplicate policy-rule HTTP semantics.</li>
 </ul>
 <h2 id="frontier">Frontier</h2>
 <ul>
-<li><a href="tickets/005-http-api-contract-coverage.html">005 — Expand HTTP API contract coverage</a> — cover auth, malformed input, method/route errors, limits, and response consistency across endpoints.</li>
 <li><a href="tickets/007-extension-service-worker-resilience.html">007 — Expand extension service-worker resilience coverage</a> — test daemon-down/offline, queue persistence, retry/backoff, pause/rule controls, and token/config behavior.</li>
 <li><a href="tickets/008-real-chrome-e2e-matrix.html">008 — Expand real Chrome e2e matrix</a> — turn the real-browser authority into a broader policy/control/surface matrix without touching daily Chrome.</li>
 <li><a href="tickets/009-performance-benchmark-harness.html">009 — Add performance benchmark harness and budgets</a> — measure ingest/search/timeline/detail/media-worker behavior on synthetic scalable datasets.</li>
@@ -170,10 +170,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>Whether operational alerts should integrate with an external notification channel; remote delivery requires explicit approval.</li>
 </ul>
 <h2 id="handoff">Handoff</h2>
-<p>Open frontier tickets: 9. Blocked tickets: 1.</p>
-<p>Recommended next ticket: <strong>005 — Expand HTTP API contract coverage</strong>. Tickets 006 and 016 closed the highest-risk media lease and duplicate-write durability gaps; the next frontier should lock down loopback API contract behavior before more browser/benchmark coverage.</p>
+<p>Open frontier tickets: 8. Blocked tickets: 1.</p>
+<p>Recommended next ticket: <strong>007 — Expand extension service-worker resilience coverage</strong>. The daemon-side media/write/API contracts are now hardened; the next coverage gap is Chrome service-worker resilience.</p>
 <p>Copy into a fresh session:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/005-http-api-contract-coverage.md.
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md, ticket docs/wayfinder/durability-performance-coverage/tickets/007-extension-service-worker-resilience.md.
 </code></pre></div>
   </article>
   <div class="md-footer">

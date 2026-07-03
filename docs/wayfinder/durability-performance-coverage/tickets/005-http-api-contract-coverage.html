@@ -126,7 +126,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
   <article class="md-body">
 <h1 id="expand-http-api-contract-coverage">Expand HTTP API contract coverage</h1>
 <h2 id="status">Status</h2>
-<p>open</p>
+<p>closed</p>
 <h2 id="question">Question</h2>
 <p>Can every HTTP endpoint have contract tests for auth, malformed input, bounded limits, unsupported routes/methods, stable error shape, and no uncaught server tracebacks?</p>
 <h2 id="type">Type</h2>
@@ -145,9 +145,24 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>Blocked by: none; ticket 001 preferred for budget language.</li>
 </ul>
 <h2 id="resolution">Resolution</h2>
-<p>Pending.</p>
+<p>Closed in this slice. HTTP contract coverage now exercises stable JSON error behavior and bounded/duplicate contracts across the loopback API:</p>
+<ul>
+<li>Missing and invalid bearer tokens return JSON <code>401</code> responses with a top-level <code>error</code> string.</li>
+<li>Malformed JSON, invalid capture payloads, unknown routes, and unsupported methods are covered as JSON error responses (<code>400</code>, <code>404</code>, <code>501</code>).</li>
+<li>Limit clamping is covered for <code>recent</code>, <code>timeline</code>, and media queue status surfaces.</li>
+<li>Duplicate policy-rule creation through HTTP is covered and returns the existing semantic rule added in ticket 016.</li>
+<li><code>MemoryHandler.send_error</code> now converts BaseHTTPRequestHandler unsupported-method errors into the same JSON error shape instead of the default HTML page.</li>
+</ul>
+<p>Evidence:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>/tmp/browser-memory-daemon-verify-venv/bin/python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pytest<span style="color: #F8F8F2"> </span>-q<span style="color: #F8F8F2"> </span>daemon/tests/e2e/test_http_api.py<span style="color: #F8F8F2"> </span>daemon/tests/e2e/test_admin_api.py<span style="color: #F8F8F2"> </span>daemon/tests/unit/test_policy_store.py
+<span style="color: #959077"># 12 passed</span>
+
+<span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span>/tmp/browser-memory-daemon-verify-venv/bin/python<span style="color: #F8F8F2"> </span>./scripts/run-e2e.sh
+<span style="color: #959077"># pytest passed; extension node:test 23/23; extension build; real Chrome for Testing e2e ok; secret scan passed</span>
+</code></pre></div>
+
 <h2 id="new-tickets-fog-updates">New tickets / fog updates</h2>
-<p>Pending. If endpoint behavior is underspecified, update <code>docs/api.md</code> with the contract proven by tests. Include duplicate policy-rule creation semantics if this ticket touches rule endpoints; a late ticket-004 audit noted concurrent identical creates can duplicate rows without a semantic uniqueness constraint.</p>
+<p>No new tickets. <code>docs/api.md</code> now records stable JSON error shape, common status codes, limit bounds, and duplicate policy-rule semantics.</p>
   </article>
   <div class="md-footer">
     Rendered from <code>docs/wayfinder/durability-performance-coverage/tickets/005-http-api-contract-coverage.md</code> — the Markdown file is the canonical,

@@ -132,7 +132,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </blockquote>
 <!-- BEGIN GENERATED:inventory-summary -->
 <blockquote>
-<p><strong>Current inventory:</strong> 94 static test functions across 17 files — 71 daemon pytest tests + 23 extension node:test tests.</p>
+<p><strong>Current inventory:</strong> 96 static test functions across 17 files — 73 daemon pytest tests + 23 extension node:test tests.</p>
 </blockquote>
 <!-- END GENERATED:inventory-summary -->
 
@@ -180,7 +180,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <hr />
 <h2 id="generated-test-inventory">Generated test inventory</h2>
 <!-- BEGIN GENERATED:audit-run -->
-<p>Latest inventory: <strong>94 static test functions</strong> across <strong>17 files</strong> (71 daemon pytest; 23 extension node:test). Regenerate with <code>python3.11 scripts/generate_test_inventory.py --write</code>; enforce with <code>--check</code>. Counts are source-level test functions, not pytest parametrized case expansions.</p>
+<p>Latest inventory: <strong>96 static test functions</strong> across <strong>17 files</strong> (73 daemon pytest; 23 extension node:test). Regenerate with <code>python3.11 scripts/generate_test_inventory.py --write</code>; enforce with <code>--check</code>. Counts are source-level test functions, not pytest parametrized case expansions.</p>
 <!-- END GENERATED:audit-run -->
 
 <h3 id="per-file-counts">Per-file counts</h3>
@@ -212,7 +212,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <tr>
 <td><code>daemon/tests/e2e/test_http_api.py</code></td>
 <td>pytest</td>
-<td style="text-align: right;">3</td>
+<td style="text-align: right;">5</td>
 </tr>
 <tr>
 <td><code>daemon/tests/integration/test_ingest_search_forget.py</code></td>
@@ -282,7 +282,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <tr>
 <td><strong>Total</strong></td>
 <td></td>
-<td style="text-align: right;"><strong>94</strong></td>
+<td style="text-align: right;"><strong>96</strong></td>
 </tr>
 </tbody>
 </table>
@@ -300,9 +300,11 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 | `daemon/tests/e2e/test_cli_admin.py` | pytest | `(module)` | `test_cli_admin_commands` | 34 | Cli admin commands. |
 | `daemon/tests/e2e/test_concurrency_stress.py` | pytest | `(module)` | `test_concurrency_stress_harness_exercises_shared_sqlite_db` | 6 | Concurrency stress harness exercises shared sqlite db. |
 | `daemon/tests/e2e/test_concurrency_stress.py` | pytest | `(module)` | `test_concurrency_stress_cli_prints_json_for_explicit_runtime` | 36 | Concurrency stress cli prints json for explicit runtime. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_skips_request_time_db_initialization_after_startup` | 46 | Http capture skips request time db initialization after startup. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_media_fetch_raw_upload_and_purge_rehydrate_controls` | 78 | Http media fetch raw upload and purge rehydrate controls. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_search_forget_round_trip` | 147 | Http capture search forget round trip. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_skips_request_time_db_initialization_after_startup` | 61 | Http capture skips request time db initialization after startup. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_media_fetch_raw_upload_and_purge_rehydrate_controls` | 93 | Http media fetch raw upload and purge rehydrate controls. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_search_forget_round_trip` | 162 | Http capture search forget round trip. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_api_contract_errors_methods_and_limits_are_json` | 268 | Http api contract errors methods and limits are json. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_policy_rule_duplicate_creation_returns_existing_semantic_rule` | 312 | Http policy rule duplicate creation returns existing semantic rule. |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_ingest_search_redact_and_forget` | 17 | Ingest search redact and forget. |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_metadata_redacted_before_fts_and_forget_by_original_url` | 42 | Metadata redacted before fts and forget by original url. |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_url_path_secret_redacted_and_not_searchable` | 65 | Url path secret redacted and not searchable. |

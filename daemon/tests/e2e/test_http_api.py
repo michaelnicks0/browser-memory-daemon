@@ -21,6 +21,21 @@ def request(method, url, token="test-token", body=None):
         return response.status, json.loads(response.read().decode() or "{}")
 
 
+def error_request(method, url, token="test-token", body=None, raw_body=None, content_type="application/json"):
+    data = raw_body if raw_body is not None else (None if body is None else json.dumps(body).encode())
+    req = urllib.request.Request(url, data=data, method=method)
+    if token:
+        req.add_header("Authorization", f"Bearer {token}")
+    if data is not None:
+        req.add_header("Content-Type", content_type)
+    try:
+        with urllib.request.urlopen(req, timeout=10) as response:
+            return response.status, dict(response.headers), json.loads(response.read().decode() or "{}")
+    except urllib.error.HTTPError as exc:
+        text = exc.read().decode()
+        return exc.code, dict(exc.headers), json.loads(text or "{}")
+
+
 def raw_request(method, url, token="test-token", body=None):
     data = None if body is None else json.dumps(body).encode()
     req = urllib.request.Request(url, data=data, method=method)
@@ -245,6 +260,71 @@ def test_http_capture_search_forget_round_trip(tmp_path):
 
         status, found_after = request("GET", f"{base}/search?{q}")
         assert found_after["results"] == []
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+
+
+def test_http_api_contract_errors_methods_and_limits_are_json(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", host="127.0.0.1", port=0, policy_mode="all")
+    cfg = replace(cfg, media_fetch_on_capture=False)
+    server = make_server(cfg)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        status, stored = request(
+            "POST",
+            f"{base}/capture",
+            body={"visit_id": "limit-contract-1", "url": "https://example.org/limits", "title": "Limits", "text": "Limit contract body."},
+        )
+        assert status == 201
+
+        error_cases = [
+            error_request("GET", f"{base}/recent?limit=5", token=None),
+            error_request("GET", f"{base}/recent?limit=5", token="wrong"),
+            error_request("POST", f"{base}/capture", raw_body=b"{"),
+            error_request("POST", f"{base}/capture", body={"url": "not-a-url", "text": "bad"}),
+            error_request("GET", f"{base}/does-not-exist"),
+            error_request("PATCH", f"{base}/health", raw_body=b"{}"),
+        ]
+        assert [case[0] for case in error_cases] == [401, 401, 400, 400, 404, 501]
+        for _status, headers, payload in error_cases:
+            assert "application/json" in headers.get("Content-Type", "")
+            assert set(payload) == {"error"}
+            assert isinstance(payload["error"], str) and payload["error"]
+
+        status, recent = request("GET", f"{base}/recent?limit=9999")
+        assert status == 200
+        assert len(recent["results"]) == 1
+        status, timeline = request("GET", f"{base}/timeline?limit=9999")
+        assert status == 200
+        assert timeline["count"] == 1
+        status, queue = request("GET", f"{base}/media-artifacts/queue-status?limit=9999")
+        assert status == 200
+        assert len(queue["recent_nonstored"] or []) <= 200
+        assert stored["stored"] is True
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+
+
+def test_http_policy_rule_duplicate_creation_returns_existing_semantic_rule(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", host="127.0.0.1", port=0, policy_mode="all")
+    server = make_server(cfg)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        status, first = request("POST", f"{base}/policy/rules", body={"rule_type": "domain", "pattern": "Example.COM.", "action": "block"})
+        assert status == 201
+        status, second = request("POST", f"{base}/policy/rules", body={"rule_type": "domain", "pattern": "example.com", "action": "block"})
+        assert status == 201
+        assert second["rule"]["id"] == first["rule"]["id"]
+        assert second["rule"]["pattern"] == "example.com"
+        status, rules = request("GET", f"{base}/policy/rules")
+        assert status == 200
+        assert [rule for rule in rules["rules"] if rule["pattern"] == "example.com"] == [second["rule"]]
     finally:
         server.shutdown()
         thread.join(timeout=5)

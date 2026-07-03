@@ -5,7 +5,7 @@
 > **Runtime:** Python **3.11+** (`pyproject.toml` requires `>=3.11`). Use `BMD_PYTHON=/path/to/python3.11` when the host `python3` is older.
 
 <!-- BEGIN GENERATED:inventory-summary -->
-> **Current inventory:** 94 static test functions across 17 files — 71 daemon pytest tests + 23 extension node:test tests.
+> **Current inventory:** 96 static test functions across 17 files — 73 daemon pytest tests + 23 extension node:test tests.
 <!-- END GENERATED:inventory-summary -->
 
 ---
@@ -66,7 +66,7 @@ Use `--runtime-root PATH` only for explicit fixture roots; do not point the stre
 ## Generated test inventory
 
 <!-- BEGIN GENERATED:audit-run -->
-Latest inventory: **94 static test functions** across **17 files** (71 daemon pytest; 23 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
+Latest inventory: **96 static test functions** across **17 files** (73 daemon pytest; 23 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
 <!-- END GENERATED:audit-run -->
 
 ### Per-file counts
@@ -77,7 +77,7 @@ Latest inventory: **94 static test functions** across **17 files** (71 daemon py
 | `daemon/tests/e2e/test_admin_api.py` | pytest | 3 |
 | `daemon/tests/e2e/test_cli_admin.py` | pytest | 1 |
 | `daemon/tests/e2e/test_concurrency_stress.py` | pytest | 2 |
-| `daemon/tests/e2e/test_http_api.py` | pytest | 3 |
+| `daemon/tests/e2e/test_http_api.py` | pytest | 5 |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | 20 |
 | `daemon/tests/integration/test_media_worker.py` | pytest | 19 |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | 5 |
@@ -91,7 +91,7 @@ Latest inventory: **94 static test functions** across **17 files** (71 daemon py
 | `extension/tests/unit/media_queue.test.js` | node:test | 5 |
 | `extension/tests/unit/queue.test.js` | node:test | 1 |
 | `extension/tests/unit/shared.test.js` | node:test | 2 |
-| **Total** |  | **94** |
+| **Total** |  | **96** |
 <!-- END GENERATED:per-file-counts -->
 
 <details>
@@ -106,9 +106,11 @@ Latest inventory: **94 static test functions** across **17 files** (71 daemon py
 | `daemon/tests/e2e/test_cli_admin.py` | pytest | `(module)` | `test_cli_admin_commands` | 34 | Cli admin commands. |
 | `daemon/tests/e2e/test_concurrency_stress.py` | pytest | `(module)` | `test_concurrency_stress_harness_exercises_shared_sqlite_db` | 6 | Concurrency stress harness exercises shared sqlite db. |
 | `daemon/tests/e2e/test_concurrency_stress.py` | pytest | `(module)` | `test_concurrency_stress_cli_prints_json_for_explicit_runtime` | 36 | Concurrency stress cli prints json for explicit runtime. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_skips_request_time_db_initialization_after_startup` | 46 | Http capture skips request time db initialization after startup. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_media_fetch_raw_upload_and_purge_rehydrate_controls` | 78 | Http media fetch raw upload and purge rehydrate controls. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_search_forget_round_trip` | 147 | Http capture search forget round trip. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_skips_request_time_db_initialization_after_startup` | 61 | Http capture skips request time db initialization after startup. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_media_fetch_raw_upload_and_purge_rehydrate_controls` | 93 | Http media fetch raw upload and purge rehydrate controls. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_search_forget_round_trip` | 162 | Http capture search forget round trip. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_api_contract_errors_methods_and_limits_are_json` | 268 | Http api contract errors methods and limits are json. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_policy_rule_duplicate_creation_returns_existing_semantic_rule` | 312 | Http policy rule duplicate creation returns existing semantic rule. |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_ingest_search_redact_and_forget` | 17 | Ingest search redact and forget. |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_metadata_redacted_before_fts_and_forget_by_original_url` | 42 | Metadata redacted before fts and forget by original url. |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_url_path_secret_redacted_and_not_searchable` | 65 | Url path secret redacted and not searchable. |

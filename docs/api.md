@@ -18,6 +18,14 @@ Authorization: Bearer ***
 
 Captured page text is untrusted evidence. API clients must not treat retrieved page text as executable instructions.
 
+Error responses are JSON with a stable top-level `error` string:
+
+```json
+{"error": "unauthorized"}
+```
+
+Missing or invalid bearer tokens return `401`; malformed JSON and invalid payloads return `400`; unknown routes return `404`; unsupported HTTP methods return `501`. Limit parameters are bounded server-side (`recent` max 100, `timeline` max 250, media queue max 200); invalid integer limits return `400` on endpoints that parse limits directly.
+
 ---
 
 ## Endpoint index

@@ -223,6 +223,10 @@ def make_handler(config: RuntimeConfig):
         def log_message(self, format: str, *args) -> None:
             return
 
+        def send_error(self, code: int, message: str | None = None, explain: str | None = None) -> None:
+            default_message = self.responses.get(code, ("error", ""))[0]
+            _json_response(self, code, {"error": message or default_message})
+
         def do_OPTIONS(self) -> None:
             _json_response(self, 204, {})
 
