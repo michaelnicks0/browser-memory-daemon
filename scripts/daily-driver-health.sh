@@ -24,10 +24,10 @@ if [ -z "$EXT_DIR" ] && [ -n "$WIN_USER" ]; then
   EXT_DIR="/mnt/c/Users/${WIN_USER}/AppData/Local/browser-memory-daemon/extension"
 fi
 
-ARGS=(--token "$TOKEN" daily-driver-health)
+ARGS=(daily-driver-health)
 if [ -n "$EXT_DIR" ]; then
   ARGS+=(--extension-dir "$EXT_DIR")
 fi
 
 cd "$ROOT"
-PYTHONPATH="$ROOT/daemon/src" exec "$PY" -m browser_memory_daemon "${ARGS[@]}" "$@"
+BMD_API_TOKEN="$TOKEN" PYTHONPATH="$ROOT/daemon/src${PYTHONPATH:+:$PYTHONPATH}" exec "$PY" -m browser_memory_daemon "${ARGS[@]}" "$@"

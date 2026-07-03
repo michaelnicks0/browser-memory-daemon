@@ -206,7 +206,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </table>
 <hr />
 <h2 id="daily-driver-state-checks">Daily-driver state checks</h2>
-<p>One redaction-safe snapshot command covers WSL services, loopback health from WSL and Windows, recent systemd journal warning/error counts, SQLite integrity/freshness/counts, media-queue aggregates, storage headroom, and the Windows extension artifact state:</p>
+<p>One redaction-safe snapshot command covers WSL services, loopback health from WSL and Windows, recent systemd journal warning/error counts, SQLite integrity/freshness/counts, media-queue aggregates, storage headroom, protected token/env files, service process-argument secrecy, unit-file expectations, and the Windows extension artifact state:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>./scripts/daily-driver-health.sh
 </code></pre></div>
 
@@ -233,6 +233,14 @@ systemctl<span style="color: #F8F8F2"> </span>--user<span style="color: #F8F8F2"
 <h2 id="install-or-refresh-daily-chrome-integration">Install or refresh daily Chrome integration</h2>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">cd </span>~/repos/workstation/browser-memory-daemon
 <span style="color: #F8F8F2">BMD_POLICY_MODE</span><span style="color: #FF4689">=</span>all<span style="color: #F8F8F2"> </span>./scripts/install-daily-driver.sh
+</code></pre></div>
+
+<p>Preview the install without writing files, copying artifacts, or restarting services:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_POLICY_MODE</span><span style="color: #FF4689">=</span>all<span style="color: #F8F8F2"> </span>./scripts/install-daily-driver.sh<span style="color: #F8F8F2"> </span>--dry-run
+</code></pre></div>
+
+<p>Check the current installed stack without rebuilding/copying/restarting:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>./scripts/install-daily-driver.sh<span style="color: #F8F8F2"> </span>--check
 </code></pre></div>
 
 <p>Then reload the unpacked extension in Chrome:</p>

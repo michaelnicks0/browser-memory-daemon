@@ -126,7 +126,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
   <article class="md-body">
 <h1 id="harden-installer-token-and-windows-artifact-consistency">Harden installer, token, and Windows artifact consistency</h1>
 <h2 id="status">Status</h2>
-<p>open</p>
+<p>closed</p>
 <h2 id="question">Question</h2>
 <p>Can the daily-driver install/refresh path be made self-validating and testable: Python runtime, service units, token file permissions, process-arg secrecy, Windows extension artifact contents, and Chrome manual reload guidance?</p>
 <h2 id="type">Type</h2>
@@ -145,9 +145,32 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>Blocked by: none. Ticket 002 supplies reusable health/artifact checks.</li>
 </ul>
 <h2 id="resolution">Resolution</h2>
-<p>Pending.</p>
+<p>Closed in this slice. The daily-driver install path now has an explicit non-mutating preview/check surface and the redaction-safe health snapshot verifies the installer/token/artifact invariants called out by the ticket.</p>
+<p>Implemented:</p>
+<ul>
+<li><code>scripts/install-daily-driver.sh --dry-run</code> validates inputs and Python 3.11+ runtime, prints the planned config/unit/extension/service actions, and makes no files/service/Chrome artifact changes.</li>
+<li><code>scripts/install-daily-driver.sh --check</code> runs the installed-state health/artifact check without rebuilding, copying, writing units, rotating tokens, or restarting services.</li>
+<li><code>scripts/daily-driver-health.sh</code> no longer passes the bearer token in CLI arguments; it uses <code>BMD_API_TOKEN</code> for the short-lived health command.</li>
+<li>Daily-driver health JSON now checks protected token/env files, token-file/env/extension token consistency without printing token values, unit-file <code>EnvironmentFile</code>/<code>ExecStart</code> expectations, and live service process-argument token secrecy.</li>
+<li>Operator docs now explain dry-run/check mode, manual Chrome reload, token permissions, EnvironmentFile usage, and extension token matching.</li>
+</ul>
+<p>Focused evidence:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>bash<span style="color: #F8F8F2"> </span>-n<span style="color: #F8F8F2"> </span>scripts/install-daily-driver.sh<span style="color: #F8F8F2"> </span>scripts/daily-driver-health.sh
+/tmp/browser-memory-daemon-verify-venv/bin/python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pytest<span style="color: #F8F8F2"> </span>-q<span style="color: #F8F8F2"> </span>daemon/tests/unit/test_daily_driver_health.py<span style="color: #F8F8F2"> </span>daemon/tests/e2e/test_daily_driver_install.py
+<span style="color: #959077"># 4 passed</span>
+
+<span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span>/tmp/browser-memory-daemon-verify-venv/bin/python<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  BMD_POLICY_MODE</span><span style="color: #FF4689">=</span>all<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  BMD_WINDOWS_EXTENSION_DIR</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2">$tmp</span><span style="color: #E6DB74">/windows-extension&quot;</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  XDG_CONFIG_HOME</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2">$tmp</span><span style="color: #E6DB74">/config-home&quot;</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  XDG_DATA_HOME</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2">$tmp</span><span style="color: #E6DB74">/data-home&quot;</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  XDG_STATE_HOME</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2">$tmp</span><span style="color: #E6DB74">/state-home&quot;</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>./scripts/install-daily-driver.sh<span style="color: #F8F8F2"> </span>--dry-run<span style="color: #F8F8F2"> </span>&gt;/tmp/bmd_install_dry_run.txt
+<span style="color: #959077"># dry_run_exit=0; non_mutating_paths_ok=1</span>
+</code></pre></div>
+
 <h2 id="new-tickets-fog-updates">New tickets / fog updates</h2>
-<p>Pending. Do not modify the daily Chrome profile JSON; test with temp dirs or explicit dry-run/check mode.</p>
+<p>No new ticket. Do not modify the daily Chrome profile JSON; future installer changes should continue using temp dirs or explicit <code>--dry-run</code>/<code>--check</code> paths for verification.</p>
   </article>
   <div class="md-footer">
     Rendered from <code>docs/wayfinder/durability-performance-coverage/tickets/011-installer-token-artifact-consistency.md</code> — the Markdown file is the canonical,

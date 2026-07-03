@@ -47,14 +47,26 @@ BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
 
 The installer:
 
-1. validates `BMD_POLICY_MODE`;
+1. validates `BMD_POLICY_MODE` and the Python 3.11+ runtime;
 2. builds the MV3 extension;
 3. copies it to the Windows-local extension directory;
 4. creates or reuses the daemon token;
-5. writes protected WSL env with `BMD_POLICY_MODE`;
-6. writes/enables/restarts the `systemd --user` daemon and media-worker services;
+5. writes protected WSL env with `BMD_API_TOKEN`, `BMD_POLICY_MODE`, and `PYTHONPATH`;
+6. writes/enables/restarts `systemd --user` daemon and media-worker services whose `ExecStart` values do not carry token material;
 7. preconfigures the Windows extension copy with token and policy mode;
 8. verifies WSL and Windows loopback health.
+
+Non-mutating install preview:
+
+```bash
+BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh --dry-run
+```
+
+Read-only installed-state check, with no rebuild/copy/unit writes/restarts:
+
+```bash
+./scripts/install-daily-driver.sh --check
+```
 
 Rotate token and refresh extension copy:
 
@@ -84,6 +96,7 @@ Direct `Preferences` / `Secure Preferences` JSON transplant was tested and rejec
 ## Verify service
 
 ```bash
+./scripts/daily-driver-health.sh
 systemctl --user status browser-memory-daemon.service
 systemctl --user status browser-memory-media-worker.service
 journalctl --user -u browser-memory-daemon.service -n 50 --no-pager
@@ -105,6 +118,8 @@ Expected health includes:
 ```json
 {"ok": true, "capture_enabled": true, "policy_mode": "all"}
 ```
+
+The aggregate health JSON also checks that `~/.config/browser-memory-daemon/token` and `env` are owner-only, that the environment file token matches the token file, that the unit files use the protected `EnvironmentFile`, that service process arguments do not expose token material, and that the Windows extension artifact token defaults match the token file. Token values are not printed.
 
 ---
 

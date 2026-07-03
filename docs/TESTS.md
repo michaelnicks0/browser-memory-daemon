@@ -5,7 +5,7 @@
 > **Runtime:** Python **3.11+** (`pyproject.toml` requires `>=3.11`). Use `BMD_PYTHON=/path/to/python3.11` when the host `python3` is older.
 
 <!-- BEGIN GENERATED:inventory-summary -->
-> **Current inventory:** 103 static test functions across 20 files — 76 daemon pytest tests + 27 extension node:test tests.
+> **Current inventory:** 105 static test functions across 21 files — 78 daemon pytest tests + 27 extension node:test tests.
 <!-- END GENERATED:inventory-summary -->
 
 ---
@@ -71,7 +71,7 @@ Use `--runtime-root PATH` only for explicit fixture roots; do not point the stre
 ## Generated test inventory
 
 <!-- BEGIN GENERATED:audit-run -->
-Latest inventory: **103 static test functions** across **20 files** (76 daemon pytest; 27 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
+Latest inventory: **105 static test functions** across **21 files** (78 daemon pytest; 27 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
 <!-- END GENERATED:audit-run -->
 
 ### Per-file counts
@@ -82,13 +82,14 @@ Latest inventory: **103 static test functions** across **20 files** (76 daemon p
 | `daemon/tests/e2e/test_admin_api.py` | pytest | 3 |
 | `daemon/tests/e2e/test_cli_admin.py` | pytest | 1 |
 | `daemon/tests/e2e/test_concurrency_stress.py` | pytest | 2 |
+| `daemon/tests/e2e/test_daily_driver_install.py` | pytest | 1 |
 | `daemon/tests/e2e/test_http_api.py` | pytest | 5 |
 | `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | 2 |
 | `daemon/tests/e2e/test_read_model_indexes.py` | pytest | 1 |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | 20 |
 | `daemon/tests/integration/test_media_worker.py` | pytest | 19 |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | 5 |
-| `daemon/tests/unit/test_daily_driver_health.py` | pytest | 2 |
+| `daemon/tests/unit/test_daily_driver_health.py` | pytest | 3 |
 | `daemon/tests/unit/test_db.py` | pytest | 2 |
 | `daemon/tests/unit/test_normalize.py` | pytest | 4 |
 | `daemon/tests/unit/test_policy.py` | pytest | 6 |
@@ -99,7 +100,7 @@ Latest inventory: **103 static test functions** across **20 files** (76 daemon p
 | `extension/tests/unit/queue.test.js` | node:test | 1 |
 | `extension/tests/unit/service_worker.test.js` | node:test | 4 |
 | `extension/tests/unit/shared.test.js` | node:test | 2 |
-| **Total** |  | **103** |
+| **Total** |  | **105** |
 <!-- END GENERATED:per-file-counts -->
 
 <details>
@@ -114,6 +115,7 @@ Latest inventory: **103 static test functions** across **20 files** (76 daemon p
 | `daemon/tests/e2e/test_cli_admin.py` | pytest | `(module)` | `test_cli_admin_commands` | 34 | Cli admin commands. |
 | `daemon/tests/e2e/test_concurrency_stress.py` | pytest | `(module)` | `test_concurrency_stress_harness_exercises_shared_sqlite_db` | 6 | Concurrency stress harness exercises shared sqlite db. |
 | `daemon/tests/e2e/test_concurrency_stress.py` | pytest | `(module)` | `test_concurrency_stress_cli_prints_json_for_explicit_runtime` | 36 | Concurrency stress cli prints json for explicit runtime. |
+| `daemon/tests/e2e/test_daily_driver_install.py` | pytest | `(module)` | `test_install_daily_driver_dry_run_is_non_mutating` | 12 | Install daily driver dry run is non mutating. |
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_skips_request_time_db_initialization_after_startup` | 61 | Http capture skips request time db initialization after startup. |
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_media_fetch_raw_upload_and_purge_rehydrate_controls` | 93 | Http media fetch raw upload and purge rehydrate controls. |
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_search_forget_round_trip` | 162 | Http capture search forget round trip. |
@@ -166,8 +168,9 @@ Latest inventory: **103 static test functions** across **20 files** (76 daemon p
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_can_attach_to_latest_visit_by_url` | 114 | Visit lifecycle event can attach to latest visit by url. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_without_matching_visit_stores_metadata_only` | 146 | Visit lifecycle event without matching visit stores metadata only. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_validates_ranges` | 168 | Visit lifecycle event validates ranges. |
-| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_snapshot_is_aggregate_and_redaction_safe` | 27 | Daily driver health snapshot is aggregate and redaction safe. |
-| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_missing_extension_token` | 100 | Daily driver health detects missing extension token. |
+| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_snapshot_is_aggregate_and_redaction_safe` | 70 | Daily driver health snapshot is aggregate and redaction safe. |
+| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_missing_extension_token` | 148 | Daily driver health detects missing extension token. |
+| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_insecure_token_permissions_and_process_args` | 182 | Daily driver health detects insecure token permissions and process args. |
 | `daemon/tests/unit/test_db.py` | pytest | `(module)` | `test_connect_uses_extended_busy_timeout` | 5 | Connect uses extended busy timeout. |
 | `daemon/tests/unit/test_db.py` | pytest | `(module)` | `test_init_db_enforces_wal_and_connection_pragmas` | 12 | Init db enforces wal and connection pragmas. |
 | `daemon/tests/unit/test_normalize.py` | pytest | `(module)` | `test_normalize_url_removes_tracking_fragment_default_port_and_sorts_query` | 4 | Normalize url removes tracking fragment default port and sorts query. |
@@ -256,7 +259,14 @@ After `./scripts/install-daily-driver.sh` and Chrome extension reload:
    ./scripts/daily-driver-health.sh
    ```
 
-   The JSON should include `ok=true`. It is redaction-safe: it reports service state, loopback health, journal counts/sanitized templates, DB freshness/counts, media queue counts, storage headroom, and extension artifact state without dumping captured page text or token values.
+   The JSON should include `ok=true`. It is redaction-safe: it reports service state, process-argument token secrecy, loopback health, journal counts/sanitized templates, DB freshness/counts, media queue counts, storage headroom, protected token/env/unit artifact checks, and extension artifact state without dumping captured page text or token values.
+
+   To verify install inputs without touching live services or Chrome artifacts:
+
+   ```bash
+   ./scripts/install-daily-driver.sh --dry-run
+   ./scripts/install-daily-driver.sh --check
+   ```
 
 2. If the aggregate command reports an error, isolate daemon state:
 

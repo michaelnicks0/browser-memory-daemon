@@ -9,6 +9,7 @@ from pathlib import Path
 import re
 import shutil
 import sqlite3
+import stat
 import subprocess
 import time
 from typing import Any, Callable
@@ -47,6 +48,10 @@ _EXTENSION_TOKEN_FILES = (
     "src/options.js",
     "src/popup.js",
 )
+_DAILY_DRIVER_UNIT_COMMANDS = {
+    "browser-memory-daemon.service": "-m browser_memory_daemon --host ${BMD_HOST} --port ${BMD_PORT} serve",
+    "browser-memory-media-worker.service": "-m browser_memory_daemon media-worker --loop --interval ${BMD_MEDIA_WORKER_INTERVAL} --limit ${BMD_MEDIA_WORKER_LIMIT}",
+}
 
 
 @dataclass(frozen=True)
@@ -107,6 +112,9 @@ def daily_driver_health_snapshot(
     *,
     base_url: str | None = None,
     extension_dir: str | Path | None = None,
+    token_file: str | Path | None = None,
+    env_file: str | Path | None = None,
+    unit_dir: str | Path | None = None,
     journal_since: str = "24 hours ago",
     include_windows_loopback: bool = True,
     powershell: str | Path | None = None,
@@ -125,14 +133,24 @@ def daily_driver_health_snapshot(
     selected_urlopen = urlopen or urllib.request.urlopen
     selected_base_url = (base_url or f"http://{config.host}:{config.port}").rstrip("/")
     selected_extension_dir = Path(extension_dir).expanduser() if extension_dir else default_windows_extension_dir()
+    selected_token_file = Path(token_file).expanduser() if token_file else config.config_root / "token"
+    selected_env_file = Path(env_file).expanduser() if env_file else config.config_root / "env"
+    selected_unit_dir = Path(unit_dir).expanduser() if unit_dir else Path.home() / ".config" / "systemd" / "user"
 
     loopback = _loopback_health(selected_base_url, selected_urlopen)
     windows_loopback = _windows_loopback_health(config.port, selected_runner, include_windows_loopback=include_windows_loopback, powershell=powershell)
-    systemd = _systemd_status(selected_runner)
+    systemd = _systemd_status(selected_runner, api_token=config.api_token)
     journals = _journal_status(selected_runner, since=journal_since)
     database = _database_status(config)
     storage = _storage_status(config, selected_extension_dir)
-    extension = _extension_status(selected_extension_dir, expected_policy_mode=config.policy_mode)
+    install = _install_artifact_status(
+        config,
+        token_file=selected_token_file,
+        env_file=selected_env_file,
+        unit_dir=selected_unit_dir,
+        extension_dir=selected_extension_dir,
+    )
+    extension = _extension_status(selected_extension_dir, expected_policy_mode=config.policy_mode, expected_api_token=install.get("expected_api_token"))
 
     errors: list[str] = []
     warnings: list[str] = []
@@ -142,6 +160,7 @@ def daily_driver_health_snapshot(
     _score_journals(journals, errors, warnings)
     _score_database(database, errors, warnings)
     _score_storage(storage, warnings)
+    _score_install_artifacts(install, errors, warnings)
     _score_extension(extension, errors, warnings)
 
     return {
@@ -158,6 +177,7 @@ def daily_driver_health_snapshot(
         "journals": journals,
         "database": database,
         "storage": storage,
+        "install": {key: value for key, value in install.items() if key != "expected_api_token"},
         "extension": extension,
     }
 
@@ -236,7 +256,7 @@ def _windows_loopback_health(
     return output
 
 
-def _systemd_status(runner: CommandRunner) -> dict[str, Any]:
+def _systemd_status(runner: CommandRunner, *, api_token: str) -> dict[str, Any]:
     units: dict[str, Any] = {}
     available = True
     for unit in DAILY_DRIVER_UNITS:
@@ -246,7 +266,7 @@ def _systemd_status(runner: CommandRunner) -> dict[str, Any]:
                 "--user",
                 "show",
                 unit,
-                "--property=Id,LoadState,ActiveState,SubState,NRestarts,ExecMainStatus,ExecMainStartTimestamp,StateChangeTimestamp",
+                "--property=Id,LoadState,ActiveState,SubState,NRestarts,ExecMainStatus,ExecMainStartTimestamp,StateChangeTimestamp,MainPID,FragmentPath",
                 "--no-pager",
             ],
             10,
@@ -256,8 +276,10 @@ def _systemd_status(runner: CommandRunner) -> dict[str, Any]:
         if show.exit_code == 127 or enabled.exit_code == 127 or active.exit_code == 127:
             available = False
         props = _parse_systemctl_show(show.stdout)
+        main_pid = _safe_int(props.get("MainPID"))
         units[unit] = {
             "ok": show.exit_code == 0 and props.get("LoadState") == "loaded" and props.get("ActiveState") == "active" and active.stdout == "active",
+            "fragment_path": props.get("FragmentPath"),
             "load_state": props.get("LoadState"),
             "active_state": props.get("ActiveState"),
             "sub_state": props.get("SubState"),
@@ -265,6 +287,8 @@ def _systemd_status(runner: CommandRunner) -> dict[str, Any]:
             "is_enabled": enabled.stdout or enabled.stderr,
             "n_restarts": _safe_int(props.get("NRestarts")),
             "exec_main_status": _safe_int(props.get("ExecMainStatus")),
+            "main_pid": main_pid,
+            "process_arg_secrecy": _process_arg_secrecy(main_pid, runner, api_token=api_token),
             "exec_main_start_timestamp": props.get("ExecMainStartTimestamp"),
             "state_change_timestamp": props.get("StateChangeTimestamp"),
             "command_exit_codes": {
@@ -391,7 +415,127 @@ def _storage_status(config: RuntimeConfig, extension_dir: Path | None) -> dict[s
     return {name: _disk_usage(path) for name, path in paths.items()}
 
 
-def _extension_status(extension_dir: Path | None, *, expected_policy_mode: str) -> dict[str, Any]:
+def _process_arg_secrecy(main_pid: int | None, runner: CommandRunner, *, api_token: str) -> dict[str, Any]:
+    if not main_pid or main_pid <= 0:
+        return {"checked": False, "reason": "no-main-pid"}
+    result = runner(["ps", "-p", str(main_pid), "-o", "args="], 10)
+    args_text = result.stdout or ""
+    return {
+        "checked": result.exit_code == 0,
+        "exit_code": result.exit_code,
+        "token_literal_present": bool(api_token and api_token in args_text),
+        "api_token_assignment_present": "BMD_API_TOKEN=" in args_text,
+    }
+
+
+def _install_artifact_status(
+    config: RuntimeConfig,
+    *,
+    token_file: Path,
+    env_file: Path,
+    unit_dir: Path,
+    extension_dir: Path | None,
+) -> dict[str, Any]:
+    token_state, expected_api_token = _token_file_state(token_file, runtime_api_token=config.api_token)
+    return {
+        "expected_api_token": expected_api_token,
+        "token_file": token_state,
+        "env_file": _env_file_state(env_file, expected_api_token=expected_api_token),
+        "unit_dir": str(unit_dir),
+        "unit_files": {
+            unit: _unit_file_state(unit_dir / unit, unit=unit, expected_api_token=expected_api_token)
+            for unit in DAILY_DRIVER_UNITS
+        },
+        "extension_dir": str(extension_dir) if extension_dir else None,
+    }
+
+
+def _token_file_state(path: Path, *, runtime_api_token: str) -> tuple[dict[str, Any], str | None]:
+    state = _basic_file_state(path)
+    if not path.exists():
+        state.update({"non_empty": False, "owner_only_permissions": False, "matches_runtime_token": False})
+        return state, None
+    try:
+        raw = path.read_text(encoding="utf-8", errors="replace")
+    except OSError as exc:
+        state.update({"non_empty": False, "owner_only_permissions": False, "matches_runtime_token": False, "error": _safe_error(exc)})
+        return state, None
+    token = raw.strip()
+    state.update(
+        {
+            "non_empty": bool(token),
+            "line_count": len([line for line in raw.splitlines() if line.strip()]),
+            "owner_only_permissions": _owner_only_permissions(path),
+            "matches_runtime_token": bool(token and token == runtime_api_token),
+        }
+    )
+    return state, token or None
+
+
+def _env_file_state(path: Path, *, expected_api_token: str | None) -> dict[str, Any]:
+    state = _basic_file_state(path)
+    if not path.exists():
+        state.update({"owner_only_permissions": False, "api_token_assignment_present": False, "matches_token_file": False})
+        return state
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError as exc:
+        state.update({"owner_only_permissions": False, "api_token_assignment_present": False, "matches_token_file": False, "error": _safe_error(exc)})
+        return state
+    state.update(
+        {
+            "owner_only_permissions": _owner_only_permissions(path),
+            "api_token_assignment_present": "BMD_API_TOKEN=" in text,
+            "policy_mode_assignment_present": "BMD_POLICY_MODE=" in text,
+            "pythonpath_assignment_present": "PYTHONPATH=" in text,
+            "matches_token_file": bool(expected_api_token and f"BMD_API_TOKEN={expected_api_token}" in text),
+        }
+    )
+    return state
+
+
+def _unit_file_state(path: Path, *, unit: str, expected_api_token: str | None) -> dict[str, Any]:
+    state = _basic_file_state(path)
+    expected_command = _DAILY_DRIVER_UNIT_COMMANDS.get(unit, "")
+    if not path.exists():
+        state.update({"uses_environment_file": False, "expected_execstart_present": False, "token_literal_present": False, "api_token_assignment_present": False})
+        return state
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError as exc:
+        state.update({"uses_environment_file": False, "expected_execstart_present": False, "token_literal_present": False, "api_token_assignment_present": False, "error": _safe_error(exc)})
+        return state
+    exec_lines = [line for line in text.splitlines() if line.startswith("ExecStart=")]
+    state.update(
+        {
+            "uses_environment_file": "EnvironmentFile=%h/.config/browser-memory-daemon/env" in text,
+            "expected_execstart_present": bool(expected_command and any(expected_command in line for line in exec_lines)),
+            "token_literal_present": bool(expected_api_token and expected_api_token in text),
+            "api_token_assignment_present": any("BMD_API_TOKEN" in line for line in exec_lines),
+        }
+    )
+    return state
+
+
+def _basic_file_state(path: Path) -> dict[str, Any]:
+    state: dict[str, Any] = {"path": str(path), "exists": path.exists(), "bytes": _file_size(path)}
+    try:
+        mode = stat.S_IMODE(path.stat().st_mode) if path.exists() else None
+    except OSError:
+        mode = None
+    state["mode_octal"] = f"{mode:04o}" if mode is not None else None
+    return state
+
+
+def _owner_only_permissions(path: Path) -> bool:
+    try:
+        mode = stat.S_IMODE(path.stat().st_mode)
+    except OSError:
+        return False
+    return (mode & 0o077) == 0
+
+
+def _extension_status(extension_dir: Path | None, *, expected_policy_mode: str, expected_api_token: str | None = None) -> dict[str, Any]:
     if extension_dir is None:
         return {"ok": False, "exists": False, "error": "extension directory could not be inferred"}
     manifest_path = extension_dir / "manifest.json"
@@ -402,15 +546,16 @@ def _extension_status(extension_dir: Path | None, *, expected_policy_mode: str) 
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
             manifest_error = _safe_error(exc)
-    token_files = {rel: _extension_file_state(extension_dir / rel, expected_policy_mode=expected_policy_mode) for rel in _EXTENSION_TOKEN_FILES}
+    token_files = {rel: _extension_file_state(extension_dir / rel, expected_policy_mode=expected_policy_mode, expected_api_token=expected_api_token) for rel in _EXTENSION_TOKEN_FILES}
     files = {
         "manifest.json": {"exists": manifest_path.exists(), "bytes": _file_size(manifest_path)},
         **{rel: {"exists": (extension_dir / rel).exists(), "bytes": _file_size(extension_dir / rel)} for rel in _EXTENSION_TOKEN_FILES},
     }
     token_configured = all(state.get("api_token_configured") for state in token_files.values())
+    token_matches = all(state.get("api_token_matches_expected") for state in token_files.values()) if expected_api_token else None
     policy_modes = {rel: state.get("policy_mode_default") for rel, state in token_files.items()}
     policy_matches = all(mode == expected_policy_mode for mode in policy_modes.values() if mode)
-    ok = extension_dir.exists() and manifest_path.exists() and not manifest_error and token_configured and policy_matches
+    ok = extension_dir.exists() and manifest_path.exists() and not manifest_error and token_configured and policy_matches and token_matches is not False
     output: dict[str, Any] = {
         "ok": ok,
         "path": str(extension_dir),
@@ -418,6 +563,7 @@ def _extension_status(extension_dir: Path | None, *, expected_policy_mode: str) 
         "manifest": _select_keys(manifest, ("manifest_version", "name", "version")) if manifest else {},
         "files": files,
         "api_token_configured": token_configured,
+        "api_token_matches_token_file": token_matches,
         "policy_mode_defaults": policy_modes,
         "expected_policy_mode": expected_policy_mode,
     }
@@ -429,7 +575,7 @@ def _extension_status(extension_dir: Path | None, *, expected_policy_mode: str) 
     return output
 
 
-def _extension_file_state(path: Path, *, expected_policy_mode: str) -> dict[str, Any]:
+def _extension_file_state(path: Path, *, expected_policy_mode: str, expected_api_token: str | None) -> dict[str, Any]:
     state: dict[str, Any] = {"exists": path.exists()}
     if not path.exists():
         return state
@@ -439,7 +585,10 @@ def _extension_file_state(path: Path, *, expected_policy_mode: str) -> dict[str,
         state["error"] = _safe_error(exc)
         return state
     token_matches = re.findall(r"apiToken:\s*(['\"])(.*?)\1", text)
-    state["api_token_configured"] = any(value for _quote, value in token_matches)
+    token_values = [value for _quote, value in token_matches]
+    state["api_token_configured"] = any(token_values)
+    if expected_api_token is not None:
+        state["api_token_matches_expected"] = any(value == expected_api_token for value in token_values)
     policy_match = re.search(r"policyMode:\s*['\"]([^'\"]+)['\"]", text)
     state["policy_mode_default"] = policy_match.group(1) if policy_match else None
     state["policy_mode_matches_expected"] = state["policy_mode_default"] == expected_policy_mode
@@ -490,6 +639,9 @@ def _score_systemd(systemd: dict[str, Any], errors: list[str], warnings: list[st
         restarts = state.get("n_restarts")
         if isinstance(restarts, int) and restarts > 0:
             warnings.append(f"{unit} reports NRestarts={restarts}")
+        process = state.get("process_arg_secrecy") or {}
+        if process.get("token_literal_present") or process.get("api_token_assignment_present"):
+            errors.append(f"{unit} appears to expose token material in process arguments")
 
 
 def _score_journals(journals: dict[str, Any], errors: list[str], warnings: list[str]) -> None:
@@ -525,6 +677,46 @@ def _score_storage(storage: dict[str, Any], warnings: list[str]) -> None:
             warnings.append(f"storage path {name} is {used_percent}% used")
 
 
+def _score_install_artifacts(install: dict[str, Any], errors: list[str], warnings: list[str]) -> None:
+    token = install.get("token_file") or {}
+    if not token.get("exists"):
+        errors.append("daily-driver token file is missing")
+    elif not token.get("non_empty"):
+        errors.append("daily-driver token file is empty")
+    elif not token.get("owner_only_permissions"):
+        errors.append("daily-driver token file permissions are not owner-only")
+    if token.get("line_count", 1) != 1:
+        warnings.append("daily-driver token file should contain exactly one non-empty line")
+    if token.get("exists") and not token.get("matches_runtime_token"):
+        warnings.append("daily-driver token file does not match the token used for this health check")
+
+    env_file = install.get("env_file") or {}
+    if not env_file.get("exists"):
+        errors.append("daily-driver environment file is missing")
+    else:
+        if not env_file.get("owner_only_permissions"):
+            errors.append("daily-driver environment file permissions are not owner-only")
+        if not env_file.get("api_token_assignment_present"):
+            errors.append("daily-driver environment file is missing BMD_API_TOKEN")
+        if not env_file.get("matches_token_file"):
+            errors.append("daily-driver environment token does not match token file")
+        if not env_file.get("policy_mode_assignment_present"):
+            warnings.append("daily-driver environment file is missing BMD_POLICY_MODE")
+        if not env_file.get("pythonpath_assignment_present"):
+            warnings.append("daily-driver environment file is missing PYTHONPATH")
+
+    for unit, state in (install.get("unit_files") or {}).items():
+        if not state.get("exists"):
+            errors.append(f"daily-driver unit file is missing: {unit}")
+            continue
+        if not state.get("uses_environment_file"):
+            errors.append(f"{unit} does not use the protected EnvironmentFile")
+        if not state.get("expected_execstart_present"):
+            errors.append(f"{unit} ExecStart does not match the expected daily-driver command")
+        if state.get("token_literal_present") or state.get("api_token_assignment_present"):
+            errors.append(f"{unit} contains token material in the unit ExecStart")
+
+
 def _score_extension(extension: dict[str, Any], errors: list[str], warnings: list[str]) -> None:
     if not extension.get("exists"):
         errors.append("Windows extension artifact directory is missing")
@@ -533,6 +725,8 @@ def _score_extension(extension: dict[str, Any], errors: list[str], warnings: lis
         errors.append("Windows extension manifest is missing or invalid")
     if not extension.get("api_token_configured"):
         errors.append("Windows extension artifact does not have a configured API token default")
+    if extension.get("api_token_matches_token_file") is False:
+        errors.append("Windows extension artifact token defaults do not match the WSL token file")
     expected = extension.get("expected_policy_mode")
     for rel, mode in extension.get("policy_mode_defaults", {}).items():
         if mode != expected:

@@ -27,16 +27,95 @@ HOST="${BMD_HOST:-127.0.0.1}"
 PORT="${BMD_PORT:-8765}"
 POLICY_MODE="${BMD_POLICY_MODE:-all}"
 PS="${BMD_POWERSHELL:-/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe}"
+MODE=install
+
+usage() {
+  cat <<'EOF'
+Usage: scripts/install-daily-driver.sh [--dry-run|--check]
+
+Install/refresh writes protected WSL config, systemd user units, and the
+Windows-local unpacked extension artifact, then restarts services.
+
+Modes:
+  --dry-run  Validate inputs and print the planned writes; make no changes.
+  --check    Run the redaction-safe daily-driver health/artifact check only;
+             do not build, copy, write units, rotate tokens, or restart services.
+EOF
+}
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --dry-run) MODE=dry-run ;;
+    --check) MODE=check ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "Unknown argument: $1" >&2; usage >&2; exit 2 ;;
+  esac
+  shift
+done
 
 if [ ! -x "$PY" ]; then
   echo "Python runtime not executable: $PY" >&2
   exit 1
 fi
 
+PY_VERSION="$($PY - <<'PY'
+import sys
+if sys.version_info < (3, 11):
+    raise SystemExit(f"Python 3.11+ is required, got {sys.version.split()[0]}")
+print(sys.version.split()[0])
+PY
+)" || {
+  "$PY" --version >&2 || true
+  exit 1
+}
+
 case "$POLICY_MODE" in
   all|recall|balanced|strict) ;;
   *) echo "BMD_POLICY_MODE must be one of: all, recall, balanced, strict" >&2; exit 1 ;;
 esac
+
+if [ "$MODE" = "dry-run" ]; then
+  cat <<EOF
+Daily-driver install dry run; no files, services, or Chrome artifacts will be changed.
+
+Resolved inputs:
+  Python: $PY ($PY_VERSION)
+  Policy mode: $POLICY_MODE
+  Host/port: $HOST:$PORT
+  Config dir: $CFG_DIR
+  Data dir: $DATA_DIR
+  State dir: $STATE_DIR
+  Token file: $TOKEN_FILE
+  Environment file: $ENV_FILE
+  Daemon unit: $UNIT_FILE
+  Media-worker unit: $WORKER_UNIT_FILE
+  Windows extension artifact dir: $EXT_DIR
+
+Install/refresh would:
+  - create protected WSL config/data/state directories;
+  - create or reuse the token file, or rotate it if BMD_ROTATE_TOKEN=1;
+  - write the protected EnvironmentFile with BMD_API_TOKEN and BMD_POLICY_MODE;
+  - write systemd user units that read the EnvironmentFile instead of passing tokens in ExecStart;
+  - build extension/dist, copy it to the Windows-local artifact dir, and patch token/policy defaults there;
+  - daemon-reload, enable/restart both user services, then verify WSL and Windows loopback health.
+
+Chrome still requires the manual reload step after a real install:
+  chrome://extensions → Browser Memory Daemon → Reload
+EOF
+  exit 0
+fi
+
+if [ "$MODE" = "check" ]; then
+  if [ ! -s "$TOKEN_FILE" ]; then
+    echo "Browser Memory Daemon token file missing or empty: $TOKEN_FILE" >&2
+    exit 1
+  fi
+  TOKEN="$(tr -d '\r\n' < "$TOKEN_FILE")"
+  cd "$ROOT"
+  BMD_API_TOKEN="$TOKEN" PYTHONPATH="$ROOT/daemon/src${PYTHONPATH:+:$PYTHONPATH}" \
+    exec "$PY" -m browser_memory_daemon --host "$HOST" --port "$PORT" --policy-mode "$POLICY_MODE" \
+      daily-driver-health --extension-dir "$EXT_DIR"
+fi
 
 mkdir -p "$CFG_DIR" "$DATA_DIR" "$STATE_DIR" "$UNIT_DIR" "$EXT_DIR"
 chmod 700 "$CFG_DIR"

@@ -201,15 +201,23 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 
 <p>The installer:</p>
 <ol>
-<li>validates <code>BMD_POLICY_MODE</code>;</li>
+<li>validates <code>BMD_POLICY_MODE</code> and the Python 3.11+ runtime;</li>
 <li>builds the MV3 extension;</li>
 <li>copies it to the Windows-local extension directory;</li>
 <li>creates or reuses the daemon token;</li>
-<li>writes protected WSL env with <code>BMD_POLICY_MODE</code>;</li>
-<li>writes/enables/restarts the <code>systemd --user</code> daemon and media-worker services;</li>
+<li>writes protected WSL env with <code>BMD_API_TOKEN</code>, <code>BMD_POLICY_MODE</code>, and <code>PYTHONPATH</code>;</li>
+<li>writes/enables/restarts <code>systemd --user</code> daemon and media-worker services whose <code>ExecStart</code> values do not carry token material;</li>
 <li>preconfigures the Windows extension copy with token and policy mode;</li>
 <li>verifies WSL and Windows loopback health.</li>
 </ol>
+<p>Non-mutating install preview:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_POLICY_MODE</span><span style="color: #FF4689">=</span>all<span style="color: #F8F8F2"> </span>./scripts/install-daily-driver.sh<span style="color: #F8F8F2"> </span>--dry-run
+</code></pre></div>
+
+<p>Read-only installed-state check, with no rebuild/copy/unit writes/restarts:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>./scripts/install-daily-driver.sh<span style="color: #F8F8F2"> </span>--check
+</code></pre></div>
+
 <p>Rotate token and refresh extension copy:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_ROTATE_TOKEN</span><span style="color: #FF4689">=</span><span style="color: #AE81FF">1</span><span style="color: #F8F8F2"> BMD_POLICY_MODE</span><span style="color: #FF4689">=</span>all<span style="color: #F8F8F2"> </span>./scripts/install-daily-driver.sh
 </code></pre></div>
@@ -227,7 +235,8 @@ Extension path: %LOCALAPPDATA%\browser-memory-daemon\extension
 <p>Direct <code>Preferences</code> / <code>Secure Preferences</code> JSON transplant was tested and rejected by Chrome on launch. Chrome protects extension entries with legacy MACs and encrypted hashes; invalid entries are removed. Use Chrome's own <strong>Load unpacked</strong> / <strong>Reload</strong> flow.</p>
 <hr />
 <h2 id="verify-service">Verify service</h2>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>systemctl<span style="color: #F8F8F2"> </span>--user<span style="color: #F8F8F2"> </span>status<span style="color: #F8F8F2"> </span>browser-memory-daemon.service
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>./scripts/daily-driver-health.sh
+systemctl<span style="color: #F8F8F2"> </span>--user<span style="color: #F8F8F2"> </span>status<span style="color: #F8F8F2"> </span>browser-memory-daemon.service
 systemctl<span style="color: #F8F8F2"> </span>--user<span style="color: #F8F8F2"> </span>status<span style="color: #F8F8F2"> </span>browser-memory-media-worker.service
 journalctl<span style="color: #F8F8F2"> </span>--user<span style="color: #F8F8F2"> </span>-u<span style="color: #F8F8F2"> </span>browser-memory-daemon.service<span style="color: #F8F8F2"> </span>-n<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">50</span><span style="color: #F8F8F2"> </span>--no-pager
 journalctl<span style="color: #F8F8F2"> </span>--user<span style="color: #F8F8F2"> </span>-u<span style="color: #F8F8F2"> </span>browser-memory-media-worker.service<span style="color: #F8F8F2"> </span>-n<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">50</span><span style="color: #F8F8F2"> </span>--no-pager
@@ -245,6 +254,7 @@ journalctl<span style="color: #F8F8F2"> </span>--user<span style="color: #F8F8F2
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">{</span><span style="color: #FF4689">&quot;ok&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #66D9EF">true</span><span style="color: #F8F8F2">, </span><span style="color: #FF4689">&quot;capture_enabled&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #66D9EF">true</span><span style="color: #F8F8F2">, </span><span style="color: #FF4689">&quot;policy_mode&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;all&quot;</span><span style="color: #F8F8F2">}</span>
 </code></pre></div>
 
+<p>The aggregate health JSON also checks that <code>~/.config/browser-memory-daemon/token</code> and <code>env</code> are owner-only, that the environment file token matches the token file, that the unit files use the protected <code>EnvironmentFile</code>, that service process arguments do not expose token material, and that the Windows extension artifact token defaults match the token file. Token values are not printed.</p>
 <hr />
 <h2 id="local-ui">Local UI</h2>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>http://127.0.0.1:8765/ui

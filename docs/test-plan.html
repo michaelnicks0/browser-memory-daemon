@@ -205,6 +205,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>popup/options support pause, health, dashboard, block/forget domain, policy mode.</td>
 </tr>
 <tr>
+<td>REQ-015A daily-driver install consistency</td>
+<td><code>daemon/tests/e2e/test_daily_driver_install.py</code> and <code>daemon/tests/unit/test_daily_driver_health.py</code> cover non-mutating installer dry-run, protected token/env files, service process-argument secrecy, unit expectations, and extension token matching.</td>
+</tr>
+<tr>
 <td>REQ-016 local UI</td>
 <td>admin API tests verify <code>/ui</code> asset serving and UI-backed API surfaces.</td>
 </tr>

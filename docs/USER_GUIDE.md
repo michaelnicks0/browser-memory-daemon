@@ -42,7 +42,7 @@ Use Python 3.11+ for CLI/dev commands. If the host `python3` is older, run `pyth
 
 ## Daily-driver state checks
 
-One redaction-safe snapshot command covers WSL services, loopback health from WSL and Windows, recent systemd journal warning/error counts, SQLite integrity/freshness/counts, media-queue aggregates, storage headroom, and the Windows extension artifact state:
+One redaction-safe snapshot command covers WSL services, loopback health from WSL and Windows, recent systemd journal warning/error counts, SQLite integrity/freshness/counts, media-queue aggregates, storage headroom, protected token/env files, service process-argument secrecy, unit-file expectations, and the Windows extension artifact state:
 
 ```bash
 ./scripts/daily-driver-health.sh
@@ -81,6 +81,18 @@ Expected health includes:
 ```bash
 cd ~/repos/workstation/browser-memory-daemon
 BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
+```
+
+Preview the install without writing files, copying artifacts, or restarting services:
+
+```bash
+BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh --dry-run
+```
+
+Check the current installed stack without rebuilding/copying/restarting:
+
+```bash
+./scripts/install-daily-driver.sh --check
 ```
 
 Then reload the unpacked extension in Chrome:
