@@ -12,6 +12,7 @@ import urllib.request
 from browser_memory_daemon.app import make_server
 from browser_memory_daemon.config import load_config
 from browser_memory_daemon.db import connect, init_db
+import browser_memory_daemon.media as media_module
 from browser_memory_daemon.ingest import ingest_capture
 from browser_memory_daemon.media import claim_media_fetch_tasks, fetch_pending_media_artifacts, media_artifacts_for_snapshot, purge_media_cache, store_media_artifact, store_media_blob_stream
 from browser_memory_daemon.media_worker import normalize_cdp_covered_blob_video_refs, normalize_cdp_hls_manifest_refs, normalize_hls_audio_renditions, normalize_hls_video_skips, normalize_legacy_blob_video_skips, normalize_opaque_blob_video_refs, normalize_snapshot_budget_skips, normalize_storage_budget_skips, normalize_terminal_failed_artifacts, run_once
@@ -491,6 +492,36 @@ def test_media_worker_stores_hls_master_playlist_as_video_mp4(tmp_path):
             assert media["has_file"] is True
             file_row = conn.execute("SELECT file_path FROM media_artifacts WHERE id = ?", (media["id"],)).fetchone()
             assert open(file_row["file_path"], "rb").read() == expected_bytes
+
+
+def test_hls_assembly_uses_single_deadline_across_segments(monkeypatch):
+    clock = {"now": 100.0}
+    fetched: list[str] = []
+
+    def monotonic() -> float:
+        return clock["now"]
+
+    def fake_fetch_hls_asset(source_url: str, page_url: str, *, max_bytes: int, timeout_seconds: float) -> tuple[bytes, str]:
+        fetched.append(source_url)
+        clock["now"] += 2.0
+        return b"segment", ""
+
+    monkeypatch.setattr(media_module.time, "monotonic", monotonic)
+    monkeypatch.setattr(media_module, "_fetch_hls_asset", fake_fetch_hls_asset)
+
+    content, mime_type, reason = media_module._hls_playlist_to_media(
+        "https://media.example/playlist.m3u8",
+        "https://example.com/page",
+        "#EXTM3U\n#EXTINF:1.0,\nseg1.ts\n#EXTINF:1.0,\nseg2.ts\n#EXT-X-ENDLIST\n",
+        max_bytes=100,
+        timeout_seconds=10,
+        deadline=101.0,
+    )
+
+    assert content == b""
+    assert mime_type == ""
+    assert reason == "hls-time-budget-exceeded"
+    assert fetched == ["https://media.example/seg1.ts"]
 
 
 def test_media_worker_requeues_legacy_hls_video_unsupported_skips(tmp_path):

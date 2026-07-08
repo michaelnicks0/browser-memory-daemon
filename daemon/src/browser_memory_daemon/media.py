@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 import re
 import sqlite3
+import time
 import uuid
 from typing import Any
 from urllib.error import HTTPError, URLError
@@ -955,8 +956,11 @@ def _hls_playlist_to_media(
     *,
     max_bytes: int,
     timeout_seconds: float,
+    deadline: float | None = None,
     depth: int = 0,
 ) -> tuple[bytes, str, str]:
+    if _hls_deadline_expired(deadline):
+        return b"", "", "hls-time-budget-exceeded"
     if depth > 3:
         return b"", "", "hls-depth-exceeded"
     if not playlist_text.lstrip().startswith("#EXTM3U"):
@@ -965,7 +969,9 @@ def _hls_playlist_to_media(
     if variants:
         last_reason = "hls-no-video-variant"
         for _, variant_url in variants:
-            variant_text, reason = _fetch_hls_playlist(variant_url, page_url, timeout_seconds=timeout_seconds)
+            if _hls_deadline_expired(deadline):
+                return b"", "", "hls-time-budget-exceeded"
+            variant_text, reason = _fetch_hls_playlist(variant_url, page_url, timeout_seconds=_remaining_hls_timeout(timeout_seconds, deadline))
             if reason:
                 last_reason = reason
                 continue
@@ -974,7 +980,8 @@ def _hls_playlist_to_media(
                 page_url,
                 variant_text,
                 max_bytes=max_bytes,
-                timeout_seconds=timeout_seconds,
+                timeout_seconds=_remaining_hls_timeout(timeout_seconds, deadline),
+                deadline=deadline,
                 depth=depth + 1,
             )
             if not reason:
@@ -1005,14 +1012,18 @@ def _hls_playlist_to_media(
     content_parts: list[bytes] = []
     total = 0
     if init_url:
-        init_content, reason = _fetch_hls_asset(init_url, page_url, max_bytes=max_bytes, timeout_seconds=timeout_seconds)
+        if _hls_deadline_expired(deadline):
+            return b"", "", "hls-time-budget-exceeded"
+        init_content, reason = _fetch_hls_asset(init_url, page_url, max_bytes=max_bytes, timeout_seconds=_remaining_hls_timeout(timeout_seconds, deadline))
         if reason:
             return b"", "", reason
         content_parts.append(init_content)
         total += len(init_content)
 
     for segment_url in segment_urls:
-        segment, reason = _fetch_hls_asset(segment_url, page_url, max_bytes=max_bytes - total, timeout_seconds=timeout_seconds)
+        if _hls_deadline_expired(deadline):
+            return b"", "", "hls-time-budget-exceeded"
+        segment, reason = _fetch_hls_asset(segment_url, page_url, max_bytes=max_bytes - total, timeout_seconds=_remaining_hls_timeout(timeout_seconds, deadline))
         if reason:
             return b"", "", reason
         total += len(segment)
@@ -1033,9 +1044,19 @@ def _hls_playlist_to_media(
     return joined, "video/mp2t", ""
 
 
-def _fetch_hls_media_bytes(source_url: str, page_url: str, playlist_content: bytes, *, max_bytes: int, timeout_seconds: float) -> tuple[bytes, str, str]:
+def _hls_deadline_expired(deadline: float | None) -> bool:
+    return deadline is not None and time.monotonic() >= deadline
+
+
+def _remaining_hls_timeout(timeout_seconds: float, deadline: float | None) -> float:
+    if deadline is None:
+        return timeout_seconds
+    return max(0.001, min(timeout_seconds, deadline - time.monotonic()))
+
+
+def _fetch_hls_media_bytes(source_url: str, page_url: str, playlist_content: bytes, *, max_bytes: int, timeout_seconds: float, deadline: float | None = None) -> tuple[bytes, str, str]:
     playlist_text = playlist_content.decode("utf-8", "replace")
-    return _hls_playlist_to_media(source_url, page_url, playlist_text, max_bytes=max_bytes, timeout_seconds=timeout_seconds)
+    return _hls_playlist_to_media(source_url, page_url, playlist_text, max_bytes=max_bytes, timeout_seconds=timeout_seconds, deadline=deadline)
 
 
 def _fetch_media_bytes(source_url: str, page_url: str, *, media_type: str, max_bytes: int, timeout_seconds: float) -> tuple[bytes, str, str]:
@@ -1049,6 +1070,7 @@ def _fetch_media_bytes(source_url: str, page_url: str, *, media_type: str, max_b
         page_url,
         accept="image/avif,image/webp,image/apng,image/svg+xml,image/*,video/*,application/vnd.apple.mpegurl,application/x-mpegURL,*/*;q=0.8",
     )
+    deadline = time.monotonic() + max(0.001, timeout_seconds)
     try:
         with urlopen(request, timeout=timeout_seconds) as response:
             raw_content_type = response.headers.get("content-type", "")
@@ -1065,7 +1087,8 @@ def _fetch_media_bytes(source_url: str, page_url: str, *, media_type: str, max_b
                     page_url,
                     content,
                     max_bytes=max_bytes,
-                    timeout_seconds=timeout_seconds,
+                    timeout_seconds=_remaining_hls_timeout(timeout_seconds, deadline),
+                    deadline=deadline,
                 )
             return content, response_mime, ""
     except HTTPError as exc:
