@@ -29,6 +29,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0019](0019-use-durable-text-retention-with-wal-aware-local-backup.md) | accepted | Use durable text retention with WAL-aware local backup and disposable media cache. |
 | [ADR-0020](0020-enforce-static-requirement-traceability-gate.md) | accepted | Enforce static requirement traceability in the generated test inventory gate. |
 | [ADR-0021](0021-use-configurable-nas-blob-root-with-local-sqlite.md) | accepted | Use a configurable NAS-capable blob root while keeping SQLite/WAL local. |
+| [ADR-0022](0022-use-fast-doctor-and-media-queue-health-telemetry.md) | accepted | Use fast doctor and media-queue health telemetry. |
 
 ## Backfilled decision history
 

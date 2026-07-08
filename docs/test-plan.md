@@ -30,7 +30,7 @@
 | REQ-016 local UI | admin API tests verify `/ui` asset serving and UI-backed API surfaces; `daemon/tests/e2e/test_ui_dashboard_smoke.py` verifies token bootstrap parsing, core panels, empty/error states, and initial dashboard API calls through a low-dependency DOM harness. |
 | REQ-017 CLI | `daemon/tests/e2e/test_cli_admin.py` covers read/admin commands. |
 | REQ-018 audit logging | API paths write metadata-only audit events. |
-| REQ-019 doctor | `/doctor` and CLI doctor verify DB integrity, FTS consistency, paths, counts, and policy mode. |
+| REQ-019 doctor | `/doctor` and CLI doctor verify DB integrity, FTS consistency, paths, policy mode, fast DB-derived storage counts, and opt-in filesystem storage census. |
 | REQ-020 artifact boundary | `.gitignore` and `scripts/secret-scan.sh`. |
 | REQ-021 Windows browser e2e | `scripts/run-real-chrome-e2e.sh` synthetic allowed/SPA/banking/local scenarios plus public media, cookie-required media, and synthetic `blob:` video artifacts. |
 | REQ-022 durable media sidecars | `test_media_worker.py`, `media_queue.test.js`, `service_worker.test.js` media upload retry coverage, HTTP raw blob/purge tests, real Chrome media e2e. |

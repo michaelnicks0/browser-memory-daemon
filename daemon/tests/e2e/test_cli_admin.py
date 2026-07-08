@@ -59,6 +59,12 @@ def test_cli_admin_commands(cli_server, capsys, monkeypatch):
     assert main(_base_args(cli_server) + ["doctor"]) == 0
     doctor = _last_json(capsys)
     assert doctor["ok"] is True
+    assert doctor["storage"]["census_mode"] == "db-derived"
+
+    assert main(_base_args(cli_server) + ["doctor", "--storage-census"]) == 0
+    full_doctor = _last_json(capsys)
+    assert full_doctor["ok"] is True
+    assert full_doctor["storage"]["census_mode"] == "filesystem"
 
     assert main(_base_args(cli_server) + ["policy-rules", "--block-domain", "cli-block.example"]) == 0
     rule = _last_json(capsys)

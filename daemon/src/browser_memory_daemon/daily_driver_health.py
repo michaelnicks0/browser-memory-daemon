@@ -421,27 +421,165 @@ def _freshness(conn: sqlite3.Connection) -> dict[str, Any]:
 
 
 def _media_queue_aggregates(conn: sqlite3.Connection) -> dict[str, Any]:
+    due_where = """
+            status IN ('pending','retrying')
+              AND (next_attempt_at IS NULL OR datetime(next_attempt_at) <= CURRENT_TIMESTAMP)
+    """
+    stale_lease_where = """
+            lease_until IS NOT NULL
+              AND datetime(lease_until) < CURRENT_TIMESTAMP
+              AND status IN ('fetching','uploading','leased')
+    """
     return {
         "artifact_status_counts": _group_counts(conn, "media_artifacts", "capture_status"),
         "task_status_counts": _group_counts(conn, "media_fetch_tasks", "status"),
-        "due_pending_or_retrying": _safe_scalar(
-            conn,
-            """
-            SELECT COUNT(*) FROM media_fetch_tasks
-            WHERE status IN ('pending','retrying')
-              AND (next_attempt_at IS NULL OR next_attempt_at <= CURRENT_TIMESTAMP)
-            """,
-        ),
-        "stale_leases": _safe_scalar(
-            conn,
-            """
-            SELECT COUNT(*) FROM media_fetch_tasks
-            WHERE lease_until IS NOT NULL
-              AND lease_until < CURRENT_TIMESTAMP
-              AND status IN ('fetching','uploading','leased')
-            """,
-        ),
+        "due_pending_or_retrying": _safe_scalar(conn, f"SELECT COUNT(*) FROM media_fetch_tasks WHERE {due_where}"),
+        "due_by_status": _status_counts_for_where(conn, "media_fetch_tasks", "status", due_where),
+        "due_by_artifact_status": _due_by_artifact_status(conn, due_where),
+        **_oldest_due_summary(conn, due_where),
+        "stale_leases": _safe_scalar(conn, f"SELECT COUNT(*) FROM media_fetch_tasks WHERE {stale_lease_where}"),
+        **_oldest_stale_lease_summary(conn, stale_lease_where),
+        "latest_worker_run": _latest_media_worker_run(conn),
+        "worker_throughput": _media_worker_throughput(conn),
     }
+
+
+def _status_counts_for_where(conn: sqlite3.Connection, table: str, column: str, where_sql: str) -> dict[str, int]:
+    try:
+        rows = conn.execute(
+            f"SELECT {column} AS value, COUNT(*) AS count FROM {table} WHERE {where_sql} GROUP BY {column} ORDER BY {column}"
+        ).fetchall()
+        return {str(row["value"]): int(row["count"]) for row in rows}
+    except sqlite3.Error:
+        return {}
+
+
+def _due_by_artifact_status(conn: sqlite3.Connection, where_sql: str) -> list[dict[str, Any]]:
+    try:
+        rows = conn.execute(
+            f"""
+            SELECT COALESCE(media_artifacts.capture_status, 'unknown') AS capture_status,
+                   COALESCE(media_artifacts.media_type, 'unknown') AS media_type,
+                   COUNT(*) AS tasks
+            FROM media_fetch_tasks
+            LEFT JOIN media_artifacts ON media_artifacts.id = media_fetch_tasks.artifact_id
+            WHERE {where_sql}
+            GROUP BY media_artifacts.capture_status, media_artifacts.media_type
+            ORDER BY tasks DESC, capture_status, media_type
+            LIMIT 20
+            """
+        ).fetchall()
+        return [
+            {"capture_status": str(row["capture_status"]), "media_type": str(row["media_type"]), "tasks": int(row["tasks"])}
+            for row in rows
+        ]
+    except sqlite3.Error:
+        return []
+
+
+def _oldest_due_summary(conn: sqlite3.Connection, where_sql: str) -> dict[str, Any]:
+    return _oldest_timestamp_summary(
+        conn,
+        f"""
+        SELECT MIN(datetime(COALESCE(next_attempt_at, created_at))) AS oldest_at,
+               CAST(strftime('%s', 'now') - strftime('%s', MIN(datetime(COALESCE(next_attempt_at, created_at)))) AS INTEGER) AS age_seconds
+        FROM media_fetch_tasks
+        WHERE {where_sql}
+        """,
+        timestamp_key="oldest_due_at",
+        age_key="oldest_due_age_seconds",
+    )
+
+
+def _oldest_stale_lease_summary(conn: sqlite3.Connection, where_sql: str) -> dict[str, Any]:
+    return _oldest_timestamp_summary(
+        conn,
+        f"""
+        SELECT MIN(datetime(lease_until)) AS oldest_at,
+               CAST(strftime('%s', 'now') - strftime('%s', MIN(datetime(lease_until))) AS INTEGER) AS age_seconds
+        FROM media_fetch_tasks
+        WHERE {where_sql}
+        """,
+        timestamp_key="oldest_stale_lease_until",
+        age_key="oldest_stale_lease_age_seconds",
+    )
+
+
+def _oldest_timestamp_summary(conn: sqlite3.Connection, sql: str, *, timestamp_key: str, age_key: str) -> dict[str, Any]:
+    try:
+        row = conn.execute(sql).fetchone()
+    except sqlite3.Error:
+        return {timestamp_key: None, age_key: None}
+    if not row or row["oldest_at"] is None:
+        return {timestamp_key: None, age_key: None}
+    return {timestamp_key: row["oldest_at"], age_key: max(0, int(row["age_seconds"] or 0))}
+
+
+def _latest_media_worker_run(conn: sqlite3.Connection) -> dict[str, Any] | None:
+    try:
+        row = conn.execute(
+            """
+            SELECT created_at,
+                   metadata_json,
+                   CAST(strftime('%s', 'now') - strftime('%s', datetime(created_at)) AS INTEGER) AS age_seconds
+            FROM audit_events
+            WHERE event_type = 'media.worker.run_once'
+            ORDER BY datetime(created_at) DESC, created_at DESC
+            LIMIT 1
+            """
+        ).fetchone()
+    except sqlite3.Error:
+        return None
+    if row is None:
+        return None
+    metadata = _safe_json_dict(row["metadata_json"])
+    output: dict[str, Any] = {
+        "created_at": row["created_at"],
+        "age_seconds": max(0, int(row["age_seconds"] or 0)),
+    }
+    for key in ("worker_kind", "attempted", "stored", "failed", "skipped", "already_stored"):
+        if key in metadata:
+            output[key] = metadata[key]
+    return output
+
+
+def _media_worker_throughput(conn: sqlite3.Connection) -> dict[str, dict[str, int]]:
+    return {
+        "1h": _media_worker_window(conn, "-1 hour"),
+        "24h": _media_worker_window(conn, "-24 hours"),
+    }
+
+
+def _media_worker_window(conn: sqlite3.Connection, sqlite_modifier: str) -> dict[str, int]:
+    totals = {"runs": 0, "attempted": 0, "stored": 0, "failed": 0, "skipped": 0, "already_stored": 0}
+    try:
+        rows = conn.execute(
+            """
+            SELECT metadata_json
+            FROM audit_events
+            WHERE event_type = 'media.worker.run_once'
+              AND datetime(created_at) >= datetime('now', ?)
+            """,
+            (sqlite_modifier,),
+        ).fetchall()
+    except sqlite3.Error:
+        return totals
+    totals["runs"] = len(rows)
+    for row in rows:
+        metadata = _safe_json_dict(row["metadata_json"])
+        for key in ("attempted", "stored", "failed", "skipped", "already_stored"):
+            totals[key] += _safe_int(metadata.get(key)) or 0
+    return totals
+
+
+def _safe_json_dict(raw: Any) -> dict[str, Any]:
+    if not isinstance(raw, str) or not raw:
+        return {}
+    try:
+        value = json.loads(raw)
+    except json.JSONDecodeError:
+        return {}
+    return value if isinstance(value, dict) else {}
 
 
 def _storage_status(config: RuntimeConfig, extension_dir: Path | None) -> dict[str, Any]:

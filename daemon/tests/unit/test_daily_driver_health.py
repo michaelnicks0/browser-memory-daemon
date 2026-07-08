@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 import browser_memory_daemon.daily_driver_health as health
@@ -144,6 +145,87 @@ def test_daily_driver_health_snapshot_is_aggregate_and_redaction_safe(tmp_path):
     assert "https://secret.example/path/to/blob" not in rendered
     assert "<url>" in rendered
     assert "Bearer <redacted>" in rendered
+
+
+def test_daily_driver_health_media_queue_uses_datetime_comparisons_and_reports_worker_throughput(tmp_path):
+    cfg = load_config(runtime_root=tmp_path / "runtime", test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    current_utc = datetime.now(timezone.utc).replace(microsecond=0)
+    current_iso = current_utc.isoformat().replace("+00:00", "Z")
+    with connect(cfg.db_path) as conn:
+        conn.execute(
+            """
+            INSERT INTO documents(id, canonical_url, normalized_url, domain, title, first_seen_at, last_seen_at)
+            VALUES ('doc_health_media', 'https://example.test/media', 'https://example.test/media', 'example.test', 'Media', ?, ?)
+            """,
+            (current_iso, current_iso),
+        )
+        conn.execute(
+            """
+            INSERT INTO snapshots(id, document_id, captured_at, extraction_method, text_hash)
+            VALUES ('snap_health_media', 'doc_health_media', ?, 'dom', 'hash-health-media')
+            """,
+            (current_iso,),
+        )
+        for artifact_id, media_type in (("media_due", "image"), ("media_leased", "video")):
+            conn.execute(
+                """
+                INSERT INTO media_artifacts(
+                  id, document_id, snapshot_id, media_type, role, source_url,
+                  normalized_source_url, page_url, capture_status
+                ) VALUES (?, 'doc_health_media', 'snap_health_media', ?, 'content', ?, ?, 'https://example.test/media', 'referenced')
+                """,
+                (artifact_id, media_type, f"https://cdn.example.test/{artifact_id}.bin", f"https://cdn.example.test/{artifact_id}.bin"),
+            )
+        conn.execute(
+            """
+            INSERT INTO media_fetch_tasks(
+              id, artifact_id, worker_kind, status, priority, attempts, max_attempts,
+              next_attempt_at, lease_owner, lease_until, created_at, updated_at
+            ) VALUES (
+              'task_due', 'media_due', 'daemon-public', 'pending', 50, 0, 5,
+              '2000-01-01T00:00:00Z', NULL, NULL, '2000-01-01 00:00:00', '2000-01-01 00:00:00'
+            )
+            """
+        )
+        conn.execute(
+            """
+            INSERT INTO media_fetch_tasks(
+              id, artifact_id, worker_kind, status, priority, attempts, max_attempts,
+              next_attempt_at, lease_owner, lease_until, created_at, updated_at
+            ) VALUES (
+              'task_leased', 'media_leased', 'daemon-public', 'leased', 50, 0, 5,
+              NULL, 'stale-worker', '2000-01-01T00:00:00Z', '2000-01-01 00:00:00', '2000-01-01 00:00:00'
+            )
+            """
+        )
+        conn.execute(
+            """
+            INSERT INTO audit_events(id, event_type, metadata_json, created_at)
+            VALUES ('audit_worker_health', 'media.worker.run_once', ?, ?)
+            """,
+            (
+                json.dumps({"attempted": 25, "stored": 16, "failed": 0, "skipped": 5}),
+                current_utc.strftime("%Y-%m-%d %H:%M:%S"),
+            ),
+        )
+        conn.commit()
+
+        queue = health._media_queue_aggregates(conn)
+
+    assert queue["due_pending_or_retrying"] == 1
+    assert queue["due_by_status"] == {"pending": 1}
+    assert queue["due_by_artifact_status"] == [{"capture_status": "referenced", "media_type": "image", "tasks": 1}]
+    assert queue["oldest_due_at"] == "2000-01-01 00:00:00"
+    assert queue["oldest_due_age_seconds"] > 0
+    assert queue["stale_leases"] == 1
+    assert queue["oldest_stale_lease_until"] == "2000-01-01 00:00:00"
+    assert queue["oldest_stale_lease_age_seconds"] > 0
+    assert queue["latest_worker_run"]["attempted"] == 25
+    assert queue["latest_worker_run"]["stored"] == 16
+    assert queue["latest_worker_run"]["age_seconds"] >= 0
+    assert queue["worker_throughput"]["1h"]["runs"] == 1
+    assert queue["worker_throughput"]["1h"]["attempted"] == 25
 
 
 def test_daily_driver_health_detects_missing_extension_token(tmp_path):

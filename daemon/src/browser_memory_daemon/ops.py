@@ -229,7 +229,7 @@ def snapshot_detail(conn: sqlite3.Connection, snapshot_id: str, *, max_text_char
     }
 
 
-def doctor(config: RuntimeConfig, conn: sqlite3.Connection) -> dict[str, Any]:
+def doctor(config: RuntimeConfig, conn: sqlite3.Connection, *, storage_census: bool = False) -> dict[str, Any]:
     tables = [
         "sources",
         "documents",
@@ -251,20 +251,7 @@ def doctor(config: RuntimeConfig, conn: sqlite3.Connection) -> dict[str, Any]:
     missing_fts = conn.execute(
         "SELECT COUNT(*) AS n FROM chunks WHERE id NOT IN (SELECT chunk_id FROM chunks_fts)"
     ).fetchone()["n"]
-    storage_files = 0
-    storage_bytes = 0
-    if config.clean_text_root.exists():
-        for path in config.clean_text_root.rglob("*"):
-            if path.is_file():
-                storage_files += 1
-                storage_bytes += path.stat().st_size
-    media_files = 0
-    media_bytes = 0
-    if config.media_root.exists():
-        for path in config.media_root.rglob("*"):
-            if path.is_file():
-                media_files += 1
-                media_bytes += path.stat().st_size
+    storage = _doctor_storage(config, conn, storage_census=storage_census)
     return {
         "ok": integrity == "ok" and missing_fts == 0,
         "version": __version__,
@@ -279,14 +266,57 @@ def doctor(config: RuntimeConfig, conn: sqlite3.Connection) -> dict[str, Any]:
             "media_root": str(config.media_root),
         },
         "database": {"exists": config.db_path.exists(), "integrity_check": integrity, "counts": counts, "chunks_missing_fts": missing_fts},
-        "storage": {
-            "clean_text_files": storage_files,
-            "clean_text_bytes": storage_bytes,
-            "media_files": media_files,
-            "media_bytes": media_bytes,
-        },
+        "storage": storage,
         "media_queue": media_queue_status(conn, config, limit=25),
     }
+
+
+def _doctor_storage(config: RuntimeConfig, conn: sqlite3.Connection, *, storage_census: bool) -> dict[str, Any]:
+    if not storage_census:
+        clean = conn.execute(
+            """
+            SELECT COUNT(DISTINCT cleaned_text_path) AS files,
+                   COALESCE(SUM(LENGTH(text)), 0) AS bytes
+            FROM snapshots
+            LEFT JOIN chunks ON chunks.snapshot_id = snapshots.id
+            WHERE COALESCE(cleaned_text_path, '') != ''
+            """
+        ).fetchone()
+        media = conn.execute(
+            """
+            SELECT COUNT(DISTINCT file_path) AS files,
+                   COALESCE(SUM(byte_size), 0) AS bytes
+            FROM media_artifacts
+            WHERE COALESCE(file_path, '') != ''
+            """
+        ).fetchone()
+        return {
+            "census_mode": "db-derived",
+            "clean_text_files": int(clean["files"] or 0),
+            "clean_text_bytes": int(clean["bytes"] or 0),
+            "media_files": int(media["files"] or 0),
+            "media_bytes": int(media["bytes"] or 0),
+        }
+    clean_files, clean_bytes = _filesystem_census(config.clean_text_root)
+    media_files, media_bytes = _filesystem_census(config.media_root)
+    return {
+        "census_mode": "filesystem",
+        "clean_text_files": clean_files,
+        "clean_text_bytes": clean_bytes,
+        "media_files": media_files,
+        "media_bytes": media_bytes,
+    }
+
+
+def _filesystem_census(root: Path) -> tuple[int, int]:
+    files = 0
+    bytes_total = 0
+    if root.exists():
+        for path in root.rglob("*"):
+            if path.is_file():
+                files += 1
+                bytes_total += path.stat().st_size
+    return files, bytes_total
 
 
 def _capture_row(row: sqlite3.Row) -> dict[str, Any]:

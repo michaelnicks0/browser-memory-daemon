@@ -54,7 +54,7 @@ Missing or invalid bearer tokens return `401`; malformed JSON and invalid payloa
 | `/policy/rules/{rule_id}` | `DELETE` | Delete a policy rule. | Yes |
 | `/policy/evaluate?url=...` | `GET` | Explain static + local capture decision. | Yes |
 | `/forget` | `POST` | Forget by URL or domain and return a deletion receipt. | Yes |
-| `/doctor` | `GET` | DB integrity, FTS consistency, storage counts, runtime paths. | Yes |
+| `/doctor[?storage_census=full]` | `GET` | DB integrity, FTS consistency, runtime paths, media queue, and fast DB-derived storage counts; optional filesystem census walks blob roots. | Yes |
 
 ---
 
@@ -70,6 +70,41 @@ Missing or invalid bearer tokens return `401`; malformed JSON and invalid payloa
   "policy_mode": "all"
 }
 ```
+
+---
+
+## Doctor response
+
+`/doctor` is the fast authenticated diagnostic endpoint. By default it reports storage counts from SQLite metadata so routine checks do not recursively walk large clean-text/media roots:
+
+```http
+GET /doctor
+Authorization: Bearer ***
+```
+
+```json
+{
+  "ok": true,
+  "database": {"integrity_check": "ok", "chunks_missing_fts": 0},
+  "storage": {
+    "census_mode": "db-derived",
+    "clean_text_files": 2,
+    "clean_text_bytes": 12345,
+    "media_files": 10,
+    "media_bytes": 987654
+  },
+  "media_queue": {"artifacts": {"stored": 10}, "tasks": {"succeeded": 10}}
+}
+```
+
+When exact filesystem file counts are needed, opt in explicitly:
+
+```http
+GET /doctor?storage_census=full
+Authorization: Bearer ***
+```
+
+Full storage census returns `storage.census_mode="filesystem"` and walks `clean_text_root` plus `media_root`; it can be slow on large NAS-backed blob roots.
 
 ---
 
@@ -210,7 +245,7 @@ GET /media-artifacts/queue-status?limit=50
 Authorization: Bearer ***
 ```
 
-The response includes artifact/task status counts, stored-byte totals, recent non-stored artifacts, and live cache gates (`max_media_artifact_bytes`, `max_media_bytes_per_snapshot`, `max_media_bytes_per_domain`, `max_media_cache_bytes`, MIME allowlist, priority floor, and cache pressure).
+The response includes artifact/task status counts, stored-byte totals, recent non-stored artifacts, and live cache gates (`max_media_artifact_bytes`, `max_media_bytes_per_snapshot`, `max_media_bytes_per_domain`, `max_media_cache_bytes`, MIME allowlist, priority floor, and cache pressure). The daily-driver health snapshot additionally derives due-task, oldest-due, stale-lease, latest-worker-run, and 1h/24h worker-throughput telemetry from the same task/audit tables using SQLite datetime comparisons, so mixed `CURRENT_TIMESTAMP` and ISO-`T` timestamps are compared as times rather than strings.
 
 Purge local media blob cache without deleting text/FTS/ref rows:
 

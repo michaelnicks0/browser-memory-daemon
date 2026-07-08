@@ -172,6 +172,10 @@ def _coerce_limit(value, default: int, maximum: int) -> int:
     return max(1, min(parsed, maximum))
 
 
+def _truthy_query_value(value: str | None) -> bool:
+    return str(value or "").strip().lower() in {"1", "true", "yes", "full", "filesystem"}
+
+
 def _ensure_db(config: RuntimeConfig) -> None:
     # Request handlers still ensure the schema exists, but they must not run the
     # legacy media-task backfill on every capture/event. That backfill can scan
@@ -339,8 +343,9 @@ def make_handler(config: RuntimeConfig):
                     return
                 if parsed.path == "/doctor":
                     _ensure_db(config)
+                    storage_census = _truthy_query_value(params.get("storage_census", [None])[0])
                     with connect(config.db_path) as conn:
-                        result = doctor(config, conn)
+                        result = doctor(config, conn, storage_census=storage_census)
                         audit(conn, "doctor", {"ok": result["ok"]})
                         conn.commit()
                     _json_response(self, 200, result)

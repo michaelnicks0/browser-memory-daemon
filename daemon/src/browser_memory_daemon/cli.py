@@ -36,7 +36,8 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("serve")
     sub.add_parser("health")
-    sub.add_parser("doctor")
+    doctor_cmd = sub.add_parser("doctor")
+    doctor_cmd.add_argument("--storage-census", action="store_true", help="walk clean-text/media roots for exact file counts; default uses DB-derived counts")
     daily_health = sub.add_parser("daily-driver-health")
     daily_health.add_argument("--journal-since", default="24 hours ago")
     daily_health.add_argument("--extension-dir")
@@ -146,7 +147,8 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(_request("GET", f"{base}/snapshots/{snapshot_id}", token=cfg.api_token), indent=2))
         return 0
     if args.command == "doctor":
-        print(json.dumps(_request("GET", f"{base}/doctor", token=cfg.api_token), indent=2))
+        q = "?storage_census=full" if args.storage_census else ""
+        print(json.dumps(_request("GET", f"{base}/doctor{q}", token=cfg.api_token), indent=2))
         return 0
     if args.command == "daily-driver-health":
         result = daily_driver_health_snapshot(

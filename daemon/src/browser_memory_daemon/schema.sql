@@ -226,7 +226,9 @@ CREATE INDEX IF NOT EXISTS idx_media_artifacts_content_sha256 ON media_artifacts
 CREATE INDEX IF NOT EXISTS idx_media_artifacts_capture_status ON media_artifacts(capture_status);
 CREATE INDEX IF NOT EXISTS idx_media_artifacts_status_created ON media_artifacts(capture_status, created_at DESC, id);
 CREATE INDEX IF NOT EXISTS idx_media_fetch_tasks_status_next ON media_fetch_tasks(status, next_attempt_at, priority);
+CREATE INDEX IF NOT EXISTS idx_media_fetch_tasks_status_lease ON media_fetch_tasks(status, lease_until);
 CREATE INDEX IF NOT EXISTS idx_media_fetch_tasks_artifact ON media_fetch_tasks(artifact_id);
+CREATE INDEX IF NOT EXISTS idx_audit_events_type_created ON audit_events(event_type, created_at DESC);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_privacy_rules_semantics ON privacy_rules(rule_type, pattern, action);
 CREATE INDEX IF NOT EXISTS idx_chunks_document_id ON chunks(document_id);
 CREATE INDEX IF NOT EXISTS idx_chunks_document_snapshot_chunk_index ON chunks(document_id, snapshot_id, chunk_index);

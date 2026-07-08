@@ -48,7 +48,7 @@ One redaction-safe snapshot command covers WSL services, loopback health from WS
 ./scripts/daily-driver-health.sh
 ```
 
-The command prints JSON and exits non-zero when a hard health error is present. It does **not** dump captured page text, snippets, cookies, bearer tokens, raw captured URLs, or extension token values. Warnings such as due media retries are reported in `summary.warnings` while still producing a zero exit when the stack is otherwise healthy. Default storage thresholds are warning below 5 GB free or 90% used and hard error below 1 GB free or 98% used; restart/start-failure budgets warn at 3 and hard-fail at 10. Override these locally with `BMD_HEALTH_HEADROOM_*` and `BMD_HEALTH_SERVICE_*` environment variables when a small VM or test filesystem needs different bounds.
+The command prints JSON and exits non-zero when a hard health error is present. It does **not** dump captured page text, snippets, cookies, bearer tokens, raw captured URLs, or extension token values. Warnings such as due media retries are reported in `summary.warnings` while still producing a zero exit when the stack is otherwise healthy. The media-queue section reports due task counts by task/artifact status, oldest-due age, stale lease age, latest media-worker run, and 1h/24h worker throughput. Default storage thresholds are warning below 5 GB free or 90% used and hard error below 1 GB free or 98% used; restart/start-failure budgets warn at 3 and hard-fail at 10. Override these locally with `BMD_HEALTH_HEADROOM_*` and `BMD_HEALTH_SERVICE_*` environment variables when a small VM or test filesystem needs different bounds.
 
 Manual spot checks, if you need to isolate a layer:
 
@@ -59,6 +59,14 @@ systemctl --user is-enabled browser-memory-daemon.service
 systemctl --user is-enabled browser-memory-media-worker.service
 PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" doctor
+```
+
+`doctor` defaults to fast DB-derived storage counts. If you need exact file counts after a storage migration or manual cleanup, opt in to the slower filesystem walk:
+
+```bash
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
+  --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
+  doctor --storage-census
 ```
 
 Windows loopback check from WSL:

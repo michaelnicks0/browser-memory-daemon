@@ -116,6 +116,13 @@ def test_admin_read_apis_and_ui_assets(server):
     assert doctor["ok"] is True
     assert doctor["database"]["counts"]["documents"] == 2
     assert doctor["storage"]["clean_text_files"] == 2
+    assert doctor["storage"]["census_mode"] == "db-derived"
+
+    status, full_doctor = request("GET", f"{server}/doctor?storage_census=full")
+    assert status == 200
+    assert full_doctor["ok"] is True
+    assert full_doctor["storage"]["census_mode"] == "filesystem"
+    assert full_doctor["storage"]["clean_text_files"] == 2
 
 
 def test_policy_rule_blocks_future_capture_and_can_be_deleted(server):

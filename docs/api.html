@@ -291,9 +291,9 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Yes</td>
 </tr>
 <tr>
-<td><code>/doctor</code></td>
+<td><code>/doctor[?storage_census=full]</code></td>
 <td style="text-align: right;"><code>GET</code></td>
-<td>DB integrity, FTS consistency, storage counts, runtime paths.</td>
+<td>DB integrity, FTS consistency, runtime paths, media queue, and fast DB-derived storage counts; optional filesystem census walks blob roots.</td>
 <td>Yes</td>
 </tr>
 </tbody>
@@ -310,6 +310,33 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <span style="color: #F8F8F2">}</span>
 </code></pre></div>
 
+<hr />
+<h2 id="doctor-response">Doctor response</h2>
+<p><code>/doctor</code> is the fast authenticated diagnostic endpoint. By default it reports storage counts from SQLite metadata so routine checks do not recursively walk large clean-text/media roots:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #ED007E; background-color: #1E0010">GET /doctor</span>
+<span style="color: #ED007E; background-color: #1E0010">Authorization: Bearer ***</span>
+</code></pre></div>
+
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">{</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;ok&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #66D9EF">true</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;database&quot;</span><span style="color: #F8F8F2">: {</span><span style="color: #FF4689">&quot;integrity_check&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;ok&quot;</span><span style="color: #F8F8F2">, </span><span style="color: #FF4689">&quot;chunks_missing_fts&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">0</span><span style="color: #F8F8F2">},</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;storage&quot;</span><span style="color: #F8F8F2">: {</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;census_mode&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;db-derived&quot;</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;clean_text_files&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">2</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;clean_text_bytes&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">12345</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;media_files&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">10</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;media_bytes&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">987654</span>
+<span style="color: #F8F8F2">  },</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;media_queue&quot;</span><span style="color: #F8F8F2">: {</span><span style="color: #FF4689">&quot;artifacts&quot;</span><span style="color: #F8F8F2">: {</span><span style="color: #FF4689">&quot;stored&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">10</span><span style="color: #F8F8F2">}, </span><span style="color: #FF4689">&quot;tasks&quot;</span><span style="color: #F8F8F2">: {</span><span style="color: #FF4689">&quot;succeeded&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">10</span><span style="color: #F8F8F2">}}</span>
+<span style="color: #F8F8F2">}</span>
+</code></pre></div>
+
+<p>When exact filesystem file counts are needed, opt in explicitly:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #ED007E; background-color: #1E0010">GET /doctor?storage_census=full</span>
+<span style="color: #ED007E; background-color: #1E0010">Authorization: Bearer ***</span>
+</code></pre></div>
+
+<p>Full storage census returns <code>storage.census_mode="filesystem"</code> and walks <code>clean_text_root</code> plus <code>media_root</code>; it can be slow on large NAS-backed blob roots.</p>
 <hr />
 <h2 id="capture-payload">Capture payload</h2>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">{</span>
@@ -427,7 +454,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <span style="color: #ED007E; background-color: #1E0010">Authorization: Bearer ***</span>
 </code></pre></div>
 
-<p>The response includes artifact/task status counts, stored-byte totals, recent non-stored artifacts, and live cache gates (<code>max_media_artifact_bytes</code>, <code>max_media_bytes_per_snapshot</code>, <code>max_media_bytes_per_domain</code>, <code>max_media_cache_bytes</code>, MIME allowlist, priority floor, and cache pressure).</p>
+<p>The response includes artifact/task status counts, stored-byte totals, recent non-stored artifacts, and live cache gates (<code>max_media_artifact_bytes</code>, <code>max_media_bytes_per_snapshot</code>, <code>max_media_bytes_per_domain</code>, <code>max_media_cache_bytes</code>, MIME allowlist, priority floor, and cache pressure). The daily-driver health snapshot additionally derives due-task, oldest-due, stale-lease, latest-worker-run, and 1h/24h worker-throughput telemetry from the same task/audit tables using SQLite datetime comparisons, so mixed <code>CURRENT_TIMESTAMP</code> and ISO-<code>T</code> timestamps are compared as times rather than strings.</p>
 <p>Purge local media blob cache without deleting text/FTS/ref rows:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #ED007E; background-color: #1E0010">POST /media-artifacts/purge-cache</span>
 <span style="color: #ED007E; background-color: #1E0010">Authorization: Bearer ***</span>

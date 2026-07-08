@@ -38,7 +38,7 @@ Global defaults:
 |---|---|---|
 | `serve` | Start the loopback daemon. | Human startup line; process stays running. |
 | `health` | Fetch `/health`. | Raw JSON string. |
-| `doctor` | Fetch `/doctor`. | Pretty JSON. |
+| `doctor [--storage-census]` | Fetch `/doctor`; default uses fast DB-derived storage counts, `--storage-census` opts into an exact filesystem walk. | Pretty JSON. |
 | `daily-driver-health [--journal-since WINDOW] [--extension-dir PATH] [--powershell PATH] [--skip-windows-loopback] [--no-fail]` | Redaction-safe daily-driver snapshot across services, loopback, journals, DB freshness, media queue, storage, and extension artifact state. | Pretty JSON. Exits non-zero on hard errors unless `--no-fail` is set. |
 | `recent --limit N` | Recent captures. | Pretty JSON list. |
 | `timeline [--date YYYY-MM-DD] [--after ISO] [--before ISO] [--limit N]` | Capture timeline. | Pretty JSON. |
