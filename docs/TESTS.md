@@ -5,7 +5,7 @@
 > **Runtime:** Python **3.11+** (`pyproject.toml` requires `>=3.11`). Use `BMD_PYTHON=/path/to/python3.11` when the host `python3` is older.
 
 <!-- BEGIN GENERATED:inventory-summary -->
-> **Current inventory:** 116 static test functions across 24 files — 89 daemon pytest tests + 27 extension node:test tests.
+> **Current inventory:** 119 static test functions across 24 files — 92 daemon pytest tests + 27 extension node:test tests.
 <!-- END GENERATED:inventory-summary -->
 
 ---
@@ -73,7 +73,7 @@ Use `--runtime-root PATH` only for explicit fixture roots; do not point the stre
 ## Generated test inventory
 
 <!-- BEGIN GENERATED:audit-run -->
-Latest inventory: **116 static test functions** across **24 files** (89 daemon pytest; 27 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
+Latest inventory: **119 static test functions** across **24 files** (92 daemon pytest; 27 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
 <!-- END GENERATED:audit-run -->
 
 ## Requirements traceability gate
@@ -87,7 +87,7 @@ Traceability gate: **✅ pass**.
 | Test-plan requirement rows found | 24 |
 | Missing architecture requirements in `docs/test-plan.md` | none |
 | Unresolved file/test references in `docs/test-plan.md` | none |
-| Static test inventory measured | 116 tests / 24 files |
+| Static test inventory measured | 119 tests / 24 files |
 <!-- END GENERATED:traceability-gate -->
 
 ### Per-file counts
@@ -100,7 +100,7 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/e2e/test_daily_driver_install.py` | pytest | 1 |
 | `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | 2 |
 | `daemon/tests/e2e/test_http_api.py` | pytest | 5 |
-| `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | 2 |
+| `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | 5 |
 | `daemon/tests/e2e/test_read_model_indexes.py` | pytest | 1 |
 | `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | 3 |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | 22 |
@@ -118,7 +118,7 @@ Traceability gate: **✅ pass**.
 | `extension/tests/unit/queue.test.js` | node:test | 1 |
 | `extension/tests/unit/service_worker.test.js` | node:test | 4 |
 | `extension/tests/unit/shared.test.js` | node:test | 2 |
-| **Total** |  | **116** |
+| **Total** |  | **119** |
 <!-- END GENERATED:per-file-counts -->
 
 <details>
@@ -141,8 +141,11 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_search_forget_round_trip` | 162 | Http capture search forget round trip. |
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_api_contract_errors_methods_and_limits_are_json` | 268 | Http api contract errors methods and limits are json. |
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_policy_rule_duplicate_creation_returns_existing_semantic_rule` | 312 | Http policy rule duplicate creation returns existing semantic rule. |
-| `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_json_output_is_structured` | 8 | Performance benchmark json output is structured. |
-| `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_human_summary_is_compact` | 44 | Performance benchmark human summary is compact. |
+| `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_path_invariant_rejects_blob_escape` | 47 | Performance benchmark path invariant rejects blob escape. |
+| `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_subprocess_does_not_write_default_home_blob_root` | 64 | Performance benchmark subprocess does not write default home blob root. |
+| `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_temp_runtime_cleanup_stays_inside_tmp_home` | 99 | Performance benchmark temp runtime cleanup stays inside tmp home. |
+| `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_json_output_is_structured` | 131 | Performance benchmark json output is structured. |
+| `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_human_summary_is_compact` | 168 | Performance benchmark human summary is compact. |
 | `daemon/tests/e2e/test_read_model_indexes.py` | pytest | `(module)` | `test_read_model_ordered_queries_use_schema_indexes` | 12 | Read model ordered queries use schema indexes. |
 | `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | `(module)` | `test_ui_dashboard_shell_serves_bootstrap_and_core_panels` | 37 | Ui dashboard shell serves bootstrap and core panels. |
 | `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | `(module)` | `test_ui_dashboard_static_asset_path_traversal_is_rejected` | 70 | Ui dashboard static asset path traversal is rejected. |

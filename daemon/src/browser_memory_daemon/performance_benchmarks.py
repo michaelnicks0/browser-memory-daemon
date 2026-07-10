@@ -118,15 +118,50 @@ def _measure_once(label: str, fn: Callable[[], Any], *, count_fn: Callable[[Any]
     return metric, result
 
 
+def _resolve_path(path: Path) -> Path:
+    return path.expanduser().resolve(strict=False)
+
+
+def _benchmark_paths(config: RuntimeConfig) -> dict[str, Path]:
+    return {
+        "config_root": config.config_root,
+        "data_root": config.data_root,
+        "state_root": config.state_root,
+        "blob_root": config.blob_root,
+        "db_path": config.db_path,
+        "clean_text_root": config.clean_text_root,
+        "raw_html_root": config.raw_html_root,
+        "media_root": config.media_root,
+        "audit_log_path": config.audit_log_path,
+    }
+
+
+def _assert_benchmark_paths_contained(config: RuntimeConfig, runtime_root: Path) -> dict[str, str]:
+    resolved_root = _resolve_path(runtime_root)
+    violations: dict[str, str] = {}
+    resolved_paths: dict[str, str] = {}
+    for name, path in _benchmark_paths(config).items():
+        resolved = _resolve_path(path)
+        resolved_paths[name] = str(resolved)
+        if not resolved.is_relative_to(resolved_root):
+            violations[name] = str(resolved)
+    if violations:
+        formatted = ", ".join(f"{name}={path}" for name, path in sorted(violations.items()))
+        raise RuntimeError(f"benchmark path containment failed for runtime {resolved_root}: {formatted}")
+    return {"runtime_root": str(resolved_root), **resolved_paths}
+
+
 def _benchmark_config(runtime_root: Path) -> RuntimeConfig:
     cfg = RuntimeConfig(
         api_token="benchmark-token",
         policy_mode="all",
         config_root=runtime_root / "config",
         data_root=runtime_root / "data",
+        blob_root=runtime_root / "blobs",
         state_root=runtime_root / "state",
         media_fetch_timeout_seconds=1.0,
     )
+    _assert_benchmark_paths_contained(cfg, runtime_root)
     cfg.ensure_dirs()
     return cfg
 
@@ -387,14 +422,17 @@ def _advisory_budget_checks(benchmarks: dict[str, Any]) -> dict[str, Any]:
 
 def run_benchmark(options: BenchmarkOptions) -> dict[str, Any]:
     cleanup = False
+    config: RuntimeConfig | None = None
     if options.runtime_root is None:
         runtime_root = Path(tempfile.mkdtemp(prefix="browser-memory-benchmark-"))
+        (runtime_root / ".benchmark-runtime-root").write_text("browser-memory-daemon synthetic benchmark\n", encoding="utf-8")
         cleanup = not options.keep_runtime_root
     else:
         runtime_root = options.runtime_root.expanduser().resolve()
         runtime_root.mkdir(parents=True, exist_ok=True)
-    config = _benchmark_config(runtime_root)
     try:
+        config = _benchmark_config(runtime_root)
+        containment = _assert_benchmark_paths_contained(config, runtime_root)
         init_db(config)
         with connect(config.db_path) as conn:
             ingest = _ingest_dataset(conn, config, options)
@@ -437,7 +475,7 @@ def run_benchmark(options: BenchmarkOptions) -> dict[str, Any]:
                 "media_every": options.media_every,
                 "captured_text_source": "deterministic synthetic generator; no live captured text fixtures",
             },
-            "runtime": {"runtime_root": str(runtime_root), "runtime_root_retained": not cleanup},
+            "runtime": {**containment, "runtime_root_retained": not cleanup},
             "counts": counts,
             "benchmarks": benchmarks,
             "storage": storage,
@@ -446,7 +484,21 @@ def run_benchmark(options: BenchmarkOptions) -> dict[str, Any]:
         return result
     finally:
         if cleanup:
-            shutil.rmtree(runtime_root, ignore_errors=True)
+            _cleanup_benchmark_runtime(runtime_root, config)
+
+
+def _cleanup_benchmark_runtime(runtime_root: Path, config: RuntimeConfig | None) -> None:
+    resolved_root = _resolve_path(runtime_root)
+    if resolved_root.is_symlink() or not resolved_root.is_dir():
+        raise RuntimeError(f"refusing to remove non-directory benchmark runtime root: {resolved_root}")
+    if not resolved_root.name.startswith("browser-memory-benchmark-"):
+        raise RuntimeError(f"refusing to remove unexpected benchmark runtime root: {resolved_root}")
+    marker = resolved_root / ".benchmark-runtime-root"
+    if not marker.is_file():
+        raise RuntimeError(f"refusing to remove unmarked benchmark runtime root: {resolved_root}")
+    if config is not None:
+        _assert_benchmark_paths_contained(config, resolved_root)
+    shutil.rmtree(resolved_root)
 
 
 def human_summary(result: dict[str, Any]) -> str:
