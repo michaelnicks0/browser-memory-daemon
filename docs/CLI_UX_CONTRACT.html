@@ -202,6 +202,16 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Hard spool cap. A positive value and spool root must be configured together.</td>
 </tr>
 <tr>
+<td><code>BMD_MAX_MEDIA_INFLIGHT_BYTES</code></td>
+<td><code>524288000</code></td>
+<td>Positive per-process cap for active media transfer bytes; must be at least <code>BMD_MAX_MEDIA_ARTIFACT_BYTES</code>.</td>
+</tr>
+<tr>
+<td><code>BMD_MAX_MEDIA_CONCURRENT_REQUESTS</code></td>
+<td><code>4</code></td>
+<td>Positive per-process cap for active media HTTP requests/transfers.</td>
+</tr>
+<tr>
 <td><code>BMD_MEDIA_ROOT_IDENTITY</code></td>
 <td>unset</td>
 <td>Expected exact content of <code>.bmd-media-root-id</code>; required for guarded external roots.</td>

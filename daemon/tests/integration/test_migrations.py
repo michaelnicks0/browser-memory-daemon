@@ -59,6 +59,7 @@ def _drop_snapshot_text_authority(conn: sqlite3.Connection) -> None:
 
 def _drop_media_storage_tiers(conn: sqlite3.Connection) -> None:
     conn.execute("DROP TABLE IF EXISTS blob_storage_records")
+    conn.execute("DROP TABLE IF EXISTS media_cache_reservations")
     conn.execute("DROP TABLE media_spool_reservations")
     conn.execute("ALTER TABLE media_artifacts DROP COLUMN spool_locator")
     conn.execute("ALTER TABLE media_artifacts DROP COLUMN storage_tier")
@@ -242,12 +243,13 @@ def test_version_twelve_normalizes_historical_media_state_once(tmp_path):
             """,
             task_rows,
         )
-        conn.execute("DELETE FROM schema_migrations WHERE version = 12")
+        conn.execute("DROP TABLE media_cache_reservations")
+        conn.execute("DELETE FROM schema_migrations WHERE version >= 12")
         conn.execute("PRAGMA user_version = 11")
         conn.commit()
 
     result = migrate_database(cfg, execute=True)
-    assert result["applied_versions"] == [12]
+    assert result["applied_versions"] == [12, 13]
     with connect(cfg.db_path) as conn:
         statuses = {
             row["id"]: (row["capture_status"], row["status_reason"])
@@ -277,6 +279,47 @@ def test_version_twelve_normalizes_historical_media_state_once(tmp_path):
 
     repeated = migrate_database(cfg, execute=True)
     assert repeated["applied_versions"] == []
+
+
+def test_version_thirteen_adds_cache_reservations_from_exact_prior_schema(tmp_path):
+    cfg = _config(tmp_path)
+    init_db(cfg)
+    with connect(cfg.db_path) as conn:
+        conn.execute("DROP TABLE media_cache_reservations")
+        conn.execute("DELETE FROM schema_migrations WHERE version = 13")
+        conn.execute("PRAGMA user_version = 12")
+        conn.commit()
+
+    before = migration_status(cfg)
+    assert before["current_version"] == 12
+    assert before["pending_versions"] == [13]
+    result = migrate_database(cfg, execute=True)
+    assert result["applied_versions"] == [13]
+    with connect(cfg.db_path) as conn:
+        columns = {
+            row["name"] for row in conn.execute("PRAGMA table_info(media_cache_reservations)").fetchall()
+        }
+        assert columns == {
+            "reservation_id",
+            "artifact_id",
+            "document_id",
+            "snapshot_id",
+            "domain",
+            "reserved_bytes",
+            "owner_pid",
+            "owner_start_token",
+            "expires_at",
+            "created_at",
+        }
+        foreign_keys = {
+            row["from"]: (row["table"], row["on_delete"])
+            for row in conn.execute("PRAGMA foreign_key_list(media_cache_reservations)")
+        }
+        assert foreign_keys == {
+            "document_id": ("documents", "CASCADE"),
+            "snapshot_id": ("snapshots", "CASCADE"),
+        }
+        assert schema_fingerprint(conn) == MIGRATIONS[-1].schema_fingerprint
 
 
 def test_capture_observation_and_url_claim_schema_enforces_expand_contract(tmp_path):
@@ -366,9 +409,9 @@ def test_version_three_fixture_upgrades_once_to_capture_model_expand_schema(tmp_
 
     before = migration_status(cfg)
     assert before["current_version"] == 3
-    assert before["pending_versions"] == [4, 5, 6, 7, 8, 9, 10, 11, 12]
+    assert before["pending_versions"] == [4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
     result = migrate_database(cfg, execute=True)
-    assert result["applied_versions"] == [4, 5, 6, 7, 8, 9, 10, 11, 12]
+    assert result["applied_versions"] == [4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
     with connect(cfg.db_path) as conn:
         tables = {
             row["name"]
@@ -815,13 +858,14 @@ def test_version_eleven_adds_and_backfills_blob_lifecycle_records(tmp_path):
             (capture["document_id"], capture["snapshot_id"]),
         )
         conn.execute("DROP TABLE blob_storage_records")
+        conn.execute("DROP TABLE media_cache_reservations")
         conn.execute("DELETE FROM schema_migrations WHERE version >= 11")
         conn.execute("PRAGMA user_version = 10")
 
     pending = migration_status(cfg)
-    assert pending["pending_versions"] == [11, 12]
+    assert pending["pending_versions"] == [11, 12, 13]
     result = migrate_database(cfg, execute=True)
-    assert result["applied_versions"] == [11, 12]
+    assert result["applied_versions"] == [11, 12, 13]
     with connect(cfg.db_path) as conn:
         rows = [
             dict(row)

@@ -37,6 +37,8 @@ Global defaults:
 | `--media-root` / `BMD_MEDIA_ROOT` | `<blob-root>/media` | Final disposable media bytes. Explicit external roots require mount and identity-marker verification. |
 | `--media-spool-root` / `BMD_MEDIA_SPOOL_ROOT` | disabled | Local durable outage spool; must be under the runtime data root and paired with positive `BMD_MAX_MEDIA_SPOOL_BYTES`. |
 | `BMD_MAX_MEDIA_SPOOL_BYTES` | `0` | Hard spool cap. A positive value and spool root must be configured together. |
+| `BMD_MAX_MEDIA_INFLIGHT_BYTES` | `524288000` | Positive per-process cap for active media transfer bytes; must be at least `BMD_MAX_MEDIA_ARTIFACT_BYTES`. |
+| `BMD_MAX_MEDIA_CONCURRENT_REQUESTS` | `4` | Positive per-process cap for active media HTTP requests/transfers. |
 | `BMD_MEDIA_ROOT_IDENTITY` | unset | Expected exact content of `.bmd-media-root-id`; required for guarded external roots. |
 | `BMD_REQUIRE_MEDIA_ROOT_MOUNT` | `0` | Forces mount/identity guarding even for a compatibility-root layout. Explicit external media roots are guarded regardless. |
 | `--policy-mode` / `BMD_POLICY_MODE` | `all` | Daily-driver default is maximum recall. |

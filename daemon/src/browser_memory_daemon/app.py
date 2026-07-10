@@ -21,6 +21,7 @@ from .media import (
     store_media_artifact,
     store_media_blob_stream,
 )
+from .media_resources import MediaResourceUnavailable, media_resource_budget
 from .media_storage import media_blob_store_and_locator, media_root_readiness
 from .models import CapturePayload
 from .ops import doctor, document_detail, recent_captures, snapshot_detail, timeline
@@ -111,15 +112,27 @@ def _ui_file_body(path: Path, config: RuntimeConfig) -> bytes:
     return text.replace(marker, _ui_bootstrap_script(config) + marker, 1).encode("utf-8")
 
 
-def _binary_response(handler: BaseHTTPRequestHandler, status: int, body: bytes, *, content_type: str, filename: str | None = None) -> None:
+def _binary_stream_response(
+    handler: BaseHTTPRequestHandler,
+    status: int,
+    stream,
+    *,
+    content_length: int,
+    content_type: str,
+    filename: str | None = None,
+) -> None:
     handler.send_response(status)
     handler.send_header("Content-Type", content_type or "application/octet-stream")
-    handler.send_header("Content-Length", str(len(body)))
+    handler.send_header("Content-Length", str(content_length))
     handler.send_header("X-Content-Type-Options", "nosniff")
     if filename:
         handler.send_header("Content-Disposition", f'inline; filename="{filename}"')
     handler.end_headers()
-    handler.wfile.write(body)
+    while True:
+        chunk = stream.read(64 * 1024)
+        if not chunk:
+            break
+        handler.wfile.write(chunk)
 
 
 def _read_json(handler: BaseHTTPRequestHandler, max_bytes: int) -> dict:
@@ -385,13 +398,25 @@ def make_handler(config: RuntimeConfig):
                         )
                         return
                     assert store is not None
-                    _binary_response(
-                        self,
-                        200,
-                        store.read_bytes(resolution.path),
-                        content_type=artifact.get("mime_type") or "application/octet-stream",
-                        filename=resolution.path.name,
-                    )
+                    assert locator is not None
+                    try:
+                        content_length = resolution.path.stat().st_size
+                        with media_resource_budget(config).acquire(
+                            byte_count=content_length,
+                            request_count=1,
+                            timeout=0,
+                        ):
+                            with store.open(locator) as stream:
+                                _binary_stream_response(
+                                    self,
+                                    200,
+                                    stream,
+                                    content_length=content_length,
+                                    content_type=artifact.get("mime_type") or "application/octet-stream",
+                                    filename=resolution.path.name,
+                                )
+                    except MediaResourceUnavailable as exc:
+                        _json_response(self, 503, {"error": str(exc)})
                     return
                 if parsed.path == "/doctor":
                     _ensure_db(config)
@@ -449,14 +474,25 @@ def make_handler(config: RuntimeConfig):
                 except ValueError:
                     _json_response(self, 400, {"error": "invalid content length"})
                     return
+                if content_length < 0:
+                    _json_response(self, 400, {"error": "invalid content length"})
+                    return
                 try:
                     _ensure_db(config)
-                    with connect(config.db_path) as conn:
-                        headers = {key: self.headers.get(key, "") for key in ["Content-Type", "X-BMD-Document-ID", "X-BMD-Snapshot-ID", "X-BMD-Source-URL"]}
-                        result = store_media_blob_stream(conn, config, artifact_id, self.rfile, headers=headers, content_length=content_length)
-                        audit(conn, "media.blob_put", {"artifact_id": artifact_id, "stored": result["stored"], "capture_status": result["capture_status"], "byte_size": result["byte_size"]})
-                        conn.commit()
+                    with media_resource_budget(config).acquire(
+                        byte_count=content_length,
+                        request_count=1,
+                        timeout=0,
+                    ):
+                        with connect(config.db_path) as conn:
+                            headers = {key: self.headers.get(key, "") for key in ["Content-Type", "X-BMD-Document-ID", "X-BMD-Snapshot-ID", "X-BMD-Source-URL"]}
+                            result = store_media_blob_stream(conn, config, artifact_id, self.rfile, headers=headers, content_length=content_length)
+                            audit(conn, "media.blob_put", {"artifact_id": artifact_id, "stored": result["stored"], "capture_status": result["capture_status"], "byte_size": result["byte_size"]})
+                            conn.commit()
                     _json_response(self, 201 if result["stored"] else 200, result)
+                    return
+                except MediaResourceUnavailable as exc:
+                    _json_response(self, 503, {"error": str(exc)})
                     return
                 except KeyError as exc:
                     _json_response(self, 404, {"error": str(exc).strip("'")})
@@ -471,10 +507,22 @@ def make_handler(config: RuntimeConfig):
                 _json_response(self, 401, {"error": "unauthorized"})
                 return
             parsed = urlparse(self.path)
+            media_request_lease = None
             try:
                 max_bytes = config.max_media_payload_bytes if parsed.path == "/media-artifacts" else config.max_payload_bytes
+                if parsed.path == "/media-artifacts":
+                    media_request_lease = media_resource_budget(config).acquire(
+                        byte_count=int(self.headers.get("Content-Length", "0") or 0),
+                        request_count=1,
+                        timeout=0,
+                    )
                 data = _read_json(self, max_bytes)
+            except MediaResourceUnavailable as exc:
+                _json_response(self, 503, {"error": str(exc)})
+                return
             except Exception as exc:
+                if media_request_lease is not None:
+                    media_request_lease.release()
                 _json_response(self, 400, {"error": str(exc)})
                 return
             if parsed.path == "/media-artifacts/purge-cache":
@@ -548,6 +596,9 @@ def make_handler(config: RuntimeConfig):
                 except Exception as exc:
                     _json_response(self, 400, {"error": str(exc)})
                     return
+                finally:
+                    if media_request_lease is not None:
+                        media_request_lease.release()
             if parsed.path == "/visit-events":
                 url = str(data.get("url") or "")
                 decision = evaluate_capture(

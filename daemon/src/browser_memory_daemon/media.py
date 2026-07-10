@@ -4,6 +4,7 @@ import base64
 import hashlib
 import json
 import sqlite3
+import tempfile
 import uuid
 from dataclasses import dataclass
 from typing import Any
@@ -13,6 +14,7 @@ from .config import RuntimeConfig
 from .media_fetch import _PUBLIC_FETCH_OPENER as _PUBLIC_FETCH_OPENER
 from .media_fetch import _PUBLIC_FETCH_RESOLVER as _PUBLIC_FETCH_RESOLVER
 from .media_fetch import _fetch_media_bytes as _fetch_media_bytes
+from .media_fetch import _fetch_media_stream as _fetch_media_stream
 from .media_fetch import _file_extension as _file_extension
 from .media_fetch import _guarded_public_fetch as _guarded_public_fetch
 from .media_fetch import _infer_mime_from_url as _infer_mime_from_url
@@ -37,6 +39,7 @@ from .media_models import (
 from .media_models import (
     normalize_task_status as normalize_task_status,
 )
+from .media_resources import media_resource_budget
 from .media_storage import media_blob_store_and_locator
 from .media_store import MediaArtifactWrite
 from .media_store import media_artifact as media_artifact
@@ -292,12 +295,15 @@ def media_queue_status(conn: sqlite3.Connection, config: RuntimeConfig, *, limit
         """,
         (max(1, min(int(limit), 200)),),
     ).fetchall()
+    resources = media_resource_budget(config).snapshot()
     return {
         "artifacts": {row["capture_status"]: row["n"] for row in artifact_rows},
         "tasks": {row["status"]: row["n"] for row in task_rows},
         "bytes": {"stored": stored_bytes},
         "gates": {
             "max_media_artifact_bytes": config.max_media_artifact_bytes,
+            "max_media_inflight_bytes": config.max_media_inflight_bytes,
+            "max_media_concurrent_requests": config.max_media_concurrent_requests,
             "max_media_bytes_per_snapshot": config.max_media_bytes_per_snapshot,
             "max_media_bytes_per_domain": config.max_media_bytes_per_domain,
             "max_media_cache_bytes": config.max_media_cache_bytes,
@@ -305,6 +311,7 @@ def media_queue_status(conn: sqlite3.Connection, config: RuntimeConfig, *, limit
             "media_mime_allowlist": list(config.media_mime_allowlist),
             "cache_pressure": stored_bytes / config.max_media_cache_bytes if config.max_media_cache_bytes else 0,
         },
+        "resources": resources,
         "recent_nonstored": [dict(row) for row in recent],
     }
 
@@ -335,7 +342,13 @@ def media_queue_status(conn: sqlite3.Connection, config: RuntimeConfig, *, limit
 
 
 
-def _payload_from_media_row(row: sqlite3.Row | dict[str, Any], *, capture_status: str, status_reason: str = "", content: bytes = b"", mime_type: str = "") -> dict[str, Any]:
+def _payload_from_media_row(
+    row: sqlite3.Row | dict[str, Any],
+    *,
+    capture_status: str,
+    status_reason: str = "",
+    mime_type: str = "",
+) -> dict[str, Any]:
     value = dict(row)
     payload: dict[str, Any] = {
         "artifact_id": value["id"],
@@ -368,8 +381,6 @@ def _payload_from_media_row(row: sqlite3.Row | dict[str, Any], *, capture_status
             metadata = {}
     if metadata:
         payload["metadata"] = metadata
-    if content:
-        payload["content_base64"] = base64.b64encode(content).decode("ascii")
     return payload
 
 
@@ -385,38 +396,56 @@ def fetch_and_store_media_artifact(conn: sqlite3.Connection, config: RuntimeConf
             "skipped": True,
             "reason": "already-stored",
         }
-    content, response_mime, reason = _fetch_media_bytes(
+    with _fetch_media_stream(
         value.get("source_url") or "",
         value.get("page_url") or "",
         media_type=value.get("media_type") or "",
         max_bytes=config.max_media_artifact_bytes,
         timeout_seconds=config.media_fetch_timeout_seconds,
         config=config,
-    )
-    if reason:
-        return store_media_artifact(
+    ) as fetched:
+        if fetched.reason:
+            return store_media_artifact(
+                conn,
+                config,
+                _payload_from_media_row(
+                    value,
+                    capture_status=media_capture_status_for_fetch_reason(
+                        fetched.reason,
+                        source_url=value.get("source_url") or "",
+                        media_type=value.get("media_type") or "",
+                    ),
+                    status_reason=fetched.reason,
+                    mime_type=fetched.mime_type,
+                ),
+            )
+        if fetched.stream is None or fetched.byte_size <= 0:
+            empty_reason = "empty-media-response"
+            return store_media_artifact(
+                conn,
+                config,
+                _payload_from_media_row(
+                    value,
+                    capture_status=media_capture_status_for_fetch_reason(
+                        empty_reason,
+                        source_url=value.get("source_url") or "",
+                        media_type=value.get("media_type") or "",
+                    ),
+                    status_reason=empty_reason,
+                    mime_type=fetched.mime_type,
+                ),
+            )
+        payload = _payload_from_media_row(value, capture_status="stored", mime_type=fetched.mime_type)
+        return _persist_media_artifact(
             conn,
             config,
-            _payload_from_media_row(
-                value,
-                capture_status=media_capture_status_for_fetch_reason(reason, source_url=value.get("source_url") or "", media_type=value.get("media_type") or ""),
-                status_reason=reason,
-                mime_type=response_mime,
+            _build_media_artifact_write(
+                config,
+                payload,
+                content_stream=fetched.stream,
+                content_size=fetched.byte_size,
             ),
         )
-    if not content:
-        empty_reason = "empty-media-response"
-        return store_media_artifact(
-            conn,
-            config,
-            _payload_from_media_row(
-                value,
-                capture_status=media_capture_status_for_fetch_reason(empty_reason, source_url=value.get("source_url") or "", media_type=value.get("media_type") or ""),
-                status_reason=empty_reason,
-                mime_type=response_mime,
-            ),
-        )
-    return store_media_artifact(conn, config, _payload_from_media_row(value, capture_status="stored", content=content, mime_type=response_mime))
 
 
 def fetch_pending_media_artifacts(
@@ -439,18 +468,25 @@ def fetch_pending_media_artifacts(
             domain=domain,
             limit=selected_limit,
         )
-        rows = claim_media_fetch_tasks(
-            conn,
-            worker_id=worker_id,
-            limit=selected_limit,
-            snapshot_id=snapshot_id,
-            document_id=document_id,
-            domain=domain,
-        )
-    results = process_media_fetch_task_rows(conn, config, rows)
+    results: list[dict[str, Any]] = []
+    claimed = 0
+    for _ in range(selected_limit):
+        with conn:
+            rows = claim_media_fetch_tasks(
+                conn,
+                worker_id=worker_id,
+                limit=1,
+                snapshot_id=snapshot_id,
+                document_id=document_id,
+                domain=domain,
+            )
+        if not rows:
+            break
+        claimed += 1
+        results.extend(process_media_fetch_task_rows(conn, config, rows))
     return {
         "attempted": len(results),
-        "claimed": len(rows),
+        "claimed": claimed,
         "seeded_tasks": seeded,
         "stored": sum(1 for item in results if item.get("stored")),
         "failed": sum(1 for item in results if item.get("capture_status") == "failed"),
@@ -583,7 +619,13 @@ def _artifact_priority(data: dict[str, Any], ref: MediaRef) -> int:
     return _metadata_priority({**(metadata or {}), "width": ref.width, "height": ref.height})
 
 
-def store_media_artifact(conn: sqlite3.Connection, config: RuntimeConfig, data: dict[str, Any]) -> dict[str, Any]:
+def _build_media_artifact_write(
+    config: RuntimeConfig,
+    data: dict[str, Any],
+    *,
+    content_stream: Any | None = None,
+    content_size: int | None = None,
+) -> MediaArtifactWrite:
     snapshot_id = _bounded_text(data.get("snapshot_id") or data.get("snapshotId"), max_chars=128)
     document_id = _bounded_text(data.get("document_id") or data.get("documentId"), max_chars=128)
     visit_id = _bounded_text(data.get("visit_id") or data.get("visitId"), max_chars=128) or None
@@ -609,45 +651,47 @@ def store_media_artifact(conn: sqlite3.Connection, config: RuntimeConfig, data: 
         default="metadata-only",
     )
     reason = _bounded_text(data.get("status_reason") or data.get("statusReason"), max_chars=512)
-    content = _decode_base64(str(content_base64)) if content_base64 else b""
+    content = b"" if content_stream is not None else (_decode_base64(str(content_base64)) if content_base64 else b"")
+    selected_content_size = max(0, int(content_size or 0)) if content_stream is not None else len(content)
     mime_type = _sanitize_mime(
         data.get("mime_type") or data.get("mimeType") or ref.mime_type,
         media_type=ref.media_type,
     )
-    return _persist_media_artifact(
-        conn,
-        config,
-        MediaArtifactWrite(
-            artifact_id=artifact_id,
-            generated_artifact_id=generated_artifact_id,
-            artifact_id_provided=bool(provided_artifact_id),
-            document_id=document_id,
-            snapshot_id=snapshot_id,
-            visit_id=visit_id,
-            media_type=ref.media_type,
-            role=ref.role,
-            source_url=source_url,
-            normalized_source_url=normalized_source_url,
-            page_url=page_url,
-            alt_text=alt_text,
-            title=title,
-            mime_type=mime_type,
-            width=ref.width,
-            height=ref.height,
-            duration_seconds=ref.duration_seconds,
-            capture_status=status,
-            status_reason=reason,
-            metadata_json=json.dumps(metadata, sort_keys=True),
-            priority=priority,
-            content=content,
-            file_extension=_file_extension(mime_type, ref.source_url),
-            fetch_supported=_media_fetch_supported(source_url),
-        ),
+    return MediaArtifactWrite(
+        artifact_id=artifact_id,
+        generated_artifact_id=generated_artifact_id,
+        artifact_id_provided=bool(provided_artifact_id),
+        document_id=document_id,
+        snapshot_id=snapshot_id,
+        visit_id=visit_id,
+        media_type=ref.media_type,
+        role=ref.role,
+        source_url=source_url,
+        normalized_source_url=normalized_source_url,
+        page_url=page_url,
+        alt_text=alt_text,
+        title=title,
+        mime_type=mime_type,
+        width=ref.width,
+        height=ref.height,
+        duration_seconds=ref.duration_seconds,
+        capture_status=status,
+        status_reason=reason,
+        metadata_json=json.dumps(metadata, sort_keys=True),
+        priority=priority,
+        content=content,
+        content_stream=content_stream,
+        content_size=selected_content_size,
+        file_extension=_file_extension(mime_type, ref.source_url),
+        fetch_supported=_media_fetch_supported(source_url),
     )
 
 
-def _read_limited_stream(stream: Any, max_bytes: int, expected_bytes: int | None = None) -> bytes:
-    chunks: list[bytes] = []
+def store_media_artifact(conn: sqlite3.Connection, config: RuntimeConfig, data: dict[str, Any]) -> dict[str, Any]:
+    return _persist_media_artifact(conn, config, _build_media_artifact_write(config, data))
+
+
+def _spool_limited_stream(stream: Any, spool: Any, max_bytes: int, expected_bytes: int | None = None) -> int:
     total = 0
     remaining = expected_bytes
     while remaining is None or remaining > 0:
@@ -658,12 +702,13 @@ def _read_limited_stream(stream: Any, max_bytes: int, expected_bytes: int | None
         total += len(chunk)
         if total > max_bytes:
             raise ValueError("media artifact too large")
-        chunks.append(chunk)
+        spool.write(chunk)
         if remaining is not None:
             remaining -= len(chunk)
     if expected_bytes is not None and remaining and remaining > 0:
         raise ValueError("incomplete media upload")
-    return b"".join(chunks)
+    spool.seek(0)
+    return total
 
 
 def store_media_blob_stream(
@@ -687,7 +732,6 @@ def store_media_blob_stream(
         raise ValueError("snapshot_id does not match artifact")
     if content_length is not None and content_length > config.max_media_artifact_bytes:
         return store_media_artifact(conn, config, _payload_from_media_row(artifact, capture_status="skipped", status_reason="media-too-large"))
-    content = _read_limited_stream(stream, config.max_media_artifact_bytes, expected_bytes=content_length)
     raw_content_type = headers.get("content-type", "")
     if raw_content_type.split(";", 1)[0].strip().lower() == "application/octet-stream":
         raw_content_type = ""
@@ -696,4 +740,21 @@ def store_media_blob_stream(
     if raw_content_type and not mime_type:
         capture_status = "referenced" if media_type == "video" else "skipped"
         return store_media_artifact(conn, config, _payload_from_media_row(artifact, capture_status=capture_status, status_reason="non-media-content-type"))
-    return store_media_artifact(conn, config, _payload_from_media_row(artifact, capture_status="stored", content=content, mime_type=mime_type))
+    with tempfile.SpooledTemporaryFile(max_size=1024 * 1024, mode="w+b") as content_stream:
+        content_size = _spool_limited_stream(
+            stream,
+            content_stream,
+            config.max_media_artifact_bytes,
+            expected_bytes=content_length,
+        )
+        payload = _payload_from_media_row(artifact, capture_status="stored", mime_type=mime_type)
+        return _persist_media_artifact(
+            conn,
+            config,
+            _build_media_artifact_write(
+                config,
+                payload,
+                content_stream=content_stream,
+                content_size=content_size,
+            ),
+        )

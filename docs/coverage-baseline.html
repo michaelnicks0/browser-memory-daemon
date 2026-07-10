@@ -209,9 +209,9 @@ date: "2026-07-10"</p>
 </tr>
 <tr>
 <td>Media core</td>
-<td style="text-align: right;">76.73%</td>
-<td style="text-align: right;">67.77%</td>
-<td>Guarded fetch/HLS/path/cache/task, migration, bounded reconciliation, and explicit requeue tests cover the decomposed media modules. Global in-flight resource budgets remain Phase 4 work.</td>
+<td style="text-align: right;">81.29%</td>
+<td style="text-align: right;">72.80%</td>
+<td>Current Phase 4.5 measurement across <code>media.py</code> and all <code>media_*</code> modules: 1,579/1,876 statements and 463/636 branches. Guarded streaming fetch/HLS, process budgets, transactional cache reservations, failure cleanup, bounded reconciliation, and explicit requeue paths have executable evidence.</td>
 </tr>
 <tr>
 <td>Media worker state transitions</td>
@@ -223,6 +223,7 @@ date: "2026-07-10"</p>
 </table>
 <h2 id="extension-queue-boundary">Extension queue boundary</h2>
 <p>Node tests are not included in the Python coverage percentage. They run in the same fast gate.</p>
+<p>The media-core row was remeasured after Phase 4.5 on 2026-07-10. The Phase 1.3 repository baseline and 80% ratchet above remain the historical floor-setting measurement.</p>
 <p>The suite now explicitly characterizes capture-queue overflow: with 100 stored captures and an offline daemon, the existing queue preserves the 100 old entries but drops the newly submitted capture without visible backpressure. That passing test is <strong>defect evidence</strong>, not acceptance. <code>REQ-037</code> / <code>HRD-012</code> remains planned until Phase 5 delivers the transactional IndexedDB outbox, byte quotas, visible overflow, and restart-safe claims.</p>
 <p>Media queue due-state tests cover pending, deferred retry, stale processing, malformed processing timestamps, terminal states, fetched-blob retention, and delete cleanup.</p>
 <h2 id="static-analysis-scope">Static-analysis scope</h2>

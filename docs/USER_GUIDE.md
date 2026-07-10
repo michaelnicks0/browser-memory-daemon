@@ -122,10 +122,12 @@ BMD_DERIVATIVE_ROOT="$HOME/.local/share/browser-memory-daemon/derivatives" \
   BMD_REQUIRE_MEDIA_ROOT_MOUNT=1 \
   BMD_MEDIA_SPOOL_ROOT="$HOME/.local/share/browser-memory-daemon/media-spool" \
   BMD_MAX_MEDIA_SPOOL_BYTES=1073741824 \
+  BMD_MAX_MEDIA_INFLIGHT_BYTES=524288000 \
+  BMD_MAX_MEDIA_CONCURRENT_REQUESTS=4 \
   BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
 ```
 
-Explicit external `BMD_MEDIA_ROOT` values are intentionally strict: media access requires a non-root mounted ancestor and an exact identity marker. The installer does not create the external media root or marker. A failed guard degrades media handling but does not block local SQLite text/provenance capture. The spool is optional, must remain under the local data root, and is enabled only when both its path and a positive byte cap are configured. `BMD_BLOB_ROOT` and `BMD_REQUIRE_BLOB_ROOT_MOUNT` remain compatibility controls for legacy layouts.
+Explicit external `BMD_MEDIA_ROOT` values are intentionally strict: media access requires a non-root mounted ancestor and an exact identity marker. The installer does not create the external media root or marker. A failed guard degrades media handling but does not block local SQLite text/provenance capture. The spool is optional, must remain under the local data root, and is enabled only when both its path and a positive byte cap are configured. `BMD_MAX_MEDIA_INFLIGHT_BYTES` must be positive and at least `BMD_MAX_MEDIA_ARTIFACT_BYTES`; `BMD_MAX_MEDIA_CONCURRENT_REQUESTS` must also be positive. These caps apply independently inside the daemon and worker processes, while SQLite cache reservations coordinate persistent cache admission across them. `BMD_BLOB_ROOT` and `BMD_REQUIRE_BLOB_ROOT_MOUNT` remain compatibility inputs for legacy layouts.
 
 Then reload the unpacked extension in Chrome:
 
@@ -212,6 +214,8 @@ The daily-driver daemon embeds the current token into the `/ui` HTML bootstrap, 
 ## Media cache controls
 
 Text/FTS rows are the durable recall source. Final media blobs are a bounded disposable cache under `BMD_MEDIA_ROOT` (legacy default `${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}/media/`); artifact refs remain even if blobs are purged. During a guarded-root outage, explicitly configured local spool bytes remain readable as stored artifacts.
+
+Raw uploads, daemon-public HTTP/HLS fetch, artifact publication, and stored-media responses use bounded streams. The authenticated `/media/queue-status` response reports configured/current counters for the serving daemon process; CLI queue status runs in its own short-lived process, so those counters are normally idle. A temporary `media-resource-budget` outcome is retryable; snapshot/domain/global cache-budget skips remain terminal until explicitly requeued after a cap or policy change. SQLite version 13 reservations prevent daemon and worker processes from concurrently committing beyond persistent cache caps.
 
 Inspect spool capacity and final-root readiness without mutation:
 

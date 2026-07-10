@@ -19,6 +19,8 @@ def test_install_daily_driver_dry_run_is_non_mutating(tmp_path):
         "BMD_PYTHON": sys.executable,
         "BMD_POLICY_MODE": "all",
         "BMD_BLOB_ROOT": str(blob_root),
+        "BMD_MAX_MEDIA_INFLIGHT_BYTES": "300000000",
+        "BMD_MAX_MEDIA_CONCURRENT_REQUESTS": "3",
         "BMD_WINDOWS_EXTENSION_DIR": str(extension_dir),
         "XDG_CONFIG_HOME": str(config_home),
         "XDG_DATA_HOME": str(data_home),
@@ -40,6 +42,8 @@ def test_install_daily_driver_dry_run_is_non_mutating(tmp_path):
     assert "Python:" in result.stdout
     assert f"Blob dir: {blob_root}" in result.stdout
     assert "Require media mount: 0" in result.stdout
+    assert "Media in-flight byte cap: 300000000" in result.stdout
+    assert "Media concurrent request cap: 3" in result.stdout
     assert "verify the configured media root mount and identity marker" in result.stdout
     assert "write systemd user units that read the EnvironmentFile" in result.stdout
     assert "chrome://extensions" in result.stdout

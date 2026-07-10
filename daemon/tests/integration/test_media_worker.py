@@ -25,8 +25,10 @@ from browser_memory_daemon.media import (
     store_media_blob_stream,
 )
 from browser_memory_daemon.media_ops import reconcile_cdp_blob_coverage
+from browser_memory_daemon.media_resources import media_resource_budget
 from browser_memory_daemon.media_worker import run_once
 from browser_memory_daemon.models import CapturePayload
+from browser_memory_daemon.search import search_memory
 
 
 def post_json(url: str, token: str, body: dict) -> tuple[int, dict]:
@@ -313,6 +315,49 @@ def test_media_worker_processes_data_url_task_and_marks_success(tmp_path):
         assert media["capture_status"] == "stored"
         task = conn.execute("SELECT status FROM media_fetch_tasks").fetchone()
         assert task["status"] == "succeeded"
+
+
+def test_media_resource_pressure_does_not_roll_back_searchable_text(tmp_path, monkeypatch):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    cfg = replace(cfg, max_media_concurrent_requests=1, media_fetch_timeout_seconds=0.01)
+    init_db(cfg)
+    monkeypatch.setattr(
+        media_fetch_module,
+        "_PUBLIC_FETCH_RESOLVER",
+        fake_resolver_for({"media.example": "93.184.216.34"}),
+    )
+
+    def unexpected_open(*_args, **_kwargs):
+        raise AssertionError("request slot exhaustion must prevent network open")
+
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", unexpected_open)
+    payload = CapturePayload.from_dict(
+        {
+            "url": "https://example.com/text-first-budget",
+            "title": "Text first under media pressure",
+            "text": "Searchable text commits before optional media fetch.",
+            "media_artifacts": [
+                {
+                    "media_type": "image",
+                    "source_url": "https://media.example/image.png",
+                    "mime_type": "image/png",
+                }
+            ],
+        },
+        allow_any_url=True,
+    )
+    with connect(cfg.db_path) as conn:
+        capture = ingest_capture(conn, cfg, payload)
+        conn.commit()
+        with media_resource_budget(cfg).acquire(byte_count=0, request_count=1, timeout=0):
+            summary = run_once(conn, cfg, worker_id="pressure-worker", limit=1)
+        media = media_artifacts_for_snapshot(conn, capture["snapshot_id"])[0]
+        results = search_memory(conn, "Searchable text commits", limit=5)
+
+    assert summary["attempted"] == 1
+    assert media["capture_status"] == "retrying"
+    assert media["status_reason"] == "media-resource-budget"
+    assert results and results[0]["snapshot_id"] == capture["snapshot_id"]
 
 
 def test_init_db_does_not_repeat_historical_media_task_seed(tmp_path):

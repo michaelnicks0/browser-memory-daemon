@@ -28,6 +28,8 @@ class RuntimeConfig:
     max_payload_bytes: int = 2_000_000
     max_media_payload_bytes: int = 40_000_000
     max_media_artifact_bytes: int = 250_000_000
+    max_media_inflight_bytes: int = 500_000_000
+    max_media_concurrent_requests: int = 4
     max_media_bytes_per_snapshot: int = 1_000_000_000
     max_media_bytes_per_domain: int = 10_000_000_000
     max_media_cache_bytes: int = 100_000_000_000
@@ -80,6 +82,12 @@ class RuntimeConfig:
             raise ValueError("BMD_MEDIA_ROOT_IDENTITY must match [A-Za-z0-9._-]{1,128}")
         if self.max_media_spool_bytes < 0:
             raise RuntimeError("BMD_MAX_MEDIA_SPOOL_BYTES must be non-negative")
+        if self.max_media_inflight_bytes <= 0:
+            raise ValueError("BMD_MAX_MEDIA_INFLIGHT_BYTES must be positive")
+        if self.max_media_concurrent_requests <= 0:
+            raise ValueError("BMD_MAX_MEDIA_CONCURRENT_REQUESTS must be positive")
+        if self.max_media_artifact_bytes > self.max_media_inflight_bytes:
+            raise ValueError("BMD_MAX_MEDIA_INFLIGHT_BYTES must allow at least one maximum-size media artifact")
         if (self.media_spool_root is None) != (self.max_media_spool_bytes == 0):
             raise ValueError("BMD_MEDIA_SPOOL_ROOT and positive BMD_MAX_MEDIA_SPOOL_BYTES must be configured together")
         if self.media_spool_root is not None:
@@ -193,6 +201,10 @@ def load_config(
         max_payload_bytes=_env_int("BMD_MAX_PAYLOAD_BYTES", RuntimeConfig.max_payload_bytes),
         max_media_payload_bytes=_env_int("BMD_MAX_MEDIA_PAYLOAD_BYTES", RuntimeConfig.max_media_payload_bytes),
         max_media_artifact_bytes=_env_int("BMD_MAX_MEDIA_ARTIFACT_BYTES", RuntimeConfig.max_media_artifact_bytes),
+        max_media_inflight_bytes=_env_int("BMD_MAX_MEDIA_INFLIGHT_BYTES", RuntimeConfig.max_media_inflight_bytes),
+        max_media_concurrent_requests=_env_int(
+            "BMD_MAX_MEDIA_CONCURRENT_REQUESTS", RuntimeConfig.max_media_concurrent_requests
+        ),
         max_media_bytes_per_snapshot=_env_int("BMD_MAX_MEDIA_BYTES_PER_SNAPSHOT", RuntimeConfig.max_media_bytes_per_snapshot),
         max_media_bytes_per_domain=_env_int("BMD_MAX_MEDIA_BYTES_PER_DOMAIN", RuntimeConfig.max_media_bytes_per_domain),
         max_media_cache_bytes=_env_int("BMD_MAX_MEDIA_CACHE_BYTES", RuntimeConfig.max_media_cache_bytes),

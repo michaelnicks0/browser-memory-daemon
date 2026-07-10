@@ -44,12 +44,14 @@ Coverage percentages are supporting evidence, not substitutes for scenario asser
 | Versioned migrations | 79.53% | 66.67% | Fresh/unversioned/repeat/concurrent/checksum/newer/failure/headroom/backup/restore/FTS/FK/integrity scenarios in `test_migrations.py`. |
 | Storage-path containment | 96.19% | **100.00%** | Direct grammar, traversal, symlink, outside-root, missing-file, and explicit-root tests in `test_storage_paths.py`, plus integration callers. |
 | Forget/deletion selection | 85.63% | 76.09% | Literal selector, policy-mode, scope, containment, and receipt cases in ingest/search/forget integration tests. Crash-recoverable tombstones remain Phase 3 work. |
-| Media core | 76.73% | 67.77% | Guarded fetch/HLS/path/cache/task, migration, bounded reconciliation, and explicit requeue tests cover the decomposed media modules. Global in-flight resource budgets remain Phase 4 work. |
+| Media core | 81.29% | 72.80% | Current Phase 4.5 measurement across `media.py` and all `media_*` modules: 1,579/1,876 statements and 463/636 branches. Guarded streaming fetch/HLS, process budgets, transactional cache reservations, failure cleanup, bounded reconciliation, and explicit requeue paths have executable evidence. |
 | Media worker state transitions | 89.33% | 89.29% | Retry, lease, terminal, and convergence scenarios are executable. |
 
 ## Extension queue boundary
 
 Node tests are not included in the Python coverage percentage. They run in the same fast gate.
+
+The media-core row was remeasured after Phase 4.5 on 2026-07-10. The Phase 1.3 repository baseline and 80% ratchet above remain the historical floor-setting measurement.
 
 The suite now explicitly characterizes capture-queue overflow: with 100 stored captures and an offline daemon, the existing queue preserves the 100 old entries but drops the newly submitted capture without visible backpressure. That passing test is **defect evidence**, not acceptance. `REQ-037` / `HRD-012` remains planned until Phase 5 delivers the transactional IndexedDB outbox, byte quotas, visible overflow, and restart-safe claims.
 

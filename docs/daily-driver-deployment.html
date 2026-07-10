@@ -202,6 +202,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td><code>BMD_MEDIA_SPOOL_ROOT</code> under the local data root, paired with positive <code>BMD_MAX_MEDIA_SPOOL_BYTES</code></td>
 </tr>
 <tr>
+<td>Per-process media capacity</td>
+<td>Positive <code>BMD_MAX_MEDIA_INFLIGHT_BYTES</code> (at least one maximum artifact) and <code>BMD_MAX_MEDIA_CONCURRENT_REQUESTS</code></td>
+</tr>
+<tr>
 <td>Durable audit events</td>
 <td>SQLite <code>audit_events</code> table; no <code>audit.jsonl</code> writer exists. <code>BMD_AUDIT_LOG</code> is a reserved/unused compatibility field.</td>
 </tr>
@@ -239,6 +243,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <span style="color: #F8F8F2">  BMD_REQUIRE_MEDIA_ROOT_MOUNT</span><span style="color: #FF4689">=</span><span style="color: #AE81FF">1</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  BMD_MEDIA_SPOOL_ROOT</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2">$HOME</span><span style="color: #E6DB74">/.local/share/browser-memory-daemon/media-spool&quot;</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  BMD_MAX_MEDIA_SPOOL_BYTES</span><span style="color: #FF4689">=</span><span style="color: #AE81FF">1073741824</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  BMD_MAX_MEDIA_INFLIGHT_BYTES</span><span style="color: #FF4689">=</span><span style="color: #AE81FF">524288000</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  BMD_MAX_MEDIA_CONCURRENT_REQUESTS</span><span style="color: #FF4689">=</span><span style="color: #AE81FF">4</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  BMD_POLICY_MODE</span><span style="color: #FF4689">=</span>all<span style="color: #F8F8F2"> </span>./scripts/install-daily-driver.sh
 </code></pre></div>
 

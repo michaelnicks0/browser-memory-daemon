@@ -458,6 +458,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </code></pre></div>
 
 <p>If <code>content_base64</code> is omitted, the artifact is metadata-only.</p>
+<p>Raw <code>PUT</code> requires a non-negative <code>Content-Length</code>, rejects bodies above the configured artifact cap before consumption, and copies accepted bytes through a bounded spool. Media route capacity exhaustion returns HTTP <code>503</code> with the compatible top-level <code>error</code> field. Compatibility JSON remains bounded but can still require a base64 decode copy; raw upload is the preferred binary path.</p>
 <p>Public daemon backfill:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #ED007E; background-color: #1E0010">POST /media-artifacts/fetch-pending</span>
 <span style="color: #ED007E; background-color: #1E0010">Authorization: Bearer ***</span>
@@ -487,13 +488,13 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <span style="color: #F8F8F2">}</span>
 </code></pre></div>
 
-<p>Manual and background fetches use the same <code>media_fetch_tasks</code> lease path as the media worker. An actively leased task is not fetched by a competing caller; stale leases are eligible for recovery.</p>
+<p>Manual and background fetches use the same <code>media_fetch_tasks</code> lease path as the media worker. Each caller claims one task immediately before processing it, so later tasks do not age in a preclaimed batch while earlier work waits for process capacity or network deadlines. An actively leased task is not fetched by a competing caller; stale leases are eligible for recovery.</p>
 <p>Queue/cache status:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #ED007E; background-color: #1E0010">GET /media-artifacts/queue-status?limit=50</span>
 <span style="color: #ED007E; background-color: #1E0010">Authorization: Bearer ***</span>
 </code></pre></div>
 
-<p>The response includes artifact/task status counts, stored-byte totals, recent non-stored artifacts, and live cache gates (<code>max_media_artifact_bytes</code>, <code>max_media_bytes_per_snapshot</code>, <code>max_media_bytes_per_domain</code>, <code>max_media_cache_bytes</code>, MIME allowlist, priority floor, and cache pressure). The daily-driver health snapshot additionally derives due-task, oldest-due, stale-lease, latest-worker-run, and 1h/24h worker-throughput telemetry from the same task/audit tables using SQLite datetime comparisons, so mixed <code>CURRENT_TIMESTAMP</code> and ISO-<code>T</code> timestamps are compared as times rather than strings.</p>
+<p>The response includes artifact/task status counts, stored-byte totals, recent non-stored artifacts, live cache gates (<code>max_media_artifact_bytes</code>, <code>max_media_bytes_per_snapshot</code>, <code>max_media_bytes_per_domain</code>, <code>max_media_cache_bytes</code>, MIME allowlist, priority floor, and cache pressure), and aggregate process-resource counters (<code>max_inflight_bytes</code>, <code>inflight_bytes</code>, <code>max_concurrent_requests</code>, <code>active_requests</code>). The counters expose no captured content, URL, or storage path. The daily-driver health snapshot additionally derives due-task, oldest-due, stale-lease, latest-worker-run, and 1h/24h worker-throughput telemetry from the same task/audit tables using SQLite datetime comparisons, so mixed <code>CURRENT_TIMESTAMP</code> and ISO-<code>T</code> timestamps are compared as times rather than strings.</p>
 <p>Purge local media blob cache without deleting text/FTS/ref rows:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #ED007E; background-color: #1E0010">POST /media-artifacts/purge-cache</span>
 <span style="color: #ED007E; background-color: #1E0010">Authorization: Bearer ***</span>
@@ -509,7 +510,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <span style="color: #ED007E; background-color: #1E0010">Authorization: Bearer ***</span>
 </code></pre></div>
 
-<p>The daemon validates the tier-owned locator against the configured media/spool root before serving bytes. Missing, stale, invalid, out-of-root, <code>purging</code>, or <code>purged</code> artifacts return metadata/not-stored responses rather than reading arbitrary local files.</p>
+<p>The daemon validates the tier-owned locator against the configured media/spool root before serving bytes and streams accepted responses from <code>BlobStore.open</code> in bounded chunks while holding a process byte/request lease. Missing, stale, invalid, out-of-root, <code>purging</code>, or <code>purged</code> artifacts return metadata/not-stored responses rather than reading arbitrary local files.</p>
 <p>Media metadata is not inserted into FTS; search results only expose <code>media_artifact_count</code>.</p>
 <hr />
 <h2 id="policy-rules">Policy rules</h2>

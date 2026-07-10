@@ -120,7 +120,7 @@ flowchart TB
   Rolling --> Purged["status = purged<br/>refs/hash/provenance remain"]
 ```
 
-The final media cache is bounded and disposable. The optional local spool has a separate hard byte cap covering committed/orphaned files plus distinct in-flight reservations. Text, FTS rows, media refs, hashes, status reasons, and provenance remain authoritative when bytes are absent, spooled, or purged.
+The final media cache is bounded and disposable. The optional local spool has a separate hard byte cap covering committed/orphaned files plus distinct in-flight reservations. SQLite version 13 also reserves snapshot/domain/global cache capacity transactionally across processes, while process-local request and byte leases bound concurrent streaming HTTP/HLS/upload/download work. Text, FTS rows, media refs, hashes, status reasons, and provenance remain authoritative when bytes are absent, spooled, purged, or delayed by resource pressure.
 
 ---
 

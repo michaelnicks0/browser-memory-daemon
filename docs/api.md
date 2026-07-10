@@ -255,6 +255,8 @@ Compatibility JSON upload:
 
 If `content_base64` is omitted, the artifact is metadata-only.
 
+Raw `PUT` requires a non-negative `Content-Length`, rejects bodies above the configured artifact cap before consumption, and copies accepted bytes through a bounded spool. Media route capacity exhaustion returns HTTP `503` with the compatible top-level `error` field. Compatibility JSON remains bounded but can still require a base64 decode copy; raw upload is the preferred binary path.
+
 Public daemon backfill:
 
 ```http
@@ -289,7 +291,7 @@ Response summary:
 }
 ```
 
-Manual and background fetches use the same `media_fetch_tasks` lease path as the media worker. An actively leased task is not fetched by a competing caller; stale leases are eligible for recovery.
+Manual and background fetches use the same `media_fetch_tasks` lease path as the media worker. Each caller claims one task immediately before processing it, so later tasks do not age in a preclaimed batch while earlier work waits for process capacity or network deadlines. An actively leased task is not fetched by a competing caller; stale leases are eligible for recovery.
 
 Queue/cache status:
 
@@ -298,7 +300,7 @@ GET /media-artifacts/queue-status?limit=50
 Authorization: Bearer ***
 ```
 
-The response includes artifact/task status counts, stored-byte totals, recent non-stored artifacts, and live cache gates (`max_media_artifact_bytes`, `max_media_bytes_per_snapshot`, `max_media_bytes_per_domain`, `max_media_cache_bytes`, MIME allowlist, priority floor, and cache pressure). The daily-driver health snapshot additionally derives due-task, oldest-due, stale-lease, latest-worker-run, and 1h/24h worker-throughput telemetry from the same task/audit tables using SQLite datetime comparisons, so mixed `CURRENT_TIMESTAMP` and ISO-`T` timestamps are compared as times rather than strings.
+The response includes artifact/task status counts, stored-byte totals, recent non-stored artifacts, live cache gates (`max_media_artifact_bytes`, `max_media_bytes_per_snapshot`, `max_media_bytes_per_domain`, `max_media_cache_bytes`, MIME allowlist, priority floor, and cache pressure), and aggregate process-resource counters (`max_inflight_bytes`, `inflight_bytes`, `max_concurrent_requests`, `active_requests`). The counters expose no captured content, URL, or storage path. The daily-driver health snapshot additionally derives due-task, oldest-due, stale-lease, latest-worker-run, and 1h/24h worker-throughput telemetry from the same task/audit tables using SQLite datetime comparisons, so mixed `CURRENT_TIMESTAMP` and ISO-`T` timestamps are compared as times rather than strings.
 
 Purge local media blob cache without deleting text/FTS/ref rows:
 
@@ -321,7 +323,7 @@ GET /media-artifacts/<artifact_id>
 Authorization: Bearer ***
 ```
 
-The daemon validates the tier-owned locator against the configured media/spool root before serving bytes. Missing, stale, invalid, out-of-root, `purging`, or `purged` artifacts return metadata/not-stored responses rather than reading arbitrary local files.
+The daemon validates the tier-owned locator against the configured media/spool root before serving bytes and streams accepted responses from `BlobStore.open` in bounded chunks while holding a process byte/request lease. Missing, stale, invalid, out-of-root, `purging`, or `purged` artifacts return metadata/not-stored responses rather than reading arbitrary local files.
 
 Media metadata is not inserted into FTS; search results only expose `media_artifact_count`.
 

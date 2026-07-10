@@ -121,6 +121,8 @@ def media_capture_status_for_fetch_reason(reason: str, *, source_url: str = "", 
         return "expired"
     if lower.startswith(("fetch-status-429", "fetch-timeout", "fetch-error-")):
         return "retrying"
+    if lower == "media-resource-budget":
+        return "retrying"
     if lower.startswith("hls-"):
         return "referenced"
     if lower in {"empty-media-response", "failed to fetch"}:

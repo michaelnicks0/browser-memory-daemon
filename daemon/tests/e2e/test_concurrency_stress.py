@@ -25,6 +25,7 @@ def test_concurrency_stress_harness_exercises_shared_sqlite_db(tmp_path):
         "upload": 4,
     }
     assert result["mixed_operations"]["failed_by_kind"] == {}
+    assert result["mixed_operations"]["capacity_rejections"] >= 0
     assert result["database"]["integrity_check"] == "ok"
     assert result["database"]["chunks_missing_fts"] == 0
     assert result["database"]["counts"]["documents"] == 4

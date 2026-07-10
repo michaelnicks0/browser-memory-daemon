@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import os
 import sqlite3
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, BinaryIO, cast
 from urllib.parse import urlsplit
 
 from .blob_lifecycle import process_blob_tombstones, register_committed_blob, tombstone_blob
@@ -18,6 +19,33 @@ from .media_storage import (
 )
 from .media_tasks import ensure_media_fetch_task, mark_media_fetch_task
 from .storage_paths import storage_stem, validate_media_artifact_id
+
+
+def _read_process_start_token(pid: int) -> str:
+    stat_text = Path(f"/proc/{pid}/stat").read_text(encoding="utf-8")
+    _, separator, fields_text = stat_text.rpartition(")")
+    fields = fields_text.split()
+    if not separator or len(fields) <= 19:
+        raise OSError(f"unexpected /proc stat format for pid {pid}")
+    return fields[19]
+
+
+_PROCESS_ID = os.getpid()
+try:
+    _PROCESS_START_TOKEN = _read_process_start_token(_PROCESS_ID)
+except OSError:
+    _PROCESS_START_TOKEN = "unavailable"
+
+
+def _cache_reservation_owner_is_live(owner_pid: int, owner_start_token: str) -> bool:
+    if owner_start_token == "unavailable":
+        return True
+    try:
+        return _read_process_start_token(owner_pid) == owner_start_token
+    except FileNotFoundError:
+        return False
+    except OSError:
+        return True
 
 
 def _mime_allowed(config: RuntimeConfig, mime_type: str, media_type: str) -> bool:
@@ -48,6 +76,49 @@ def stored_media_bytes(
     row = conn.execute(
         f"SELECT COALESCE(SUM(byte_size), 0) AS n FROM media_artifacts WHERE capture_status IN ('stored', 'purging', 'missing') AND (COALESCE(blob_locator, '') != '' OR COALESCE(spool_locator, '') != '' OR COALESCE(file_path, '') != '') {where_sql}{exclusion}",
         query_params,
+    ).fetchone()
+    return int(row["n"] if row else 0)
+
+
+def _active_reserved_media_bytes(
+    conn: sqlite3.Connection,
+    *,
+    snapshot_id: str | None = None,
+    domain: str | None = None,
+) -> int:
+    where = ["expires_at > strftime('%Y-%m-%dT%H:%M:%fZ', 'now')"]
+    params: list[Any] = []
+    if snapshot_id is not None:
+        where.append("snapshot_id = ?")
+        params.append(snapshot_id)
+    if domain is not None:
+        where.append("domain = ?")
+        params.append(domain)
+    row = conn.execute(
+        f"SELECT COALESCE(SUM(reserved_bytes), 0) AS n FROM media_cache_reservations WHERE {' AND '.join(where)}",
+        params,
+    ).fetchone()
+    return int(row["n"] if row else 0)
+
+
+def _stored_domain_media_bytes(
+    conn: sqlite3.Connection,
+    domain: str,
+    *,
+    exclude_artifact_id: str | None = None,
+) -> int:
+    exclusion = " AND m.id != ?" if exclude_artifact_id else ""
+    params: tuple[Any, ...] = (domain, exclude_artifact_id) if exclude_artifact_id else (domain,)
+    row = conn.execute(
+        f"""
+        SELECT COALESCE(SUM(m.byte_size), 0) AS n
+        FROM media_artifacts m
+        JOIN documents d ON d.id = m.document_id
+        WHERE m.capture_status IN ('stored', 'purging', 'missing')
+          AND (COALESCE(m.blob_locator, '') != '' OR COALESCE(m.spool_locator, '') != '' OR COALESCE(m.file_path, '') != '')
+          AND d.domain = ?{exclusion}
+        """,
+        params,
     ).fetchone()
     return int(row["n"] if row else 0)
 
@@ -208,33 +279,36 @@ def media_storage_allowed(
             (snapshot_id,),
             exclude_artifact_id=artifact_id,
         )
-        if current + candidate_bytes > config.max_media_bytes_per_snapshot:
+        reserved = _active_reserved_media_bytes(conn, snapshot_id=snapshot_id)
+        if current + reserved + candidate_bytes > config.max_media_bytes_per_snapshot:
             return False, "snapshot-media-budget"
     if config.max_media_bytes_per_domain > 0:
         doc = conn.execute("SELECT domain FROM documents WHERE id = ?", (document_id,)).fetchone()
         if doc and doc["domain"]:
             domain = str(doc["domain"])
+            reserved = _active_reserved_media_bytes(conn, domain=domain)
             eviction = _evict_oldest_media_to_fit(
                 conn,
                 config,
-                candidate_bytes=candidate_bytes,
+                candidate_bytes=candidate_bytes + reserved,
                 max_bytes=config.max_media_bytes_per_domain,
                 reason="cache-evicted:domain-oldest",
                 domain=domain,
                 exclude_artifact_id=artifact_id,
             )
-            if int(eviction.get("remaining") or 0) + candidate_bytes > config.max_media_bytes_per_domain:
+            if int(eviction.get("remaining") or 0) + reserved + candidate_bytes > config.max_media_bytes_per_domain:
                 return False, "domain-media-budget"
     if config.max_media_cache_bytes > 0:
+        reserved = _active_reserved_media_bytes(conn)
         eviction = _evict_oldest_media_to_fit(
             conn,
             config,
-            candidate_bytes=candidate_bytes,
+            candidate_bytes=candidate_bytes + reserved,
             max_bytes=config.max_media_cache_bytes,
             reason="cache-evicted:global-oldest",
             exclude_artifact_id=artifact_id,
         )
-        if int(eviction.get("remaining") or 0) + candidate_bytes > config.max_media_cache_bytes:
+        if int(eviction.get("remaining") or 0) + reserved + candidate_bytes > config.max_media_cache_bytes:
             return False, "media-cache-budget"
     return True, ""
 
@@ -263,6 +337,8 @@ class MediaArtifactWrite:
     metadata_json: str
     priority: int
     content: bytes
+    content_stream: BinaryIO | None
+    content_size: int
     file_extension: str
     fetch_supported: bool
 
@@ -324,7 +400,8 @@ def _prepare_media_blob(
     config: RuntimeConfig,
     *,
     artifact_id: str,
-    content: bytes,
+    content: bytes | BinaryIO,
+    content_size: int,
     file_extension: str,
 ) -> _PreparedMediaBlob:
     artifact_id = validate_media_artifact_id(artifact_id)
@@ -333,10 +410,10 @@ def _prepare_media_blob(
     destination = choose_media_blob_destination(config)
     reservation_id: str | None = None
     if destination.tier == "spool":
-        reservation = reserve_media_spool(conn, config, artifact_id=artifact_id, reserved_bytes=len(content))
+        reservation = reserve_media_spool(conn, config, artifact_id=artifact_id, reserved_bytes=content_size)
         reservation_id = str(reservation["reservation_id"])
     try:
-        staged = destination.store.stage(content, expected_size=len(content))
+        staged = destination.store.stage(content, expected_size=content_size)
     except BaseException:
         if reservation_id is not None:
             release_media_spool_reservation(conn, reservation_id)
@@ -369,11 +446,125 @@ def _rollback_artifact_transaction(conn: sqlite3.Connection, savepoint: str | No
         conn.execute(f"RELEASE SAVEPOINT {savepoint}")
 
 
+def _refresh_or_remove_expired_cache_reservations(conn: sqlite3.Connection) -> None:
+    expired = conn.execute(
+        """
+        SELECT reservation_id, owner_pid, owner_start_token
+        FROM media_cache_reservations
+        WHERE expires_at <= strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+        """
+    ).fetchall()
+    for row in expired:
+        reservation_id = str(row["reservation_id"])
+        if _cache_reservation_owner_is_live(int(row["owner_pid"]), str(row["owner_start_token"])):
+            conn.execute(
+                """
+                UPDATE media_cache_reservations
+                SET expires_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '+15 minutes')
+                WHERE reservation_id = ?
+                """,
+                (reservation_id,),
+            )
+        else:
+            conn.execute(
+                "DELETE FROM media_cache_reservations WHERE reservation_id = ?",
+                (reservation_id,),
+            )
+
+
+def reserve_media_cache_admission(
+    conn: sqlite3.Connection,
+    config: RuntimeConfig,
+    *,
+    artifact_id: str,
+    document_id: str,
+    snapshot_id: str,
+    candidate_bytes: int,
+) -> tuple[str | None, str]:
+    if candidate_bytes <= 0:
+        return None, ""
+    domain_row = conn.execute("SELECT domain FROM documents WHERE id = ?", (document_id,)).fetchone()
+    domain = str(domain_row["domain"] or "") if domain_row else ""
+    reservation_id = f"media-cache-{uuid.uuid4().hex}"
+    savepoint = _start_artifact_transaction(conn)
+    try:
+        _refresh_or_remove_expired_cache_reservations(conn)
+        if config.max_media_bytes_per_snapshot > 0:
+            snapshot_total = stored_media_bytes(
+                conn,
+                "AND snapshot_id = ?",
+                (snapshot_id,),
+                exclude_artifact_id=artifact_id,
+            ) + _active_reserved_media_bytes(conn, snapshot_id=snapshot_id)
+            if snapshot_total + candidate_bytes > config.max_media_bytes_per_snapshot:
+                _finish_artifact_transaction(conn, savepoint)
+                return None, "snapshot-media-budget"
+        if config.max_media_bytes_per_domain > 0 and domain:
+            domain_total = _stored_domain_media_bytes(
+                conn,
+                domain,
+                exclude_artifact_id=artifact_id,
+            ) + _active_reserved_media_bytes(conn, domain=domain)
+            if domain_total + candidate_bytes > config.max_media_bytes_per_domain:
+                _finish_artifact_transaction(conn, savepoint)
+                return None, "domain-media-budget"
+        if config.max_media_cache_bytes > 0:
+            global_total = stored_media_bytes(
+                conn,
+                exclude_artifact_id=artifact_id,
+            ) + _active_reserved_media_bytes(conn)
+            if global_total + candidate_bytes > config.max_media_cache_bytes:
+                _finish_artifact_transaction(conn, savepoint)
+                return None, "media-cache-budget"
+        conn.execute(
+            """
+            INSERT INTO media_cache_reservations(
+              reservation_id, artifact_id, document_id, snapshot_id, domain,
+              reserved_bytes, owner_pid, owner_start_token, expires_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '+15 minutes'))
+            """,
+            (
+                reservation_id,
+                artifact_id,
+                document_id,
+                snapshot_id,
+                domain,
+                candidate_bytes,
+                _PROCESS_ID,
+                _PROCESS_START_TOKEN,
+            ),
+        )
+        _finish_artifact_transaction(conn, savepoint)
+    except BaseException:
+        _rollback_artifact_transaction(conn, savepoint)
+        raise
+    return reservation_id, ""
+
+
+def release_media_cache_reservation(conn: sqlite3.Connection, reservation_id: str) -> None:
+    savepoint = _start_artifact_transaction(conn)
+    try:
+        conn.execute("DELETE FROM media_cache_reservations WHERE reservation_id = ?", (reservation_id,))
+        _finish_artifact_transaction(conn, savepoint)
+    except BaseException:
+        _rollback_artifact_transaction(conn, savepoint)
+        raise
+
+
 def _release_failed_reservation(conn: sqlite3.Connection, reservation_id: str | None) -> None:
     if reservation_id is None:
         return
     try:
         release_media_spool_reservation(conn, reservation_id)
+    except sqlite3.Error:
+        pass
+
+
+def _release_failed_cache_reservation(conn: sqlite3.Connection, reservation_id: str | None) -> None:
+    if reservation_id is None:
+        return
+    try:
+        release_media_cache_reservation(conn, reservation_id)
     except sqlite3.Error:
         pass
 
@@ -387,10 +578,12 @@ def persist_media_artifact(
     existing = _existing_media_artifact(conn, artifact_id)
     _validate_media_owner(conn, write, existing)
 
-    content = write.content
+    content_size = write.content_size if write.content_stream is not None else len(write.content)
+    content_source: bytes | BinaryIO = write.content_stream if write.content_stream is not None else write.content
     status = write.capture_status
     reason = write.status_reason
-    if content:
+    cache_reservation_id: str | None = None
+    if content_size:
         allowed, gate_reason = media_storage_allowed(
             conn,
             config,
@@ -398,36 +591,52 @@ def persist_media_artifact(
             snapshot_id=write.snapshot_id,
             media_type=write.media_type,
             mime_type=write.mime_type,
-            candidate_bytes=len(content),
+            candidate_bytes=content_size,
             priority=write.priority,
             artifact_id=artifact_id,
         )
         if not allowed:
-            content = b""
+            content_size = 0
             status = "skipped"
             reason = gate_reason
         else:
-            status = "stored"
+            cache_reservation_id, gate_reason = reserve_media_cache_admission(
+                conn,
+                config,
+                artifact_id=artifact_id,
+                document_id=write.document_id,
+                snapshot_id=write.snapshot_id,
+                candidate_bytes=content_size,
+            )
+            if cache_reservation_id is None:
+                content_size = 0
+                status = "skipped"
+                reason = gate_reason
+            else:
+                status = "stored"
     elif status == "stored":
         status = "metadata-only"
 
-    prepared = (
-        _prepare_media_blob(
-            conn,
-            config,
-            artifact_id=artifact_id,
-            content=content,
-            file_extension=write.file_extension,
-        )
-        if content
-        else None
-    )
+    prepared: _PreparedMediaBlob | None = None
+    try:
+        if content_size:
+            prepared = _prepare_media_blob(
+                conn,
+                config,
+                artifact_id=artifact_id,
+                content=content_source,
+                content_size=content_size,
+                file_extension=write.file_extension,
+            )
+    except BaseException:
+        _release_failed_cache_reservation(conn, cache_reservation_id)
+        raise
     target_path: Path | None = None
     replacement_operation: str | None = None
     result_tier = str(existing["storage_tier"] or "media-root") if existing else "media-root"
     result_status = status
     result_reason = reason
-    result_byte_size = len(content) if content else 0
+    result_byte_size = content_size
     had_transaction = conn.in_transaction
     savepoint: str | None = None
     transaction_started = False
@@ -449,7 +658,7 @@ def persist_media_artifact(
         blob_locator = ""
         spool_locator = ""
         content_sha256 = ""
-        byte_size = len(content) if content else None
+        byte_size = content_size if content_size else None
         storage_tier = "media-root"
         if prepared is not None:
             target_path = prepared.store.commit(prepared.staged, prepared.locator)
@@ -547,6 +756,11 @@ def persist_media_artifact(
                 "DELETE FROM media_spool_reservations WHERE reservation_id = ?",
                 (prepared.reservation_id,),
             )
+        if cache_reservation_id is not None:
+            conn.execute(
+                "DELETE FROM media_cache_reservations WHERE reservation_id = ?",
+                (cache_reservation_id,),
+            )
         if prepared is not None:
             current_locator = spool_locator if storage_tier == "spool" else blob_locator
             register_committed_blob(
@@ -602,6 +816,7 @@ def persist_media_artifact(
                     pass
         if prepared is not None:
             _release_failed_reservation(conn, prepared.reservation_id)
+        _release_failed_cache_reservation(conn, cache_reservation_id)
         raise
 
     if replacement_operation:

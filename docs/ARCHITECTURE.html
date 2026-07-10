@@ -213,6 +213,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>Migration version 10 records each artifact's <code>media-root</code> or <code>spool</code> tier. Dry-run-first spool draining streams and hash-verifies the destination, commits the tier transition, and only then removes the source.</li>
 <li>Migration version 11 adds durable <code>blob_storage_records</code>. Forget, purge, eviction, spool drain, replacement, and blob migration register committed/tombstoned lifecycle state before filesystem deletion; <code>failed</code>/<code>blocked</code> work remains pending and visible until <code>storage reconcile --execute</code> converges it.</li>
 <li>Migration version 12 performs one-time historical media-state correction. The steady-state worker runs only bounded current-state CDP/task reconciliation plus due-task leasing; budget skips require an explicit scoped <code>media-cache requeue</code> preview/execute operation.</li>
+<li>Migration version 13 adds expiring SQLite cache reservations. Admission counts committed plus active reserved bytes transactionally across daemon and worker processes, and publication replaces its reservation with the committed artifact row in the same transaction.</li>
+<li><code>BMD_MAX_MEDIA_INFLIGHT_BYTES</code> and <code>BMD_MAX_MEDIA_CONCURRENT_REQUESTS</code> bound media bytes and active requests within each daemon or worker process. Raw upload, public HTTP/HLS fetch, artifact staging, and stored responses use bounded streams; queue status exposes aggregate lease counters.</li>
 <li>Text-first backup uses SQLite's online backup API plus a redaction-safe SHA-256 manifest. Restore verifies into an absent runtime root; media/spool/secrets remain excluded by default.</li>
 </ul>
 <hr />
@@ -586,12 +588,12 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td>REQ-036</td>
 <td style="text-align: right;">1</td>
-<td>planned</td>
+<td>active</td>
 <td>Media transitions, cache admission, leases, retries, and resource budgets shall be closed, bounded, and concurrency-safe.</td>
 <td>Media State Machine</td>
 <td><code>HRD-011</code></td>
-<td><code>daemon/src/browser_memory_daemon/media_models.py</code><br><code>daemon/src/browser_memory_daemon/media_tasks.py</code><br><code>daemon/src/browser_memory_daemon/media_store.py</code><br><code>daemon/src/browser_memory_daemon/media_ops.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/media_storage.py</code><br><code>daemon/src/browser_memory_daemon/media_worker.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0010_split_media_root_and_add_spool.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0012_normalize_historical_media_state.py</code></td>
-<td><code>daemon/tests/integration/test_media_tasks.py::test_media_task_repository_allows_only_one_concurrent_lease_owner</code><br><code>daemon/tests/unit/test_media_store.py::test_media_facade_preserves_admission_api_identity</code><br><code>daemon/tests/unit/test_media_store.py::test_media_facade_preserves_artifact_store_api_identity</code><br><code>daemon/tests/integration/test_storage_reconcile.py</code><br><code>daemon/tests/integration/test_media_storage.py::test_spool_reservations_serialize_concurrent_cap_checks</code><br><code>daemon/tests/integration/test_media_storage.py::test_failed_first_publication_removes_new_blob_and_spool_reservation</code><br><code>daemon/tests/integration/test_media_storage.py::test_failed_write_transaction_start_aborts_stage_and_releases_spool_reservation</code><br><code>daemon/tests/integration/test_media_storage.py::test_failed_replacement_preserves_previous_blob_and_removes_candidate</code><br><code>daemon/tests/e2e/test_http_api.py::test_http_upload_get_and_purge_use_bounded_spool_during_media_root_outage</code><br><code>daemon/tests/integration/test_media_worker.py::test_media_worker_does_not_auto_requeue_terminal_budget_skips</code><br><code>daemon/tests/integration/test_media_ops.py::test_media_requeue_is_scoped_and_dry_run_first</code><br><code>daemon/tests/integration/test_migrations.py::test_version_twelve_normalizes_historical_media_state_once</code></td>
+<td><code>daemon/src/browser_memory_daemon/app.py</code><br><code>daemon/src/browser_memory_daemon/config.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/media_models.py</code><br><code>daemon/src/browser_memory_daemon/media_tasks.py</code><br><code>daemon/src/browser_memory_daemon/media_store.py</code><br><code>daemon/src/browser_memory_daemon/media_fetch.py</code><br><code>daemon/src/browser_memory_daemon/media_hls.py</code><br><code>daemon/src/browser_memory_daemon/media_ops.py</code><br><code>daemon/src/browser_memory_daemon/media_resources.py</code><br><code>daemon/src/browser_memory_daemon/media_storage.py</code><br><code>daemon/src/browser_memory_daemon/media_worker.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0010_split_media_root_and_add_spool.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0012_normalize_historical_media_state.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0013_add_media_cache_reservations.py</code></td>
+<td><code>daemon/tests/integration/test_media_tasks.py::test_media_task_repository_allows_only_one_concurrent_lease_owner</code><br><code>daemon/tests/unit/test_media_store.py::test_media_facade_preserves_admission_api_identity</code><br><code>daemon/tests/unit/test_media_store.py::test_media_facade_preserves_artifact_store_api_identity</code><br><code>daemon/tests/unit/test_media_resources.py</code><br><code>daemon/tests/unit/test_media_worker_claiming.py</code><br><code>daemon/tests/integration/test_storage_reconcile.py</code><br><code>daemon/tests/integration/test_media_storage.py::test_spool_reservations_serialize_concurrent_cap_checks</code><br><code>daemon/tests/integration/test_media_storage.py::test_cache_reservations_serialize_concurrent_global_admission</code><br><code>daemon/tests/integration/test_media_storage.py::test_cache_reservation_blocks_publication_until_released_and_expired_rows_are_reclaimed</code><br><code>daemon/tests/integration/test_media_storage.py::test_cancellation_like_stage_failure_releases_spool_and_cache_reservations</code><br><code>daemon/tests/integration/test_media_storage.py::test_failed_first_publication_removes_new_blob_and_spool_reservation</code><br><code>daemon/tests/integration/test_media_storage.py::test_failed_write_transaction_start_aborts_stage_and_releases_spool_reservation</code><br><code>daemon/tests/integration/test_media_storage.py::test_failed_replacement_preserves_previous_blob_and_removes_candidate</code><br><code>daemon/tests/e2e/test_http_api.py::test_http_upload_get_and_purge_use_bounded_spool_during_media_root_outage</code><br><code>daemon/tests/e2e/test_http_api.py::test_http_raw_media_upload_returns_503_when_global_byte_budget_cannot_admit_body</code><br><code>daemon/tests/integration/test_media_worker.py::test_media_worker_does_not_auto_requeue_terminal_budget_skips</code><br><code>daemon/tests/integration/test_media_worker.py::test_media_resource_pressure_does_not_roll_back_searchable_text</code><br><code>daemon/tests/integration/test_media_ops.py::test_media_requeue_is_scoped_and_dry_run_first</code><br><code>daemon/tests/integration/test_migrations.py::test_version_twelve_normalizes_historical_media_state_once</code><br><code>daemon/tests/integration/test_migrations.py::test_version_thirteen_adds_cache_reservations_from_exact_prior_schema</code></td>
 </tr>
 <tr>
 <td>REQ-037</td>
@@ -831,12 +833,12 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Daemon media worker</td>
-<td>Durable public-media backfill with leases/backoff/retry and HLS/audio sidecar assembly.</td>
-<td>Does not receive or export Chrome cookies; final and spool-backed media remain storage-tier aware.</td>
+<td>Durable public-media backfill with leases/backoff/retry, process request/byte budgets, and streamed HLS/audio sidecar assembly.</td>
+<td>Does not receive or export Chrome cookies; claims one due task immediately before work; final and spool-backed media remain storage-tier aware.</td>
 </tr>
 <tr>
 <td>Media cache manager</td>
-<td>Applies size gates, manual purge/rehydrate, oldest-first domain/global rolling eviction, guarded final-root selection, bounded local spool admission/drain, and retryable byte deletion.</td>
+<td>Applies size gates, transactional committed-plus-reserved cache admission, manual purge/rehydrate, oldest-first domain/global rolling eviction, guarded final-root selection, bounded local spool admission/drain, and retryable byte deletion.</td>
 <td>Blob bytes are disposable; text, refs, hashes, and provenance remain durable. Failed purge/eviction stays unreadable, retryable, and included in admission accounting.</td>
 </tr>
 <tr>
@@ -885,8 +887,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td><code>BrowserMediaContainers</code>, <code>ExtensionMediaComponents</code>, <code>CredentialedMediaSidecarFlow</code></td>
 </tr>
 <tr>
-<td>How does daemon-public media backfill work?</td>
-<td><code>DaemonMediaWorkerContainers</code>, <code>DaemonMediaComponents</code>, <code>DaemonPublicMediaWorkerFlow</code></td>
+<td>How does daemon-public media backfill and bounded streaming work?</td>
+<td><code>DaemonMediaWorkerContainers</code>, <code>DaemonMediaComponents</code>, <code>DaemonMediaTransportComponents</code>, <code>DaemonMediaResourceComponents</code>, <code>DaemonPublicMediaWorkerFlow</code></td>
 </tr>
 <tr>
 <td>How do read/search/forget/doctor operations reach storage?</td>
@@ -949,17 +951,17 @@ text/FTS/media refs remain authoritative
 </tr>
 <tr>
 <td>Daemon lazy sidecar</td>
-<td>Public unauthenticated backfill with atomic leases, backoff, guarded HLS assembly, and status classification.</td>
-<td><code>daemon/src/browser_memory_daemon/media_worker.py</code>, <code>media_tasks.py</code>, <code>media_models.py</code>, <code>media_fetch.py</code>, <code>media_hls.py</code>, <code>media.py</code> compatibility facade</td>
+<td>Public unauthenticated backfill with atomic just-in-time leases, backoff, streamed guarded HLS assembly, process resource budgets, and status classification.</td>
+<td><code>daemon/src/browser_memory_daemon/media_worker.py</code>, <code>media_tasks.py</code>, <code>media_models.py</code>, <code>media_fetch.py</code>, <code>media_hls.py</code>, <code>media_resources.py</code>, <code>media.py</code> compatibility facade</td>
 </tr>
 <tr>
 <td>Cache management</td>
-<td>Purge/rehydrate controls plus oldest-first rolling eviction for domain/global caps.</td>
-<td><code>media_store.py</code>, <code>media.py</code> compatibility facade, <code>cli.py</code>, <code>/media-artifacts/*</code></td>
+<td>Transactional SQLite reservations plus purge/rehydrate controls and oldest-first rolling eviction for snapshot/domain/global caps.</td>
+<td><code>media_store.py</code>, migration version 13, <code>media.py</code> compatibility facade, <code>cli.py</code>, <code>/media-artifacts/*</code></td>
 </tr>
 </tbody>
 </table>
-<p>Media status vocabulary and ordinary transition matrices live in <code>media_models.py</code>. Durable task identity, terminal-state preservation, atomic leasing, stale-lease recovery, and retry/backoff live in <code>media_tasks.py</code>. Artifact publication, row ownership, contained reads, cache byte accounting/admission, purge, oldest-first eviction, and tombstone-backed deletion outcomes live in <code>media_store.py</code>. Guarded HTTP/data transport and redirect/address policy live in <code>media_fetch.py</code>; bounded HLS parsing and assembly live in <code>media_hls.py</code>. <code>media_ops.py</code> owns bounded current-state repair and scoped dry-run-first budget requeue; historical correction runs once in migration 12 rather than every worker pass. <code>media.py</code> remains the stable compatibility surface. Streamed assembly and global in-flight budgets remain a later reversible slice.</p>
+<p>Media status vocabulary and ordinary transition matrices live in <code>media_models.py</code>. Durable task identity, terminal-state preservation, atomic just-in-time leasing, stale-lease recovery, and retry/backoff live in <code>media_tasks.py</code>. Artifact publication, row ownership, contained streamed reads, transactional cache reservation/admission, purge, oldest-first eviction, and tombstone-backed deletion outcomes live in <code>media_store.py</code>. Guarded streamed HTTP/data transport and redirect/address policy live in <code>media_fetch.py</code>; bounded streamed HLS parsing and assembly live in <code>media_hls.py</code>. <code>media_resources.py</code> owns process-local request/byte leases and aggregate telemetry. <code>media_ops.py</code> owns bounded current-state repair and scoped dry-run-first budget requeue; historical correction runs once in migration 12 rather than every worker pass. <code>media.py</code> remains the stable compatibility surface.</p>
 <h3 id="visual-references">Visual references</h3>
 <table>
 <thead>

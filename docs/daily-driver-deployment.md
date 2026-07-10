@@ -39,6 +39,7 @@ The daemon is persistent in WSL. Chrome still requires **Load unpacked** / **Rel
 | Legacy clean-text sidecars | `${BMD_DERIVATIVE_ROOT}/clean-text/` |
 | Final media blobs | `${BMD_MEDIA_ROOT:-${BMD_BLOB_ROOT}/media}` |
 | Optional local media spool | `BMD_MEDIA_SPOOL_ROOT` under the local data root, paired with positive `BMD_MAX_MEDIA_SPOOL_BYTES` |
+| Per-process media capacity | Positive `BMD_MAX_MEDIA_INFLIGHT_BYTES` (at least one maximum artifact) and `BMD_MAX_MEDIA_CONCURRENT_REQUESTS` |
 | Durable audit events | SQLite `audit_events` table; no `audit.jsonl` writer exists. `BMD_AUDIT_LOG` is a reserved/unused compatibility field. |
 
 ---
@@ -83,6 +84,8 @@ BMD_MEDIA_ROOT=/mnt/nas/browser-memory-daemon/media \
   BMD_REQUIRE_MEDIA_ROOT_MOUNT=1 \
   BMD_MEDIA_SPOOL_ROOT="$HOME/.local/share/browser-memory-daemon/media-spool" \
   BMD_MAX_MEDIA_SPOOL_BYTES=1073741824 \
+  BMD_MAX_MEDIA_INFLIGHT_BYTES=524288000 \
+  BMD_MAX_MEDIA_CONCURRENT_REQUESTS=4 \
   BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
 ```
 

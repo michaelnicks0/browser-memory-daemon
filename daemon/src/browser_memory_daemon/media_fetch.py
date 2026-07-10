@@ -3,14 +3,40 @@ from __future__ import annotations
 import base64
 import ipaddress
 import socket
+import tempfile
 import time
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, BinaryIO, Protocol, cast
 from urllib.error import HTTPError, URLError
 from urllib.parse import unquote_to_bytes, urljoin, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from .config import RuntimeConfig
+from .media_resources import MediaResourceLease, MediaResourceUnavailable, media_resource_budget
+
+
+@dataclass
+class FetchedMediaStream:
+    stream: BinaryIO | None
+    byte_size: int
+    mime_type: str
+    reason: str
+    _resource_lease: MediaResourceLease | None = None
+
+    def close(self) -> None:
+        if self.stream is not None:
+            self.stream.close()
+            self.stream = None
+        if self._resource_lease is not None:
+            self._resource_lease.release()
+            self._resource_lease = None
+
+    def __enter__(self) -> FetchedMediaStream:
+        return self
+
+    def __exit__(self, exc_type: Any, exc: Any, traceback: Any) -> None:
+        self.close()
 
 SAFE_MEDIA_SUFFIX_MIME = {
     ".png": "image/png",
@@ -247,11 +273,13 @@ def _guarded_public_fetch(
     timeout_seconds: float,
     deadline: float | None = None,
     budget: _FetchBudget | None = None,
+    output_stream: BinaryIO | None = None,
 ) -> tuple[bytes, str, str, str]:
     del page_url  # Public daemon fetch intentionally sends no Referer.
     current_url = source_url
     visited: set[str] = set()
     redirects = 0
+    process_budget = media_resource_budget(config)
     while True:
         if _deadline_expired(deadline):
             return b"", "", current_url, "hls-time-budget-exceeded"
@@ -265,10 +293,40 @@ def _guarded_public_fetch(
             return b"", "", current_url, "hls-request-budget-exceeded"
         request = _request_for_url(current_url, "", accept=accept)
         try:
-            with _PUBLIC_FETCH_OPENER(request, timeout=_remaining_timeout(timeout_seconds, deadline)) as response:
-                status = _response_status(response)
-                if 300 <= status < 400:
-                    location = _response_header(response.headers, "location")
+            resource_lease = process_budget.acquire(
+                byte_count=0,
+                request_count=1,
+                timeout=_remaining_timeout(timeout_seconds, deadline),
+            )
+        except MediaResourceUnavailable:
+            return b"", "", current_url, "media-resource-budget"
+        try:
+            try:
+                with _PUBLIC_FETCH_OPENER(request, timeout=_remaining_timeout(timeout_seconds, deadline)) as response:
+                    status = _response_status(response)
+                    if 300 <= status < 400:
+                        location = _response_header(response.headers, "location")
+                        if not location:
+                            return b"", "", current_url, "fetch-redirect-missing-location"
+                        redirects += 1
+                        if redirects > config.media_public_fetch_max_redirects:
+                            return b"", "", current_url, "fetch-too-many-redirects"
+                        current_url = _redirect_target(current_url, location)
+                        continue
+                    if status >= 400:
+                        return b"", "", current_url, f"fetch-status-{status}"
+                    if output_stream is not None:
+                        _size, read_reason = _read_http_response_to_stream(
+                            response,
+                            output_stream,
+                            max_bytes=max_bytes,
+                        )
+                        return b"", str(response.headers.get("content-type", "")), current_url, read_reason
+                    content, read_reason = _read_http_response_limited(response, max_bytes=max_bytes)
+                    return content, str(response.headers.get("content-type", "")), current_url, read_reason
+            except HTTPError as exc:
+                if 300 <= int(exc.code) < 400:
+                    location = _response_header(exc.headers, "location")
                     if not location:
                         return b"", "", current_url, "fetch-redirect-missing-location"
                     redirects += 1
@@ -276,28 +334,16 @@ def _guarded_public_fetch(
                         return b"", "", current_url, "fetch-too-many-redirects"
                     current_url = _redirect_target(current_url, location)
                     continue
-                if status >= 400:
-                    return b"", "", current_url, f"fetch-status-{status}"
-                content, read_reason = _read_http_response_limited(response, max_bytes=max_bytes)
-                return content, str(response.headers.get("content-type", "")), current_url, read_reason
-        except HTTPError as exc:
-            if 300 <= int(exc.code) < 400:
-                location = _response_header(exc.headers, "location")
-                if not location:
-                    return b"", "", current_url, "fetch-redirect-missing-location"
-                redirects += 1
-                if redirects > config.media_public_fetch_max_redirects:
-                    return b"", "", current_url, "fetch-too-many-redirects"
-                current_url = _redirect_target(current_url, location)
-                continue
-            return b"", "", current_url, f"fetch-status-{exc.code}"
-        except TimeoutError:
-            return b"", "", current_url, "fetch-timeout"
-        except URLError as exc:
-            url_reason = getattr(exc, "reason", exc)
-            return b"", "", current_url, f"fetch-error-{str(url_reason)[:160]}"
-        except Exception as exc:
-            return b"", "", current_url, f"fetch-error-{str(exc)[:160]}"
+                return b"", "", current_url, f"fetch-status-{exc.code}"
+            except TimeoutError:
+                return b"", "", current_url, "fetch-timeout"
+            except URLError as exc:
+                url_reason = getattr(exc, "reason", exc)
+                return b"", "", current_url, f"fetch-error-{str(url_reason)[:160]}"
+            except Exception as exc:
+                return b"", "", current_url, f"fetch-error-{str(exc)[:160]}"
+        finally:
+            resource_lease.release()
 
 
 def _content_type_mime(value: str) -> str:
@@ -334,6 +380,138 @@ def _read_http_response_limited(response: Any, *, max_bytes: int) -> tuple[bytes
     return b"".join(chunks), ""
 
 
+def _read_http_response_to_stream(response: Any, stream: BinaryIO, *, max_bytes: int) -> tuple[int, str]:
+    try:
+        content_length = int(response.headers.get("content-length") or "0")
+    except ValueError:
+        content_length = 0
+    if content_length > max_bytes:
+        return 0, "media-too-large"
+    total = 0
+    while True:
+        chunk = response.read(64 * 1024)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > max_bytes:
+            return 0, "media-too-large"
+        stream.write(chunk)
+    return total, ""
+
+
+
+
+def _stream_size(stream: BinaryIO) -> int:
+    position = stream.tell()
+    stream.seek(0, 2)
+    size = stream.tell()
+    stream.seek(position)
+    return size
+
+
+def _fetch_media_stream(
+    source_url: str,
+    page_url: str,
+    *,
+    media_type: str,
+    max_bytes: int,
+    timeout_seconds: float,
+    config: RuntimeConfig,
+) -> FetchedMediaStream:
+    try:
+        resource_lease = media_resource_budget(config).acquire(
+            byte_count=max_bytes,
+            request_count=0,
+            timeout=timeout_seconds,
+        )
+    except MediaResourceUnavailable:
+        return FetchedMediaStream(None, 0, "", "media-resource-budget")
+    spool = cast(BinaryIO, tempfile.SpooledTemporaryFile(max_size=1024 * 1024, mode="w+b"))
+    try:
+        parts = urlsplit(source_url)
+        if parts.scheme == "data":
+            content, mime_type, reason = _data_url_to_media(source_url, media_type=media_type, max_bytes=max_bytes)
+            if reason:
+                spool.close()
+                resource_lease.release()
+                return FetchedMediaStream(None, 0, mime_type, reason)
+            spool.write(content)
+            spool.seek(0)
+            return FetchedMediaStream(spool, len(content), mime_type, "", resource_lease)
+        if parts.scheme not in {"http", "https"}:
+            spool.close()
+            resource_lease.release()
+            return FetchedMediaStream(None, 0, "", "unsupported-media-url-scheme")
+        deadline = time.monotonic() + max(0.001, timeout_seconds)
+        initial_max_bytes = max_bytes
+        if media_type == "video" and parts.path.lower().endswith(".m3u8"):
+            initial_max_bytes = min(max_bytes, config.media_hls_playlist_max_bytes)
+        _content, raw_content_type, final_url, reason = _guarded_public_fetch(
+            config,
+            source_url,
+            page_url,
+            accept="image/*,video/*,audio/*,application/vnd.apple.mpegurl,application/x-mpegURL,application/octet-stream,*/*;q=0.8",
+            max_bytes=initial_max_bytes,
+            timeout_seconds=timeout_seconds,
+            deadline=deadline,
+            output_stream=spool,
+        )
+        if reason:
+            spool.close()
+            resource_lease.release()
+            return FetchedMediaStream(None, 0, "", reason)
+        raw_mime = _content_type_mime(raw_content_type)
+        response_mime = _safe_response_mime(raw_content_type, media_type=media_type)
+        hls_candidate = media_type == "video" and _is_hls_candidate(final_url or source_url, raw_content_type)
+        spool.seek(0)
+        playlist_probe = spool.read(config.media_hls_playlist_max_bytes + 1) if media_type == "video" else b""
+        looks_hls = media_type == "video" and _looks_like_hls_playlist(playlist_probe)
+        if raw_mime and not response_mime and not hls_candidate and not looks_hls:
+            spool.close()
+            resource_lease.release()
+            return FetchedMediaStream(None, 0, "", "non-media-content-type")
+        if hls_candidate or looks_hls:
+            if len(playlist_probe) > config.media_hls_playlist_max_bytes:
+                spool.close()
+                resource_lease.release()
+                return FetchedMediaStream(None, 0, "", "media-too-large")
+            from .media_hls import _fetch_hls_media_bytes, _HlsFetchBudget
+
+            spool.seek(0)
+            spool.truncate()
+            hls_budget = _HlsFetchBudget(
+                requests_remaining=max(0, config.media_hls_max_requests - 1),
+                deadline=deadline,
+            )
+            _assembled, hls_mime, hls_reason = _fetch_hls_media_bytes(
+                final_url or source_url,
+                page_url,
+                playlist_probe,
+                max_bytes=max_bytes,
+                timeout_seconds=timeout_seconds,
+                config=config,
+                budget=hls_budget,
+                deadline=deadline,
+                output_stream=spool,
+            )
+            if hls_reason:
+                spool.close()
+                resource_lease.release()
+                return FetchedMediaStream(None, 0, hls_mime, hls_reason)
+            response_mime = hls_mime
+        byte_size = _stream_size(spool)
+        if byte_size <= 0:
+            spool.close()
+            resource_lease.release()
+            return FetchedMediaStream(None, 0, response_mime, "empty-media-response")
+        spool.seek(0)
+        return FetchedMediaStream(spool, byte_size, response_mime, "", resource_lease)
+    except BaseException:
+        spool.close()
+        resource_lease.release()
+        raise
+
+
 def _fetch_media_bytes(
     source_url: str,
     page_url: str,
@@ -343,48 +521,14 @@ def _fetch_media_bytes(
     timeout_seconds: float,
     config: RuntimeConfig,
 ) -> tuple[bytes, str, str]:
-    parts = urlsplit(source_url)
-    if parts.scheme == "data":
-        return _data_url_to_media(source_url, media_type=media_type, max_bytes=max_bytes)
-    if parts.scheme not in {"http", "https"}:
-        return b"", "", "unsupported-media-url-scheme"
-    deadline = time.monotonic() + max(0.001, timeout_seconds)
-    initial_max_bytes = max_bytes
-    if media_type == "video" and parts.path.lower().endswith(".m3u8"):
-        initial_max_bytes = min(max_bytes, config.media_hls_playlist_max_bytes)
-    content, raw_content_type, final_url, reason = _guarded_public_fetch(
-        config,
+    with _fetch_media_stream(
         source_url,
         page_url,
-        accept="image/avif,image/webp,image/apng,image/svg+xml,image/*,video/*,application/vnd.apple.mpegurl,application/x-mpegURL,*/*;q=0.8",
-        max_bytes=initial_max_bytes,
+        config=config,
+        media_type=media_type,
+        max_bytes=max_bytes,
         timeout_seconds=timeout_seconds,
-        deadline=deadline,
-    )
-    response_mime = _safe_response_mime(raw_content_type, media_type=media_type)
-    hls_candidate = media_type == "video" and _is_hls_candidate(final_url or source_url, raw_content_type)
-    if reason:
-        return b"", response_mime, reason
-    if hls_candidate or (media_type == "video" and _looks_like_hls_playlist(content)):
-        if len(content) > config.media_hls_playlist_max_bytes:
-            return b"", "", "media-too-large"
-    if raw_content_type and not response_mime and not hls_candidate:
-        return b"", "", "non-media-content-type"
-    if media_type == "video" and (hls_candidate or _looks_like_hls_playlist(content)):
-        from .media_hls import (
-            _fetch_hls_media_bytes,
-            _HlsFetchBudget,
-        )
-
-        budget = _HlsFetchBudget(requests_remaining=max(0, config.media_hls_max_requests - 1), deadline=deadline)
-        return _fetch_hls_media_bytes(
-            final_url or source_url,
-            page_url,
-            content,
-            max_bytes=max_bytes,
-            timeout_seconds=_remaining_timeout(timeout_seconds, deadline),
-            config=config,
-            budget=budget,
-            deadline=deadline,
-        )
-    return content, response_mime, ""
+    ) as fetched:
+        if fetched.reason or fetched.stream is None:
+            return b"", fetched.mime_type, fetched.reason
+        return fetched.stream.read(), fetched.mime_type, ""

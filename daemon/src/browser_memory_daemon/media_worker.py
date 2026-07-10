@@ -21,16 +21,24 @@ def run_once(
     limit: int = 25,
 ) -> dict[str, Any]:
     worker_id = worker_id or f"media-worker-{uuid.uuid4()}"
+    selected_limit = max(1, int(limit))
     with conn:
-        reconciled_cdp_blob_coverage = reconcile_cdp_blob_coverage(conn, limit=limit)
-        reconciled_stored_tasks = reconcile_stored_media_tasks(conn, worker_kind=worker_kind, limit=limit)
-        rows = claim_media_fetch_tasks(conn, worker_id=worker_id, worker_kind=worker_kind, limit=limit)
-    results = process_media_fetch_task_rows(
-        conn,
-        config,
-        rows,
-        fetch_artifact=fetch_and_store_media_artifact,
-    )
+        reconciled_cdp_blob_coverage = reconcile_cdp_blob_coverage(conn, limit=selected_limit)
+        reconciled_stored_tasks = reconcile_stored_media_tasks(conn, worker_kind=worker_kind, limit=selected_limit)
+    results: list[dict[str, Any]] = []
+    for _ in range(selected_limit):
+        with conn:
+            rows = claim_media_fetch_tasks(conn, worker_id=worker_id, worker_kind=worker_kind, limit=1)
+        if not rows:
+            break
+        results.extend(
+            process_media_fetch_task_rows(
+                conn,
+                config,
+                rows,
+                fetch_artifact=fetch_and_store_media_artifact,
+            )
+        )
     summary = {
         "worker_id": worker_id,
         "worker_kind": worker_kind,

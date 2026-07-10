@@ -21,6 +21,10 @@ from browser_memory_daemon.media_storage import (
     release_media_spool_reservation,
     reserve_media_spool,
 )
+from browser_memory_daemon.media_store import (
+    release_media_cache_reservation,
+    reserve_media_cache_admission,
+)
 from browser_memory_daemon.models import CapturePayload
 
 
@@ -179,6 +183,7 @@ def test_failed_first_publication_removes_new_blob_and_spool_reservation(tmp_pat
             store_media_artifact(conn, cfg, _store_payload(b"must-not-survive"))
         assert conn.execute("SELECT COUNT(*) FROM media_artifacts").fetchone()[0] == 0
         assert conn.execute("SELECT COUNT(*) FROM media_spool_reservations").fetchone()[0] == 0
+        assert conn.execute("SELECT COUNT(*) FROM media_cache_reservations").fetchone()[0] == 0
 
     committed_files = [
         path for path in cfg.media_spool_root.rglob("*") if path.is_file() and ".staging" not in path.parts
@@ -187,13 +192,38 @@ def test_failed_first_publication_removes_new_blob_and_spool_reservation(tmp_pat
     assert not cfg.media_root.exists()
 
 
+def test_cancellation_like_stage_failure_releases_spool_and_cache_reservations(tmp_path, monkeypatch):
+    cfg = _spool_config(tmp_path, monkeypatch)
+    init_db(cfg)
+    monkeypatch.setattr(media_storage_module, "has_non_root_mount_ancestor", lambda _path: False)
+
+    def cancel_stage(*_args, **_kwargs):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(media_store_module.BlobStore, "stage", cancel_stage)
+    with connect(cfg.db_path) as conn:
+        _insert_media_owner(conn)
+        conn.commit()
+        with pytest.raises(KeyboardInterrupt):
+            store_media_artifact(conn, cfg, _store_payload(b"cancelled-candidate"))
+        assert conn.execute("SELECT COUNT(*) FROM media_spool_reservations").fetchone()[0] == 0
+        assert conn.execute("SELECT COUNT(*) FROM media_cache_reservations").fetchone()[0] == 0
+
+
 def test_failed_write_transaction_start_aborts_stage_and_releases_spool_reservation(tmp_path, monkeypatch):
     cfg = _spool_config(tmp_path, monkeypatch)
     init_db(cfg)
     monkeypatch.setattr(media_storage_module, "has_non_root_mount_ancestor", lambda _path: False)
 
-    def fail_transaction_start(_conn):
-        raise sqlite3.OperationalError("injected write lock failure")
+    real_transaction_start = media_store_module._start_artifact_transaction
+    transaction_starts = 0
+
+    def fail_transaction_start(conn):
+        nonlocal transaction_starts
+        transaction_starts += 1
+        if transaction_starts == 2:
+            raise sqlite3.OperationalError("injected write lock failure")
+        return real_transaction_start(conn)
 
     monkeypatch.setattr(media_store_module, "_start_artifact_transaction", fail_transaction_start)
     with connect(cfg.db_path) as conn:
@@ -202,6 +232,7 @@ def test_failed_write_transaction_start_aborts_stage_and_releases_spool_reservat
         with pytest.raises(sqlite3.OperationalError, match="injected write lock failure"):
             store_media_artifact(conn, cfg, _store_payload(b"candidate"))
         assert conn.execute("SELECT COUNT(*) FROM media_spool_reservations").fetchone()[0] == 0
+        assert conn.execute("SELECT COUNT(*) FROM media_cache_reservations").fetchone()[0] == 0
 
     assert [path for path in cfg.media_spool_root.rglob("*") if path.is_file()] == []
 
@@ -229,6 +260,7 @@ def test_failed_replacement_preserves_previous_blob_and_removes_candidate(tmp_pa
         conn.commit()
         with pytest.raises(sqlite3.IntegrityError, match="injected media update failure"):
             store_media_artifact(conn, cfg, _store_payload(b"replacement-bytes"))
+        assert conn.execute("SELECT COUNT(*) FROM media_cache_reservations").fetchone()[0] == 0
 
     original = cfg.media_root.joinpath(original_path)
     assert original.read_bytes() == b"original-bytes"
@@ -317,6 +349,139 @@ def test_spool_reservations_serialize_concurrent_cap_checks(tmp_path, monkeypatc
     assert outcomes.count("full") == 1
     with connect(cfg.db_path) as conn:
         assert conn.execute("SELECT COALESCE(SUM(reserved_bytes), 0) FROM media_spool_reservations").fetchone()[0] == 8
+
+
+def test_cache_reservations_serialize_concurrent_global_admission(tmp_path):
+    cfg = load_config(runtime_root=tmp_path / "runtime", test_mode=True, token="test-token", policy_mode="all")
+    cfg = replace(cfg, max_media_cache_bytes=10)
+    init_db(cfg)
+    with connect(cfg.db_path) as conn:
+        _insert_media_owner(conn)
+        conn.commit()
+    barrier = Barrier(2)
+
+    def reserve(artifact_id: str) -> tuple[str | None, str]:
+        with connect(cfg.db_path) as conn:
+            barrier.wait(timeout=5)
+            return reserve_media_cache_admission(
+                conn,
+                cfg,
+                artifact_id=artifact_id,
+                document_id="doc-spool",
+                snapshot_id="snap-spool",
+                candidate_bytes=8,
+            )
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [executor.submit(reserve, "media-cache-a"), executor.submit(reserve, "media-cache-b")]
+        outcomes = [future.result(timeout=10) for future in futures]
+
+    assert sum(reservation_id is not None for reservation_id, _reason in outcomes) == 1
+    assert [reason for reservation_id, reason in outcomes if reservation_id is None] == ["media-cache-budget"]
+    with connect(cfg.db_path) as conn:
+        row = conn.execute(
+            "SELECT COUNT(*) AS reservation_count, SUM(reserved_bytes) AS reserved_bytes FROM media_cache_reservations"
+        ).fetchone()
+        assert dict(row) == {"reservation_count": 1, "reserved_bytes": 8}
+        winner = next(reservation_id for reservation_id, _reason in outcomes if reservation_id is not None)
+        release_media_cache_reservation(conn, winner)
+
+
+def test_cache_reservation_blocks_publication_until_released_and_expired_rows_are_reclaimed(tmp_path):
+    cfg = load_config(runtime_root=tmp_path / "runtime", test_mode=True, token="test-token", policy_mode="all")
+    cfg = replace(cfg, max_media_cache_bytes=10)
+    init_db(cfg)
+    with connect(cfg.db_path) as conn:
+        _insert_media_owner(conn)
+        conn.commit()
+        reservation_id, reason = reserve_media_cache_admission(
+            conn,
+            cfg,
+            artifact_id="media-held-reservation",
+            document_id="doc-spool",
+            snapshot_id="snap-spool",
+            candidate_bytes=8,
+        )
+        assert reservation_id is not None
+        assert reason == ""
+
+        blocked = store_media_artifact(conn, cfg, _store_payload(b"12345678"))
+        assert blocked["stored"] is False
+        assert blocked["status_reason"] == "media-cache-budget"
+        assert [path for path in cfg.media_root.rglob("*") if path.is_file()] == []
+
+        release_media_cache_reservation(conn, reservation_id)
+        conn.execute(
+            """
+            INSERT INTO media_cache_reservations(
+              reservation_id, artifact_id, document_id, snapshot_id, domain, reserved_bytes,
+              owner_pid, owner_start_token, expires_at
+            ) VALUES ('expired-reservation', 'expired-artifact', 'doc-spool', 'snap-spool',
+                      'example.com', 10, 999999999, 'dead-owner', '2000-01-01T00:00:00.000Z')
+            """
+        )
+        conn.commit()
+        stored = store_media_artifact(conn, cfg, _store_payload(b"12345678"))
+        assert stored["stored"] is True
+        assert conn.execute("SELECT COUNT(*) FROM media_cache_reservations").fetchone()[0] == 0
+
+
+def test_expired_live_cache_reservation_is_refreshed_and_remains_admitted(tmp_path):
+    cfg = replace(
+        load_config(runtime_root=tmp_path / "runtime", test_mode=True, token="test-token", policy_mode="all"),
+        max_media_cache_bytes=10,
+    )
+    init_db(cfg)
+    with connect(cfg.db_path) as conn:
+        _insert_media_owner(conn)
+        conn.commit()
+        conn.execute(
+            """
+            INSERT INTO media_cache_reservations(
+              reservation_id, artifact_id, document_id, snapshot_id, domain, reserved_bytes,
+              owner_pid, owner_start_token, expires_at
+            ) VALUES ('live-expired', 'live-artifact', 'doc-spool', 'snap-spool',
+                      'example.com', 10, ?, ?, '2000-01-01T00:00:00.000Z')
+            """,
+            (media_store_module._PROCESS_ID, media_store_module._PROCESS_START_TOKEN),
+        )
+        conn.commit()
+
+        reservation_id, reason = reserve_media_cache_admission(
+            conn,
+            cfg,
+            artifact_id="media-blocked-by-live-reservation",
+            document_id="doc-spool",
+            snapshot_id="snap-spool",
+            candidate_bytes=1,
+        )
+        assert reservation_id is None
+        assert reason == "media-cache-budget"
+        refreshed = conn.execute(
+            "SELECT expires_at > strftime('%Y-%m-%dT%H:%M:%fZ', 'now') FROM media_cache_reservations WHERE reservation_id = 'live-expired'"
+        ).fetchone()[0]
+        assert refreshed == 1
+
+
+def test_cache_reservation_cascades_when_owner_is_forgotten(tmp_path):
+    cfg = load_config(runtime_root=tmp_path / "runtime", test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    with connect(cfg.db_path) as conn:
+        _insert_media_owner(conn)
+        conn.commit()
+        reservation_id, reason = reserve_media_cache_admission(
+            conn,
+            cfg,
+            artifact_id="media-forgotten-reservation",
+            document_id="doc-spool",
+            snapshot_id="snap-spool",
+            candidate_bytes=8,
+        )
+        assert reservation_id is not None
+        assert reason == ""
+        conn.execute("DELETE FROM documents WHERE id = 'doc-spool'")
+        conn.commit()
+        assert conn.execute("SELECT COUNT(*) FROM media_cache_reservations").fetchone()[0] == 0
 
 
 def test_spool_capacity_accounts_for_existing_files_and_exact_headroom(tmp_path, monkeypatch):

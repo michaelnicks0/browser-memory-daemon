@@ -153,8 +153,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>SQLite/FTS/media storage</td>
-<td>✅ Documents/visits/snapshots/chunks/FTS/media/audit/deletion receipts plus version-4 through version-8 provenance/locator expansion, version-9 complete cleaned-text authority, version-10 media storage tiers/spool reservations, version-11 blob lifecycle records, and version-12 historical media-state correction. New text/provenance commits locally without media-root access; recent/timeline/detail reads are observation-first with explicit legacy fallback.</td>
-<td><code>schema.sql</code>, <code>migration_steps/</code>, <code>migrations.py</code>, <code>text_authority.py</code>, <code>media_storage.py</code>, <code>blob_lifecycle.py</code>, migration/text/read tests, ADR-0028, ADR-0030 through ADR-0040, ADR-0046.</td>
+<td>✅ Documents/visits/snapshots/chunks/FTS/media/audit/deletion receipts plus version-4 through version-8 provenance/locator expansion, version-9 complete cleaned-text authority, version-10 media storage tiers/spool reservations, version-11 blob lifecycle records, version-12 historical media-state correction, and version-13 transactional cache reservations. New text/provenance commits locally without media-root access; recent/timeline/detail reads are observation-first with explicit legacy fallback.</td>
+<td><code>schema.sql</code>, <code>migration_steps/</code>, <code>migrations.py</code>, <code>text_authority.py</code>, <code>media_storage.py</code>, <code>blob_lifecycle.py</code>, migration/text/read tests, ADR-0028, ADR-0030 through ADR-0040, ADR-0046, ADR-0047.</td>
 </tr>
 <tr>
 <td>Blob filesystem boundary</td>
@@ -178,8 +178,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Media artifacts</td>
-<td>✅ Durable image/video refs and binaries: fast text/manifest capture, browser IndexedDB lazy queue, credentialed fetch, raw blob upload, enabled-by-default X/Twitter CDP recorder, guarded public transport, bounded HLS/audio assembly, explicit state/task stores, bounded current-state reconciliation, scoped dry-run-first budget requeue, and artifact publication/read/purge with failed-write compensation; no OCR/media indexing.</td>
-<td><code>media_models.py</code>, <code>media_tasks.py</code>, <code>media_store.py</code>, <code>media_fetch.py</code>, <code>media_hls.py</code>, <code>media_ops.py</code>, worker/extension tests, ADR-0042 through ADR-0046.</td>
+<td>✅ Durable image/video refs and streamed binaries: fast text/manifest capture, browser IndexedDB lazy queue, credentialed raw upload, enabled-by-default X/Twitter CDP recorder, guarded public transport, bounded streamed HLS/audio assembly, process request/byte budgets, transactional cross-process cache reservations, just-in-time task claiming, explicit state/task stores, bounded current-state reconciliation, scoped dry-run-first budget requeue, and failed-write compensation; no OCR/media indexing.</td>
+<td><code>media_models.py</code>, <code>media_tasks.py</code>, <code>media_store.py</code>, <code>media_fetch.py</code>, <code>media_hls.py</code>, <code>media_resources.py</code>, <code>media_ops.py</code>, worker/extension tests, ADR-0042 through ADR-0047.</td>
 </tr>
 <tr>
 <td>Local UI</td>
@@ -226,7 +226,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <hr />
 <h2 id="requirement-posture">Requirement posture</h2>
 <!-- BEGIN GENERATED:requirement-posture -->
-<p>The canonical catalog contains <strong>43 stable requirements</strong>: <strong>37 active</strong> and <strong>6 planned</strong>. Normative statements, implementation links, V-model evidence, and legacy aliases are owned by <a href="../requirements/catalog.toml"><code>requirements/catalog.toml</code></a>; generated tables in this doc set must not be hand-edited.</p>
+<p>The canonical catalog contains <strong>43 stable requirements</strong>: <strong>38 active</strong> and <strong>5 planned</strong>. Normative statements, implementation links, V-model evidence, and legacy aliases are owned by <a href="../requirements/catalog.toml"><code>requirements/catalog.toml</code></a>; generated tables in this doc set must not be hand-edited.</p>
 <!-- END GENERATED:requirement-posture -->
 
 <hr />

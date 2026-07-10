@@ -97,3 +97,16 @@ def test_media_spool_requires_explicit_local_root_and_positive_cap(tmp_path, mon
     assert cfg.media_spool_enabled is True
     assert cfg.media_spool_root == spool_root
     assert not spool_root.exists()
+
+
+def test_global_media_resource_budgets_are_positive_and_fit_one_artifact(tmp_path, monkeypatch):
+    monkeypatch.setenv("BMD_MAX_MEDIA_INFLIGHT_BYTES", "100")
+    monkeypatch.setenv("BMD_MAX_MEDIA_ARTIFACT_BYTES", "100")
+    monkeypatch.setenv("BMD_MAX_MEDIA_CONCURRENT_REQUESTS", "2")
+    cfg = load_config(runtime_root=tmp_path / "runtime", test_mode=True, token="test-token", policy_mode="all")
+    assert cfg.max_media_inflight_bytes == 100
+    assert cfg.max_media_concurrent_requests == 2
+
+    monkeypatch.setenv("BMD_MAX_MEDIA_INFLIGHT_BYTES", "99")
+    with pytest.raises(ValueError, match="allow at least one"):
+        load_config(runtime_root=tmp_path / "invalid", test_mode=True, token="test-token", policy_mode="all")

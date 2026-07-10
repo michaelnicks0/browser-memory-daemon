@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass
+from typing import BinaryIO
 from urllib.parse import urljoin, urlsplit
 
 from .config import RuntimeConfig
@@ -73,6 +74,7 @@ def _fetch_hls_asset(
     timeout_seconds: float,
     config: RuntimeConfig,
     budget: _HlsFetchBudget,
+    output_stream: BinaryIO | None = None,
 ) -> tuple[bytes, str]:
     content, _content_type, _final_url, reason = _guarded_public_fetch(
         config,
@@ -83,6 +85,7 @@ def _fetch_hls_asset(
         timeout_seconds=timeout_seconds,
         deadline=budget.deadline,
         budget=budget,
+        output_stream=output_stream,
     )
     return content, reason
 
@@ -121,6 +124,7 @@ def _hls_playlist_to_media(
     budget: _HlsFetchBudget,
     deadline: float | None = None,
     depth: int = 0,
+    output_stream: BinaryIO | None = None,
 ) -> tuple[bytes, str, str]:
     if _hls_deadline_expired(budget.deadline if budget.deadline is not None else deadline):
         return b"", "", "hls-time-budget-exceeded"
@@ -132,6 +136,7 @@ def _hls_playlist_to_media(
     if variants:
         last_reason = "hls-no-video-variant"
         for _, variant_url in variants:
+            variant_start = output_stream.tell() if output_stream is not None else 0
             if _hls_deadline_expired(budget.deadline):
                 return b"", "", "hls-time-budget-exceeded"
             variant_text, reason = _fetch_hls_playlist(
@@ -154,9 +159,13 @@ def _hls_playlist_to_media(
                 budget=budget,
                 deadline=budget.deadline,
                 depth=depth + 1,
+                output_stream=output_stream,
             )
             if not reason:
                 return content, mime, ""
+            if output_stream is not None:
+                output_stream.seek(variant_start)
+                output_stream.truncate()
             last_reason = reason
         return b"", "", last_reason
 
@@ -185,6 +194,7 @@ def _hls_playlist_to_media(
     if init_url:
         if _hls_deadline_expired(budget.deadline):
             return b"", "", "hls-time-budget-exceeded"
+        before = output_stream.tell() if output_stream is not None else 0
         init_content, reason = _fetch_hls_asset(
             init_url,
             page_url,
@@ -192,15 +202,19 @@ def _hls_playlist_to_media(
             timeout_seconds=_remaining_hls_timeout(timeout_seconds, budget.deadline),
             config=config,
             budget=budget,
+            output_stream=output_stream,
         )
         if reason:
             return b"", "", reason
-        content_parts.append(init_content)
-        total += len(init_content)
+        init_size = output_stream.tell() - before if output_stream is not None else len(init_content)
+        if output_stream is None:
+            content_parts.append(init_content)
+        total += init_size
 
     for segment_url in segment_urls:
         if _hls_deadline_expired(budget.deadline):
             return b"", "", "hls-time-budget-exceeded"
+        before = output_stream.tell() if output_stream is not None else 0
         segment, reason = _fetch_hls_asset(
             segment_url,
             page_url,
@@ -208,15 +222,18 @@ def _hls_playlist_to_media(
             timeout_seconds=_remaining_hls_timeout(timeout_seconds, budget.deadline),
             config=config,
             budget=budget,
+            output_stream=output_stream,
         )
         if reason:
             return b"", "", reason
-        total += len(segment)
+        segment_size = output_stream.tell() - before if output_stream is not None else len(segment)
+        total += segment_size
         if total > max_bytes:
             return b"", "", "media-too-large"
-        content_parts.append(segment)
+        if output_stream is None:
+            content_parts.append(segment)
 
-    joined = b"".join(content_parts)
+    joined = b"" if output_stream is not None else b"".join(content_parts)
     segment_paths = [urlsplit(url).path.lower() for url in segment_urls]
     if is_audio_rendition:
         if any(path.endswith(".aac") for path in segment_paths):
@@ -249,6 +266,7 @@ def _fetch_hls_media_bytes(
     config: RuntimeConfig,
     budget: _HlsFetchBudget,
     deadline: float | None = None,
+    output_stream: BinaryIO | None = None,
 ) -> tuple[bytes, str, str]:
     playlist_text = playlist_content.decode("utf-8", "replace")
     return _hls_playlist_to_media(
@@ -260,4 +278,5 @@ def _fetch_hls_media_bytes(
         config=config,
         budget=budget,
         deadline=deadline,
+        output_stream=output_stream,
     )

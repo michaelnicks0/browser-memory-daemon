@@ -154,6 +154,25 @@ CREATE TABLE IF NOT EXISTS media_spool_reservations (
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 );
 
+CREATE TABLE IF NOT EXISTS media_cache_reservations (
+  reservation_id TEXT PRIMARY KEY,
+  artifact_id TEXT NOT NULL,
+  document_id TEXT NOT NULL,
+  snapshot_id TEXT NOT NULL,
+  domain TEXT NOT NULL DEFAULT '',
+  reserved_bytes INTEGER NOT NULL CHECK (reserved_bytes > 0),
+  owner_pid INTEGER NOT NULL CHECK (owner_pid > 0),
+  owner_start_token TEXT NOT NULL CHECK (owner_start_token <> ''),
+  expires_at TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE,
+  FOREIGN KEY(snapshot_id) REFERENCES snapshots(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_media_cache_reservations_expiry ON media_cache_reservations(expires_at);
+CREATE INDEX IF NOT EXISTS idx_media_cache_reservations_snapshot ON media_cache_reservations(snapshot_id);
+CREATE INDEX IF NOT EXISTS idx_media_cache_reservations_domain ON media_cache_reservations(domain);
+
 CREATE TABLE IF NOT EXISTS blob_storage_records (
   id TEXT PRIMARY KEY,
   operation_id TEXT,

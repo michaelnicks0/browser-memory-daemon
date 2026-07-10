@@ -8,6 +8,7 @@ from dataclasses import replace
 import browser_memory_daemon.app as app_module
 import browser_memory_daemon.media_storage as media_storage_module
 from browser_memory_daemon.app import make_server
+from browser_memory_daemon.blob_store import BlobStore
 from browser_memory_daemon.config import load_config
 
 
@@ -92,6 +93,10 @@ def test_http_capture_skips_request_time_db_initialization_after_startup(tmp_pat
 
 
 def test_http_upload_get_and_purge_use_bounded_spool_during_media_root_outage(tmp_path, monkeypatch):
+    def forbid_whole_blob_read(*_args, **_kwargs):
+        raise AssertionError("media GET must stream through BlobStore.open")
+
+    monkeypatch.setattr(BlobStore, "read_bytes", forbid_whole_blob_read)
     runtime_root = tmp_path / "runtime"
     external_media_root = tmp_path / "external-media"
     spool_root = runtime_root / "media-spool"
@@ -204,6 +209,12 @@ def test_http_media_fetch_raw_upload_and_purge_rehydrate_controls(tmp_path):
         assert status == 200
         assert queue_status["artifacts"]["stored"] == 1
         assert queue_status["bytes"]["stored"] == 8
+        assert queue_status["resources"] == {
+            "max_inflight_bytes": cfg.max_media_inflight_bytes,
+            "max_concurrent_requests": cfg.max_media_concurrent_requests,
+            "inflight_bytes": 0,
+            "active_requests": 0,
+        }
 
         status, dry = request("POST", f"{base}/media-artifacts/purge-cache", body={"domain": "example.org", "dry_run": True})
         assert status == 200
@@ -226,6 +237,57 @@ def test_http_media_fetch_raw_upload_and_purge_rehydrate_controls(tmp_path):
         assert fetched["attempted"] == 1
         assert fetched["stored"] == 1
         assert fetched["remaining"] == 0
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+
+
+def test_http_raw_media_upload_returns_503_when_global_byte_budget_cannot_admit_body(tmp_path):
+    cfg = load_config(
+        runtime_root=tmp_path,
+        test_mode=True,
+        token="test-token",
+        host="127.0.0.1",
+        port=0,
+        policy_mode="all",
+    )
+    cfg = replace(
+        cfg,
+        media_fetch_on_capture=False,
+        max_media_artifact_bytes=8,
+        max_media_inflight_bytes=8,
+        max_media_concurrent_requests=1,
+    )
+    server = make_server(cfg)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        status, capture = request(
+            "POST",
+            f"{base}/capture",
+            body={
+                "url": "https://example.org/resource-budget",
+                "text": "Text remains committed when a media upload is rejected by its resource budget.",
+                "media_artifacts": [
+                    {"media_type": "image", "source_url": "https://example.org/resource-budget.png"}
+                ],
+            },
+        )
+        assert status == 201
+        artifact_id = capture["media_artifacts"][0]["artifact_id"]
+        status, _headers, body = error_request(
+            "PUT",
+            f"{base}/media-artifacts/{artifact_id}/blob",
+            raw_body=b"123456789",
+            content_type="image/png",
+        )
+        assert status == 503
+        assert body["error"] == "media resource request exceeds configured budget"
+        query = urllib.parse.urlencode({"q": "Text remains committed", "limit": "3"})
+        status, search = request("GET", f"{base}/search?{query}")
+        assert status == 200
+        assert search["results"][0]["snapshot_id"] == capture["snapshot_id"]
     finally:
         server.shutdown()
         thread.join(timeout=5)

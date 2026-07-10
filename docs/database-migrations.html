@@ -252,6 +252,16 @@ date: "2026-07-10"</p>
 <td><code>add_blob_lifecycle_records</code></td>
 <td>Add durable blob lifecycle metadata and backfill currently stored media plus legacy snapshot derivatives as <code>committed</code>. The migration is additive and moves or deletes no bytes.</td>
 </tr>
+<tr>
+<td style="text-align: right;"><code>12</code></td>
+<td><code>normalize-historical-media-state</code></td>
+<td>Perform one-time historical media status/task correction formerly run by every worker pass. Terminal budget skips remain closed until an explicit scoped operator requeue.</td>
+</tr>
+<tr>
+<td style="text-align: right;"><code>13</code></td>
+<td><code>add-media-cache-reservations</code></td>
+<td>Add expiring SQLite reservations used to serialize committed-plus-reserved snapshot/domain/global media-cache admission across daemon and worker processes. The migration is additive and moves or deletes no bytes.</td>
+</tr>
 </tbody>
 </table>
 <p>Each <code>schema_migrations</code> row stores version, unique name, SHA-256 checksum, and applied timestamp. <code>PRAGMA user_version</code> must match the highest contiguous ledger version. Unknown-newer versions, gaps, name drift, checksum drift, and schema-fingerprint drift fail closed.</p>
@@ -271,7 +281,7 @@ date: "2026-07-10"</p>
 <span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2">$BMD_PYTHON</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pytest<span style="color: #F8F8F2"> </span>-q<span style="color: #F8F8F2"> </span>daemon/tests/integration/test_migrations.py
 </code></pre></div>
 
-<p>The fixture suite covers fresh initialization, exact unversioned detection, repeated and concurrent no-op/application behavior, checksum and unknown-newer rejection, injected rollback, FTS/foreign-key/integrity checks, destructive headroom refusal, online backup, restore-backed search, a version-3-to-latest expand upgrade, observation/claim constraints, version-5 evidence-bounded historical backfill, version-6 conservative media-observation linking, version-7 claimed lifecycle identity, version-8 nullable relative-locator expansion, and version-9 hash-verified SQLite text authority plus new-write behavior.</p>
+<p>The fixture suite covers fresh initialization, exact unversioned detection, repeated and concurrent no-op/application behavior, checksum and unknown-newer rejection, injected rollback, FTS/foreign-key/integrity checks, destructive headroom refusal, online backup, restore-backed search, a version-3-to-latest expand upgrade, observation/claim constraints, version-5 evidence-bounded historical backfill, version-6 conservative media-observation linking, version-7 claimed lifecycle identity, version-8 nullable relative-locator expansion, version-9 hash-verified SQLite text authority plus new-write behavior, version-10 storage tiers/spool reservations, version-11 blob lifecycle records, version-12 one-time historical media correction, and version-13 cache reservations with exact schema fingerprints.</p>
   </article>
   <div class="md-footer">
     Rendered from <code>docs/database-migrations.md</code> — the Markdown file is the canonical,
