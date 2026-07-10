@@ -546,12 +546,12 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td>REQ-033</td>
 <td style="text-align: right;">1</td>
-<td>planned</td>
+<td>active</td>
 <td>Visits, capture observations, snapshots, lifecycle events, and media provenance shall have explicit temporal relationships.</td>
 <td>Capture Observation Model</td>
 <td><code>HRD-008</code></td>
-<td><code>daemon/src/browser_memory_daemon/models.py</code><br><code>daemon/src/browser_memory_daemon/ingest.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/ops.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0004_capture_observations_and_url_claims.sql</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0005_backfill_historical_observations.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0006_link_media_artifacts_to_observations.py</code></td>
-<td>—</td>
+<td><code>daemon/src/browser_memory_daemon/models.py</code><br><code>daemon/src/browser_memory_daemon/ingest.py</code><br><code>daemon/src/browser_memory_daemon/lifecycle.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/ops.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0004_capture_observations_and_url_claims.sql</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0005_backfill_historical_observations.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0006_link_media_artifacts_to_observations.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0007_add_claimed_visit_identity.sql</code></td>
+<td><code>daemon/tests/integration/test_observation_reads.py::test_observation_first_reads_preserve_contemporaneous_snapshots_and_unique_visit_summary</code><br><code>daemon/tests/integration/test_visit_lifecycle.py::test_claimed_visit_identity_does_not_fall_back_by_url_and_reconciles_after_delayed_capture</code></td>
 </tr>
 <tr>
 <td>REQ-034</td>
@@ -596,12 +596,12 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td>REQ-038</td>
 <td style="text-align: right;">1</td>
-<td>planned</td>
+<td>active</td>
 <td>Dwell shall be derived from validated interval unions rather than additive overlapping reports.</td>
 <td>Visit Lifecycle Pipeline</td>
 <td><code>HRD-013</code></td>
 <td><code>daemon/src/browser_memory_daemon/lifecycle.py</code></td>
-<td>—</td>
+<td><code>daemon/tests/integration/test_visit_lifecycle.py::test_lifecycle_dwell_uses_interval_union_for_overlap_containment_adjacency_and_out_of_order</code></td>
 </tr>
 <tr>
 <td>REQ-039</td>
@@ -802,7 +802,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td>Capture observation / URL-claim model</td>
 <td>Additive temporal observation, untrusted claim authority, explicit media-reference provenance, and observation-first activity reads in SQLite.</td>
-<td>Version-4 tables, version-5 observation backfill, version-6 media-observation links, and contemporaneous recent/timeline/detail reads are current; lifecycle identity/interval-union cutover remains target state.</td>
+<td>Version-4 tables, version-5 observation backfill, version-6 media-observation links, version-7 claimed lifecycle identity, and contemporaneous recent/timeline/detail reads are current.</td>
 </tr>
 <tr>
 <td>Policy engine</td>
@@ -816,8 +816,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Lifecycle pipeline</td>
-<td>Store metadata-only visit events and update dwell.</td>
-<td>Uses policy mode for URL redaction/filtering.</td>
+<td>Store metadata-only visit events and derive dwell from validated interval unions.</td>
+<td>Exact claimed visit IDs never fall back by URL; delayed captures reconcile pending events by claimed ID plus normalized observed URL, while no-ID legacy payloads remain explicitly labeled.</td>
 </tr>
 <tr>
 <td>Daemon media worker</td>
@@ -1197,7 +1197,7 @@ status_reason  = cache-evicted:global-oldest
 </tr>
 <tr>
 <td><code>visit_events</code></td>
-<td>Metadata-only lifecycle segments.</td>
+<td>Metadata-only lifecycle segments with claimed/resolved visit identity, explicit attachment method, and interval-union dwell evidence.</td>
 </tr>
 <tr>
 <td><code>snapshots</code></td>

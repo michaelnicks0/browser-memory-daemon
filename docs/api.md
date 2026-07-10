@@ -352,7 +352,9 @@ Rules narrow capture in every policy mode, including `all`. Use `domain` for hos
 }
 ```
 
-If `visit_id` matches a stored visit, positive `active_seconds` is added to `visits.dwell_seconds`. Duplicate event IDs and overlapping active segments do not double-count dwell.
+If `visit_id` is present, it resolves only when exact identity and normalized observed URL agree. An event that arrives before its capture is retained with `visit_id: null`, its `claimed_visit_id`, and `attachment_method: "unmatched"`; capture ingestion later reconciles it only when claimed ID and normalized observed URL both match. Payloads that omit `visit_id` retain an explicitly labeled `legacy-url-fallback` during the compatibility window.
+
+Positive-active intervals require timezone-qualified start/end timestamps, a positive bounded duration, and reported `active_seconds` within one second of that duration. `visits.dwell_seconds` is replaced with the union of all valid positive-active intervals for the resolved visit, so overlap, containment, adjacency, out-of-order delivery, and duplicate event IDs do not double-count. The response separates resolved `visit_id` from `claimed_visit_id` and reports `attachment_method`, `dwell_updated`, and the current derived `dwell_seconds`.
 
 ---
 

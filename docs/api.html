@@ -532,7 +532,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <span style="color: #F8F8F2">}</span>
 </code></pre></div>
 
-<p>If <code>visit_id</code> matches a stored visit, positive <code>active_seconds</code> is added to <code>visits.dwell_seconds</code>. Duplicate event IDs and overlapping active segments do not double-count dwell.</p>
+<p>If <code>visit_id</code> is present, it resolves only when exact identity and normalized observed URL agree. An event that arrives before its capture is retained with <code>visit_id: null</code>, its <code>claimed_visit_id</code>, and <code>attachment_method: "unmatched"</code>; capture ingestion later reconciles it only when claimed ID and normalized observed URL both match. Payloads that omit <code>visit_id</code> retain an explicitly labeled <code>legacy-url-fallback</code> during the compatibility window.</p>
+<p>Positive-active intervals require timezone-qualified start/end timestamps, a positive bounded duration, and reported <code>active_seconds</code> within one second of that duration. <code>visits.dwell_seconds</code> is replaced with the union of all valid positive-active intervals for the resolved visit, so overlap, containment, adjacency, out-of-order delivery, and duplicate event IDs do not double-count. The response separates resolved <code>visit_id</code> from <code>claimed_visit_id</code> and reports <code>attachment_method</code>, <code>dwell_updated</code>, and the current derived <code>dwell_seconds</code>.</p>
 <hr />
 <h2 id="deletion-payloads">Deletion payloads</h2>
 <p>Forget accepts exactly one destructive selector. A domain selector is a literal hostname; it continues to delete that host and its subdomains:</p>

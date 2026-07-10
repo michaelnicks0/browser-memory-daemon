@@ -490,14 +490,14 @@ revision = 1
 statement = "Visits, capture observations, snapshots, lifecycle events, and media provenance shall have explicit temporal relationships."
 rationale = "Historical reads must return contemporaneous evidence rather than the latest document state."
 owner = "Capture Observation Model"
-status = "planned"
+status = "active"
 aliases = ["HRD-008"]
-implementation = ["daemon/src/browser_memory_daemon/models.py", "daemon/src/browser_memory_daemon/ingest.py", "daemon/src/browser_memory_daemon/media.py", "daemon/src/browser_memory_daemon/ops.py", "daemon/src/browser_memory_daemon/migration_steps/v0004_capture_observations_and_url_claims.sql", "daemon/src/browser_memory_daemon/migration_steps/v0005_backfill_historical_observations.py", "daemon/src/browser_memory_daemon/migration_steps/v0006_link_media_artifacts_to_observations.py"]
+implementation = ["daemon/src/browser_memory_daemon/models.py", "daemon/src/browser_memory_daemon/ingest.py", "daemon/src/browser_memory_daemon/lifecycle.py", "daemon/src/browser_memory_daemon/media.py", "daemon/src/browser_memory_daemon/ops.py", "daemon/src/browser_memory_daemon/migration_steps/v0004_capture_observations_and_url_claims.sql", "daemon/src/browser_memory_daemon/migration_steps/v0005_backfill_historical_observations.py", "daemon/src/browser_memory_daemon/migration_steps/v0006_link_media_artifacts_to_observations.py", "daemon/src/browser_memory_daemon/migration_steps/v0007_add_claimed_visit_identity.sql"]
 unit_evidence = []
-integration_evidence = ["daemon/tests/integration/test_capture_observations.py", "daemon/tests/integration/test_observation_reads.py", "daemon/tests/integration/test_migrations.py::test_version_five_backfills_only_evidence_supported_historical_relationships", "daemon/tests/integration/test_migrations.py::test_version_six_backfills_only_unambiguous_media_observation_links"]
-system_evidence = []
-operational_evidence = ["docs/architecture/adr/0030-separate-capture-observations-and-url-claims.md", "docs/architecture/adr/0031-dual-write-observed-url-capture-provenance.md", "docs/architecture/adr/0032-link-media-artifacts-to-capture-observations.md", "docs/architecture/adr/0033-use-observation-first-historical-activity-reads.md"]
-validation_evidence = []
+integration_evidence = ["daemon/tests/integration/test_capture_observations.py", "daemon/tests/integration/test_observation_reads.py", "daemon/tests/integration/test_visit_lifecycle.py::test_claimed_visit_identity_does_not_fall_back_by_url_and_reconciles_after_delayed_capture", "daemon/tests/integration/test_migrations.py::test_version_five_backfills_only_evidence_supported_historical_relationships", "daemon/tests/integration/test_migrations.py::test_version_six_backfills_only_unambiguous_media_observation_links", "daemon/tests/integration/test_migrations.py::test_version_seven_preserves_claimed_visit_identity_for_historical_events"]
+system_evidence = ["daemon/tests/e2e/test_admin_api.py", "daemon/tests/e2e/test_http_api.py"]
+operational_evidence = ["docs/architecture/adr/0030-separate-capture-observations-and-url-claims.md", "docs/architecture/adr/0031-dual-write-observed-url-capture-provenance.md", "docs/architecture/adr/0032-link-media-artifacts-to-capture-observations.md", "docs/architecture/adr/0033-use-observation-first-historical-activity-reads.md", "docs/architecture/adr/0034-bind-lifecycle-by-visit-identity-and-union-dwell.md"]
+validation_evidence = ["daemon/tests/integration/test_observation_reads.py::test_observation_first_reads_preserve_contemporaneous_snapshots_and_unique_visit_summary", "daemon/tests/integration/test_visit_lifecycle.py::test_claimed_visit_identity_does_not_fall_back_by_url_and_reconciles_after_delayed_capture"]
 
 [[requirements]]
 id = "REQ-034"
@@ -565,14 +565,14 @@ revision = 1
 statement = "Dwell shall be derived from validated interval unions rather than additive overlapping reports."
 rationale = "Equal-start deduplication does not prevent partial-overlap double counting."
 owner = "Visit Lifecycle Pipeline"
-status = "planned"
+status = "active"
 aliases = ["HRD-013"]
 implementation = ["daemon/src/browser_memory_daemon/lifecycle.py"]
 unit_evidence = []
-integration_evidence = []
-system_evidence = []
-operational_evidence = []
-validation_evidence = []
+integration_evidence = ["daemon/tests/integration/test_visit_lifecycle.py::test_lifecycle_dwell_uses_interval_union_for_overlap_containment_adjacency_and_out_of_order", "daemon/tests/integration/test_visit_lifecycle.py::test_visit_lifecycle_event_validates_ranges"]
+system_evidence = ["daemon/tests/e2e/test_http_api.py"]
+operational_evidence = ["docs/architecture/adr/0034-bind-lifecycle-by-visit-identity-and-union-dwell.md"]
+validation_evidence = ["daemon/tests/integration/test_visit_lifecycle.py::test_lifecycle_dwell_uses_interval_union_for_overlap_containment_adjacency_and_out_of_order"]
 
 [[requirements]]
 id = "REQ-039"

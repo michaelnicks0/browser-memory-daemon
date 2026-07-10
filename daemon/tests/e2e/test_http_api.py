@@ -227,11 +227,16 @@ def test_http_capture_search_forget_round_trip(tmp_path):
         })
         assert status == 201
         assert event["dwell_updated"] is True
-
+        assert event["visit_id"] == "http-visit-1"
+        assert event["claimed_visit_id"] == "http-visit-1"
+        assert event["attachment_method"] == "visit-id"
+        assert event["dwell_seconds"] == 25
         status, document = request("GET", f"{base}/documents/{stored['document_id']}")
         assert status == 200
         assert document["visits"][0]["dwell_seconds"] == 25
         assert document["visit_events"][0]["max_scroll_percent"] == 91
+        assert document["visit_events"][0]["claimed_visit_id"] == "http-visit-1"
+        assert document["visit_events"][0]["attachment_method"] == "visit-id"
 
         status, blocked_event = request("POST", f"{base}/visit-events", body={
             "visit_id": "blocked-event",

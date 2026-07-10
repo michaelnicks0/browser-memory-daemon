@@ -27,11 +27,11 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
 
             wslLoopbackDaemon = container "WSL Loopback HTTP Daemon" "Authenticated loopback HTTP API that handles capture, visit events, media artifact upload/fetch/purge, exact search, recent/timeline/detail, policy rules, doctor, forget, and static UI serving." "Python 3.11, ThreadingHTTPServer" {
                 httpRouter = component "HTTP Request Router" "Routes loopback API requests, serves UI assets, enforces bearer auth for memory/admin APIs, and applies CORS for allowed origins." "Python http.server" "Current"
-                migrationKernel = component "Database Migration Kernel" "Validates exact schema fingerprints, ordered migration names/checksums, and PRAGMA user_version; applies transactional steps, backup-gates destructive changes, and expands capture observations, URL claims, and media-observation provenance through version 6." "Python + sqlite3" "Current"
+                migrationKernel = component "Database Migration Kernel" "Validates exact schema fingerprints, ordered migration names/checksums, and PRAGMA user_version; applies transactional steps, backup-gates destructive changes, and expands capture observations, URL claims, media-observation provenance, and claimed lifecycle identity through version 7." "Python + sqlite3" "Current"
                 policyEngine = component "Policy Engine" "Evaluates all/recall/balanced/strict capture mode decisions and redacts URL/title/body text outside all mode." "Python" "Current"
                 policyStore = component "Policy Store" "Persists and evaluates explicit local block-domain and URL-prefix rules for every policy mode." "Python + SQLite" "Current"
                 ingestPipeline = component "Ingest Pipeline" "Normalizes observed URLs, computes document/snapshot IDs, stores visits/observations/snapshots/chunks/FTS rows, records non-authoritative URL claims, writes clean text blobs, and links media references to observations." "Python + sqlite3" "Current"
-                lifecyclePipeline = component "Lifecycle Pipeline" "Stores metadata-only tab lifecycle events and updates visit dwell seconds idempotently." "Python + sqlite3" "Current"
+                lifecyclePipeline = component "Lifecycle Pipeline" "Stores claimed/resolved tab lifecycle identity, reconciles delayed captures, validates active intervals, and derives visit dwell from interval unions." "Python + sqlite3" "Current"
                 mediaManager = component "Media Artifact Manager" "Records media references, validates blob uploads, enforces MIME/size/cache gates, writes blobs atomically, queues public fetch tasks, and purges or rehydrates cache entries." "Python + sqlite3 + filesystem" "Current"
                 searchReadModel = component "Search and Read Model" "Provides exact FTS search plus observation-first recent/timeline/document/snapshot/media detail views with an explicit ambiguous legacy fallback." "Python + SQLite FTS5" "Current"
                 forgetPipeline = component "Forget Pipeline" "Deletes URL/domain-scoped memory rows, FTS entries, clean-text blobs, media blobs, lifecycle rows, and records deletion receipts." "Python + sqlite3" "Current"
@@ -107,7 +107,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
         ingestPipeline -> sqliteDatabase "Writes capture rows and FTS to" "sqlite3"
         ingestPipeline -> cleanTextBlobStore "Writes text snapshots to" "Filesystem"
         ingestPipeline -> mediaManager "Records media refs through"
-        lifecyclePipeline -> sqliteDatabase "Writes lifecycle and dwell to" "sqlite3"
+        lifecyclePipeline -> sqliteDatabase "Writes lifecycle identity and interval-union dwell to" "sqlite3"
         mediaManager -> sqliteDatabase "Updates media rows and tasks in" "sqlite3"
         mediaManager -> mediaBlobCache "Writes, serves, evicts, and purges blobs in" "Filesystem"
         searchReadModel -> sqliteDatabase "Reads metadata and FTS from" "SQLite FTS5"

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Database-Migrations — browser-memory-daemon</title>
+<title>0034-Bind-Lifecycle-By-Visit-Identity-And-Union-Dwell — browser-memory-daemon</title>
 <style>
 :root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
@@ -120,140 +120,86 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <body>
 <div class="wrap">
   <div class="docbar">
-    <a class="home" href="../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
-    <span class="crumb">/ <b>docs/database-migrations.md</b></span>
+    <a class="home" href="../../../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
+    <span class="crumb">/ <b>docs/architecture/adr/0034-bind-lifecycle-by-visit-identity-and-union-dwell.md</b></span>
   </div>
   <article class="md-body">
 <hr />
-<p>title: "Database Migrations"
-description: "Versioned SQLite migration, compatibility, backup, and rollback contract"
-audience: "operator"
-status: "current"
-version: "1.0.0"
-date: "2026-07-10"</p>
+<p>status: accepted
+date: 2026-07-10
+decision-makers: [Michael]
+consulted: [TARS]
+informed: []</p>
 <hr />
-<h1 id="database-migrations">Database Migrations</h1>
-<p>Browser Memory Daemon keeps SQLite local and authoritative. Schema evolution is controlled by an ordered migration ledger rather than recurring <code>CREATE IF NOT EXISTS</code> and historical repair work at request time.</p>
-<h2 id="safety-boundary">Safety boundary</h2>
+<h1 id="adr-0034-bind-lifecycle-events-by-claimed-visit-identity-and-derive-dwell-from-interval-unions">ADR-0034: Bind lifecycle events by claimed visit identity and derive dwell from interval unions</h1>
+<h2 id="context-and-problem-statement">Context and problem statement</h2>
+<p>Lifecycle events could previously fall back from an unknown caller-supplied <code>visit_id</code> to the latest visit with the same normalized URL. Concurrent tabs and delayed captures could therefore attach telemetry to the wrong navigation. Dwell was incremented from reported <code>active_seconds</code> values and only suppressed overlaps with equal starts, so partial overlap, containment, adjacency, and out-of-order delivery could double count.</p>
+<p>The capture model requires one visit per navigation/session, durable handling of events that arrive before capture, and dwell based on valid time intervals.</p>
+<h2 id="decision-drivers">Decision drivers</h2>
 <ul>
-<li><code>memory migrate --check</code> is read-only. It does not create the database, directories, ledger rows, or backups.</li>
-<li><code>memory migrate --execute</code> is the explicit operator path for pending migrations.</li>
-<li>Normal startup applies only pending <strong>non-destructive</strong> migrations. A future destructive migration fails startup before that step and requires explicit <code>migrate --execute</code>.</li>
-<li>A destructive step requires disk-headroom preflight and a verified SQLite online backup before its first write.</li>
-<li>There are no destructive down-migrations. Rollback means the prior application plus the pre-migration backup.</li>
-<li>Database migration does not move SQLite to NAS and does not touch media/blob roots.</li>
+<li>Preserve concurrent same-URL tab identity.</li>
+<li>Accept lifecycle events before or after their matching capture.</li>
+<li>Avoid speculative URL-based attachment for versioned clients.</li>
+<li>Make event retries idempotent and dwell independent of arrival order.</li>
+<li>Keep legacy payloads that omit visit identity readable during the compatibility period.</li>
+<li>Use additive, reversible schema evolution.</li>
 </ul>
-<p>Do not run these commands against the daily-driver database during repository verification. Use an explicit temporary runtime and blob root.</p>
-<h2 id="commands">Commands</h2>
-<p>Global options precede the command:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span>/tmp/browser-memory-daemon-verify-venv/bin/python
-
-<span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2">$BMD_PYTHON</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
-<span style="color: #F8F8F2">  </span>--runtime-root<span style="color: #F8F8F2"> </span>/tmp/bmd-migration-check/runtime<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
-<span style="color: #F8F8F2">  </span>--blob-root<span style="color: #F8F8F2"> </span>/tmp/bmd-migration-check/blobs<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
-<span style="color: #F8F8F2">  </span>--token<span style="color: #F8F8F2"> </span>fixture-token<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
-<span style="color: #F8F8F2">  </span>migrate<span style="color: #F8F8F2"> </span>--check
-</code></pre></div>
-
-<p>Execute pending steps only after reviewing the JSON report:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2">$BMD_PYTHON</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
-<span style="color: #F8F8F2">  </span>--runtime-root<span style="color: #F8F8F2"> </span>/tmp/bmd-migration-check/runtime<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
-<span style="color: #F8F8F2">  </span>--blob-root<span style="color: #F8F8F2"> </span>/tmp/bmd-migration-check/blobs<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
-<span style="color: #F8F8F2">  </span>--token<span style="color: #F8F8F2"> </span>fixture-token<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
-<span style="color: #F8F8F2">  </span>migrate<span style="color: #F8F8F2"> </span>--execute
-</code></pre></div>
-
-<p>Exit codes:</p>
-<table>
-<thead>
-<tr>
-<th style="text-align: right;">Code</th>
-<th>Meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: right;"><code>0</code></td>
-<td>Database is current, or execution completed and the database is current.</td>
-</tr>
-<tr>
-<td style="text-align: right;"><code>1</code></td>
-<td>Compatibility, checksum, fingerprint, backup, headroom, or execution failure.</td>
-</tr>
-<tr>
-<td style="text-align: right;"><code>2</code></td>
-<td>Check succeeded, the database is compatible, and migrations remain pending.</td>
-</tr>
-</tbody>
-</table>
-<h2 id="current-ordered-ledger">Current ordered ledger</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: right;">Version</th>
-<th>Name</th>
-<th>Role</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: right;"><code>1</code></td>
-<td><code>baseline_current_schema</code></td>
-<td>Immutable validated baseline. An existing unversioned database is stamped only when its normalized SQLite schema fingerprint exactly matches version 1.</td>
-</tr>
-<tr>
-<td style="text-align: right;"><code>2</code></td>
-<td><code>normalize_baseline_reference_data</code></td>
-<td>Ensures the built-in Chrome source row and performs one-time privacy-rule deduplication formerly embedded in steady-state <code>schema.sql</code>.</td>
-</tr>
-<tr>
-<td style="text-align: right;"><code>3</code></td>
-<td><code>seed_daemon_public_media_fetch_tasks</code></td>
-<td>One-time historical task seeding formerly run by every <code>init_db</code> call.</td>
-</tr>
-<tr>
-<td style="text-align: right;"><code>4</code></td>
-<td><code>add_capture_observations_and_url_claims</code></td>
-<td>Additive capture-observation and untrusted URL-claim tables with a new exact schema fingerprint; no backfill or read cutover.</td>
-</tr>
-<tr>
-<td style="text-align: right;"><code>5</code></td>
-<td><code>backfill_historical_capture_observations_and_url_claims</code></td>
-<td>One-time evidence-bounded backfill: inferred observations only from stored snapshot/visit links, ambiguous observations when no visit survives, and historical canonical-authority claims without speculative splits.</td>
-</tr>
-<tr>
-<td style="text-align: right;"><code>6</code></td>
-<td><code>link_media_artifacts_to_capture_observations</code></td>
-<td>Add the observation/artifact relation; backfill only a unique visit+snapshot candidate as inferred or a unique snapshot-only candidate as ambiguous, leaving multi-candidate history unresolved.</td>
-</tr>
-<tr>
-<td style="text-align: right;"><code>7</code></td>
-<td><code>add_claimed_visit_identity</code></td>
-<td>Preserve claimed lifecycle visit identity, expose attachment method, and enable exact delayed-capture reconciliation without URL-recency guesses.</td>
-</tr>
-</tbody>
-</table>
-<p>Each <code>schema_migrations</code> row stores version, unique name, SHA-256 checksum, and applied timestamp. <code>PRAGMA user_version</code> must match the highest contiguous ledger version. Unknown-newer versions, gaps, name drift, checksum drift, and schema-fingerprint drift fail closed.</p>
-<p>The version-1 SQL is frozen in <code>daemon/src/browser_memory_daemon/migration_steps/v0001_baseline_schema.sql</code>; its declared fingerprint and loader live beside it in <code>v0001_baseline_schema.py</code>. Future schema changes add ordered steps; they do not rewrite version 1.</p>
-<h2 id="backup-and-rollback">Backup and rollback</h2>
-<p>Before a destructive step, the migration kernel:</p>
+<h2 id="decision">Decision</h2>
+<h3 id="claimed-and-resolved-visit-identity">Claimed and resolved visit identity</h3>
+<p>Migration version 7 adds <code>claimed_visit_id</code> and <code>attachment_method</code> to <code>visit_events</code>.</p>
+<ul>
+<li>A payload with <code>visit_id</code> is resolved only when exact visit ID and normalized observed URL agree.</li>
+<li>If that visit does not yet exist, the event is stored with <code>visit_id = NULL</code>, its <code>claimed_visit_id</code>, and <code>attachment_method = unmatched</code>.</li>
+<li>Capture ingestion reconciles pending rows only when both claimed visit ID and normalized observed URL match; reconciled rows use <code>visit-id-delayed</code>.</li>
+<li>A payload that omits visit identity may use the existing latest-URL lookup during the legacy compatibility window and is marked <code>legacy-url-fallback</code>.</li>
+<li>Historical linked rows are backfilled with their existing <code>visit_id</code> as the claim and marked <code>historical</code>.</li>
+</ul>
+<p>The API returns resolved and claimed IDs separately. It never reports an unmatched claimed ID as though it were a resolved visit.</p>
+<h3 id="interval-validation-and-dwell">Interval validation and dwell</h3>
+<p>New positive-active lifecycle events must include timezone-qualified start and end timestamps. The end must be after the start, the interval is bounded to one day, and reported <code>active_seconds</code> must agree with interval duration within one second.</p>
+<p>For each resolved visit, dwell is recomputed from all valid positive-active intervals:</p>
 <ol>
-<li>measures the SQLite DB plus WAL/SHM footprint;</li>
-<li>requires bounded free-space headroom;</li>
-<li>writes an online backup under the configured state root's <code>migration-backups/</code> directory;</li>
-<li>runs <code>PRAGMA integrity_check</code> and <code>PRAGMA foreign_key_check</code> against the backup;</li>
-<li>starts the destructive step only after those checks pass.</li>
+<li>sort intervals by start time;</li>
+<li>merge overlap, containment, and adjacency;</li>
+<li>sum merged durations;</li>
+<li>replace <code>visits.dwell_seconds</code> with the derived total.</li>
 </ol>
-<p>If a step fails, that step's transaction and ledger row roll back. The failure reports the backup path when one was created. Restore is deliberately not automatic: stop writers, preserve the failed database for diagnosis, restore the backup to an explicit destination, run integrity/FTS/application smoke checks, and use the prior compatible application version.</p>
-<h2 id="repository-verification">Repository verification</h2>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span>/tmp/browser-memory-daemon-verify-venv/bin/python
-<span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2">$BMD_PYTHON</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pytest<span style="color: #F8F8F2"> </span>-q<span style="color: #F8F8F2"> </span>daemon/tests/integration/test_migrations.py
-</code></pre></div>
-
-<p>The fixture suite covers fresh initialization, exact unversioned detection, repeated and concurrent no-op/application behavior, checksum and unknown-newer rejection, injected rollback, FTS/foreign-key/integrity checks, destructive headroom refusal, online backup, restore-backed search, a version-3-to-latest expand upgrade, observation/claim constraints, version-5 evidence-bounded historical backfill, and version-6 conservative media-observation linking.</p>
+<p>Arrival order and duplicate event delivery therefore do not change the result. Historical naive timestamps remain readable as UTC during recomputation, but new interval payloads require an explicit timezone.</p>
+<h2 id="compatibility-and-rollback">Compatibility and rollback</h2>
+<p>The migration is additive. Prior binaries ignore appended columns. Rollback remains the prior application plus the pre-migration online backup; there is no destructive down-migration.</p>
+<p>The URL fallback remains only for payloads with no visit identity. Phase 2 extension changes make current browser payloads always identity-bearing, after which the fallback is legacy-only evidence rather than the normal path.</p>
+<h2 id="consequences">Consequences</h2>
+<h3 id="positive">Positive</h3>
+<ul>
+<li>Concurrent tabs at the same URL cannot steal one another's identity-bearing lifecycle events.</li>
+<li>Delayed capture reconciles pending events without URL recency guesses.</li>
+<li>Dwell is monotonic with evidence and invariant to overlap or delivery order.</li>
+<li>Attachment quality is visible in SQLite and authenticated detail reads.</li>
+</ul>
+<h3 id="negative">Negative</h3>
+<ul>
+<li>Dwell recomputation reads all positive intervals for one visit after each accepted active segment. Visit event volumes are bounded and indexed; future optimization must preserve exact union semantics.</li>
+<li>Legacy no-ID events retain explicit URL fallback until compatibility evidence permits removal.</li>
+<li>Invalid historical intervals remain stored but are excluded from union accounting.</li>
+</ul>
+<h2 id="rejected-alternatives">Rejected alternatives</h2>
+<ul>
+<li><strong>Fallback from an unknown claimed ID to latest URL:</strong> fails concurrent-tab identity.</li>
+<li><strong>Increment dwell by each report:</strong> double counts overlap and is order-dependent.</li>
+<li><strong>Deduplicate equal starts only:</strong> misses partial overlap, containment, and bridging intervals.</li>
+<li><strong>Create placeholder visits before capture:</strong> would invent document/visit authority before accepted text capture.</li>
+</ul>
+<h2 id="validation">Validation</h2>
+<ul>
+<li><code>daemon/tests/integration/test_visit_lifecycle.py::test_lifecycle_dwell_uses_interval_union_for_overlap_containment_adjacency_and_out_of_order</code></li>
+<li><code>daemon/tests/integration/test_visit_lifecycle.py::test_claimed_visit_identity_does_not_fall_back_by_url_and_reconciles_after_delayed_capture</code></li>
+<li><code>daemon/tests/integration/test_visit_lifecycle.py::test_visit_lifecycle_event_validates_ranges</code></li>
+<li><code>daemon/tests/integration/test_migrations.py::test_version_seven_preserves_claimed_visit_identity_for_historical_events</code></li>
+<li>HTTP lifecycle characterization remains covered by <code>daemon/tests/e2e/test_http_api.py</code>.</li>
+</ul>
   </article>
   <div class="md-footer">
-    Rendered from <code>docs/database-migrations.md</code> — the Markdown file is the canonical,
+    Rendered from <code>docs/architecture/adr/0034-bind-lifecycle-by-visit-identity-and-union-dwell.md</code> — the Markdown file is the canonical,
     version-controlled source. This HTML is generated (regenerate with
     <code>scripts/render_docs.py</code>); do not hand-edit.
   </div>

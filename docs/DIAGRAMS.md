@@ -139,13 +139,21 @@ Repeated unchanged extractions add observations without duplicating text or repl
 flowchart LR
   Start(("start")) --> Active["Active"]
   Active --> Deactivate["tab deactivated<br/>window blurred"] --> Inactive["Inactive"]
-  Inactive --> Reactivate["tab active again"] --> Active
+  Inactive --> Reactivate["tab activated<br/>window focused"] --> Active
   Active --> Close["tab closed"] --> Closed["Closed"] --> End(("end"))
   Active --> Navigate["navigation-away<br/>SPA route"] --> Navigated["Navigated"]
   Navigated --> NewURL["new URL state"] --> Active
+  Deactivate --> Identity{"exact claimed<br/>visit exists?"}
+  Close --> Identity
+  Navigate --> Identity
+  Identity -->|yes| Link["link by visit ID"]
+  Identity -->|not yet| Pending["store claimed ID<br/>attachment=unmatched"]
+  Pending --> Capture["matching capture arrives"] --> Link
+  Link --> Union["validate + union all<br/>positive active intervals"]
+  Union --> Dwell["replace derived dwell"]
 ```
 
-Lifecycle events carry URL, timestamps, active seconds, and max-scroll percent. `/visit-events` is metadata-only; body text only flows through `/capture`.
+Lifecycle events carry claimed visit identity, URL, timezone-qualified timestamps, active seconds, and max-scroll percent. Identity-bearing events never fall back to the latest same-URL visit; delayed capture reconciles by claimed ID plus normalized observed URL. Dwell is the union of valid positive-active intervals, not an additive counter. `/visit-events` is metadata-only; body text only flows through `/capture`.
 
 ---
 

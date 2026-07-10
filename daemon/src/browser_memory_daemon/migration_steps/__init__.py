@@ -12,6 +12,7 @@ from . import (
     v0004_capture_observations_and_url_claims,
     v0005_backfill_historical_observations,
     v0006_link_media_artifacts_to_observations,
+    v0007_add_claimed_visit_identity,
 )
 
 
@@ -83,6 +84,17 @@ MIGRATIONS = (
         sql=v0006_link_media_artifacts_to_observations.SQL,
         apply=v0006_link_media_artifacts_to_observations.apply,
         schema_fingerprint=v0006_link_media_artifacts_to_observations.SCHEMA_FINGERPRINT,
+    ),
+    MigrationStep(
+        version=7,
+        name=v0007_add_claimed_visit_identity.NAME,
+        checksum=migration_checksum(
+            7,
+            v0007_add_claimed_visit_identity.NAME,
+            v0007_add_claimed_visit_identity.CHECKSUM_PAYLOAD,
+        ),
+        sql=v0007_add_claimed_visit_identity.SQL,
+        schema_fingerprint=v0007_add_claimed_visit_identity.SCHEMA_FINGERPRINT,
     ),
 )
 

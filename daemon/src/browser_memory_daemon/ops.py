@@ -276,7 +276,8 @@ def document_detail(conn: sqlite3.Connection, config: RuntimeConfig, document_id
     ).fetchall()
     visit_events = conn.execute(
         """
-        SELECT id, visit_id, document_id, url, normalized_url, event_type,
+        SELECT id, visit_id, claimed_visit_id, attachment_method,
+               document_id, url, normalized_url, event_type,
                event_started_at, event_ended_at, active_seconds, max_scroll_percent,
                metadata_json, created_at
         FROM visit_events

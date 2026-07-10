@@ -7,6 +7,7 @@ from urllib.parse import urlsplit
 
 from .config import RuntimeConfig
 from .db import audit
+from .lifecycle import recompute_visit_dwell
 from .media import media_artifact_id, parse_media_refs, record_media_references
 from .models import CapturePayload
 from .normalize import domain_from_url, normalize_url
@@ -268,6 +269,18 @@ def ingest_capture(conn: sqlite3.Connection, config: RuntimeConfig, payload: Cap
                 int(payload.is_incognito),
             ),
         )
+        delayed_event_count = conn.execute(
+            """
+            UPDATE visit_events
+            SET visit_id = ?, document_id = ?, attachment_method = 'visit-id-delayed'
+            WHERE visit_id IS NULL
+              AND claimed_visit_id = ?
+              AND normalized_url = ?
+            """,
+            (payload.visit_id, document_id, payload.visit_id, normalized),
+        ).rowcount
+        if delayed_event_count:
+            recompute_visit_dwell(conn, payload.visit_id)
         snapshot_cursor = conn.execute(
             """
             INSERT OR IGNORE INTO snapshots(

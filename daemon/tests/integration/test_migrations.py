@@ -42,6 +42,12 @@ def _config(tmp_path):
     )
 
 
+def _drop_claimed_visit_identity(conn: sqlite3.Connection) -> None:
+    conn.execute("DROP INDEX IF EXISTS idx_visit_events_claimed_visit")
+    conn.execute("ALTER TABLE visit_events DROP COLUMN attachment_method")
+    conn.execute("ALTER TABLE visit_events DROP COLUMN claimed_visit_id")
+
+
 def _create_unversioned_current_db(cfg, *, with_media_ref: bool = False) -> None:
     cfg.ensure_dirs()
     with sqlite3.connect(cfg.db_path) as conn:
@@ -237,6 +243,7 @@ def test_version_three_fixture_upgrades_once_to_capture_model_expand_schema(tmp_
     cfg = _config(tmp_path)
     init_db(cfg)
     with connect(cfg.db_path) as conn:
+        _drop_claimed_visit_identity(conn)
         conn.execute("DROP TABLE media_artifact_observations")
         conn.execute("DROP TABLE document_url_claims")
         conn.execute("DROP TABLE capture_observations")
@@ -246,9 +253,9 @@ def test_version_three_fixture_upgrades_once_to_capture_model_expand_schema(tmp_
 
     before = migration_status(cfg)
     assert before["current_version"] == 3
-    assert before["pending_versions"] == [4, 5, 6]
+    assert before["pending_versions"] == [4, 5, 6, 7]
     result = migrate_database(cfg, execute=True)
-    assert result["applied_versions"] == [4, 5, 6]
+    assert result["applied_versions"] == [4, 5, 6, 7]
     with connect(cfg.db_path) as conn:
         tables = {
             row["name"]
@@ -261,13 +268,14 @@ def test_version_three_fixture_upgrades_once_to_capture_model_expand_schema(tmp_
             "document_url_claims",
             "media_artifact_observations",
         } <= tables
-        assert schema_fingerprint(conn) == MIGRATIONS[5].schema_fingerprint
+        assert schema_fingerprint(conn) == MIGRATIONS[6].schema_fingerprint
 
 
 def test_version_five_backfills_only_evidence_supported_historical_relationships(tmp_path):
     cfg = _config(tmp_path)
     init_db(cfg)
     with connect(cfg.db_path) as conn:
+        _drop_claimed_visit_identity(conn)
         conn.execute("DELETE FROM document_url_claims")
         conn.execute("DELETE FROM capture_observations")
         conn.execute("DROP TABLE media_artifact_observations")
@@ -422,14 +430,15 @@ def test_version_six_backfills_only_unambiguous_media_observation_links(tmp_path
             "UPDATE media_artifacts SET visit_id = NULL WHERE id = ?",
             (no_visit["media_artifacts"][0]["artifact_id"],),
         )
+        _drop_claimed_visit_identity(conn)
         conn.execute("DROP TABLE media_artifact_observations")
-        conn.execute("DELETE FROM schema_migrations WHERE version = 6")
+        conn.execute("DELETE FROM schema_migrations WHERE version >= 6")
         conn.execute("PRAGMA user_version = 5")
 
-    pending = migration_status(cfg)
+    pending = migration_status(cfg, steps=MIGRATIONS[:6])
     assert pending["current_version"] == 5
     assert pending["pending_versions"] == [6]
-    result = migrate_database(cfg, execute=True)
+    result = migrate_database(cfg, execute=True, steps=MIGRATIONS[:6])
     assert result["applied_versions"] == [6]
 
     with connect(cfg.db_path) as conn:
@@ -460,6 +469,65 @@ def test_version_six_backfills_only_unambiguous_media_observation_links(tmp_path
         }
         assert ambiguous_artifact_id not in links
         assert schema_fingerprint(conn) == MIGRATIONS[5].schema_fingerprint
+        assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
+
+
+def test_version_seven_preserves_claimed_visit_identity_for_historical_events(tmp_path):
+    cfg = _config(tmp_path)
+    init_db(cfg)
+    with connect(cfg.db_path) as conn:
+        capture = ingest_capture(
+            conn,
+            cfg,
+            CapturePayload.from_dict(
+                {
+                    "visit_id": "visit-v7-history",
+                    "url": "https://example.org/v7-history",
+                    "title": "Version seven history",
+                    "text": "Readable historical lifecycle fixture for migration version seven.",
+                }
+            ),
+        )
+        conn.execute(
+            """
+            INSERT INTO visit_events(
+              id, visit_id, document_id, source_id, url, normalized_url, event_type,
+              event_started_at, event_ended_at, active_seconds, metadata_json
+            ) VALUES (?, ?, ?, 'chrome-extension', ?, ?, 'active-segment', ?, ?, 10, '{}')
+            """,
+            (
+                "event-v7-history",
+                "visit-v7-history",
+                capture["document_id"],
+                "https://example.org/v7-history",
+                "https://example.org/v7-history",
+                "2026-01-06T00:00:00Z",
+                "2026-01-06T00:00:10Z",
+            ),
+        )
+        _drop_claimed_visit_identity(conn)
+        conn.execute("DELETE FROM schema_migrations WHERE version = 7")
+        conn.execute("PRAGMA user_version = 6")
+
+    pending = migration_status(cfg)
+    assert pending["current_version"] == 6
+    assert pending["pending_versions"] == [7]
+    result = migrate_database(cfg, execute=True)
+    assert result["applied_versions"] == [7]
+
+    with connect(cfg.db_path) as conn:
+        event = conn.execute(
+            """
+            SELECT visit_id, claimed_visit_id, attachment_method
+            FROM visit_events WHERE id = 'event-v7-history'
+            """
+        ).fetchone()
+        assert dict(event) == {
+            "visit_id": "visit-v7-history",
+            "claimed_visit_id": "visit-v7-history",
+            "attachment_method": "historical",
+        }
+        assert schema_fingerprint(conn) == MIGRATIONS[6].schema_fingerprint
         assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
 
 

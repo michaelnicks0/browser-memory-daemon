@@ -64,6 +64,7 @@ Exit codes:
 | `4` | `add_capture_observations_and_url_claims` | Additive capture-observation and untrusted URL-claim tables with a new exact schema fingerprint; no backfill or read cutover. |
 | `5` | `backfill_historical_capture_observations_and_url_claims` | One-time evidence-bounded backfill: inferred observations only from stored snapshot/visit links, ambiguous observations when no visit survives, and historical canonical-authority claims without speculative splits. |
 | `6` | `link_media_artifacts_to_capture_observations` | Add the observation/artifact relation; backfill only a unique visit+snapshot candidate as inferred or a unique snapshot-only candidate as ambiguous, leaving multi-candidate history unresolved. |
+| `7` | `add_claimed_visit_identity` | Preserve claimed lifecycle visit identity, expose attachment method, and enable exact delayed-capture reconciliation without URL-recency guesses. |
 
 Each `schema_migrations` row stores version, unique name, SHA-256 checksum, and applied timestamp. `PRAGMA user_version` must match the highest contiguous ledger version. Unknown-newer versions, gaps, name drift, checksum drift, and schema-fingerprint drift fail closed.
 

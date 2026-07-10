@@ -51,6 +51,8 @@ CREATE TABLE IF NOT EXISTS visit_events (
   max_scroll_percent INTEGER,
   metadata_json TEXT NOT NULL DEFAULT '{}',
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  claimed_visit_id TEXT,
+  attachment_method TEXT NOT NULL DEFAULT 'historical' CHECK (attachment_method IN ('historical', 'visit-id', 'visit-id-delayed', 'legacy-url-fallback', 'unmatched')),
   FOREIGN KEY(visit_id) REFERENCES visits(id) ON DELETE SET NULL,
   FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE,
   FOREIGN KEY(source_id) REFERENCES sources(id)
@@ -206,6 +208,7 @@ CREATE INDEX IF NOT EXISTS idx_visits_blocked_captured_created ON visits(blocked
 CREATE INDEX IF NOT EXISTS idx_visits_document_captured_created ON visits(document_id, captured_at DESC, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_visits_normalized_url ON visits(normalized_url);
 CREATE INDEX IF NOT EXISTS idx_visit_events_visit_id ON visit_events(visit_id);
+CREATE INDEX IF NOT EXISTS idx_visit_events_claimed_visit ON visit_events(claimed_visit_id, normalized_url, event_started_at);
 CREATE INDEX IF NOT EXISTS idx_visit_events_document_id ON visit_events(document_id);
 CREATE INDEX IF NOT EXISTS idx_visit_events_visit_ended_created ON visit_events(visit_id, event_ended_at DESC, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_visit_events_document_ended_created ON visit_events(document_id, event_ended_at DESC, created_at DESC);
