@@ -5,7 +5,7 @@
 > **Runtime:** Python **3.11+** (`pyproject.toml` requires `>=3.11`). Use `BMD_PYTHON=/path/to/python3.11` when the host `python3` is older.
 
 <!-- BEGIN GENERATED:inventory-summary -->
-> **Current inventory:** 130 static test functions across 24 files — 103 daemon pytest tests + 27 extension node:test tests.
+> **Current inventory:** 135 static test functions across 24 files — 108 daemon pytest tests + 27 extension node:test tests.
 <!-- END GENERATED:inventory-summary -->
 
 ---
@@ -73,7 +73,7 @@ Use `--runtime-root PATH` only for explicit fixture roots; do not point the stre
 ## Generated test inventory
 
 <!-- BEGIN GENERATED:audit-run -->
-Latest inventory: **130 static test functions** across **24 files** (103 daemon pytest; 27 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
+Latest inventory: **135 static test functions** across **24 files** (108 daemon pytest; 27 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
 <!-- END GENERATED:audit-run -->
 
 ## Requirements traceability gate
@@ -87,7 +87,7 @@ Traceability gate: **✅ pass**.
 | Test-plan requirement rows found | 24 |
 | Missing architecture requirements in `docs/test-plan.md` | none |
 | Unresolved file/test references in `docs/test-plan.md` | none |
-| Static test inventory measured | 130 tests / 24 files |
+| Static test inventory measured | 135 tests / 24 files |
 <!-- END GENERATED:traceability-gate -->
 
 ### Per-file counts
@@ -97,17 +97,17 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/e2e/test_admin_api.py` | pytest | 3 |
 | `daemon/tests/e2e/test_cli_admin.py` | pytest | 1 |
 | `daemon/tests/e2e/test_concurrency_stress.py` | pytest | 2 |
-| `daemon/tests/e2e/test_daily_driver_install.py` | pytest | 1 |
+| `daemon/tests/e2e/test_daily_driver_install.py` | pytest | 2 |
 | `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | 2 |
 | `daemon/tests/e2e/test_http_api.py` | pytest | 5 |
 | `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | 5 |
 | `daemon/tests/e2e/test_read_model_indexes.py` | pytest | 1 |
-| `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | 3 |
+| `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | 4 |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | 25 |
 | `daemon/tests/integration/test_media_worker.py` | pytest | 28 |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | 5 |
-| `daemon/tests/unit/test_config.py` | pytest | 1 |
-| `daemon/tests/unit/test_daily_driver_health.py` | pytest | 5 |
+| `daemon/tests/unit/test_config.py` | pytest | 3 |
+| `daemon/tests/unit/test_daily_driver_health.py` | pytest | 6 |
 | `daemon/tests/unit/test_db.py` | pytest | 2 |
 | `daemon/tests/unit/test_normalize.py` | pytest | 4 |
 | `daemon/tests/unit/test_policy.py` | pytest | 6 |
@@ -118,7 +118,7 @@ Traceability gate: **✅ pass**.
 | `extension/tests/unit/queue.test.js` | node:test | 1 |
 | `extension/tests/unit/service_worker.test.js` | node:test | 4 |
 | `extension/tests/unit/shared.test.js` | node:test | 2 |
-| **Total** |  | **130** |
+| **Total** |  | **135** |
 <!-- END GENERATED:per-file-counts -->
 
 <details>
@@ -134,6 +134,7 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/e2e/test_concurrency_stress.py` | pytest | `(module)` | `test_concurrency_stress_harness_exercises_shared_sqlite_db` | 6 | Concurrency stress harness exercises shared sqlite db. |
 | `daemon/tests/e2e/test_concurrency_stress.py` | pytest | `(module)` | `test_concurrency_stress_cli_prints_json_for_explicit_runtime` | 36 | Concurrency stress cli prints json for explicit runtime. |
 | `daemon/tests/e2e/test_daily_driver_install.py` | pytest | `(module)` | `test_install_daily_driver_dry_run_is_non_mutating` | 12 | Install daily driver dry run is non mutating. |
+| `daemon/tests/e2e/test_daily_driver_install.py` | pytest | `(module)` | `test_install_daily_driver_required_mount_guard_fails_before_writes` | 54 | Install daily driver required mount guard fails before writes. |
 | `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_generate_test_inventory_reports_traceability_success` | 69 | Generate test inventory reports traceability success. |
 | `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_generate_test_inventory_check_fails_for_traceability_gaps` | 87 | Generate test inventory check fails for traceability gaps. |
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_skips_request_time_db_initialization_after_startup` | 61 | Http capture skips request time db initialization after startup. |
@@ -147,9 +148,10 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_json_output_is_structured` | 131 | Performance benchmark json output is structured. |
 | `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_human_summary_is_compact` | 168 | Performance benchmark human summary is compact. |
 | `daemon/tests/e2e/test_read_model_indexes.py` | pytest | `(module)` | `test_read_model_ordered_queries_use_schema_indexes` | 12 | Read model ordered queries use schema indexes. |
-| `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | `(module)` | `test_ui_dashboard_shell_serves_bootstrap_and_core_panels` | 37 | Ui dashboard shell serves bootstrap and core panels. |
-| `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | `(module)` | `test_ui_dashboard_static_asset_path_traversal_is_rejected` | 70 | Ui dashboard static asset path traversal is rejected. |
-| `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | `(module)` | `test_ui_dashboard_smoke_runner_executes_bootstrap_empty_and_error_states` | 80 | Ui dashboard smoke runner executes bootstrap empty and error states. |
+| `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | `(module)` | `test_ui_dashboard_shell_serves_bootstrap_and_core_panels` | 39 | Ui dashboard shell serves bootstrap and core panels. |
+| `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | `(module)` | `test_ui_dashboard_static_asset_path_traversal_is_rejected` | 72 | Ui dashboard static asset path traversal is rejected. |
+| `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | `(module)` | `test_ui_dashboard_rejects_non_loopback_host_header` | 82 | Ui dashboard rejects non loopback host header. |
+| `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | `(module)` | `test_ui_dashboard_smoke_runner_executes_bootstrap_empty_and_error_states` | 93 | Ui dashboard smoke runner executes bootstrap empty and error states. |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_ingest_search_redact_and_forget` | 25 | Ingest search redact and forget. |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_metadata_redacted_before_fts_and_forget_by_original_url` | 50 | Metadata redacted before fts and forget by original url. |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_url_path_secret_redacted_and_not_searchable` | 75 | Url path secret redacted and not searchable. |
@@ -208,12 +210,15 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_can_attach_to_latest_visit_by_url` | 114 | Visit lifecycle event can attach to latest visit by url. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_without_matching_visit_stores_metadata_only` | 146 | Visit lifecycle event without matching visit stores metadata only. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_validates_ranges` | 168 | Visit lifecycle event validates ranges. |
-| `daemon/tests/unit/test_config.py` | pytest | `(module)` | `test_blob_root_can_be_moved_independently_from_runtime_root` | 4 | Blob root can be moved independently from runtime root. |
-| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_snapshot_is_aggregate_and_redaction_safe` | 72 | Daily driver health snapshot is aggregate and redaction safe. |
-| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_media_queue_uses_datetime_comparisons_and_reports_worker_throughput` | 150 | Daily driver health media queue uses datetime comparisons and reports worker throughput. |
-| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_missing_extension_token` | 231 | Daily driver health detects missing extension token. |
-| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_insecure_token_permissions_and_process_args` | 265 | Daily driver health detects insecure token permissions and process args. |
-| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_low_headroom_and_service_start_churn` | 307 | Daily driver health detects low headroom and service start churn. |
+| `daemon/tests/unit/test_config.py` | pytest | `(module)` | `test_blob_root_can_be_moved_independently_from_runtime_root` | 7 | Blob root can be moved independently from runtime root. |
+| `daemon/tests/unit/test_config.py` | pytest | `(module)` | `test_required_blob_root_mount_refuses_unmounted_blob_root` | 28 | Required blob root mount refuses unmounted blob root. |
+| `daemon/tests/unit/test_config.py` | pytest | `(module)` | `test_required_blob_root_mount_allows_mounted_blob_root` | 41 | Required blob root mount allows mounted blob root. |
+| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_snapshot_is_aggregate_and_redaction_safe` | 75 | Daily driver health snapshot is aggregate and redaction safe. |
+| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_media_queue_uses_datetime_comparisons_and_reports_worker_throughput` | 153 | Daily driver health media queue uses datetime comparisons and reports worker throughput. |
+| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_missing_extension_token` | 234 | Daily driver health detects missing extension token. |
+| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_reports_required_blob_mount_failure` | 268 | Daily driver health reports required blob mount failure. |
+| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_insecure_token_permissions_and_process_args` | 305 | Daily driver health detects insecure token permissions and process args. |
+| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_low_headroom_and_service_start_churn` | 347 | Daily driver health detects low headroom and service start churn. |
 | `daemon/tests/unit/test_db.py` | pytest | `(module)` | `test_connect_uses_extended_busy_timeout` | 5 | Connect uses extended busy timeout. |
 | `daemon/tests/unit/test_db.py` | pytest | `(module)` | `test_init_db_enforces_wal_and_connection_pragmas` | 12 | Init db enforces wal and connection pragmas. |
 | `daemon/tests/unit/test_normalize.py` | pytest | `(module)` | `test_normalize_url_removes_tracking_fragment_default_port_and_sorts_query` | 4 | Normalize url removes tracking fragment default port and sorts query. |

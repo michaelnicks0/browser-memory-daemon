@@ -33,6 +33,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0023](0023-guard-daemon-public-media-egress.md) | accepted | Guard daemon-public media egress. |
 | [ADR-0024](0024-contain-blob-and-media-artifact-paths.md) | accepted | Contain blob and media artifact paths. |
 | [ADR-0025](0025-literal-policy-aware-forget-selectors.md) | accepted | Use literal and policy-aware forget selectors. |
+| [ADR-0026](0026-harden-loopback-ui-and-required-blob-mounts.md) | accepted | Harden loopback UI and required blob mounts. |
 
 ## Backfilled decision history
 

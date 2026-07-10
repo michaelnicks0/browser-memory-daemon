@@ -48,11 +48,11 @@ BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
 
 The installer:
 
-1. validates `BMD_POLICY_MODE` and the Python 3.11+ runtime;
+1. validates `BMD_POLICY_MODE`, `BMD_REQUIRE_BLOB_ROOT_MOUNT`, and the Python 3.11+ runtime;
 2. builds the MV3 extension;
 3. copies it to the Windows-local extension directory;
 4. creates or reuses the daemon token;
-5. writes protected WSL env with `BMD_API_TOKEN`, `BMD_POLICY_MODE`, `BMD_BLOB_ROOT`, and `PYTHONPATH`;
+5. writes protected WSL env with `BMD_API_TOKEN`, `BMD_POLICY_MODE`, `BMD_BLOB_ROOT`, `BMD_REQUIRE_BLOB_ROOT_MOUNT`, and `PYTHONPATH`;
 6. writes/enables/restarts `systemd --user` daemon and media-worker services whose `ExecStart` values do not carry token material;
 7. preconfigures the Windows extension copy with token and policy mode;
 8. verifies WSL and Windows loopback health.
@@ -73,12 +73,13 @@ To place blobs on a WSL-mounted NAS dataset while keeping SQLite/WAL local:
 
 ```bash
 BMD_BLOB_ROOT=/mnt/nas/browser-memory-daemon/blobs \
+  BMD_REQUIRE_BLOB_ROOT_MOUNT=1 \
   BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
 ```
 
 `BMD_BLOB_ROOT` affects only clean-text/media blob files. The SQLite DB, WAL/SHM sidecars, token/env files, audit state, and systemd units remain under WSL XDG paths.
 
-The mount only needs to be a normal WSL-visible filesystem path. Prefer NFS for simple kernel-mounted NAS storage when it works in the local WSL/network boundary; SSHFS is an acceptable fallback for blob payloads because SQLite/WAL stays local.
+The mount only needs to be a normal WSL-visible filesystem path. Prefer NFS for simple kernel-mounted NAS storage when it works in the local WSL/network boundary; SSHFS is an acceptable fallback for blob payloads because SQLite/WAL stays local. `BMD_REQUIRE_BLOB_ROOT_MOUNT=1` makes the installer and daemon fail before writing blobs if the configured root no longer has a non-root mounted ancestor; leave it unset or `0` only when the blob root is intentionally local WSL storage.
 
 For an existing install, migrate DB-referenced blob paths after copying/writing to the new root:
 
@@ -88,6 +89,7 @@ BMD_BLOB_ROOT=/mnt/nas/browser-memory-daemon/blobs \
   PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   blob-root migrate --execute
 BMD_BLOB_ROOT=/mnt/nas/browser-memory-daemon/blobs \
+  BMD_REQUIRE_BLOB_ROOT_MOUNT=1 \
   BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
 ```
 
@@ -144,7 +146,7 @@ Expected health includes:
 {"ok": true, "capture_enabled": true, "policy_mode": "all"}
 ```
 
-The aggregate health JSON also checks storage headroom thresholds, systemd restart budgets, recent service-start failure churn, that `~/.config/browser-memory-daemon/token` and `env` are owner-only, that the environment file token matches the token file, that the unit files use the protected `EnvironmentFile`, that service process arguments do not expose token material, and that the Windows extension artifact token defaults match the token file. Token values are not printed. Defaults warn below 5 GB free or 90% used and hard-fail below 1 GB free or 98% used; restart/start-failure budgets warn at 3 and hard-fail at 10. Override with `BMD_HEALTH_HEADROOM_*` / `BMD_HEALTH_SERVICE_*` only for intentionally small local runtimes.
+The aggregate health JSON also checks storage headroom thresholds, required blob-root mount state, systemd restart budgets, recent service-start failure churn, that `~/.config/browser-memory-daemon/token` and `env` are owner-only, that the environment file token matches the token file, that the unit files use the protected `EnvironmentFile`, that service process arguments do not expose token material, and that the Windows extension artifact token defaults match the token file. Token values are not printed. Defaults warn below 5 GB free or 90% used and hard-fail below 1 GB free or 98% used; restart/start-failure budgets warn at 3 and hard-fail at 10. Override with `BMD_HEALTH_HEADROOM_*` / `BMD_HEALTH_SERVICE_*` only for intentionally small local runtimes.
 
 ---
 
@@ -154,7 +156,7 @@ The aggregate health JSON also checks storage headroom thresholds, systemd resta
 http://127.0.0.1:8765/ui
 ```
 
-Open the local UI directly through the daemon. The daemon embeds the current token into the served `/ui` HTML bootstrap, so the dashboard prepopulates the token and auto-loads recent captures, today's timeline, policy rules, and diagnostics. Static JS/CSS assets do not contain the token, and every memory/admin API still requires the bearer token.
+Open the local UI directly through the daemon. The daemon embeds the current token into the served `/ui` HTML bootstrap, so the dashboard prepopulates the token and auto-loads recent captures, today's timeline, policy rules, and diagnostics. The UI shell rejects non-loopback `Host` headers, static JS/CSS assets do not contain the token, and every memory/admin API still requires the bearer token.
 
 The **Save override** button remains available for unusual development/test cases; normal daily-driver use should not require pasting a token.
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Security-Model — browser-memory-daemon</title>
+<title>0026-Harden-Loopback-Ui-And-Required-Blob-Mounts — browser-memory-daemon</title>
 <style>
 :root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
@@ -120,183 +120,69 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <body>
 <div class="wrap">
   <div class="docbar">
-    <a class="home" href="../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
-    <span class="crumb">/ <b>docs/security-model.md</b></span>
+    <a class="home" href="../../../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
+    <span class="crumb">/ <b>docs/architecture/adr/0026-harden-loopback-ui-and-required-blob-mounts.md</b></span>
   </div>
   <article class="md-body">
-<h1 id="security-and-policy-model">Security and Policy Model</h1>
-<blockquote>
-<p><strong>Audience:</strong> operator and maintainers.
-<strong>Status:</strong> ✅ Adjustable policy modes implemented.
-<strong>Default:</strong> <code>all</code> — maximum personal recall, no built-in URL policy filtering or daemon redaction; explicit local block rules still apply.</p>
-</blockquote>
 <hr />
-<h2 id="core-boundary">Core boundary</h2>
-<p>The daemon is local-first and WSL-resident. It assumes captured page text may be private and may contain hostile prompt-injection text. It does <strong>not</strong> assume a multi-user enterprise DLP posture.</p>
-<table>
-<thead>
-<tr>
-<th>Boundary</th>
-<th>Current control</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Network</td>
-<td>Daemon binds to <code>127.0.0.1</code> by default; daemon-public media fetches reject non-global/private destinations unless explicitly allowlisted.</td>
-</tr>
-<tr>
-<td>API auth</td>
-<td>Bearer token required for memory/admin APIs.</td>
-</tr>
-<tr>
-<td>Health/UI shell</td>
-<td><code>/health</code> and <code>/ui</code> are public loopback only; <code>/ui</code> rejects non-loopback <code>Host</code> headers and includes a same-origin token bootstrap for operator UX, while static assets stay token-free.</td>
-</tr>
-<tr>
-<td>Durable storage</td>
-<td>WSL XDG paths; repo and Chrome profile are not storage roots; DB blob paths are validated against configured roots before read/serve/delete operations; optional <code>BMD_REQUIRE_BLOB_ROOT_MOUNT=1</code> prevents silent writes into an unmounted blob root.</td>
-</tr>
-<tr>
-<td>Browser bridge</td>
-<td>Content scripts message service worker; service worker owns daemon fetch/auth/queues.</td>
-</tr>
-<tr>
-<td>Agent safety</td>
-<td>Captured page text is untrusted evidence, never instructions.</td>
-</tr>
-</tbody>
-</table>
+<p>id: ADR-0026
+status: accepted
+date: 2026-07-10
+decision_date: 2026-07-10
+decider: Operator
+scope: repo
+supersedes: []
+superseded_by: []
+related:
+  - docs/architecture/adr/0012-bootstrap-local-ui-token-from-daemon.md
+  - docs/architecture/adr/0021-use-configurable-nas-blob-root-with-local-sqlite.md
+  - docs/security-model.md
+  - docs/daily-driver-deployment.md
+  - docs/USER_GUIDE.md</p>
 <hr />
-<h2 id="policy-modes">Policy modes</h2>
-<table>
-<thead>
-<tr>
-<th>Mode</th>
-<th>Purpose</th>
-<th style="text-align: right;">Filtering</th>
-<th style="text-align: right;">Redaction</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>all</code></td>
-<td>Maximum personal recall.</td>
-<td style="text-align: right;">Built-in URL filters off; explicit local block rules on; DOM skip retained</td>
-<td style="text-align: right;">❌ Off</td>
-<td>Default.</td>
-</tr>
-<tr>
-<td><code>recall</code></td>
-<td>Broad recall with minimal protective boundaries.</td>
-<td style="text-align: right;">⚠️ Minimal</td>
-<td style="text-align: right;">✅ On</td>
-<td>Blocks incognito/internal/file/non-web schemes.</td>
-</tr>
-<tr>
-<td><code>balanced</code></td>
-<td>Practical privacy with less overblocking than strict.</td>
-<td style="text-align: right;">✅ Moderate</td>
-<td style="text-align: right;">✅ On</td>
-<td>Blocks private hosts, known high-risk domains, and high-risk query keys.</td>
-</tr>
-<tr>
-<td><code>strict</code></td>
-<td>Legacy broad privacy filtering.</td>
-<td style="text-align: right;">✅ Broad</td>
-<td style="text-align: right;">✅ On</td>
-<td>Keyword-heavy domain/path/query blocks.</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="all-mode-risk-acceptance"><code>all</code> mode risk acceptance</h2>
-<p><code>all</code> intentionally stores original URL/title/body text without daemon redaction and without built-in URL/domain/path/query filtering. It still applies explicit local block rules and skips hidden/form/editable/script/style/no-script DOM text because Operator requested those surfaces stay omitted. This is an operator-selected personal recall mode.</p>
-<p>Known consequences:</p>
+<h1 id="adr-0026-harden-loopback-ui-and-required-blob-mounts">ADR-0026: Harden loopback UI and required blob mounts</h1>
+<h2 id="context">Context</h2>
+<p>The daily-driver dashboard intentionally receives the daemon bearer token through the same-origin <code>/ui</code> HTML bootstrap. That keeps the local dashboard usable without manual token paste, but it makes the <code>/ui</code> shell more sensitive than ordinary static assets.</p>
+<p>The blob root is configurable so clean-text and media blobs can live on a WSL-visible NAS/NFS/SSHFS filesystem while SQLite/WAL stays local. If a mount disappears and the path is recreated as an ordinary local directory, the daemon could silently write new blobs to the wrong storage tier.</p>
+<h2 id="decision">Decision</h2>
+<p>We will harden Phase 0.5 with two explicit guards:</p>
+<ol>
+<li><code>/ui</code> remains unauthenticated local HTML, but the daemon rejects UI-shell/static-asset requests whose <code>Host</code> header is not loopback (<code>127.0.0.0/8</code>, <code>::1</code>, <code>localhost</code>, or <code>*.localhost</code>). Memory/admin APIs still require the bearer token.</li>
+<li>Add optional <code>BMD_REQUIRE_BLOB_ROOT_MOUNT=1</code>. When enabled, runtime config, the daily-driver installer, and daily-driver health treat <code>BMD_BLOB_ROOT</code> as valid only if it has a non-root mounted ancestor. This prevents silent fallback writes into an empty local mountpoint.</li>
+</ol>
+<p>The default remains compatible: <code>BMD_REQUIRE_BLOB_ROOT_MOUNT=0</code>, so local WSL blob roots continue to work without mount inspection.</p>
+<h2 id="consequences">Consequences</h2>
 <ul>
-<li>visible/exposed page secrets can be stored and indexed;</li>
-<li>account, email, chat, health, payment, and local/private pages can be stored;</li>
-<li>only explicit local block rules narrow capture;</li>
-<li>Chrome platform restrictions still apply where extension injection is refused.</li>
+<li>Positive: token-bootstrap UI is still convenient but less likely to answer accidental non-loopback Host-header access.</li>
+<li>Positive: NAS-backed blob deployments can fail fast when the storage mount is absent.</li>
+<li>Positive: installer dry-run validates the mount requirement before creating config/data/state/blob directories.</li>
+<li>Positive: daily-driver health reports the mount guard in redaction-safe aggregate status.</li>
+<li>Neutral: local WSL-only installs keep the existing default behavior by leaving <code>BMD_REQUIRE_BLOB_ROOT_MOUNT</code> unset or <code>0</code>.</li>
+<li>Negative: operators using a NAS blob root must ensure the mount exists before service startup when the guard is enabled.</li>
 </ul>
-<p>Mitigations that remain even in <code>all</code>:</p>
+<h2 id="verification-validation">Verification / validation</h2>
 <ul>
-<li>loopback-only daemon bind by default;</li>
-<li>bearer auth for memory/admin APIs;</li>
-<li>runtime data is outside the repo;</li>
-<li>secret scan protects committed repo content;</li>
-<li>forget-by-domain/URL can delete stored memory after the fact; URL forget uses the literal selector in <code>all</code> mode but redacts selector values in receipts.</li>
+<li>Verification: <code>daemon/tests/e2e/test_ui_dashboard_smoke.py</code> covers UI token bootstrap, token-free static assets, path traversal rejection, and non-loopback Host-header rejection.</li>
+<li>Verification: <code>daemon/tests/unit/test_config.py</code> covers required blob-root mount positive and negative config paths.</li>
+<li>Verification: <code>daemon/tests/e2e/test_daily_driver_install.py</code> covers non-mutating installer dry-runs and fail-before-write behavior when the required mount is absent.</li>
+<li>Verification: <code>daemon/tests/unit/test_daily_driver_health.py</code> covers required blob-root mount health errors.</li>
 </ul>
-<hr />
-<h2 id="non-all-redaction">Non-<code>all</code> redaction</h2>
-<p>In <code>recall</code>, <code>balanced</code>, and <code>strict</code>, redaction runs before DB/FTS/blob storage for:</p>
+<h2 id="revisit-triggers">Revisit triggers</h2>
 <ul>
-<li>private-key blocks;</li>
-<li>bearer-token-shaped strings;</li>
-<li><code>api_key</code> / <code>secret</code> / <code>token</code> assignment shapes;</li>
-<li>SSN-shaped strings;</li>
-<li>credit-card-like digit runs;</li>
-<li>URL username/password;</li>
-<li>sensitive query values and fragments;</li>
-<li>opaque long path/token segments.</li>
+<li>Supersede this ADR if <code>/ui</code> stops carrying a bearer token in HTML.</li>
+<li>Supersede this ADR before intentionally exposing the UI through a remote tunnel or non-loopback interface.</li>
+<li>Supersede this ADR if blob storage gains a stronger mount identity check, such as expected device IDs, filesystem UUIDs, or signed mount metadata.</li>
 </ul>
-<hr />
-<h2 id="current-controls">Current controls</h2>
+<h2 id="references">References</h2>
 <ul>
-<li>API token required for <code>/capture</code>, <code>/visit-events</code>, <code>/media-artifacts/*</code>, <code>/search</code>, <code>/ready</code>, <code>/recent</code>, <code>/timeline</code>, <code>/documents/{id}</code>, <code>/snapshots/{id}</code>, <code>/policy/*</code>, <code>/doctor</code>, and <code>/forget</code>.</li>
-<li><code>/health</code> exposes minimal daemon status plus <code>policy_mode</code>.</li>
-<li>Daily-driver install stores the daemon API token in protected WSL config files and injects it into the Windows-local extension artifact; the token is never committed.</li>
-<li>Token rotation is supported:</li>
+<li><code>daemon/src/browser_memory_daemon/app.py</code></li>
+<li><code>daemon/src/browser_memory_daemon/config.py</code></li>
+<li><code>daemon/src/browser_memory_daemon/daily_driver_health.py</code></li>
+<li><code>scripts/install-daily-driver.sh</code></li>
 </ul>
-<p><code>bash
-  BMD_ROTATE_TOKEN=1 BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh</code></p>
-<ul>
-<li>Local web UI is served from loopback at <code>/ui</code>; the HTML bootstrap embeds the current daemon token so the dashboard auto-loads without manual paste. Requests with non-loopback <code>Host</code> headers are rejected, static JS/CSS assets remain token-free, and every memory/admin API call still requires the bearer token.</li>
-<li>Set <code>BMD_REQUIRE_BLOB_ROOT_MOUNT=1</code> with NAS/NFS/SSHFS-backed <code>BMD_BLOB_ROOT</code> deployments to make the installer and daemon refuse startup when the mount is absent; daily-driver health reports the same mount guard.</li>
-<li>Daemon-public media fetch uses a no-cookie, no-<code>Referer</code>, HTTP(S)-only egress guard. Every direct URL, redirect target, HLS variant playlist, init map, and segment is resolved and rejected by default if it maps to loopback, private, link-local, unspecified, multicast, reserved, or otherwise non-global address space. Private destinations require explicit <code>BMD_MEDIA_PUBLIC_FETCH_ALLOW_PRIVATE_HOSTS</code> configuration.</li>
-<li>Clean-text and media blob paths are root-scoped: writes construct contained paths under the configured blob root, media filenames use hashed storage stems, and read/serve/purge/forget flows refuse stale or tampered DB paths that resolve outside <code>clean-text/</code> or <code>media/</code>.</li>
-<li>Deletion UX requires explicit browser confirmation before UI/popup forget-domain calls, and the daemon returns deletion receipts. Destructive forget accepts exactly one selector; domain selectors must be literal hostnames, and URL selectors match the active policy's storage representation while keeping receipt scopes redaction-safe.</li>
-</ul>
-<hr />
-<h2 id="current-limitations">Current limitations</h2>
-<table>
-<thead>
-<tr>
-<th>Limit</th>
-<th>Status</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Native messaging hardening</td>
-<td>Not implemented.</td>
-</tr>
-<tr>
-<td>Semantic embeddings</td>
-<td>Not implemented.</td>
-</tr>
-<tr>
-<td>Encrypted backups</td>
-<td>Not implemented.</td>
-</tr>
-<tr>
-<td>Rich allow/redact/metadata-only rules</td>
-<td>Not implemented.</td>
-</tr>
-<tr>
-<td>Retention/compaction</td>
-<td>Not implemented.</td>
-</tr>
-<tr>
-<td>Cloud processing</td>
-<td>Not implemented and should not be added without explicit approval.</td>
-</tr>
-</tbody>
-</table>
   </article>
   <div class="md-footer">
-    Rendered from <code>docs/security-model.md</code> — the Markdown file is the canonical,
+    Rendered from <code>docs/architecture/adr/0026-harden-loopback-ui-and-required-blob-mounts.md</code> — the Markdown file is the canonical,
     version-controlled source. This HTML is generated (regenerate with
     <code>scripts/render_docs.py</code>); do not hand-edit.
   </div>

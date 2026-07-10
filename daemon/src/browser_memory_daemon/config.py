@@ -40,6 +40,7 @@ class RuntimeConfig:
     media_hls_playlist_max_bytes: int = 1_000_000
     media_fetch_on_capture: bool = False
     raw_html_enabled: bool = False
+    require_blob_root_mount: bool = False
 
     @property
     def db_path(self) -> Path:
@@ -62,10 +63,30 @@ class RuntimeConfig:
         return self.state_root / "audit.jsonl"
 
     def ensure_dirs(self) -> None:
-        for path in [self.config_root, self.data_root, self.blob_root, self.state_root, self.clean_text_root, self.media_root]:
+        for path in [self.config_root, self.data_root, self.state_root]:
+            path.mkdir(parents=True, exist_ok=True)
+        if self.require_blob_root_mount and not has_non_root_mount_ancestor(self.blob_root):
+            raise RuntimeError(
+                "BMD_REQUIRE_BLOB_ROOT_MOUNT=1 requires BMD_BLOB_ROOT to be on a mounted filesystem; "
+                f"no non-root mount ancestor found for {self.blob_root}"
+            )
+        for path in [self.blob_root, self.clean_text_root, self.media_root]:
             path.mkdir(parents=True, exist_ok=True)
         if self.raw_html_enabled:
             self.raw_html_root.mkdir(parents=True, exist_ok=True)
+
+
+def has_non_root_mount_ancestor(path: Path) -> bool:
+    resolved = Path(path).expanduser().resolve(strict=False)
+    for candidate in (resolved, *resolved.parents):
+        if candidate.parent == candidate:
+            continue
+        try:
+            if candidate.exists() and candidate.is_mount():
+                return True
+        except OSError:
+            continue
+    return False
 
 
 def _env_int(name: str, default: int) -> int:
@@ -153,6 +174,7 @@ def load_config(
         media_hls_max_depth=_env_int("BMD_MEDIA_HLS_MAX_DEPTH", RuntimeConfig.media_hls_max_depth),
         media_hls_playlist_max_bytes=_env_int("BMD_MEDIA_HLS_PLAYLIST_MAX_BYTES", RuntimeConfig.media_hls_playlist_max_bytes),
         media_fetch_on_capture=_env_bool("BMD_MEDIA_FETCH_ON_CAPTURE", RuntimeConfig.media_fetch_on_capture),
+        require_blob_root_mount=_env_bool("BMD_REQUIRE_BLOB_ROOT_MOUNT", RuntimeConfig.require_blob_root_mount),
     )
     cfg.ensure_dirs()
     return cfg

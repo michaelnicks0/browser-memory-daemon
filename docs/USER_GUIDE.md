@@ -48,7 +48,7 @@ One redaction-safe snapshot command covers WSL services, loopback health from WS
 ./scripts/daily-driver-health.sh
 ```
 
-The command prints JSON and exits non-zero when a hard health error is present. It does **not** dump captured page text, snippets, cookies, bearer tokens, raw captured URLs, or extension token values. Warnings such as due media retries are reported in `summary.warnings` while still producing a zero exit when the stack is otherwise healthy. The media-queue section reports due task counts by task/artifact status, oldest-due age, stale lease age, latest media-worker run, and 1h/24h worker throughput. Default storage thresholds are warning below 5 GB free or 90% used and hard error below 1 GB free or 98% used; restart/start-failure budgets warn at 3 and hard-fail at 10. Override these locally with `BMD_HEALTH_HEADROOM_*` and `BMD_HEALTH_SERVICE_*` environment variables when a small VM or test filesystem needs different bounds.
+The command prints JSON and exits non-zero when a hard health error is present. It does **not** dump captured page text, snippets, cookies, bearer tokens, raw captured URLs, or extension token values. Warnings such as due media retries are reported in `summary.warnings` while still producing a zero exit when the stack is otherwise healthy. The media-queue section reports due task counts by task/artifact status, oldest-due age, stale lease age, latest media-worker run, and 1h/24h worker throughput. Default storage thresholds are warning below 5 GB free or 90% used and hard error below 1 GB free or 98% used; restart/start-failure budgets warn at 3 and hard-fail at 10. If `BMD_REQUIRE_BLOB_ROOT_MOUNT=1`, health also hard-fails when the configured blob root is no longer under a mounted filesystem. Override local health thresholds with `BMD_HEALTH_HEADROOM_*` and `BMD_HEALTH_SERVICE_*` only when a small VM or test filesystem needs different bounds.
 
 Manual spot checks, if you need to isolate a layer:
 
@@ -102,6 +102,16 @@ Check the current installed stack without rebuilding/copying/restarting:
 ```bash
 ./scripts/install-daily-driver.sh --check
 ```
+
+To place blobs on a WSL-mounted NAS dataset and fail fast if the mount is absent:
+
+```bash
+BMD_BLOB_ROOT=/mnt/nas/browser-memory-daemon/blobs \
+  BMD_REQUIRE_BLOB_ROOT_MOUNT=1 \
+  BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
+```
+
+`BMD_REQUIRE_BLOB_ROOT_MOUNT=1` is intentionally strict: the installer and daemon refuse to proceed unless `BMD_BLOB_ROOT` has a non-root mounted ancestor. This prevents silent fallback writes into an empty local mountpoint after a NAS/NFS/SSHFS mount drops. Leave it unset or `0` only when the blob root is intentionally on the normal WSL filesystem.
 
 Then reload the unpacked extension in Chrome:
 
@@ -179,7 +189,7 @@ Local UI:
 http://127.0.0.1:8765/ui
 ```
 
-The daily-driver daemon embeds the current token into the `/ui` HTML bootstrap, so opening `http://127.0.0.1:8765/ui` from the local machine should prepopulate the token and immediately load recent captures, today's timeline, policy rules, and diagnostics. The token is not written into the static JS/CSS assets or the repo, and every memory/admin API call still requires the bearer token.
+The daily-driver daemon embeds the current token into the `/ui` HTML bootstrap, so opening `http://127.0.0.1:8765/ui` from the local machine should prepopulate the token and immediately load recent captures, today's timeline, policy rules, and diagnostics. The UI shell rejects non-loopback `Host` headers, the token is not written into the static JS/CSS assets or the repo, and every memory/admin API call still requires the bearer token.
 
 ---
 

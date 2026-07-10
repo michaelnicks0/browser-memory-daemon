@@ -13,10 +13,12 @@ from browser_memory_daemon.app import make_server
 from browser_memory_daemon.config import load_config
 
 
-def raw_request(method, url, token: str | None = "test-token"):
+def raw_request(method, url, token: str | None = "test-token", headers: dict[str, str] | None = None):
     req = urllib.request.Request(url, method=method)
     if token:
         req.add_header("Authorization", f"Bearer {token}")
+    for key, value in (headers or {}).items():
+        req.add_header(key, value)
     with urllib.request.urlopen(req, timeout=10) as response:
         return response.status, response.headers.get("Content-Type"), response.read().decode()
 
@@ -75,6 +77,17 @@ def test_ui_dashboard_static_asset_path_traversal_is_rejected(server):
         assert exc.code in {401, 404}
     else:  # pragma: no cover - safety assertion
         raise AssertionError("path traversal should not serve repo files")
+
+
+def test_ui_dashboard_rejects_non_loopback_host_header(server):
+    try:
+        raw_request("GET", f"{server}/ui", token=None, headers={"Host": "evil.example"})
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode()
+        assert exc.code == 403
+        assert "loopback-only" in body
+    else:  # pragma: no cover - safety assertion
+        raise AssertionError("token-bootstrap UI should reject non-loopback Host headers")
 
 
 def test_ui_dashboard_smoke_runner_executes_bootstrap_empty_and_error_states():

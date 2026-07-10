@@ -27,6 +27,7 @@ WORKER_UNIT_FILE="$UNIT_DIR/browser-memory-media-worker.service"
 HOST="${BMD_HOST:-127.0.0.1}"
 PORT="${BMD_PORT:-8765}"
 POLICY_MODE="${BMD_POLICY_MODE:-all}"
+REQUIRE_BLOB_ROOT_MOUNT="${BMD_REQUIRE_BLOB_ROOT_MOUNT:-0}"
 PS="${BMD_POWERSHELL:-/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe}"
 MODE=install
 
@@ -42,6 +43,30 @@ Modes:
   --check    Run the redaction-safe daily-driver health/artifact check only;
              do not build, copy, write units, rotate tokens, or restart services.
 EOF
+}
+
+check_blob_root_mount_guard() {
+  "$PY" - "$BLOB_DIR" "$REQUIRE_BLOB_ROOT_MOUNT" <<'PY'
+from pathlib import Path
+import sys
+
+blob_root = Path(sys.argv[1]).expanduser().resolve(strict=False)
+enabled = str(sys.argv[2]).strip().lower() in {"1", "true", "yes", "on"}
+if not enabled:
+    raise SystemExit(0)
+for candidate in (blob_root, *blob_root.parents):
+    if candidate.parent == candidate:
+        continue
+    try:
+        if candidate.exists() and candidate.is_mount():
+            raise SystemExit(0)
+    except OSError:
+        pass
+raise SystemExit(
+    "BMD_REQUIRE_BLOB_ROOT_MOUNT=1 but BMD_BLOB_ROOT has no non-root mounted ancestor: "
+    f"{blob_root}. Mount the blob filesystem first or unset BMD_REQUIRE_BLOB_ROOT_MOUNT."
+)
+PY
 }
 
 while [ "$#" -gt 0 ]; do
@@ -70,10 +95,28 @@ PY
   exit 1
 }
 
+if [ "$MODE" = "check" ] && [ -f "$ENV_FILE" ]; then
+  set -a
+  # shellcheck disable=SC1090
+  . "$ENV_FILE"
+  set +a
+  HOST="${BMD_HOST:-$HOST}"
+  PORT="${BMD_PORT:-$PORT}"
+  POLICY_MODE="${BMD_POLICY_MODE:-$POLICY_MODE}"
+  BLOB_DIR="${BMD_BLOB_ROOT:-$BLOB_DIR}"
+  REQUIRE_BLOB_ROOT_MOUNT="${BMD_REQUIRE_BLOB_ROOT_MOUNT:-$REQUIRE_BLOB_ROOT_MOUNT}"
+fi
+
 case "$POLICY_MODE" in
   all|recall|balanced|strict) ;;
   *) echo "BMD_POLICY_MODE must be one of: all, recall, balanced, strict" >&2; exit 1 ;;
 esac
+case "${REQUIRE_BLOB_ROOT_MOUNT,,}" in
+  0|1|true|false|yes|no|on|off) ;;
+  *) echo "BMD_REQUIRE_BLOB_ROOT_MOUNT must be boolean-like: 0/1/true/false/yes/no/on/off" >&2; exit 1 ;;
+esac
+
+check_blob_root_mount_guard
 
 if [ "$MODE" = "dry-run" ]; then
   cat <<EOF
@@ -82,6 +125,7 @@ Daily-driver install dry run; no files, services, or Chrome artifacts will be ch
 Resolved inputs:
   Python: $PY ($PY_VERSION)
   Policy mode: $POLICY_MODE
+  Require blob mount: $REQUIRE_BLOB_ROOT_MOUNT
   Host/port: $HOST:$PORT
   Config dir: $CFG_DIR
   Data dir: $DATA_DIR
@@ -95,8 +139,9 @@ Resolved inputs:
 
 Install/refresh would:
   - create protected WSL config/data/state directories plus the configured blob root;
+  - verify the configured blob root is mounted first when BMD_REQUIRE_BLOB_ROOT_MOUNT=1;
   - create or reuse the token file, or rotate it if BMD_ROTATE_TOKEN=1;
-  - write the protected EnvironmentFile with BMD_API_TOKEN, BMD_POLICY_MODE, and BMD_BLOB_ROOT;
+  - write the protected EnvironmentFile with BMD_API_TOKEN, BMD_POLICY_MODE, BMD_BLOB_ROOT, and BMD_REQUIRE_BLOB_ROOT_MOUNT;
   - write systemd user units that read the EnvironmentFile instead of passing tokens in ExecStart;
   - build extension/dist, copy it to the Windows-local artifact dir, and patch token/policy defaults there;
   - daemon-reload, enable/restart both user services, then verify WSL and Windows loopback health.
@@ -116,6 +161,8 @@ if [ "$MODE" = "check" ]; then
     HOST="${BMD_HOST:-$HOST}"
     PORT="${BMD_PORT:-$PORT}"
     POLICY_MODE="${BMD_POLICY_MODE:-$POLICY_MODE}"
+    BLOB_DIR="${BMD_BLOB_ROOT:-$BLOB_DIR}"
+    REQUIRE_BLOB_ROOT_MOUNT="${BMD_REQUIRE_BLOB_ROOT_MOUNT:-$REQUIRE_BLOB_ROOT_MOUNT}"
   fi
   if [ ! -s "$TOKEN_FILE" ]; then
     echo "Browser Memory Daemon token file missing or empty: $TOKEN_FILE" >&2
@@ -153,6 +200,7 @@ BMD_PORT=$PORT
 BMD_API_TOKEN=$TOKEN
 BMD_POLICY_MODE=$POLICY_MODE
 BMD_BLOB_ROOT=$BLOB_DIR
+BMD_REQUIRE_BLOB_ROOT_MOUNT=$REQUIRE_BLOB_ROOT_MOUNT
 BMD_MEDIA_WORKER_INTERVAL=${BMD_MEDIA_WORKER_INTERVAL:-30}
 BMD_MEDIA_WORKER_LIMIT=${BMD_MEDIA_WORKER_LIMIT:-25}
 PYTHONPATH=$ROOT/daemon/src

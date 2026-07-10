@@ -16,7 +16,7 @@ from typing import Any, Callable
 import urllib.error
 import urllib.request
 
-from .config import RuntimeConfig
+from .config import RuntimeConfig, has_non_root_mount_ancestor
 
 DAILY_DRIVER_UNITS = (
     "browser-memory-daemon.service",
@@ -593,7 +593,12 @@ def _storage_status(config: RuntimeConfig, extension_dir: Path | None) -> dict[s
     }
     if extension_dir is not None:
         paths["extension_dir"] = extension_dir
-    return {name: _disk_usage(path) for name, path in paths.items()}
+    output = {name: _disk_usage(path) for name, path in paths.items()}
+    output.setdefault("blob_root", {})["mount_guard"] = {
+        "required": config.require_blob_root_mount,
+        "ok": (not config.require_blob_root_mount) or has_non_root_mount_ancestor(config.blob_root),
+    }
+    return output
 
 
 def _process_arg_secrecy(main_pid: int | None, runner: CommandRunner, *, api_token: str) -> dict[str, Any]:
@@ -668,6 +673,8 @@ def _env_file_state(path: Path, *, expected_api_token: str | None) -> dict[str, 
             "owner_only_permissions": _owner_only_permissions(path),
             "api_token_assignment_present": "BMD_API_TOKEN=" in text,
             "policy_mode_assignment_present": "BMD_POLICY_MODE=" in text,
+            "blob_root_assignment_present": "BMD_BLOB_ROOT=" in text,
+            "require_blob_root_mount_assignment_present": "BMD_REQUIRE_BLOB_ROOT_MOUNT=" in text,
             "pythonpath_assignment_present": "PYTHONPATH=" in text,
             "matches_token_file": bool(expected_api_token and f"BMD_API_TOKEN={expected_api_token}" in text),
         }
@@ -876,6 +883,9 @@ def _score_storage(storage: dict[str, Any], errors: list[str], warnings: list[st
             errors.append(f"storage path {name} below hard headroom threshold: {state.get('free_bytes')} bytes free, {state.get('used_percent')}% used")
         elif headroom.get("status") == "warning":
             warnings.append(f"storage path {name} below warning headroom threshold: {state.get('free_bytes')} bytes free, {state.get('used_percent')}% used")
+        mount_guard = state.get("mount_guard") or {}
+        if mount_guard.get("required") and not mount_guard.get("ok"):
+            errors.append(f"storage path {name} is not on a mounted filesystem but BMD_REQUIRE_BLOB_ROOT_MOUNT=1")
 
 
 def _score_install_artifacts(install: dict[str, Any], errors: list[str], warnings: list[str]) -> None:
@@ -903,6 +913,10 @@ def _score_install_artifacts(install: dict[str, Any], errors: list[str], warning
             errors.append("daily-driver environment token does not match token file")
         if not env_file.get("policy_mode_assignment_present"):
             warnings.append("daily-driver environment file is missing BMD_POLICY_MODE")
+        if not env_file.get("blob_root_assignment_present"):
+            warnings.append("daily-driver environment file is missing BMD_BLOB_ROOT")
+        if not env_file.get("require_blob_root_mount_assignment_present"):
+            warnings.append("daily-driver environment file is missing BMD_REQUIRE_BLOB_ROOT_MOUNT")
         if not env_file.get("pythonpath_assignment_present"):
             warnings.append("daily-driver environment file is missing PYTHONPATH")
 

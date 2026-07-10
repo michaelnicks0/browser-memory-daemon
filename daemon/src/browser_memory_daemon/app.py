@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import ipaddress
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -134,6 +135,34 @@ def _authorized(handler: BaseHTTPRequestHandler, config: RuntimeConfig) -> bool:
     return header == f"Bearer {config.api_token}"
 
 
+def _is_loopback_host(value: str, *, allow_names: bool = True) -> bool:
+    host = (value or "").strip().strip("[]").rstrip(".").lower()
+    if allow_names and (host == "localhost" or host.endswith(".localhost")):
+        return True
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
+
+
+def _request_host_header(handler: BaseHTTPRequestHandler) -> str:
+    raw = str(handler.headers.get("Host") or "").split(",", 1)[0].strip()
+    if not raw:
+        return ""
+    parsed = urlparse(f"//{raw}")
+    return parsed.hostname or raw.split(":", 1)[0]
+
+
+def _loopback_ui_allowed(handler: BaseHTTPRequestHandler, config: RuntimeConfig) -> bool:
+    host_header_ok = _is_loopback_host(_request_host_header(handler), allow_names=True)
+    if not host_header_ok:
+        return False
+    if _is_loopback_host(config.host, allow_names=True):
+        return True
+    client_host = str(handler.client_address[0]) if handler.client_address else ""
+    return _is_loopback_host(client_host, allow_names=False)
+
+
 def _ui_file_for_path(path: str) -> Path | None:
     if path in {"/", "/ui", "/ui/"}:
         candidate = UI_ROOT / "index.html"
@@ -253,6 +282,9 @@ def make_handler(config: RuntimeConfig):
                 return
             ui_file = _ui_file_for_path(parsed.path)
             if ui_file:
+                if not _loopback_ui_allowed(self, config):
+                    _json_response(self, 403, {"error": "ui is loopback-only"})
+                    return
                 _text_response(self, 200, _ui_file_body(ui_file, config), content_type=_content_type(ui_file))
                 return
             if not _authorized(self, config):

@@ -134,7 +134,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <h2 id="auth-and-boundary">Auth and boundary</h2>
 <ul>
 <li>Default bind: <code>http://127.0.0.1:8765</code>.</li>
-<li><code>/health</code> is public loopback. <code>/ui</code> HTML is public loopback and includes an inline JSON bootstrap with the current daemon token for same-origin dashboard use; static JS/CSS assets do not include the token.</li>
+<li><code>/health</code> is public loopback. <code>/ui</code> HTML is public loopback, rejects non-loopback <code>Host</code> headers, and includes an inline JSON bootstrap with the current daemon token for same-origin dashboard use; static JS/CSS assets do not include the token.</li>
 <li>Every memory, policy, deletion, and diagnostic API requires:</li>
 </ul>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #ED007E; background-color: #1E0010">Authorization: Bearer ***</span>

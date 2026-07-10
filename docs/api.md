@@ -9,7 +9,7 @@
 ## Auth and boundary
 
 - Default bind: `http://127.0.0.1:8765`.
-- `/health` is public loopback. `/ui` HTML is public loopback and includes an inline JSON bootstrap with the current daemon token for same-origin dashboard use; static JS/CSS assets do not include the token.
+- `/health` is public loopback. `/ui` HTML is public loopback, rejects non-loopback `Host` headers, and includes an inline JSON bootstrap with the current daemon token for same-origin dashboard use; static JS/CSS assets do not include the token.
 - Every memory, policy, deletion, and diagnostic API requires:
 
 ```http

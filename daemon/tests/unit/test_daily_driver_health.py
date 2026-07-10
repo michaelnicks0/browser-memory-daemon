@@ -1,4 +1,5 @@
 import json
+from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -38,6 +39,8 @@ def write_install_artifacts(cfg, tmp_path, *, token="test-token"):
                 "BMD_PORT=8765",
                 f"BMD_API_TOKEN={token}",
                 "BMD_POLICY_MODE=all",
+                f"BMD_BLOB_ROOT={cfg.blob_root}",
+                "BMD_REQUIRE_BLOB_ROOT_MOUNT=0",
                 "PYTHONPATH=/repo/daemon/src",
                 "",
             ]
@@ -260,6 +263,43 @@ def test_daily_driver_health_detects_missing_extension_token(tmp_path):
 
     assert snapshot["ok"] is False
     assert "Windows extension artifact does not have a configured API token default" in snapshot["summary"]["errors"]
+
+
+def test_daily_driver_health_reports_required_blob_mount_failure(tmp_path, monkeypatch):
+    cfg = load_config(runtime_root=tmp_path / "runtime", test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    cfg = replace(cfg, require_blob_root_mount=True)
+    unit_dir = write_install_artifacts(cfg, tmp_path)
+    extension_dir = tmp_path / "extension"
+    (extension_dir / "src").mkdir(parents=True)
+    (extension_dir / "manifest.json").write_text(json.dumps({"manifest_version": 3, "name": "Browser Memory Daemon", "version": "0.1.0"}))
+    for rel in ("src/service_worker.js", "src/options.js", "src/popup.js"):
+        (extension_dir / rel).write_text("const defaults = { apiToken: 'test-token', policyMode: 'all' };\n")
+    monkeypatch.setattr(health, "has_non_root_mount_ancestor", lambda _path: False)
+
+    def quiet_runner(args, timeout):
+        if args[:3] == ["systemctl", "--user", "show"]:
+            return CommandResult(args, 0, "LoadState=loaded\nActiveState=active\nSubState=running\nNRestarts=0\nExecMainStatus=0\n")
+        if args[:3] == ["systemctl", "--user", "is-enabled"]:
+            return CommandResult(args, 0, "enabled")
+        if args[:3] == ["systemctl", "--user", "is-active"]:
+            return CommandResult(args, 0, "active")
+        if args[:3] == ["journalctl", "--user", "-u"]:
+            return CommandResult(args, 0, "")
+        raise AssertionError(args)
+
+    snapshot = daily_driver_health_snapshot(
+        cfg,
+        extension_dir=extension_dir,
+        unit_dir=unit_dir,
+        include_windows_loopback=False,
+        runner=quiet_runner,
+        urlopen=lambda *args, **kwargs: FakeHealthResponse(),
+    )
+
+    assert snapshot["ok"] is False
+    assert snapshot["storage"]["blob_root"]["mount_guard"] == {"required": True, "ok": False}
+    assert "storage path blob_root is not on a mounted filesystem but BMD_REQUIRE_BLOB_ROOT_MOUNT=1" in snapshot["summary"]["errors"]
 
 
 def test_daily_driver_health_detects_insecure_token_permissions_and_process_args(tmp_path):
