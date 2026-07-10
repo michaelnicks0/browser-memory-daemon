@@ -35,6 +35,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
                 mediaManager = component "Media Artifact Manager" "Records media references, validates blob uploads, enforces MIME/size/cache gates, guards external media-root identity, reserves bounded local spool capacity, writes blobs atomically, drains verified spool bytes, queues public fetch tasks, and tombstones purge/eviction before deletion." "Python + sqlite3 + filesystem" "Current"
                 mediaStateModel = component "Media State Model" "Owns caller-visible and internal artifact/task status taxonomies, fetch-error classification, and explicit ordinary versus force-reset transition matrices." "Python" "Current"
                 mediaTaskRepository = component "Media Task Repository" "Creates deterministic tasks, preserves terminal state, atomically leases due work, recovers stale leases, and applies bounded retry/backoff outcomes independently from media transport." "Python + sqlite3" "Current"
+                mediaArtifactStore = component "Media Artifact Store" "Counts committed and pending media bytes, applies MIME/priority/snapshot/domain/global admission gates, evicts oldest contained artifacts, and records tombstones before deletion." "Python + sqlite3 + BlobStore" "Current"
                 blobStore = component "Contained BlobStore" "Prefers root-relative locators with contained legacy fallback; streams unique stages with size/hash accounting; atomically commits; and contains blob read, stat, and delete operations." "Python filesystem boundary" "Current"
                 storageReconciler = component "Blob Lifecycle and Storage Reconciler" "Persists committed/tombstoned/missing/deleted/blocked/failed blob state; serializes deletion processors; retries tombstones; and dry-run detects missing refs, in-root orphans, and stale stages." "Python + sqlite3 + filesystem" "Current"
                 searchReadModel = component "Search and Read Model" "Provides exact FTS search plus SQLite-authoritative text detail and observation-first recent/timeline/document/snapshot/media views with explicit legacy fallbacks." "Python + SQLite FTS5" "Current"
@@ -130,9 +131,14 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
         lifecyclePipeline -> sqliteDatabase "Writes lifecycle identity and interval-union dwell to" "sqlite3"
         mediaManager -> mediaStateModel "Classifies artifact outcomes and transition intent through"
         mediaManager -> mediaTaskRepository "Creates and claims durable media work through"
+        mediaManager -> mediaArtifactStore "Admits media bytes and requests bounded eviction through"
         mediaManager -> sqliteDatabase "Updates media artifact rows in" "sqlite3"
         mediaTaskRepository -> mediaStateModel "Validates task status vocabulary and retry classification through"
         mediaTaskRepository -> sqliteDatabase "Creates, leases, and advances media tasks in" "sqlite3"
+        mediaArtifactStore -> mediaStateModel "Uses artifact status vocabulary from"
+        mediaArtifactStore -> sqliteDatabase "Counts and advances media artifact rows in" "sqlite3"
+        mediaArtifactStore -> blobStore "Resolves contained media locators through"
+        mediaArtifactStore -> storageReconciler "Creates tombstones and observes deletion outcomes through"
         mediaManager -> blobStore "Stages, commits, reads, evicts, and purges media through"
         mediaManager -> storageReconciler "Registers committed bytes and tombstones replacement, drain, purge, and eviction through"
         searchReadModel -> sqliteDatabase "Reads metadata and FTS from" "SQLite FTS5"
@@ -282,6 +288,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
             include mediaManager
             include mediaStateModel
             include mediaTaskRepository
+            include mediaArtifactStore
             include storageReconciler
             include blobStore
             include sqliteDatabase

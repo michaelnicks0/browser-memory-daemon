@@ -589,8 +589,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Media transitions, cache admission, leases, retries, and resource budgets shall be closed, bounded, and concurrency-safe.</td>
 <td>Media State Machine</td>
 <td><code>HRD-011</code></td>
-<td><code>daemon/src/browser_memory_daemon/media_models.py</code><br><code>daemon/src/browser_memory_daemon/media_tasks.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/media_storage.py</code><br><code>daemon/src/browser_memory_daemon/media_worker.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0010_split_media_root_and_add_spool.py</code></td>
-<td><code>daemon/tests/integration/test_media_tasks.py::test_media_task_repository_allows_only_one_concurrent_lease_owner</code><br><code>daemon/tests/integration/test_media_storage.py::test_spool_reservations_serialize_concurrent_cap_checks</code><br><code>daemon/tests/e2e/test_http_api.py::test_http_upload_get_and_purge_use_bounded_spool_during_media_root_outage</code></td>
+<td><code>daemon/src/browser_memory_daemon/media_models.py</code><br><code>daemon/src/browser_memory_daemon/media_tasks.py</code><br><code>daemon/src/browser_memory_daemon/media_store.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/media_storage.py</code><br><code>daemon/src/browser_memory_daemon/media_worker.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0010_split_media_root_and_add_spool.py</code></td>
+<td><code>daemon/tests/integration/test_media_tasks.py::test_media_task_repository_allows_only_one_concurrent_lease_owner</code><br><code>daemon/tests/unit/test_media_store.py::test_media_facade_preserves_admission_api_identity</code><br><code>daemon/tests/integration/test_storage_reconcile.py</code><br><code>daemon/tests/integration/test_media_storage.py::test_spool_reservations_serialize_concurrent_cap_checks</code><br><code>daemon/tests/e2e/test_http_api.py::test_http_upload_get_and_purge_use_bounded_spool_during_media_root_outage</code></td>
 </tr>
 <tr>
 <td>REQ-037</td>
@@ -954,11 +954,11 @@ text/FTS/media refs remain authoritative
 <tr>
 <td>Cache management</td>
 <td>Purge/rehydrate controls plus oldest-first rolling eviction for domain/global caps.</td>
-<td><code>media.py</code>, <code>cli.py</code>, <code>/media-artifacts/*</code></td>
+<td><code>media_store.py</code>, <code>media.py</code>, <code>cli.py</code>, <code>/media-artifacts/*</code></td>
 </tr>
 </tbody>
 </table>
-<p>Media status vocabulary and ordinary transition matrices live in <code>media_models.py</code>. Durable task identity, terminal-state preservation, atomic leasing, stale-lease recovery, and retry/backoff live in <code>media_tasks.py</code>. <code>media.py</code> remains the stable public compatibility surface while artifact storage and fetch/HLS concerns are extracted in later reversible slices; ADR-0042 records this boundary.</p>
+<p>Media status vocabulary and ordinary transition matrices live in <code>media_models.py</code>. Durable task identity, terminal-state preservation, atomic leasing, stale-lease recovery, and retry/backoff live in <code>media_tasks.py</code>. Cache byte accounting, admission, oldest-first eviction, and tombstone-backed deletion outcomes live in <code>media_store.py</code>. <code>media.py</code> remains the stable public compatibility surface while artifact publication/read/purge and fetch/HLS concerns are extracted in later reversible slices; ADR-0042 and ADR-0043 record these boundaries.</p>
 <h3 id="visual-references">Visual references</h3>
 <table>
 <thead>

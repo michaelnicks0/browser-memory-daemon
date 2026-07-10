@@ -5,7 +5,7 @@
 > **Runtime:** Python **3.11+** (`pyproject.toml` requires `>=3.11`). Use `BMD_PYTHON=/path/to/python3.11` when the host `python3` is older.
 
 <!-- BEGIN GENERATED:inventory-summary -->
-> **Current inventory:** 212 static test functions across 35 files — 182 daemon pytest tests + 30 extension node:test tests.
+> **Current inventory:** 214 static test functions across 36 files — 184 daemon pytest tests + 30 extension node:test tests.
 <!-- END GENERATED:inventory-summary -->
 
 ---
@@ -79,7 +79,7 @@ Use `--runtime-root PATH` only for explicit fixture roots; do not point the stre
 ## Generated test inventory
 
 <!-- BEGIN GENERATED:audit-run -->
-Latest inventory: **212 static test functions** across **35 files** (182 daemon pytest; 30 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
+Latest inventory: **214 static test functions** across **36 files** (184 daemon pytest; 30 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
 <!-- END GENERATED:audit-run -->
 
 ## Requirements traceability gate
@@ -100,7 +100,7 @@ Traceability gate: **✅ pass**.
 | Normative changes without revision increment | none |
 | Requirements removed without catalog disposition | none |
 | Catalog load errors | none |
-| Static test inventory measured | 212 tests / 35 files |
+| Static test inventory measured | 214 tests / 36 files |
 <!-- END GENERATED:traceability-gate -->
 
 ### Per-file counts
@@ -132,6 +132,7 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/unit/test_daily_driver_health.py` | pytest | 6 |
 | `daemon/tests/unit/test_db.py` | pytest | 2 |
 | `daemon/tests/unit/test_media_models.py` | pytest | 4 |
+| `daemon/tests/unit/test_media_store.py` | pytest | 2 |
 | `daemon/tests/unit/test_normalize.py` | pytest | 4 |
 | `daemon/tests/unit/test_policy.py` | pytest | 6 |
 | `daemon/tests/unit/test_policy_store.py` | pytest | 4 |
@@ -142,7 +143,7 @@ Traceability gate: **✅ pass**.
 | `extension/tests/unit/queue.test.js` | node:test | 1 |
 | `extension/tests/unit/service_worker.test.js` | node:test | 6 |
 | `extension/tests/unit/shared.test.js` | node:test | 2 |
-| **Total** |  | **212** |
+| **Total** |  | **214** |
 <!-- END GENERATED:per-file-counts -->
 
 <details>
@@ -314,6 +315,8 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/unit/test_media_models.py` | pytest | `(module)` | `test_media_state_taxonomy_separates_internal_storage_recovery_states_from_caller_input` | 23 | Media state taxonomy separates internal storage recovery states from caller input. |
 | `daemon/tests/unit/test_media_models.py` | pytest | `(module)` | `test_media_transition_matrices_preserve_terminal_and_recovery_boundaries` | 32 | Media transition matrices preserve terminal and recovery boundaries. |
 | `daemon/tests/unit/test_media_models.py` | pytest | `(module)` | `test_fetch_reason_classification_is_independent_from_media_facade` | 46 | Fetch reason classification is independent from media facade. |
+| `daemon/tests/unit/test_media_store.py` | pytest | `(module)` | `test_media_facade_preserves_admission_api_identity` | 4 | Media facade preserves admission api identity. |
+| `daemon/tests/unit/test_media_store.py` | pytest | `(module)` | `test_media_store_owns_blob_admission_and_accounting_helpers` | 8 | Media store owns blob admission and accounting helpers. |
 | `daemon/tests/unit/test_normalize.py` | pytest | `(module)` | `test_normalize_url_removes_tracking_fragment_default_port_and_sorts_query` | 4 | Normalize url removes tracking fragment default port and sorts query. |
 | `daemon/tests/unit/test_normalize.py` | pytest | `(module)` | `test_normalize_url_preserves_meaningful_duplicate_query_values` | 11 | Normalize url preserves meaningful duplicate query values. |
 | `daemon/tests/unit/test_normalize.py` | pytest | `(module)` | `test_normalize_url_removes_empty_default_path_only_for_missing_path` | 18 | Normalize url removes empty default path only for missing path. |
