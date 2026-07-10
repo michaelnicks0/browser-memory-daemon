@@ -3,6 +3,7 @@ from browser_memory_daemon.config import load_config
 from browser_memory_daemon.db import connect, init_db
 from browser_memory_daemon.ingest import ingest_capture
 from browser_memory_daemon.lifecycle import record_visit_event
+from browser_memory_daemon.media import media_artifacts_for_snapshot
 from browser_memory_daemon.models import CapturePayload
 
 
@@ -189,6 +190,64 @@ def test_out_of_order_observations_preserve_temporal_bounds_and_latest_claim_pro
     }
 
 
+def test_media_references_keep_their_capture_observation_provenance(tmp_path):
+    cfg = _config(tmp_path)
+    init_db(cfg)
+    first = _payload(
+        media_artifacts=[
+            {
+                "media_type": "image",
+                "role": "content",
+                "source_url": "https://cdn.example.test/first.png",
+            }
+        ]
+    )
+    second = _payload(
+        observation_id="observation-media-2",
+        captured_at="2026-06-08T12:05:00Z",
+        media_artifacts=[
+            {
+                "media_type": "image",
+                "role": "content",
+                "source_url": "https://cdn.example.test/second.png",
+            }
+        ],
+    )
+
+    with connect(cfg.db_path) as conn:
+        first_result = ingest_capture(conn, cfg, first)
+        second_result = ingest_capture(conn, cfg, second)
+        rows = conn.execute(
+            """
+            SELECT m.source_url, mao.observation_id, mao.provenance_quality
+            FROM media_artifacts m
+            JOIN media_artifact_observations mao ON mao.artifact_id = m.id
+            ORDER BY m.source_url
+            """
+        ).fetchall()
+        media = media_artifacts_for_snapshot(conn, first_result["snapshot_id"], cfg)
+
+    assert [dict(row) for row in rows] == [
+        {
+            "source_url": "https://cdn.example.test/first.png",
+            "observation_id": first_result["observation_id"],
+            "provenance_quality": "observed",
+        },
+        {
+            "source_url": "https://cdn.example.test/second.png",
+            "observation_id": second_result["observation_id"],
+            "provenance_quality": "observed",
+        },
+    ]
+    assert {
+        item["source_url"]: [link["observation_id"] for link in item["observations"]]
+        for item in media
+    } == {
+        "https://cdn.example.test/first.png": [first_result["observation_id"]],
+        "https://cdn.example.test/second.png": [second_result["observation_id"]],
+    }
+
+
 def test_observation_retry_is_idempotent_and_conflicting_reuse_fails(tmp_path):
     cfg = _config(tmp_path)
     init_db(cfg)
@@ -214,6 +273,19 @@ def test_observation_retry_is_idempotent_and_conflicting_reuse_fails(tmp_path):
             item["artifact_id"] for item in first["media_artifacts"]
         ]
         assert conn.execute("SELECT COUNT(*) FROM capture_observations").fetchone()[0] == 1
+        link = dict(
+            conn.execute(
+                """
+                SELECT artifact_id, observation_id, provenance_quality
+                FROM media_artifact_observations
+                """
+            ).fetchone()
+        )
+        assert link == {
+            "artifact_id": first["media_artifacts"][0]["artifact_id"],
+            "observation_id": first["observation_id"],
+            "provenance_quality": "observed",
+        }
 
         with pytest.raises(ValueError, match="observation_id conflicts"):
             ingest_capture(

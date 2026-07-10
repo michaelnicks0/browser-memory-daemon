@@ -410,6 +410,20 @@ def ingest_capture(conn: sqlite3.Connection, config: RuntimeConfig, payload: Cap
             page_url=safe_url,
             refs=media_refs,
         )
+        for ref in media_refs:
+            conn.execute(
+                """
+                INSERT OR IGNORE INTO media_artifact_observations(
+                  artifact_id, observation_id, provenance_quality, observed_at
+                ) VALUES (?, ?, ?, ?)
+                """,
+                (
+                    media_artifact_id(snapshot_id, ref),
+                    observation_id,
+                    observation_quality,
+                    payload.captured_at,
+                ),
+            )
         media_ref_count = len(media_refs)
         audit(
             conn,

@@ -49,7 +49,8 @@ Quality skips retained:
 
 ```text
 document → snapshot → media_artifacts
-         ↘ visit ↗
+         ↘ capture_observations ↔ media_artifact_observations ↗
+           ↘ visit
 
 media_fetch_tasks → media_artifacts
 blobs/media/media_<hash-of-artifact-id>.<ext>
@@ -62,6 +63,7 @@ Key fields:
 | `document_id` | Parent document. |
 | `snapshot_id` | Exact text snapshot the media appeared with. |
 | `visit_id` | Visit that generated/uploaded the artifact when known. |
+| `media_artifact_observations` | Many-to-many provenance links to the exact capture observations that supplied the reference. New links are observed; historical links are added only for a unique supported candidate and labeled inferred/ambiguous. |
 | `media_type` | `image` or `video`. |
 | `role` | `content`, `poster`, or `source`. |
 | `source_url` | Original media URL, redacted outside `all` mode. |
@@ -71,6 +73,8 @@ Key fields:
 | `status_reason` | Terminal or diagnostic reason, e.g. `media-too-large`, `fetch-status-403`, `cache-purged:domain:x.com`, `cache-evicted:domain-oldest`, `covered-by-cdp-recorder`, `opaque-browser-blob`. |
 | `file_path` | Local blob path when binary is currently stored. Consumers validate this path stays under the configured media root before reading, serving, purging, or deleting it. |
 | `content_sha256`, `byte_size` | Blob provenance retained even after cache purge. |
+
+Artifact/detail API rows include an `observations` array with the stored link quality, observation quality, observed URL, visit/navigation identity, capture reason/method/version, and observation time. An empty array is truthful for unresolved multi-candidate history; readers do not synthesize a latest-snapshot association.
 
 Binary files live under:
 

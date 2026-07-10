@@ -492,11 +492,11 @@ rationale = "Historical reads must return contemporaneous evidence rather than t
 owner = "Capture Observation Model"
 status = "planned"
 aliases = ["HRD-008"]
-implementation = ["daemon/src/browser_memory_daemon/models.py", "daemon/src/browser_memory_daemon/ingest.py", "daemon/src/browser_memory_daemon/migration_steps/v0004_capture_observations_and_url_claims.sql", "daemon/src/browser_memory_daemon/migration_steps/v0005_backfill_historical_observations.py"]
+implementation = ["daemon/src/browser_memory_daemon/models.py", "daemon/src/browser_memory_daemon/ingest.py", "daemon/src/browser_memory_daemon/media.py", "daemon/src/browser_memory_daemon/migration_steps/v0004_capture_observations_and_url_claims.sql", "daemon/src/browser_memory_daemon/migration_steps/v0005_backfill_historical_observations.py", "daemon/src/browser_memory_daemon/migration_steps/v0006_link_media_artifacts_to_observations.py"]
 unit_evidence = []
-integration_evidence = ["daemon/tests/integration/test_capture_observations.py", "daemon/tests/integration/test_migrations.py::test_version_five_backfills_only_evidence_supported_historical_relationships"]
+integration_evidence = ["daemon/tests/integration/test_capture_observations.py", "daemon/tests/integration/test_migrations.py::test_version_five_backfills_only_evidence_supported_historical_relationships", "daemon/tests/integration/test_migrations.py::test_version_six_backfills_only_unambiguous_media_observation_links"]
 system_evidence = []
-operational_evidence = ["docs/architecture/adr/0030-separate-capture-observations-and-url-claims.md", "docs/architecture/adr/0031-dual-write-observed-url-capture-provenance.md"]
+operational_evidence = ["docs/architecture/adr/0030-separate-capture-observations-and-url-claims.md", "docs/architecture/adr/0031-dual-write-observed-url-capture-provenance.md", "docs/architecture/adr/0032-link-media-artifacts-to-capture-observations.md"]
 validation_evidence = []
 
 [[requirements]]

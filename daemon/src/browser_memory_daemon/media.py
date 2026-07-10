@@ -1892,6 +1892,23 @@ def _media_file_resolution(config: RuntimeConfig | None, raw_path: str | None) -
     return resolution.path, resolution.status
 
 
+def _media_observation_provenance(conn: sqlite3.Connection, artifact_id: str) -> list[dict[str, Any]]:
+    rows = conn.execute(
+        """
+        SELECT mao.observation_id, mao.provenance_quality AS link_provenance_quality,
+               mao.observed_at, o.navigation_id, o.visit_id, o.observed_url,
+               o.capture_reason, o.capture_method, o.extraction_version,
+               o.provenance_quality AS observation_provenance_quality
+        FROM media_artifact_observations mao
+        JOIN capture_observations o ON o.id = mao.observation_id
+        WHERE mao.artifact_id = ?
+        ORDER BY mao.observed_at, mao.observation_id
+        """,
+        (artifact_id,),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
 def media_artifact(conn: sqlite3.Connection, config: RuntimeConfig, artifact_id: str) -> dict[str, Any]:
     artifact_id = validate_media_artifact_id(artifact_id)
     row = conn.execute("SELECT * FROM media_artifacts WHERE id = ?", (artifact_id,)).fetchone()
@@ -1903,13 +1920,15 @@ def media_artifact(conn: sqlite3.Connection, config: RuntimeConfig, artifact_id:
     value["file_path_status"] = status
     if resolved is not None:
         value["resolved_file_path"] = str(resolved)
+    value["observations"] = _media_observation_provenance(conn, artifact_id)
     return value
 
 
 def media_artifacts_for_snapshot(conn: sqlite3.Connection, snapshot_id: str, config: RuntimeConfig | None = None) -> list[dict[str, Any]]:
     rows = conn.execute(
         """
-        SELECT id, media_type, role, source_url, normalized_source_url, alt_text, title, mime_type,
+        SELECT id, document_id, snapshot_id, visit_id, page_url,
+               media_type, role, source_url, normalized_source_url, alt_text, title, mime_type,
                width, height, duration_seconds, byte_size, capture_status, status_reason, file_path,
                created_at
         FROM media_artifacts
@@ -1927,6 +1946,7 @@ def media_artifacts_for_snapshot(conn: sqlite3.Connection, snapshot_id: str, con
         item["file_path_status"] = status
         if item["has_file"]:
             item["content_url"] = f"/media-artifacts/{item['id']}"
+        item["observations"] = _media_observation_provenance(conn, item["id"])
         result.append(item)
     return result
 
@@ -1934,7 +1954,8 @@ def media_artifacts_for_snapshot(conn: sqlite3.Connection, snapshot_id: str, con
 def media_artifacts_for_document(conn: sqlite3.Connection, document_id: str, config: RuntimeConfig | None = None, *, limit: int = 100) -> list[dict[str, Any]]:
     rows = conn.execute(
         """
-        SELECT id, snapshot_id, media_type, role, source_url, normalized_source_url, alt_text, title,
+        SELECT id, document_id, snapshot_id, visit_id, page_url,
+               media_type, role, source_url, normalized_source_url, alt_text, title,
                mime_type, width, height, duration_seconds, byte_size, capture_status, status_reason,
                file_path, created_at
         FROM media_artifacts
@@ -1953,5 +1974,6 @@ def media_artifacts_for_document(conn: sqlite3.Connection, document_id: str, con
         item["file_path_status"] = status
         if item["has_file"]:
             item["content_url"] = f"/media-artifacts/{item['id']}"
+        item["observations"] = _media_observation_provenance(conn, item["id"])
         result.append(item)
     return result

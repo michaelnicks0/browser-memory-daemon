@@ -403,6 +403,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <hr />
 <h2 id="media-artifact-apis">Media artifact APIs</h2>
 <p>Media references in <code>/capture</code> are relationship metadata only. Binary storage is asynchronous: the browser lazy sidecar fetches with Chrome cookies and uploads raw blobs, while the daemon media worker backfills public refs without Chrome cookies.</p>
+<p>Media artifact rows returned from artifact, document-detail, and snapshot-detail reads include <code>observations</code>. Each entry contains <code>observation_id</code>, <code>observed_at</code>, <code>link_provenance_quality</code>, <code>observation_provenance_quality</code>, visit/navigation identity, observed URL, and capture method/reason/version. The list contains only stored observation/artifact relationships; unresolved historical ambiguity is represented by an empty list rather than a synthesized latest-snapshot link.</p>
 <p>Raw browser upload:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #ED007E; background-color: #1E0010">PUT /media-artifacts/&lt;artifact_id&gt;/blob</span>
 <span style="color: #ED007E; background-color: #1E0010">Authorization: Bearer ***</span>

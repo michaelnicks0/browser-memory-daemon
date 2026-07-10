@@ -11,6 +11,7 @@ from . import (
     v0003_seed_media_fetch_tasks,
     v0004_capture_observations_and_url_claims,
     v0005_backfill_historical_observations,
+    v0006_link_media_artifacts_to_observations,
 )
 
 
@@ -70,6 +71,18 @@ MIGRATIONS = (
             v0005_backfill_historical_observations.CHECKSUM_PAYLOAD,
         ),
         apply=v0005_backfill_historical_observations.apply,
+    ),
+    MigrationStep(
+        version=6,
+        name=v0006_link_media_artifacts_to_observations.NAME,
+        checksum=migration_checksum(
+            6,
+            v0006_link_media_artifacts_to_observations.NAME,
+            v0006_link_media_artifacts_to_observations.CHECKSUM_PAYLOAD,
+        ),
+        sql=v0006_link_media_artifacts_to_observations.SQL,
+        apply=v0006_link_media_artifacts_to_observations.apply,
+        schema_fingerprint=v0006_link_media_artifacts_to_observations.SCHEMA_FINGERPRINT,
     ),
 )
 

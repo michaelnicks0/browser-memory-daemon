@@ -778,6 +778,7 @@ def test_schema_has_planned_core_tables(tmp_path):
         "media_fetch_tasks",
         "capture_observations",
         "document_url_claims",
+        "media_artifact_observations",
         "schema_migrations",
     }:
         assert expected in tables

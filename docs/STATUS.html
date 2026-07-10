@@ -153,7 +153,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>SQLite/FTS/media storage</td>
-<td>✅ Documents/visits/snapshots/chunks/FTS/media/audit/deletion receipts plus version-4 capture-observation/URL-claim tables, version-5 evidence-bounded historical backfill, exact schema fingerprint, ordered checksum ledger, and restore-backed migration gate. Ingest now dual-writes observations/claims; observation-first readers remain target state.</td>
+<td>✅ Documents/visits/snapshots/chunks/FTS/media/audit/deletion receipts plus version-4 observation/claim tables, version-5 historical observation backfill, version-6 media-observation links, exact schema fingerprint, ordered checksum ledger, and restore-backed migration gate. Ingest dual-writes observations/claims/media provenance; observation-first activity readers remain target state.</td>
 <td><code>schema.sql</code>, <code>migrations.py</code>, <code>migration_steps/</code>, <code>ingest.py</code>, integration/e2e tests.</td>
 </tr>
 <tr>

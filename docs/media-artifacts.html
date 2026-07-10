@@ -199,7 +199,8 @@ page media → media_artifacts rows + optional blob files
 <hr />
 <h2 id="storage-model">Storage model</h2>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>document → snapshot → media_artifacts
-         ↘ visit ↗
+         ↘ capture_observations ↔ media_artifact_observations ↗
+           ↘ visit
 
 media_fetch_tasks → media_artifacts
 blobs/media/media_&lt;hash-of-artifact-id&gt;.&lt;ext&gt;
@@ -225,6 +226,10 @@ blobs/media/media_&lt;hash-of-artifact-id&gt;.&lt;ext&gt;
 <tr>
 <td><code>visit_id</code></td>
 <td>Visit that generated/uploaded the artifact when known.</td>
+</tr>
+<tr>
+<td><code>media_artifact_observations</code></td>
+<td>Many-to-many provenance links to the exact capture observations that supplied the reference. New links are observed; historical links are added only for a unique supported candidate and labeled inferred/ambiguous.</td>
 </tr>
 <tr>
 <td><code>media_type</code></td>
@@ -264,6 +269,7 @@ blobs/media/media_&lt;hash-of-artifact-id&gt;.&lt;ext&gt;
 </tr>
 </tbody>
 </table>
+<p>Artifact/detail API rows include an <code>observations</code> array with the stored link quality, observation quality, observed URL, visit/navigation identity, capture reason/method/version, and observation time. An empty array is truthful for unresolved multi-candidate history; readers do not synthesize a latest-snapshot association.</p>
 <p>Binary files live under:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}/media/
 </code></pre></div>

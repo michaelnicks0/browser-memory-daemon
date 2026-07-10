@@ -39,6 +39,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0029](0029-use-hermetic-fast-quality-gate.md) | accepted | Add a network-free fast gate with targeted static analysis, branch coverage, an XDG write sentinel, and a measured coverage ratchet. |
 | [ADR-0030](0030-separate-capture-observations-and-url-claims.md) | accepted | Add expand-only capture-observation and untrusted URL-claim authority before dual-write and read cutover. |
 | [ADR-0031](0031-dual-write-observed-url-capture-provenance.md) | accepted | Dual-write observed-URL capture provenance, preserve visit rows on recapture, and backfill only evidence-supported historical relationships. |
+| [ADR-0032](0032-link-media-artifacts-to-capture-observations.md) | accepted | Add explicit observation/artifact provenance links with conservative evidence-bounded historical backfill. |
 
 ## Backfilled decision history
 

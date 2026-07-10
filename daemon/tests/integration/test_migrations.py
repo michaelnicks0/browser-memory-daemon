@@ -237,6 +237,7 @@ def test_version_three_fixture_upgrades_once_to_capture_model_expand_schema(tmp_
     cfg = _config(tmp_path)
     init_db(cfg)
     with connect(cfg.db_path) as conn:
+        conn.execute("DROP TABLE media_artifact_observations")
         conn.execute("DROP TABLE document_url_claims")
         conn.execute("DROP TABLE capture_observations")
         conn.execute("DELETE FROM schema_migrations WHERE version >= 4")
@@ -245,9 +246,9 @@ def test_version_three_fixture_upgrades_once_to_capture_model_expand_schema(tmp_
 
     before = migration_status(cfg)
     assert before["current_version"] == 3
-    assert before["pending_versions"] == [4, 5]
+    assert before["pending_versions"] == [4, 5, 6]
     result = migrate_database(cfg, execute=True)
-    assert result["applied_versions"] == [4, 5]
+    assert result["applied_versions"] == [4, 5, 6]
     with connect(cfg.db_path) as conn:
         tables = {
             row["name"]
@@ -255,8 +256,12 @@ def test_version_three_fixture_upgrades_once_to_capture_model_expand_schema(tmp_
                 "SELECT name FROM sqlite_schema WHERE type = 'table'"
             ).fetchall()
         }
-        assert {"capture_observations", "document_url_claims"} <= tables
-        assert schema_fingerprint(conn) == MIGRATIONS[3].schema_fingerprint
+        assert {
+            "capture_observations",
+            "document_url_claims",
+            "media_artifact_observations",
+        } <= tables
+        assert schema_fingerprint(conn) == MIGRATIONS[5].schema_fingerprint
 
 
 def test_version_five_backfills_only_evidence_supported_historical_relationships(tmp_path):
@@ -265,7 +270,8 @@ def test_version_five_backfills_only_evidence_supported_historical_relationships
     with connect(cfg.db_path) as conn:
         conn.execute("DELETE FROM document_url_claims")
         conn.execute("DELETE FROM capture_observations")
-        conn.execute("DELETE FROM schema_migrations WHERE version = 5")
+        conn.execute("DROP TABLE media_artifact_observations")
+        conn.execute("DELETE FROM schema_migrations WHERE version >= 5")
         conn.execute("PRAGMA user_version = 4")
         conn.execute(
             """
@@ -305,10 +311,10 @@ def test_version_five_backfills_only_evidence_supported_historical_relationships
             """
         )
 
-    pending = migration_status(cfg)
+    pending = migration_status(cfg, steps=MIGRATIONS[:5])
     assert pending["current_version"] == 4
     assert pending["pending_versions"] == [5]
-    result = migrate_database(cfg, execute=True)
+    result = migrate_database(cfg, execute=True, steps=MIGRATIONS[:5])
     assert result["applied_versions"] == [5]
 
     with connect(cfg.db_path) as conn:
@@ -356,7 +362,105 @@ def test_version_five_backfills_only_evidence_supported_historical_relationships
         }
         assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
 
-    assert migrate_database(cfg, execute=True)["applied_versions"] == []
+    assert migrate_database(cfg, execute=True, steps=MIGRATIONS[:5])["applied_versions"] == []
+
+
+def test_version_six_backfills_only_unambiguous_media_observation_links(tmp_path):
+    cfg = _config(tmp_path)
+    init_db(cfg)
+
+    def capture(*, suffix: str, observation_id: str, visit_id: str, captured_at: str):
+        return ingest_capture(
+            conn,
+            cfg,
+            CapturePayload.from_dict(
+                {
+                    "url": f"https://example.com/{suffix}",
+                    "title": suffix,
+                    "text": f"Stable text for {suffix}.",
+                    "visit_id": visit_id,
+                    "navigation_id": visit_id,
+                    "observation_id": observation_id,
+                    "captured_at": captured_at,
+                    "media_artifacts": [
+                        {
+                            "media_type": "image",
+                            "role": "content",
+                            "source_url": f"https://cdn.example.com/{suffix}.png",
+                        }
+                    ],
+                }
+            ),
+        )
+
+    with connect(cfg.db_path) as conn:
+        exact = capture(
+            suffix="exact-media-link",
+            observation_id="observation-exact-media",
+            visit_id="visit-exact-media",
+            captured_at="2026-01-03T00:00:00Z",
+        )
+        no_visit = capture(
+            suffix="no-visit-media-link",
+            observation_id="observation-no-visit-media",
+            visit_id="visit-no-visit-media",
+            captured_at="2026-01-04T00:00:00Z",
+        )
+        ambiguous_first = capture(
+            suffix="ambiguous-media-link",
+            observation_id="observation-ambiguous-media-1",
+            visit_id="visit-ambiguous-media",
+            captured_at="2026-01-05T00:00:00Z",
+        )
+        capture(
+            suffix="ambiguous-media-link",
+            observation_id="observation-ambiguous-media-2",
+            visit_id="visit-ambiguous-media",
+            captured_at="2026-01-05T00:05:00Z",
+        )
+        conn.execute(
+            "UPDATE media_artifacts SET visit_id = NULL WHERE id = ?",
+            (no_visit["media_artifacts"][0]["artifact_id"],),
+        )
+        conn.execute("DROP TABLE media_artifact_observations")
+        conn.execute("DELETE FROM schema_migrations WHERE version = 6")
+        conn.execute("PRAGMA user_version = 5")
+
+    pending = migration_status(cfg)
+    assert pending["current_version"] == 5
+    assert pending["pending_versions"] == [6]
+    result = migrate_database(cfg, execute=True)
+    assert result["applied_versions"] == [6]
+
+    with connect(cfg.db_path) as conn:
+        links = {
+            row["artifact_id"]: dict(row)
+            for row in conn.execute(
+                """
+                SELECT artifact_id, observation_id, provenance_quality, observed_at
+                FROM media_artifact_observations
+                ORDER BY artifact_id
+                """
+            ).fetchall()
+        }
+        exact_artifact_id = exact["media_artifacts"][0]["artifact_id"]
+        no_visit_artifact_id = no_visit["media_artifacts"][0]["artifact_id"]
+        ambiguous_artifact_id = ambiguous_first["media_artifacts"][0]["artifact_id"]
+        assert links[exact_artifact_id] == {
+            "artifact_id": exact_artifact_id,
+            "observation_id": exact["observation_id"],
+            "provenance_quality": "inferred",
+            "observed_at": "2026-01-03T00:00:00Z",
+        }
+        assert links[no_visit_artifact_id] == {
+            "artifact_id": no_visit_artifact_id,
+            "observation_id": no_visit["observation_id"],
+            "provenance_quality": "ambiguous",
+            "observed_at": "2026-01-04T00:00:00Z",
+        }
+        assert ambiguous_artifact_id not in links
+        assert schema_fingerprint(conn) == MIGRATIONS[5].schema_fingerprint
+        assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
 
 
 def test_repeated_migration_is_a_noop_and_schema_has_no_recurring_repair_dml(tmp_path):

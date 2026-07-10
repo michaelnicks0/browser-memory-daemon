@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Database-Migrations — browser-memory-daemon</title>
+<title>0032-Link-Media-Artifacts-To-Capture-Observations — browser-memory-daemon</title>
 <style>
 :root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
@@ -120,135 +120,90 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <body>
 <div class="wrap">
   <div class="docbar">
-    <a class="home" href="../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
-    <span class="crumb">/ <b>docs/database-migrations.md</b></span>
+    <a class="home" href="../../../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
+    <span class="crumb">/ <b>docs/architecture/adr/0032-link-media-artifacts-to-capture-observations.md</b></span>
   </div>
   <article class="md-body">
 <hr />
-<p>title: "Database Migrations"
-description: "Versioned SQLite migration, compatibility, backup, and rollback contract"
-audience: "operator"
-status: "current"
-version: "1.0.0"
-date: "2026-07-10"</p>
+<p>status: accepted
+date: 2026-07-10
+decision-makers: [Michael]
+consulted: [TARS]
+informed: []</p>
 <hr />
-<h1 id="database-migrations">Database Migrations</h1>
-<p>Browser Memory Daemon keeps SQLite local and authoritative. Schema evolution is controlled by an ordered migration ledger rather than recurring <code>CREATE IF NOT EXISTS</code> and historical repair work at request time.</p>
-<h2 id="safety-boundary">Safety boundary</h2>
+<h1 id="adr-0032-link-media-artifacts-to-capture-observations">ADR-0032: Link media artifacts to capture observations</h1>
+<h2 id="context-and-problem-statement">Context and problem statement</h2>
+<p>Media artifacts are deduplicated by snapshot and media-reference identity. A single artifact row carries only one legacy <code>visit_id</code>, while one snapshot can be observed repeatedly and each observation can expose a different set of media references. Joining artifacts to every observation of a snapshot would invent provenance; retaining only the artifact's first visit would silently omit later evidence.</p>
+<p>Phase 2 requires explicit temporal relationships between capture observations and media provenance before detail readers can cut over.</p>
+<h2 id="decision-drivers">Decision drivers</h2>
 <ul>
-<li><code>memory migrate --check</code> is read-only. It does not create the database, directories, ledger rows, or backups.</li>
-<li><code>memory migrate --execute</code> is the explicit operator path for pending migrations.</li>
-<li>Normal startup applies only pending <strong>non-destructive</strong> migrations. A future destructive migration fails startup before that step and requires explicit <code>migrate --execute</code>.</li>
-<li>A destructive step requires disk-headroom preflight and a verified SQLite online backup before its first write.</li>
-<li>There are no destructive down-migrations. Rollback means the prior application plus the pre-migration backup.</li>
-<li>Database migration does not move SQLite to NAS and does not touch media/blob roots.</li>
+<li>Media provenance must identify the extraction that supplied each reference.</li>
+<li>Repeated observations of one snapshot must not collapse distinct media evidence.</li>
+<li>Historical relationships may be backfilled only when one supported candidate exists.</li>
+<li>The change must remain additive and compatible with the existing media artifact/task model.</li>
+<li>Media decomposition, cache-state redesign, and BlobStore work remain separate phases.</li>
 </ul>
-<p>Do not run these commands against the daily-driver database during repository verification. Use an explicit temporary runtime and blob root.</p>
-<h2 id="commands">Commands</h2>
-<p>Global options precede the command:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span>/tmp/browser-memory-daemon-verify-venv/bin/python
-
-<span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2">$BMD_PYTHON</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
-<span style="color: #F8F8F2">  </span>--runtime-root<span style="color: #F8F8F2"> </span>/tmp/bmd-migration-check/runtime<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
-<span style="color: #F8F8F2">  </span>--blob-root<span style="color: #F8F8F2"> </span>/tmp/bmd-migration-check/blobs<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
-<span style="color: #F8F8F2">  </span>--token<span style="color: #F8F8F2"> </span>fixture-token<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
-<span style="color: #F8F8F2">  </span>migrate<span style="color: #F8F8F2"> </span>--check
-</code></pre></div>
-
-<p>Execute pending steps only after reviewing the JSON report:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2">$BMD_PYTHON</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
-<span style="color: #F8F8F2">  </span>--runtime-root<span style="color: #F8F8F2"> </span>/tmp/bmd-migration-check/runtime<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
-<span style="color: #F8F8F2">  </span>--blob-root<span style="color: #F8F8F2"> </span>/tmp/bmd-migration-check/blobs<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
-<span style="color: #F8F8F2">  </span>--token<span style="color: #F8F8F2"> </span>fixture-token<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
-<span style="color: #F8F8F2">  </span>migrate<span style="color: #F8F8F2"> </span>--execute
-</code></pre></div>
-
-<p>Exit codes:</p>
-<table>
-<thead>
-<tr>
-<th style="text-align: right;">Code</th>
-<th>Meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: right;"><code>0</code></td>
-<td>Database is current, or execution completed and the database is current.</td>
-</tr>
-<tr>
-<td style="text-align: right;"><code>1</code></td>
-<td>Compatibility, checksum, fingerprint, backup, headroom, or execution failure.</td>
-</tr>
-<tr>
-<td style="text-align: right;"><code>2</code></td>
-<td>Check succeeded, the database is compatible, and migrations remain pending.</td>
-</tr>
-</tbody>
-</table>
-<h2 id="current-ordered-ledger">Current ordered ledger</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: right;">Version</th>
-<th>Name</th>
-<th>Role</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: right;"><code>1</code></td>
-<td><code>baseline_current_schema</code></td>
-<td>Immutable validated baseline. An existing unversioned database is stamped only when its normalized SQLite schema fingerprint exactly matches version 1.</td>
-</tr>
-<tr>
-<td style="text-align: right;"><code>2</code></td>
-<td><code>normalize_baseline_reference_data</code></td>
-<td>Ensures the built-in Chrome source row and performs one-time privacy-rule deduplication formerly embedded in steady-state <code>schema.sql</code>.</td>
-</tr>
-<tr>
-<td style="text-align: right;"><code>3</code></td>
-<td><code>seed_daemon_public_media_fetch_tasks</code></td>
-<td>One-time historical task seeding formerly run by every <code>init_db</code> call.</td>
-</tr>
-<tr>
-<td style="text-align: right;"><code>4</code></td>
-<td><code>add_capture_observations_and_url_claims</code></td>
-<td>Additive capture-observation and untrusted URL-claim tables with a new exact schema fingerprint; no backfill or read cutover.</td>
-</tr>
-<tr>
-<td style="text-align: right;"><code>5</code></td>
-<td><code>backfill_historical_capture_observations_and_url_claims</code></td>
-<td>One-time evidence-bounded backfill: inferred observations only from stored snapshot/visit links, ambiguous observations when no visit survives, and historical canonical-authority claims without speculative splits.</td>
-</tr>
-<tr>
-<td style="text-align: right;"><code>6</code></td>
-<td><code>link_media_artifacts_to_capture_observations</code></td>
-<td>Add the observation/artifact relation; backfill only a unique visit+snapshot candidate as inferred or a unique snapshot-only candidate as ambiguous, leaving multi-candidate history unresolved.</td>
-</tr>
-</tbody>
-</table>
-<p>Each <code>schema_migrations</code> row stores version, unique name, SHA-256 checksum, and applied timestamp. <code>PRAGMA user_version</code> must match the highest contiguous ledger version. Unknown-newer versions, gaps, name drift, checksum drift, and schema-fingerprint drift fail closed.</p>
-<p>The version-1 SQL is frozen in <code>daemon/src/browser_memory_daemon/migration_steps/v0001_baseline_schema.sql</code>; its declared fingerprint and loader live beside it in <code>v0001_baseline_schema.py</code>. Future schema changes add ordered steps; they do not rewrite version 1.</p>
-<h2 id="backup-and-rollback">Backup and rollback</h2>
-<p>Before a destructive step, the migration kernel:</p>
+<h2 id="considered-options">Considered options</h2>
 <ol>
-<li>measures the SQLite DB plus WAL/SHM footprint;</li>
-<li>requires bounded free-space headroom;</li>
-<li>writes an online backup under the configured state root's <code>migration-backups/</code> directory;</li>
-<li>runs <code>PRAGMA integrity_check</code> and <code>PRAGMA foreign_key_check</code> against the backup;</li>
-<li>starts the destructive step only after those checks pass.</li>
+<li><strong>Infer media provenance from <code>snapshot_id</code> at read time</strong> — rejected because multiple observations can share one snapshot and expose different media.</li>
+<li><strong>Treat the legacy artifact <code>visit_id</code> as authoritative</strong> — rejected because one deduplicated artifact may be referenced by more than one observation and the column retains only one visit.</li>
+<li><strong>Duplicate media artifact rows per observation</strong> — rejected because it breaks the current stable artifact identity and cache/task relationships.</li>
+<li><strong>Add an observation/artifact relation with evidence-bounded backfill</strong> — accepted.</li>
 </ol>
-<p>If a step fails, that step's transaction and ledger row roll back. The failure reports the backup path when one was created. Restore is deliberately not automatic: stop writers, preserve the failed database for diagnosis, restore the backup to an explicit destination, run integrity/FTS/application smoke checks, and use the prior compatible application version.</p>
-<h2 id="repository-verification">Repository verification</h2>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span>/tmp/browser-memory-daemon-verify-venv/bin/python
-<span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2">$BMD_PYTHON</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pytest<span style="color: #F8F8F2"> </span>-q<span style="color: #F8F8F2"> </span>daemon/tests/integration/test_migrations.py
+<h2 id="decision-outcome">Decision outcome</h2>
+<p>Migration version 6 adds <code>media_artifact_observations</code>:</p>
+<ul>
+<li><code>(artifact_id, observation_id)</code> is the primary key;</li>
+<li>both identities use cascading foreign keys so existing document/observation forget behavior remains bounded;</li>
+<li><code>provenance_quality</code> is constrained to <code>observed</code>, <code>inferred</code>, or <code>ambiguous</code>;</li>
+<li><code>observed_at</code> preserves the relationship's capture time;</li>
+<li>an observation index supports detail and timeline reads.</li>
+</ul>
+<p>New ingest transactions insert one relation for each accepted media reference and capture observation. Exact retries remain idempotent. Two observations that share text/snapshot identity but expose different media references therefore retain distinct artifact relationships.</p>
+<p>Version-6 backfill is deliberately conservative:</p>
+<ul>
+<li>exactly one observation matching the artifact's snapshot and legacy visit becomes an <code>inferred</code> link;</li>
+<li>when no unique visit match exists but the snapshot has exactly one observation, it becomes an <code>ambiguous</code> link;</li>
+<li>multiple candidates remain unlinked rather than being speculatively assigned.</li>
+</ul>
+<p>Media detail readers expose the stored observation relationships and their link/observation provenance quality. They do not synthesize links for unresolved historical artifacts.</p>
+<h2 id="compatibility-and-rollback">Compatibility and rollback</h2>
+<ul>
+<li>Version 6 is additive and non-destructive.</li>
+<li>Existing <code>media_artifacts</code> columns and endpoint paths remain available.</li>
+<li>A prior application can ignore the relation table; rollback does not drop it.</li>
+<li>No media bytes, tasks, cache states, or artifact identifiers are rewritten.</li>
+<li>Unresolved historical artifacts remain visible through their existing document/snapshot relationships but have an empty observation relationship list.</li>
+</ul>
+<h2 id="consequences">Consequences</h2>
+<h3 id="positive">Positive</h3>
+<ul>
+<li>Media references no longer inherit an invented "latest snapshot" or broad snapshot-level observation association.</li>
+<li>Current capture provenance is exact and retry-safe.</li>
+<li>Historical uncertainty is explicit and bounded.</li>
+<li>Later media decomposition can consume a stable provenance relation without changing artifact identity.</li>
+</ul>
+<h3 id="negative">Negative</h3>
+<ul>
+<li>The relation adds rows proportional to distinct observation/artifact pairs.</li>
+<li>Some historical artifacts intentionally remain unlinked.</li>
+<li>Browser-originated post-capture uploads still rely on the relation created during the original capture until extension payloads carry observation identity everywhere.</li>
+</ul>
+<h2 id="validation">Validation</h2>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span>/tmp/browser-memory-daemon-verify-venv/bin/python<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>-m<span style="color: #F8F8F2"> </span>pytest<span style="color: #F8F8F2"> </span>-q<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>daemon/tests/integration/test_capture_observations.py<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>daemon/tests/integration/test_migrations.py<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>daemon/tests/integration/test_ingest_search_forget.py<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>daemon/tests/integration/test_media_worker.py
 </code></pre></div>
 
-<p>The fixture suite covers fresh initialization, exact unversioned detection, repeated and concurrent no-op/application behavior, checksum and unknown-newer rejection, injected rollback, FTS/foreign-key/integrity checks, destructive headroom refusal, online backup, restore-backed search, a version-3-to-latest expand upgrade, observation/claim constraints, version-5 evidence-bounded historical backfill, and version-6 conservative media-observation linking.</p>
+<p>Required evidence includes exact current-ingest links, distinct media references across observations sharing one snapshot, retry idempotency, unique historical visit/snapshot backfill, unique-snapshot ambiguous fallback, unresolved multi-candidate preservation, schema fingerprint integrity, and foreign-key integrity.</p>
+<h2 id="supersession-and-follow-up">Supersession and follow-up</h2>
+<p>This ADR extends ADR-0030 and ADR-0031 for media provenance. Observation-first recent/timeline/document/snapshot reads remain the next cutover slice. Media state-machine decomposition and streaming remain Phase 4 work.</p>
   </article>
   <div class="md-footer">
-    Rendered from <code>docs/database-migrations.md</code> — the Markdown file is the canonical,
+    Rendered from <code>docs/architecture/adr/0032-link-media-artifacts-to-capture-observations.md</code> — the Markdown file is the canonical,
     version-controlled source. This HTML is generated (regenerate with
     <code>scripts/render_docs.py</code>); do not hand-edit.
   </div>

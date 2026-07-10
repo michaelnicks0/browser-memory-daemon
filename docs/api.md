@@ -182,6 +182,8 @@ The normalized observed `url` is authoritative for new document identity. `canon
 
 Media references in `/capture` are relationship metadata only. Binary storage is asynchronous: the browser lazy sidecar fetches with Chrome cookies and uploads raw blobs, while the daemon media worker backfills public refs without Chrome cookies.
 
+Media artifact rows returned from artifact, document-detail, and snapshot-detail reads include `observations`. Each entry contains `observation_id`, `observed_at`, `link_provenance_quality`, `observation_provenance_quality`, visit/navigation identity, observed URL, and capture method/reason/version. The list contains only stored observation/artifact relationships; unresolved historical ambiguity is represented by an empty list rather than a synthesized latest-snapshot link.
+
 Raw browser upload:
 
 ```http
