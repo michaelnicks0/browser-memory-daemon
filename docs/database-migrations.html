@@ -216,6 +216,11 @@ date: "2026-07-10"</p>
 <td><code>add_capture_observations_and_url_claims</code></td>
 <td>Additive capture-observation and untrusted URL-claim tables with a new exact schema fingerprint; no backfill or read cutover.</td>
 </tr>
+<tr>
+<td style="text-align: right;"><code>5</code></td>
+<td><code>backfill_historical_capture_observations_and_url_claims</code></td>
+<td>One-time evidence-bounded backfill: inferred observations only from stored snapshot/visit links, ambiguous observations when no visit survives, and historical canonical-authority claims without speculative splits.</td>
+</tr>
 </tbody>
 </table>
 <p>Each <code>schema_migrations</code> row stores version, unique name, SHA-256 checksum, and applied timestamp. <code>PRAGMA user_version</code> must match the highest contiguous ledger version. Unknown-newer versions, gaps, name drift, checksum drift, and schema-fingerprint drift fail closed.</p>
@@ -235,7 +240,7 @@ date: "2026-07-10"</p>
 <span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2">$BMD_PYTHON</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pytest<span style="color: #F8F8F2"> </span>-q<span style="color: #F8F8F2"> </span>daemon/tests/integration/test_migrations.py
 </code></pre></div>
 
-<p>The fixture suite covers fresh initialization, exact unversioned detection, repeated and concurrent no-op/application behavior, checksum and unknown-newer rejection, injected rollback, FTS/foreign-key/integrity checks, destructive headroom refusal, online backup, restore-backed search, a version-3-to-4 expand upgrade, and observation/claim constraints.</p>
+<p>The fixture suite covers fresh initialization, exact unversioned detection, repeated and concurrent no-op/application behavior, checksum and unknown-newer rejection, injected rollback, FTS/foreign-key/integrity checks, destructive headroom refusal, online backup, restore-backed search, a version-3-to-4 expand upgrade, observation/claim constraints, and version-5 evidence-bounded historical backfill.</p>
   </article>
   <div class="md-footer">
     Rendered from <code>docs/database-migrations.md</code> — the Markdown file is the canonical,

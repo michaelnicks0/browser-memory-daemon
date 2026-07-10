@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Readme — browser-memory-daemon</title>
+<title>0031-Dual-Write-Observed-Url-Capture-Provenance — browser-memory-daemon</title>
 <style>
 :root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
@@ -121,248 +121,98 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <div class="wrap">
   <div class="docbar">
     <a class="home" href="../../../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
-    <span class="crumb">/ <b>docs/architecture/adr/README.md</b></span>
+    <span class="crumb">/ <b>docs/architecture/adr/0031-dual-write-observed-url-capture-provenance.md</b></span>
   </div>
   <article class="md-body">
-<h1 id="architecture-decision-records">Architecture Decision Records</h1>
-<blockquote>
-<p>Purpose: preserve the reasoning behind architecture, design, interface, dependency, policy, and Hermes workflow decisions that future agents must understand before changing this repo.</p>
-</blockquote>
-<p>ADRs live in this repo because Browser Memory Daemon is architecture-heavy and agent-maintained. Chat history, memory, and commit messages are not sufficient paper trails for long-lived design choices.</p>
-<h2 id="index">Index</h2>
-<table>
-<thead>
-<tr>
-<th>ADR</th>
-<th>Status</th>
-<th>Decision</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><a href="0001-use-repo-local-architecture-decision-records.html">ADR-0001</a></td>
-<td>accepted</td>
-<td>Use repo-local Markdown ADRs for architecture-significant changes.</td>
-</tr>
-<tr>
-<td><a href="0002-keep-browser-memory-local-across-windows-chrome-and-wsl.html">ADR-0002</a></td>
-<td>accepted</td>
-<td>Keep browser memory local across Windows Chrome and the WSL daemon.</td>
-</tr>
-<tr>
-<td><a href="0003-use-all-policy-mode-as-daily-driver-default.html">ADR-0003</a></td>
-<td>superseded</td>
-<td>Use <code>all</code> policy mode as the daily-driver default. Superseded by ADR-0009.</td>
-</tr>
-<tr>
-<td><a href="0004-use-text-first-sqlite-fts5-and-blob-storage.html">ADR-0004</a></td>
-<td>superseded</td>
-<td>Use text-first SQLite/FTS5 and WSL-local blob storage. Superseded by ADR-0021 for blob placement.</td>
-</tr>
-<tr>
-<td><a href="0005-use-durable-lazy-media-sidecars-with-bounded-cache.html">ADR-0005</a></td>
-<td>accepted</td>
-<td>Use durable lazy media sidecars with a bounded disposable cache.</td>
-</tr>
-<tr>
-<td><a href="0006-use-forget-cascade-with-deletion-receipts.html">ADR-0006</a></td>
-<td>accepted</td>
-<td>Use forget/delete cascades with deletion receipts.</td>
-</tr>
-<tr>
-<td><a href="0007-use-real-chrome-e2e-as-verification-authority.html">ADR-0007</a></td>
-<td>accepted</td>
-<td>Use real Chrome / Chrome for Testing e2e as the verification authority.</td>
-</tr>
-<tr>
-<td><a href="0008-use-c4-structurizr-as-canonical-architecture-model.html">ADR-0008</a></td>
-<td>accepted</td>
-<td>Use C4/Structurizr under <code>docs/architecture/</code> as the canonical architecture model.</td>
-</tr>
-<tr>
-<td><a href="0009-apply-explicit-block-rules-in-all-mode.html">ADR-0009</a></td>
-<td>accepted</td>
-<td>Apply explicit local block rules in <code>all</code> mode while preserving the daily-driver default.</td>
-</tr>
-<tr>
-<td><a href="0010-disable-cdp-recorder-by-default.html">ADR-0010</a></td>
-<td>superseded</td>
-<td>Disable the CDP recorder by default so daily Chrome avoids the native debugging banner while preserving opt-in X/Twitter video recovery. Superseded by ADR-0011.</td>
-</tr>
-<tr>
-<td><a href="0011-enable-cdp-recorder-by-default-with-disable-control.html">ADR-0011</a></td>
-<td>accepted</td>
-<td>Enable the CDP recorder by default for X/Twitter video completeness while preserving an operator disable control for banner-free browsing.</td>
-</tr>
-<tr>
-<td><a href="0012-bootstrap-local-ui-token-from-daemon.html">ADR-0012</a></td>
-<td>accepted</td>
-<td>Bootstrap the local dashboard token from the daemon-served <code>/ui</code> HTML so the UI opens populated while memory/admin APIs remain bearer-authenticated.</td>
-</tr>
-<tr>
-<td><a href="0013-generated-publish-docs.html">ADR-0013</a></td>
-<td>accepted</td>
-<td>Use generated high-level docs and HTML companions for publish-ready documentation while keeping Markdown canonical.</td>
-</tr>
-<tr>
-<td><a href="0014-use-wal-and-bounded-sqlite-contention-policy.html">ADR-0014</a></td>
-<td>accepted</td>
-<td>Use WAL, busy-timeout, startup-only DB initialization, and bounded loopback backlog as the SQLite contention policy.</td>
-</tr>
-<tr>
-<td><a href="0015-use-idempotent-local-write-paths.html">ADR-0015</a></td>
-<td>accepted</td>
-<td>Use idempotent local write paths for duplicate captures, media/cache filesystem work, and semantic policy-rule uniqueness.</td>
-</tr>
-<tr>
-<td><a href="0016-use-deterministic-synthetic-performance-benchmarks.html">ADR-0016</a></td>
-<td>accepted</td>
-<td>Use deterministic synthetic benchmarks as advisory performance evidence before read-model/index tuning.</td>
-</tr>
-<tr>
-<td><a href="0017-add-read-model-composite-indexes.html">ADR-0017</a></td>
-<td>accepted</td>
-<td>Add composite SQLite indexes for measured read-model ordering paths.</td>
-</tr>
-<tr>
-<td><a href="0018-enforce-daily-driver-headroom-and-start-budgets.html">ADR-0018</a></td>
-<td>accepted</td>
-<td>Enforce daily-driver headroom and service-start failure budgets in local health checks.</td>
-</tr>
-<tr>
-<td><a href="0019-use-durable-text-retention-with-wal-aware-local-backup.html">ADR-0019</a></td>
-<td>accepted</td>
-<td>Use durable text retention with WAL-aware local backup and disposable media cache.</td>
-</tr>
-<tr>
-<td><a href="0020-enforce-static-requirement-traceability-gate.html">ADR-0020</a></td>
-<td>superseded by ADR-0027</td>
-<td>Enforce static requirement traceability in the generated test inventory gate.</td>
-</tr>
-<tr>
-<td><a href="0021-use-configurable-nas-blob-root-with-local-sqlite.html">ADR-0021</a></td>
-<td>accepted</td>
-<td>Use a configurable NAS-capable blob root while keeping SQLite/WAL local.</td>
-</tr>
-<tr>
-<td><a href="0022-use-fast-doctor-and-media-queue-health-telemetry.html">ADR-0022</a></td>
-<td>accepted</td>
-<td>Use fast doctor and media-queue health telemetry.</td>
-</tr>
-<tr>
-<td><a href="0023-guard-daemon-public-media-egress.html">ADR-0023</a></td>
-<td>accepted</td>
-<td>Guard daemon-public media egress.</td>
-</tr>
-<tr>
-<td><a href="0024-contain-blob-and-media-artifact-paths.html">ADR-0024</a></td>
-<td>accepted</td>
-<td>Contain blob and media artifact paths.</td>
-</tr>
-<tr>
-<td><a href="0025-literal-policy-aware-forget-selectors.html">ADR-0025</a></td>
-<td>accepted</td>
-<td>Use literal and policy-aware forget selectors.</td>
-</tr>
-<tr>
-<td><a href="0026-harden-loopback-ui-and-required-blob-mounts.html">ADR-0026</a></td>
-<td>accepted</td>
-<td>Harden loopback UI and required blob mounts.</td>
-</tr>
-<tr>
-<td><a href="0027-use-canonical-semantic-requirement-catalog.html">ADR-0027</a></td>
-<td>accepted</td>
-<td>Use one machine-readable semantic requirement catalog with explicit legacy aliases and generated V-model traceability.</td>
-</tr>
-<tr>
-<td><a href="0028-use-versioned-restore-backed-sqlite-migrations.html">ADR-0028</a></td>
-<td>accepted</td>
-<td>Use versioned restore-backed SQLite migrations with exact schema fingerprints, ordered checksums, and backup-gated destructive steps.</td>
-</tr>
-<tr>
-<td><a href="0029-use-hermetic-fast-quality-gate.html">ADR-0029</a></td>
-<td>accepted</td>
-<td>Add a network-free fast gate with targeted static analysis, branch coverage, an XDG write sentinel, and a measured coverage ratchet.</td>
-</tr>
-<tr>
-<td><a href="0030-separate-capture-observations-and-url-claims.html">ADR-0030</a></td>
-<td>accepted</td>
-<td>Add expand-only capture-observation and untrusted URL-claim authority before dual-write and read cutover.</td>
-</tr>
-<tr>
-<td><a href="0031-dual-write-observed-url-capture-provenance.html">ADR-0031</a></td>
-<td>accepted</td>
-<td>Dual-write observed-URL capture provenance, preserve visit rows on recapture, and backfill only evidence-supported historical relationships.</td>
-</tr>
-</tbody>
-</table>
-<h2 id="backfilled-decision-history">Backfilled decision history</h2>
-<p>ADR-0002 through ADR-0008 are historical backfills recorded on 2026-06-14 from repo docs, code, tests, and git history. They did not introduce new runtime behavior; they document already-accepted architecture decisions so future changes can cite, comply with, or supersede them.</p>
-<p>Backfill verification run on 2026-06-14:</p>
+<hr />
+<p>status: accepted
+date: 2026-07-10
+decision-makers: [Michael]
+consulted: [TARS]
+informed: []</p>
+<hr />
+<h1 id="adr-0031-dual-write-observed-url-capture-provenance-without-replacing-visits">ADR-0031: Dual-write observed-URL capture provenance without replacing visits</h1>
+<h2 id="context-and-problem-statement">Context and problem statement</h2>
+<p>Version 4 added additive capture-observation and URL-claim tables, but the ingest path still used page-provided canonical URLs for document identity and replaced visit rows on repeated captures. <code>INSERT OR REPLACE</code> deletes then reinserts a visit, which can sever lifecycle-event and other foreign-key provenance. Deduplicated snapshots also retain only the visit that first created them.</p>
+<p>The daemon must begin writing trustworthy provenance before historical readers can cut over, while keeping legacy document/visit/snapshot columns available for compatibility.</p>
+<h2 id="decision-drivers">Decision drivers</h2>
 <ul>
-<li>ADR lint and repo Markdown fence check passed.</li>
-<li><code>git diff --check -- .</code> passed.</li>
-<li><code>./scripts/secret-scan.sh</code> passed.</li>
-<li><code>BMD_SKIP_REAL_CHROME_E2E=1 ./scripts/run-e2e.sh</code> passed using a temporary Python 3.11 shim because the host <code>python3</code> is Python 3.8 while this repo declares <code>requires-python = "&gt;=3.11"</code>.</li>
+<li>Normalized observed browser URL is the approved identity authority.</li>
+<li>Canonical URLs are untrusted claims and cannot merge documents automatically.</li>
+<li>A visit represents one navigation/session and can contain multiple observations.</li>
+<li>Browser retries must be idempotent, and conflicting reuse of an observation ID must fail.</li>
+<li>Existing historical canonical-derived IDs must remain untouched.</li>
+<li>Lifecycle-event foreign keys must survive recapture.</li>
 </ul>
-<h2 id="when-to-create-or-supersede-an-adr">When to create or supersede an ADR</h2>
-<p>Create or supersede an ADR when a change affects:</p>
-<ul>
-<li>component boundaries or ownership;</li>
-<li>Chrome extension ↔ WSL daemon interfaces;</li>
-<li>API, CLI, schema, event, or storage contracts;</li>
-<li>capture policy, redaction, security, privacy, or deletion semantics;</li>
-<li>major dependency/platform/provider choices;</li>
-<li>media sidecar, worker, cache, lifecycle, or recall architecture;</li>
-<li>verification strategy or real-browser e2e boundary;</li>
-<li>recurring Hermes/agent workflow for maintaining this repo.</li>
-</ul>
-<p>Do not create an ADR for trivial bug fixes, mechanical refactors, test-only cleanup, or completed-task logs.</p>
-<h2 id="status-values">Status values</h2>
-<table>
-<thead>
-<tr>
-<th>Status</th>
-<th>Meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>proposed</code></td>
-<td>Drafted but not yet accepted by Operator / project direction.</td>
-</tr>
-<tr>
-<td><code>accepted</code></td>
-<td>Active decision; future changes should comply.</td>
-</tr>
-<tr>
-<td><code>rejected</code></td>
-<td>Considered and intentionally not chosen.</td>
-</tr>
-<tr>
-<td><code>deprecated</code></td>
-<td>Still historical, but no longer recommended.</td>
-</tr>
-<tr>
-<td><code>superseded</code></td>
-<td>Replaced by a later ADR; keep the old record intact and link both ways.</td>
-</tr>
-</tbody>
-</table>
-<h2 id="agent-workflow">Agent workflow</h2>
+<h2 id="considered-options">Considered options</h2>
 <ol>
-<li>Inspect <code>AGENTS.md</code>, <code>docs/README.md</code>, and this ADR index before architecture-impacting work.</li>
-<li>Search existing ADRs for related decisions.</li>
-<li>If changing an accepted decision, create a new ADR and mark the older one <code>superseded</code>; do not materially rewrite accepted history.</li>
-<li>Keep ADRs short and cite real repo evidence, commands, tests, issues, commits, or research docs.</li>
-<li>Record verification/validation evidence after checks run.</li>
-<li>Commit the ADR with the implementation/design slice it governs.</li>
+<li><strong>Continue canonical-derived identity until read cutover</strong> — rejected because every new capture would add more ambiguous history.</li>
+<li><strong>Replace visit rows but rely on cascading recreation</strong> — rejected because provenance deletion is the defect.</li>
+<li><strong>Rewrite all historical documents around observed URLs now</strong> — rejected because historical evidence is incomplete.</li>
+<li><strong>Dual-write new observed-URL documents/observations/claims and conflict-update visits in place</strong> — accepted.</li>
 </ol>
-<h2 id="template">Template</h2>
-<p>Use <a href="template.html"><code>template.md</code></a> for new ADRs.</p>
+<h2 id="decision-outcome">Decision outcome</h2>
+<h3 id="new-captures">New captures</h3>
+<ul>
+<li><code>documents.id</code> is derived from the policy-transformed, normalized observed <code>url</code>.</li>
+<li>A differing <code>canonical_url</code> becomes a <code>document_url_claims</code> row with <code>identity_effect='none'</code>; same-origin assessment is recorded, but no automatic merge occurs.</li>
+<li>Claim first/last bounds and latest-observation provenance remain monotonic when delayed observations arrive out of order.</li>
+<li>Every accepted extraction writes one <code>capture_observations</code> row linking the visit, observed document, and contemporaneous snapshot.</li>
+<li>Browser-provided observation IDs become the idempotency authority. Until the extension emits them everywhere, the daemon derives a deterministic fallback from visit, capture time, observed URL, document, and snapshot and marks provenance <code>inferred</code>.</li>
+<li>Identical observation retries are row-level no-ops that still reconstruct the compatibility response, including URL-claim and media artifact identifiers. Reusing the same observation ID with conflicting stored provenance raises a conflict.</li>
+</ul>
+<h3 id="visit-identity">Visit identity</h3>
+<ul>
+<li>Visit insertion uses <code>INSERT ... ON CONFLICT DO UPDATE</code>, never <code>INSERT OR REPLACE</code>.</li>
+<li>The first visit/document/URL identity remains in place.</li>
+<li>Later observations may update title, latest capture time, earliest known start, bounded dwell, and incognito state without deleting the row.</li>
+<li>Lifecycle-event foreign keys therefore survive repeated capture.</li>
+<li>Reusing one visit ID for a different normalized observed navigation is rejected rather than creating a cross-document visit/observation mismatch.</li>
+</ul>
+<h3 id="historical-data">Historical data</h3>
+<p>Migration version 5 performs a one-time, evidence-bounded backfill:</p>
+<ul>
+<li>a snapshot with a surviving visit link becomes an <code>inferred</code> historical observation;</li>
+<li>a snapshot without a surviving visit becomes an <code>ambiguous</code> observation and does not receive an invented visit;</li>
+<li>each historical document records a <code>legacy-canonical</code> claim with <code>identity_effect='historical-authority'</code> and ambiguous provenance;</li>
+<li>no document is split or merged.</li>
+</ul>
+<h2 id="compatibility-and-rollback">Compatibility and rollback</h2>
+<ul>
+<li>Existing visit, document, and snapshot columns remain populated.</li>
+<li>Existing read APIs continue using legacy joins in this slice; observation-first read cutover is separate.</li>
+<li>A prior application can ignore the additive tables. It may resume its old canonical-derived behavior after rollback, so rollback is operationally compatible but should be temporary to avoid new ambiguous identity decisions.</li>
+<li>No destructive migration or down-migration is introduced.</li>
+</ul>
+<h2 id="consequences">Consequences</h2>
+<h3 id="positive">Positive</h3>
+<ul>
+<li>New capture history has explicit contemporaneous snapshot provenance.</li>
+<li>Cross-origin canonical claims cannot control identity or deletion scope.</li>
+<li>Repeated extraction no longer destroys visit/event identity.</li>
+<li>Historical ambiguity is visible and bounded.</li>
+</ul>
+<h3 id="negative">Negative</h3>
+<ul>
+<li>New observed-URL documents may coexist with older canonical-derived documents until read/backfill reconciliation is complete.</li>
+<li>Derived observation IDs are less authoritative than browser-issued IDs and can collide for indistinguishable captures in the same timestamp bucket.</li>
+<li>Legacy readers still do not consume the richer provenance.</li>
+</ul>
+<h2 id="validation">Validation</h2>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span>/tmp/browser-memory-daemon-verify-venv/bin/python<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>-m<span style="color: #F8F8F2"> </span>pytest<span style="color: #F8F8F2"> </span>-q<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>daemon/tests/integration/test_capture_observations.py<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>daemon/tests/integration/test_ingest_search_forget.py<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>daemon/tests/integration/test_migrations.py<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>daemon/tests/integration/test_visit_lifecycle.py
+</code></pre></div>
+
+<p>Required cases include unchanged and changed observations in one visit, multiple visits observing one snapshot, exact retry idempotency, conflicting observation-ID rejection, visit-ID/navigation conflict rejection, out-of-order temporal bounds, cross-origin canonical targeting an existing document, lifecycle FK preservation, concurrent same-URL tabs, and evidence-bounded historical backfill with the surviving visit's normalized observed URL.</p>
+<h2 id="supersession-and-follow-up">Supersession and follow-up</h2>
+<p>This ADR implements the dual-write and identity portions of ADR-0030. Observation-first recent/timeline/detail/media reads, lifecycle attachment by visit/navigation identity, and interval-union dwell remain separate cutover decisions.</p>
   </article>
   <div class="md-footer">
-    Rendered from <code>docs/architecture/adr/README.md</code> — the Markdown file is the canonical,
+    Rendered from <code>docs/architecture/adr/0031-dual-write-observed-url-capture-provenance.md</code> — the Markdown file is the canonical,
     version-controlled source. This HTML is generated (regenerate with
     <code>scripts/render_docs.py</code>); do not hand-edit.
   </div>

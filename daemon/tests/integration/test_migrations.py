@@ -239,15 +239,15 @@ def test_version_three_fixture_upgrades_once_to_capture_model_expand_schema(tmp_
     with connect(cfg.db_path) as conn:
         conn.execute("DROP TABLE document_url_claims")
         conn.execute("DROP TABLE capture_observations")
-        conn.execute("DELETE FROM schema_migrations WHERE version = 4")
+        conn.execute("DELETE FROM schema_migrations WHERE version >= 4")
         conn.execute("PRAGMA user_version = 3")
         conn.commit()
 
     before = migration_status(cfg)
     assert before["current_version"] == 3
-    assert before["pending_versions"] == [4]
+    assert before["pending_versions"] == [4, 5]
     result = migrate_database(cfg, execute=True)
-    assert result["applied_versions"] == [4]
+    assert result["applied_versions"] == [4, 5]
     with connect(cfg.db_path) as conn:
         tables = {
             row["name"]
@@ -257,6 +257,106 @@ def test_version_three_fixture_upgrades_once_to_capture_model_expand_schema(tmp_
         }
         assert {"capture_observations", "document_url_claims"} <= tables
         assert schema_fingerprint(conn) == MIGRATIONS[3].schema_fingerprint
+
+
+def test_version_five_backfills_only_evidence_supported_historical_relationships(tmp_path):
+    cfg = _config(tmp_path)
+    init_db(cfg)
+    with connect(cfg.db_path) as conn:
+        conn.execute("DELETE FROM document_url_claims")
+        conn.execute("DELETE FROM capture_observations")
+        conn.execute("DELETE FROM schema_migrations WHERE version = 5")
+        conn.execute("PRAGMA user_version = 4")
+        conn.execute(
+            """
+            INSERT INTO documents(id, canonical_url, normalized_url, domain, title, first_seen_at, last_seen_at)
+            VALUES ('doc-legacy', 'https://canonical.example/item', 'https://canonical.example/item',
+                    'canonical.example', 'Legacy document', '2026-01-01T00:00:00Z', '2026-01-02T00:00:00Z')
+            """
+        )
+        conn.execute(
+            """
+            INSERT INTO visits(
+              id, document_id, source_id, url, normalized_url, title,
+              source_device, browser_profile, visit_started_at, captured_at,
+              dwell_seconds, is_incognito, blocked
+            ) VALUES ('visit-legacy', 'doc-legacy', 'chrome-extension',
+                      'https://observed.example/item', 'https://observed.example/item',
+                      'Observed legacy title', 'legacy-device', 'Default',
+                      '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z', 0, 0, 0)
+            """
+        )
+        conn.execute(
+            """
+            INSERT INTO snapshots(
+              id, document_id, visit_id, captured_at, content_type, extraction_method,
+              text_hash, cleaned_text_path, privacy_class, redaction_count
+            ) VALUES ('snap-with-visit', 'doc-legacy', 'visit-legacy', '2026-01-01T00:00:00Z',
+                      'text/plain', 'legacy-v1', 'hash-with-visit', '/legacy/with-visit.txt', 'legacy', 0)
+            """
+        )
+        conn.execute(
+            """
+            INSERT INTO snapshots(
+              id, document_id, visit_id, captured_at, content_type, extraction_method,
+              text_hash, cleaned_text_path, privacy_class, redaction_count
+            ) VALUES ('snap-ambiguous', 'doc-legacy', NULL, '2026-01-02T00:00:00Z',
+                      'text/plain', 'legacy-v1', 'hash-ambiguous', '/legacy/ambiguous.txt', 'legacy', 0)
+            """
+        )
+
+    pending = migration_status(cfg)
+    assert pending["current_version"] == 4
+    assert pending["pending_versions"] == [5]
+    result = migrate_database(cfg, execute=True)
+    assert result["applied_versions"] == [5]
+
+    with connect(cfg.db_path) as conn:
+        observations = conn.execute(
+            """
+            SELECT snapshot_id, visit_id, observed_url, normalized_observed_url,
+                   disposition, provenance_quality
+            FROM capture_observations
+            ORDER BY snapshot_id
+            """
+        ).fetchall()
+        assert [dict(row) for row in observations] == [
+            {
+                "snapshot_id": "snap-ambiguous",
+                "visit_id": None,
+                "observed_url": "https://canonical.example/item",
+                "normalized_observed_url": "https://canonical.example/item",
+                "disposition": "historical-ambiguous",
+                "provenance_quality": "ambiguous",
+            },
+            {
+                "snapshot_id": "snap-with-visit",
+                "visit_id": "visit-legacy",
+                "observed_url": "https://observed.example/item",
+                "normalized_observed_url": "https://observed.example/item",
+                "disposition": "historical-inferred",
+                "provenance_quality": "inferred",
+            },
+        ]
+        claim = dict(
+            conn.execute(
+                """
+                SELECT claim_type, claimed_url, identity_effect, provenance_quality, same_origin
+                FROM document_url_claims
+                WHERE document_id = 'doc-legacy'
+                """
+            ).fetchone()
+        )
+        assert claim == {
+            "claim_type": "legacy-canonical",
+            "claimed_url": "https://canonical.example/item",
+            "identity_effect": "historical-authority",
+            "provenance_quality": "ambiguous",
+            "same_origin": None,
+        }
+        assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
+
+    assert migrate_database(cfg, execute=True)["applied_versions"] == []
 
 
 def test_repeated_migration_is_a_noop_and_schema_has_no_recurring_repair_dml(tmp_path):

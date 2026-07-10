@@ -161,8 +161,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Local storage/search</td>
-<td>WSL daemon persists documents, visits, snapshots, chunks, FTS rows, lifecycle events, media refs, audit events, and deletion receipts behind an exact schema fingerprint and ordered migration ledger.</td>
-<td><code>schema.sql</code>, <code>migrations.py</code>, migration integration tests.</td>
+<td>WSL daemon persists documents, visits, capture observations, snapshots, URL claims, chunks, FTS rows, lifecycle events, media refs, audit events, and deletion receipts behind an exact schema fingerprint and ordered migration ledger. New identity follows the observed URL; canonical claims cannot auto-merge documents.</td>
+<td><code>schema.sql</code>, <code>migrations.py</code>, <code>ingest.py</code>, observation/migration integration tests.</td>
 </tr>
 <tr>
 <td>Default recall posture</td>
@@ -229,8 +229,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </ul>
 <!-- BEGIN GENERATED:verification-depth -->
 <ul>
-<li><strong>Verification depth:</strong> 156 static test functions across 26 files (127 daemon pytest; 29 extension node:test), plus real Chrome for Testing e2e.</li>
-<li><strong>Requirement authority:</strong> <code>requirements/catalog.toml</code> defines 32 active and 11 planned stable requirements with generated traceability tables.</li>
+<li><strong>Verification depth:</strong> 164 static test functions across 27 files (135 daemon pytest; 29 extension node:test), plus real Chrome for Testing e2e.</li>
+<li><strong>Requirement authority:</strong> <code>requirements/catalog.toml</code> defines 33 active and 10 planned stable requirements with generated traceability tables.</li>
 </ul>
 <!-- END GENERATED:verification-depth -->
 <ul>

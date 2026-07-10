@@ -10,6 +10,7 @@ from . import (
     v0002_deduplicate_privacy_rules,
     v0003_seed_media_fetch_tasks,
     v0004_capture_observations_and_url_claims,
+    v0005_backfill_historical_observations,
 )
 
 
@@ -59,6 +60,16 @@ MIGRATIONS = (
         ),
         sql=v0004_capture_observations_and_url_claims.SQL,
         schema_fingerprint=v0004_capture_observations_and_url_claims.SCHEMA_FINGERPRINT,
+    ),
+    MigrationStep(
+        version=5,
+        name=v0005_backfill_historical_observations.NAME,
+        checksum=migration_checksum(
+            5,
+            v0005_backfill_historical_observations.NAME,
+            v0005_backfill_historical_observations.CHECKSUM_PAYLOAD,
+        ),
+        apply=v0005_backfill_historical_observations.apply,
     ),
 )
 

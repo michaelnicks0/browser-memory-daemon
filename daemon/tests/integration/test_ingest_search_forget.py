@@ -658,12 +658,13 @@ def test_repeat_capture_dedupes_snapshot_but_adds_visit(tmp_path):
             SELECT
               (SELECT COUNT(*) FROM documents) AS documents,
               (SELECT COUNT(*) FROM visits) AS visits,
+              (SELECT COUNT(*) FROM capture_observations) AS observations,
               (SELECT COUNT(*) FROM snapshots) AS snapshots,
               (SELECT COUNT(*) FROM chunks) AS chunks,
               (SELECT COUNT(*) FROM chunks_fts) AS chunks_fts
             """
         ).fetchone())
-        assert counts == {"documents": 1, "visits": 2, "snapshots": 1, "chunks": 1, "chunks_fts": 1}
+        assert counts == {"documents": 1, "visits": 2, "observations": 2, "snapshots": 1, "chunks": 1, "chunks_fts": 1}
         document = conn.execute("SELECT normalized_url, title, first_seen_at, last_seen_at FROM documents").fetchone()
         assert document["normalized_url"] == "https://example.com/article?a=1&b=2"
         assert document["title"] == "Dedupe Article Updated Title"
@@ -705,13 +706,14 @@ def test_concurrent_duplicate_capture_is_idempotent_for_snapshot_chunks_and_fts(
                 SELECT
                   (SELECT COUNT(*) FROM documents) AS documents,
                   (SELECT COUNT(*) FROM visits) AS visits,
+                  (SELECT COUNT(*) FROM capture_observations) AS observations,
                   (SELECT COUNT(*) FROM snapshots) AS snapshots,
                   (SELECT COUNT(*) FROM chunks) AS chunks,
                   (SELECT COUNT(*) FROM chunks_fts) AS chunks_fts
                 """
             ).fetchone()
         )
-        assert counts == {"documents": 1, "visits": 8, "snapshots": 1, "chunks": 1, "chunks_fts": 1}
+        assert counts == {"documents": 1, "visits": 8, "observations": 8, "snapshots": 1, "chunks": 1, "chunks_fts": 1}
         assert len(search_memory(conn, "IDEMPOTENT_CAPTURE_NEEDLE", limit=10)) == 1
     clean_files = list(cfg.clean_text_root.glob(f"{results[0]['snapshot_id']}*.txt"))
     assert clean_files == [cfg.clean_text_root / f"{results[0]['snapshot_id']}.txt"]
@@ -744,12 +746,13 @@ def test_changed_content_creates_new_snapshot_under_same_document(tmp_path):
             SELECT
               (SELECT COUNT(*) FROM documents) AS documents,
               (SELECT COUNT(*) FROM visits) AS visits,
+              (SELECT COUNT(*) FROM capture_observations) AS observations,
               (SELECT COUNT(*) FROM snapshots) AS snapshots,
               (SELECT COUNT(*) FROM chunks) AS chunks,
               (SELECT COUNT(*) FROM chunks_fts) AS chunks_fts
             """
         ).fetchone())
-        assert counts == {"documents": 1, "visits": 2, "snapshots": 2, "chunks": 2, "chunks_fts": 2}
+        assert counts == {"documents": 1, "visits": 2, "observations": 2, "snapshots": 2, "chunks": 2, "chunks_fts": 2}
         alpha_rows = search_memory(conn, "ALPHA_VERSION_NEEDLE", limit=5)
         beta_rows = search_memory(conn, "BETA_VERSION_NEEDLE", limit=5)
         assert len(alpha_rows) == 1

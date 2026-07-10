@@ -118,6 +118,11 @@ Full storage census returns `storage.census_mode="filesystem"` and walks `clean_
   "text": "Visible or extracted page text...",
   "captured_at": "2026-06-09T12:00:00Z",
   "visit_id": "visit_...",
+  "navigation_id": "navigation_...",
+  "observation_id": "observation_...",
+  "capture_reason": "initial",
+  "extraction_method": "dom-visible-text",
+  "extraction_version": "extractor-v2",
   "visit_started_at": "2026-06-09T11:59:01Z",
   "dwell_seconds": 32,
   "max_scroll_percent": 80,
@@ -146,6 +151,9 @@ Response:
   "document_id": "doc_...",
   "snapshot_id": "snap_...",
   "visit_id": "visit_...",
+  "observation_id": "obs_...",
+  "observation_created": true,
+  "url_claim_ids": [],
   "snapshot_created": true,
   "chunk_count": 3,
   "media_ref_count": 1,
@@ -165,6 +173,8 @@ Response:
 ```
 
 In `all` mode, daemon redaction is disabled. In non-`all` modes, URL/title/body redaction runs before DB/FTS/blob storage.
+
+The normalized observed `url` is authoritative for new document identity. `canonical_url` is stored only as a URL claim when it differs; it never causes an automatic cross-origin document merge. Repeated captures may share one `visit_id`/`navigation_id` while producing distinct observations. Reusing an `observation_id` with identical stored provenance is idempotent; changing its navigation, document, snapshot, URL, capture time/method/reason, extraction version, title, or provenance quality is rejected. Reusing one `visit_id` for a different normalized observed navigation is also rejected.
 
 ---
 

@@ -153,8 +153,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>SQLite/FTS/media storage</td>
-<td>✅ Documents/visits/snapshots/chunks/FTS/media/audit/deletion receipts plus version-4 additive capture-observation/URL-claim tables, exact schema fingerprint, ordered checksum ledger, and restore-backed migration gate. Observation/claim writers and readers remain target state.</td>
-<td><code>schema.sql</code>, <code>migrations.py</code>, <code>migration_steps/</code>, integration/e2e tests.</td>
+<td>✅ Documents/visits/snapshots/chunks/FTS/media/audit/deletion receipts plus version-4 capture-observation/URL-claim tables, version-5 evidence-bounded historical backfill, exact schema fingerprint, ordered checksum ledger, and restore-backed migration gate. Ingest now dual-writes observations/claims; observation-first readers remain target state.</td>
+<td><code>schema.sql</code>, <code>migrations.py</code>, <code>migration_steps/</code>, <code>ingest.py</code>, integration/e2e tests.</td>
 </tr>
 <tr>
 <td>Exact search</td>
@@ -183,8 +183,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Dedupe/versioning</td>
-<td>✅ URL normalization + text-hash snapshots.</td>
-<td>ingest tests.</td>
+<td>✅ Observed-URL document identity, text-hash snapshots, per-extraction observation idempotency, and non-authoritative canonical URL claims.</td>
+<td>ingest/observation/migration tests.</td>
 </tr>
 <tr>
 <td>SPA/delayed capture</td>
@@ -216,7 +216,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <hr />
 <h2 id="requirement-posture">Requirement posture</h2>
 <!-- BEGIN GENERATED:requirement-posture -->
-<p>The canonical catalog contains <strong>43 stable requirements</strong>: <strong>32 active</strong> and <strong>11 planned</strong>. Normative statements, implementation links, V-model evidence, and legacy aliases are owned by <a href="../requirements/catalog.toml"><code>requirements/catalog.toml</code></a>; generated tables in this doc set must not be hand-edited.</p>
+<p>The canonical catalog contains <strong>43 stable requirements</strong>: <strong>33 active</strong> and <strong>10 planned</strong>. Normative statements, implementation links, V-model evidence, and legacy aliases are owned by <a href="../requirements/catalog.toml"><code>requirements/catalog.toml</code></a>; generated tables in this doc set must not be hand-edited.</p>
 <!-- END GENERATED:requirement-posture -->
 
 <hr />

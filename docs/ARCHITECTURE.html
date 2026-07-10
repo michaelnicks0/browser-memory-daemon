@@ -550,18 +550,18 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Visits, capture observations, snapshots, lifecycle events, and media provenance shall have explicit temporal relationships.</td>
 <td>Capture Observation Model</td>
 <td><code>HRD-008</code></td>
-<td><code>daemon/src/browser_memory_daemon/models.py</code><br><code>daemon/src/browser_memory_daemon/ingest.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0004_capture_observations_and_url_claims.sql</code></td>
+<td><code>daemon/src/browser_memory_daemon/models.py</code><br><code>daemon/src/browser_memory_daemon/ingest.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0004_capture_observations_and_url_claims.sql</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0005_backfill_historical_observations.py</code></td>
 <td>—</td>
 </tr>
 <tr>
 <td>REQ-034</td>
 <td style="text-align: right;">1</td>
-<td>planned</td>
+<td>active</td>
 <td>The normalized observed browser URL shall control document identity while page-provided canonical and alternate URLs remain untrusted claims.</td>
 <td>Document Identity / URL Claims</td>
 <td><code>HRD-009</code></td>
-<td><code>daemon/src/browser_memory_daemon/models.py</code><br><code>daemon/src/browser_memory_daemon/ingest.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0004_capture_observations_and_url_claims.sql</code></td>
-<td>—</td>
+<td><code>daemon/src/browser_memory_daemon/models.py</code><br><code>daemon/src/browser_memory_daemon/ingest.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0004_capture_observations_and_url_claims.sql</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0005_backfill_historical_observations.py</code></td>
+<td><code>daemon/tests/integration/test_capture_observations.py::test_cross_origin_canonical_is_a_non_authoritative_claim_and_visit_fk_survives_recapture</code></td>
 </tr>
 <tr>
 <td>REQ-035</td>
@@ -802,7 +802,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td>Capture observation / URL-claim model</td>
 <td>Additive temporal observation and untrusted claim authority in SQLite.</td>
-<td>Version-4 tables are current; dual-write, historical backfill, and read cutover remain target state.</td>
+<td>Version-4 tables plus version-5 evidence-bounded backfill are current; ingest dual-writes observations/claims, while observation-first read cutover remains target state.</td>
 </tr>
 <tr>
 <td>Policy engine</td>
@@ -812,7 +812,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td>Ingest pipeline</td>
 <td>Normalize, store visits/documents/snapshots/chunks/FTS plus related media artifact refs/blobs.</td>
-<td><code>all</code> bypasses redaction; observation/claim dual-write is the next target slice.</td>
+<td><code>all</code> bypasses redaction; normalized observed URLs own new document identity, canonical URLs become non-authoritative claims, and accepted extractions dual-write capture observations.</td>
 </tr>
 <tr>
 <td>Lifecycle pipeline</td>
@@ -1185,11 +1185,11 @@ status_reason  = cache-evicted:global-oldest
 </tr>
 <tr>
 <td><code>capture_observations</code></td>
-<td>Additive extraction records with idempotency, visit/document/snapshot time relationships, observed URL, capture semantics, and provenance quality. The table is current; writers/readers are not cut over yet.</td>
+<td>Additive extraction records with idempotency, visit/document/snapshot time relationships, observed URL, capture semantics, and provenance quality. New ingest writes observations; read APIs still use legacy joins pending cutover.</td>
 </tr>
 <tr>
 <td><code>document_url_claims</code></td>
-<td>Canonical/alternate/Open Graph/historical URL claims with origin, same-origin assessment, and explicit non-authoritative identity effect. The table is current; writers/readers are not cut over yet.</td>
+<td>Canonical/alternate/Open Graph/historical URL claims with origin, same-origin assessment, and explicit non-authoritative identity effect. New ingest writes canonical claims and version 5 records ambiguous historical authority without speculative merges/splits.</td>
 </tr>
 <tr>
 <td><code>visit_events</code></td>

@@ -492,11 +492,11 @@ rationale = "Historical reads must return contemporaneous evidence rather than t
 owner = "Capture Observation Model"
 status = "planned"
 aliases = ["HRD-008"]
-implementation = ["daemon/src/browser_memory_daemon/models.py", "daemon/src/browser_memory_daemon/ingest.py", "daemon/src/browser_memory_daemon/migration_steps/v0004_capture_observations_and_url_claims.sql"]
+implementation = ["daemon/src/browser_memory_daemon/models.py", "daemon/src/browser_memory_daemon/ingest.py", "daemon/src/browser_memory_daemon/migration_steps/v0004_capture_observations_and_url_claims.sql", "daemon/src/browser_memory_daemon/migration_steps/v0005_backfill_historical_observations.py"]
 unit_evidence = []
-integration_evidence = ["daemon/tests/integration/test_migrations.py::test_capture_observation_and_url_claim_schema_enforces_expand_contract"]
+integration_evidence = ["daemon/tests/integration/test_capture_observations.py", "daemon/tests/integration/test_migrations.py::test_version_five_backfills_only_evidence_supported_historical_relationships"]
 system_evidence = []
-operational_evidence = ["docs/architecture/adr/0030-separate-capture-observations-and-url-claims.md"]
+operational_evidence = ["docs/architecture/adr/0030-separate-capture-observations-and-url-claims.md", "docs/architecture/adr/0031-dual-write-observed-url-capture-provenance.md"]
 validation_evidence = []
 
 [[requirements]]
@@ -505,14 +505,14 @@ revision = 1
 statement = "The normalized observed browser URL shall control document identity while page-provided canonical and alternate URLs remain untrusted claims."
 rationale = "Cross-origin canonical claims must not control budgets, deletion scope, or document merges."
 owner = "Document Identity / URL Claims"
-status = "planned"
+status = "active"
 aliases = ["HRD-009"]
-implementation = ["daemon/src/browser_memory_daemon/models.py", "daemon/src/browser_memory_daemon/ingest.py", "daemon/src/browser_memory_daemon/migration_steps/v0004_capture_observations_and_url_claims.sql"]
+implementation = ["daemon/src/browser_memory_daemon/models.py", "daemon/src/browser_memory_daemon/ingest.py", "daemon/src/browser_memory_daemon/migration_steps/v0004_capture_observations_and_url_claims.sql", "daemon/src/browser_memory_daemon/migration_steps/v0005_backfill_historical_observations.py"]
 unit_evidence = []
-integration_evidence = ["daemon/tests/integration/test_migrations.py::test_capture_observation_and_url_claim_schema_enforces_expand_contract"]
+integration_evidence = ["daemon/tests/integration/test_capture_observations.py::test_cross_origin_canonical_is_a_non_authoritative_claim_and_visit_fk_survives_recapture", "daemon/tests/integration/test_migrations.py::test_version_five_backfills_only_evidence_supported_historical_relationships"]
 system_evidence = []
-operational_evidence = ["docs/architecture/adr/0030-separate-capture-observations-and-url-claims.md"]
-validation_evidence = []
+operational_evidence = ["docs/architecture/adr/0030-separate-capture-observations-and-url-claims.md", "docs/architecture/adr/0031-dual-write-observed-url-capture-provenance.md"]
+validation_evidence = ["daemon/tests/integration/test_capture_observations.py::test_cross_origin_canonical_is_a_non_authoritative_claim_and_visit_fk_survives_recapture"]
 
 [[requirements]]
 id = "REQ-035"
