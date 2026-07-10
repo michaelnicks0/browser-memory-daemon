@@ -25,10 +25,10 @@ digraph {
       20 [id=20,shape=rect, label=<<font point-size="34">Lifecycle Pipeline</font><br /><font point-size="19">[Component: Python + sqlite3]</font><br /><br /><font point-size="24">Stores metadata-only tab<br />lifecycle events and updates<br />visit dwell seconds<br />idempotently.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
     }
 
-    28 [id=28,shape=cylinder, label=<<font point-size="34">SQLite + FTS5<br />Database</font><br /><font point-size="19">[Container: SQLite with FTS5]</font><br /><br /><font point-size="24">Durable relational and<br />full-text store for migration<br />ledger, sources, documents,<br />visits, visit events,<br />snapshots, chunks, chunks_fts,<br />media artifacts, media fetch<br />tasks, policy rules, audit<br />events, and deletion receipts.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+    28 [id=28,shape=cylinder, label=<<font point-size="34">SQLite + FTS5<br />Database</font><br /><font point-size="19">[Container: SQLite with FTS5]</font><br /><br /><font point-size="24">Durable relational and<br />full-text store for migration<br />ledger, sources, documents,<br />visits, capture observations,<br />URL claims, visit events,<br />snapshots, chunks, chunks_fts,<br />media artifacts, media fetch<br />tasks, policy rules, audit<br />events, and deletion receipts.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
   }
 
-  15 -> 20 [id=66, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Routes lifecycle events to</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-  20 -> 28 [id=75, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Writes lifecycle and dwell<br />to</font><br /><font point-size="19">[sqlite3]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  15 -> 20 [id=66, label=<<font point-size="24">Routes lifecycle events to</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+  20 -> 28 [id=75, label=<<font point-size="24">Writes lifecycle and dwell<br />to</font><br /><font point-size="19">[sqlite3]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
 
 }

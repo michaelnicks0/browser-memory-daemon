@@ -9,6 +9,7 @@ from . import (
     v0001_baseline_schema,
     v0002_deduplicate_privacy_rules,
     v0003_seed_media_fetch_tasks,
+    v0004_capture_observations_and_url_claims,
 )
 
 
@@ -47,6 +48,17 @@ MIGRATIONS = (
         name=v0003_seed_media_fetch_tasks.NAME,
         checksum=migration_checksum(3, v0003_seed_media_fetch_tasks.NAME, v0003_seed_media_fetch_tasks.CHECKSUM_PAYLOAD),
         apply=v0003_seed_media_fetch_tasks.apply,
+    ),
+    MigrationStep(
+        version=4,
+        name=v0004_capture_observations_and_url_claims.NAME,
+        checksum=migration_checksum(
+            4,
+            v0004_capture_observations_and_url_claims.NAME,
+            v0004_capture_observations_and_url_claims.SQL,
+        ),
+        sql=v0004_capture_observations_and_url_claims.SQL,
+        schema_fingerprint=v0004_capture_observations_and_url_claims.SCHEMA_FINGERPRINT,
     ),
 )
 

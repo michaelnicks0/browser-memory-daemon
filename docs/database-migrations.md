@@ -61,6 +61,7 @@ Exit codes:
 | `1` | `baseline_current_schema` | Immutable validated baseline. An existing unversioned database is stamped only when its normalized SQLite schema fingerprint exactly matches version 1. |
 | `2` | `normalize_baseline_reference_data` | Ensures the built-in Chrome source row and performs one-time privacy-rule deduplication formerly embedded in steady-state `schema.sql`. |
 | `3` | `seed_daemon_public_media_fetch_tasks` | One-time historical task seeding formerly run by every `init_db` call. |
+| `4` | `add_capture_observations_and_url_claims` | Additive capture-observation and untrusted URL-claim tables with a new exact schema fingerprint; no backfill or read cutover. |
 
 Each `schema_migrations` row stores version, unique name, SHA-256 checksum, and applied timestamp. `PRAGMA user_version` must match the highest contiguous ledger version. Unknown-newer versions, gaps, name drift, checksum drift, and schema-fingerprint drift fail closed.
 
@@ -85,4 +86,4 @@ BMD_PYTHON=/tmp/browser-memory-daemon-verify-venv/bin/python
 "$BMD_PYTHON" -m pytest -q daemon/tests/integration/test_migrations.py
 ```
 
-The fixture suite covers fresh initialization, exact unversioned detection, repeated and concurrent no-op/application behavior, checksum and unknown-newer rejection, injected rollback, FTS/foreign-key/integrity checks, destructive headroom refusal, online backup, and restore-backed search.
+The fixture suite covers fresh initialization, exact unversioned detection, repeated and concurrent no-op/application behavior, checksum and unknown-newer rejection, injected rollback, FTS/foreign-key/integrity checks, destructive headroom refusal, online backup, restore-backed search, a version-3-to-4 expand upgrade, and observation/claim constraints.

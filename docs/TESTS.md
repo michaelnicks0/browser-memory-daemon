@@ -5,7 +5,7 @@
 > **Runtime:** Python **3.11+** (`pyproject.toml` requires `>=3.11`). Use `BMD_PYTHON=/path/to/python3.11` when the host `python3` is older.
 
 <!-- BEGIN GENERATED:inventory-summary -->
-> **Current inventory:** 154 static test functions across 26 files — 125 daemon pytest tests + 29 extension node:test tests.
+> **Current inventory:** 156 static test functions across 26 files — 127 daemon pytest tests + 29 extension node:test tests.
 <!-- END GENERATED:inventory-summary -->
 
 ---
@@ -79,7 +79,7 @@ Use `--runtime-root PATH` only for explicit fixture roots; do not point the stre
 ## Generated test inventory
 
 <!-- BEGIN GENERATED:audit-run -->
-Latest inventory: **154 static test functions** across **26 files** (125 daemon pytest; 29 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
+Latest inventory: **156 static test functions** across **26 files** (127 daemon pytest; 29 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
 <!-- END GENERATED:audit-run -->
 
 ## Requirements traceability gate
@@ -100,7 +100,7 @@ Traceability gate: **✅ pass**.
 | Normative changes without revision increment | none |
 | Requirements removed without catalog disposition | none |
 | Catalog load errors | none |
-| Static test inventory measured | 154 tests / 26 files |
+| Static test inventory measured | 156 tests / 26 files |
 <!-- END GENERATED:traceability-gate -->
 
 ### Per-file counts
@@ -118,7 +118,7 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | 4 |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | 25 |
 | `daemon/tests/integration/test_media_worker.py` | pytest | 28 |
-| `daemon/tests/integration/test_migrations.py` | pytest | 9 |
+| `daemon/tests/integration/test_migrations.py` | pytest | 11 |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | 5 |
 | `daemon/tests/unit/test_config.py` | pytest | 3 |
 | `daemon/tests/unit/test_daily_driver_health.py` | pytest | 6 |
@@ -133,7 +133,7 @@ Traceability gate: **✅ pass**.
 | `extension/tests/unit/queue.test.js` | node:test | 1 |
 | `extension/tests/unit/service_worker.test.js` | node:test | 5 |
 | `extension/tests/unit/shared.test.js` | node:test | 2 |
-| **Total** |  | **154** |
+| **Total** |  | **156** |
 <!-- END GENERATED:per-file-counts -->
 
 <details>
@@ -145,8 +145,8 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/e2e/test_admin_api.py` | pytest | `(module)` | `test_admin_read_apis_and_ui_assets` | 57 | Admin read apis and ui assets. |
 | `daemon/tests/e2e/test_admin_api.py` | pytest | `(module)` | `test_policy_rule_blocks_future_capture_and_can_be_deleted` | 128 | Policy rule blocks future capture and can be deleted. |
 | `daemon/tests/e2e/test_admin_api.py` | pytest | `(module)` | `test_url_prefix_policy_rule_applies_in_all_mode_without_blocking_all_localhost` | 170 | Url prefix policy rule applies in all mode without blocking all localhost. |
-| `daemon/tests/e2e/test_cli_admin.py` | pytest | `(module)` | `test_cli_admin_commands` | 34 | Cli admin commands. |
-| `daemon/tests/e2e/test_cli_admin.py` | pytest | `(module)` | `test_cli_migrate_check_is_read_only_then_execute_applies_pending_steps` | 97 | Cli migrate check is read only then execute applies pending steps. |
+| `daemon/tests/e2e/test_cli_admin.py` | pytest | `(module)` | `test_cli_admin_commands` | 35 | Cli admin commands. |
+| `daemon/tests/e2e/test_cli_admin.py` | pytest | `(module)` | `test_cli_migrate_check_is_read_only_then_execute_applies_pending_steps` | 98 | Cli migrate check is read only then execute applies pending steps. |
 | `daemon/tests/e2e/test_concurrency_stress.py` | pytest | `(module)` | `test_concurrency_stress_harness_exercises_shared_sqlite_db` | 6 | Concurrency stress harness exercises shared sqlite db. |
 | `daemon/tests/e2e/test_concurrency_stress.py` | pytest | `(module)` | `test_concurrency_stress_cli_prints_json_for_explicit_runtime` | 36 | Concurrency stress cli prints json for explicit runtime. |
 | `daemon/tests/e2e/test_daily_driver_install.py` | pytest | `(module)` | `test_install_daily_driver_dry_run_is_non_mutating` | 12 | Install daily driver dry run is non mutating. |
@@ -194,7 +194,7 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_concurrent_duplicate_capture_is_idempotent_for_snapshot_chunks_and_fts` | 677 | Concurrent duplicate capture is idempotent for snapshot chunks and fts. |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_changed_content_creates_new_snapshot_under_same_document` | 720 | Changed content creates new snapshot under same document. |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_schema_has_planned_core_tables` | 762 | Schema has planned core tables. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_capture_payload_rejects_bad_timestamp` | 771 | Capture payload rejects bad timestamp. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_capture_payload_rejects_bad_timestamp` | 783 | Capture payload rejects bad timestamp. |
 | `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_public_fetch_rejects_dns_to_private_without_opening` | 85 | Guarded public fetch rejects dns to private without opening. |
 | `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_public_fetch_rejects_ipv6_loopback_literal_without_resolving` | 107 | Guarded public fetch rejects ipv6 loopback literal without resolving. |
 | `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_public_fetch_allowlisted_private_host_omits_referer` | 127 | Guarded public fetch allowlisted private host omits referer. |
@@ -223,15 +223,17 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_requeues_cdp_hls_manifest_refs` | 924 | Media worker requeues cdp hls manifest refs. |
 | `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_marks_blob_video_refs_covered_by_cdp_bytes` | 965 | Media worker marks blob video refs covered by cdp bytes. |
 | `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_classifies_uncovered_blob_video_refs_as_opaque` | 1015 | Media worker classifies uncovered blob video refs as opaque. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_fresh_database_migrates_to_ordered_versioned_ledger_and_preserves_fts` | 91 | Fresh database migrates to ordered versioned ledger and preserves fts. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_unversioned_current_schema_is_stamped_then_historical_seed_runs_once` | 128 | Unversioned current schema is stamped then historical seed runs once. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_repeated_migration_is_a_noop_and_schema_has_no_recurring_repair_dml` | 158 | Repeated migration is a noop and schema has no recurring repair dml. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_concurrent_fresh_migration_applies_each_ledger_step_once` | 179 | Concurrent fresh migration applies each ledger step once. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_checksum_mismatch_and_unknown_newer_version_fail_closed` | 200 | Checksum mismatch and unknown newer version fail closed. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_unknown_unversioned_schema_is_not_stamped` | 218 | Unknown unversioned schema is not stamped. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_injected_migration_failure_rolls_back_step_and_ledger` | 232 | Injected migration failure rolls back step and ledger. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_destructive_migration_creates_online_backup_that_restores_search` | 259 | Destructive migration creates online backup that restores search. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_destructive_migration_refuses_insufficient_backup_headroom_before_writes` | 296 | Destructive migration refuses insufficient backup headroom before writes. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_fresh_database_migrates_to_ordered_versioned_ledger_and_preserves_fts` | 95 | Fresh database migrates to ordered versioned ledger and preserves fts. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_unversioned_current_schema_is_stamped_then_historical_seed_runs_once` | 136 | Unversioned current schema is stamped then historical seed runs once. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_capture_observation_and_url_claim_schema_enforces_expand_contract` | 166 | Capture observation and url claim schema enforces expand contract. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_three_fixture_upgrades_once_to_capture_model_expand_schema` | 236 | Version three fixture upgrades once to capture model expand schema. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_repeated_migration_is_a_noop_and_schema_has_no_recurring_repair_dml` | 262 | Repeated migration is a noop and schema has no recurring repair dml. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_concurrent_fresh_migration_applies_each_ledger_step_once` | 283 | Concurrent fresh migration applies each ledger step once. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_checksum_mismatch_and_unknown_newer_version_fail_closed` | 304 | Checksum mismatch and unknown newer version fail closed. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_unknown_unversioned_schema_is_not_stamped` | 322 | Unknown unversioned schema is not stamped. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_injected_migration_failure_rolls_back_step_and_ledger` | 336 | Injected migration failure rolls back step and ledger. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_destructive_migration_creates_online_backup_that_restores_search` | 365 | Destructive migration creates online backup that restores search. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_destructive_migration_refuses_insufficient_backup_headroom_before_writes` | 403 | Destructive migration refuses insufficient backup headroom before writes. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_updates_dwell_and_is_idempotent` | 9 | Visit lifecycle event updates dwell and is idempotent. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_overlapping_lifecycle_events_do_not_double_count_dwell` | 67 | Overlapping lifecycle events do not double count dwell. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_can_attach_to_latest_visit_by_url` | 114 | Visit lifecycle event can attach to latest visit by url. |

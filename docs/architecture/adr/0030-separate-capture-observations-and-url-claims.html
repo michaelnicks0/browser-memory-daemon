@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Status — browser-memory-daemon</title>
+<title>0030-Separate-Capture-Observations-And-Url-Claims — browser-memory-daemon</title>
 <style>
 :root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
@@ -120,245 +120,91 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <body>
 <div class="wrap">
   <div class="docbar">
-    <a class="home" href="../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
-    <span class="crumb">/ <b>docs/STATUS.md</b></span>
+    <a class="home" href="../../../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
+    <span class="crumb">/ <b>docs/architecture/adr/0030-separate-capture-observations-and-url-claims.md</b></span>
   </div>
   <article class="md-body">
-<h1 id="browser-memory-daemon-status-implemented-pending-risks">Browser Memory Daemon Status — Implemented, Pending, Risks</h1>
-<blockquote>
-<p><strong>Audience:</strong> Operator and future maintainers.
-<strong>Current source:</strong> repository HEAD; release branch may vary.
-<strong>Policy default:</strong> <code>all</code>.</p>
-</blockquote>
 <hr />
-<h2 id="implemented">Implemented</h2>
-<table>
-<thead>
-<tr>
-<th>Area</th>
-<th>Status</th>
-<th>Evidence</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Windows Chrome extension</td>
-<td>✅ MV3 extension with service-worker-owned injection/transport.</td>
-<td><code>extension/src/</code>, extension unit tests, real Chrome e2e.</td>
-</tr>
-<tr>
-<td>WSL daemon</td>
-<td>✅ Loopback HTTP daemon with bearer auth.</td>
-<td><code>app.py</code>, HTTP e2e tests.</td>
-</tr>
-<tr>
-<td>SQLite/FTS/media storage</td>
-<td>✅ Documents/visits/snapshots/chunks/FTS/media/audit/deletion receipts plus version-4 additive capture-observation/URL-claim tables, exact schema fingerprint, ordered checksum ledger, and restore-backed migration gate. Observation/claim writers and readers remain target state.</td>
-<td><code>schema.sql</code>, <code>migrations.py</code>, <code>migration_steps/</code>, integration/e2e tests.</td>
-</tr>
-<tr>
-<td>Exact search</td>
-<td>✅ FTS5 exact search with snippets/source metadata and media artifact counts.</td>
-<td><code>search.py</code>, <code>/search</code>, tests.</td>
-</tr>
-<tr>
-<td>Forget/delete</td>
-<td>✅ URL/domain forget with receipts and text/media blob + FTS cleanup.</td>
-<td><code>forget.py</code>, tests.</td>
-</tr>
-<tr>
-<td>Media artifacts</td>
-<td>✅ Durable image/video refs and binaries: fast text/manifest capture, browser IndexedDB lazy queue, credentialed fetch, raw blob upload, enabled-by-default X/Twitter CDP recorder with disable control, HLS/audio sidecar handling, daemon public worker, rolling cache gates, purge/rehydrate controls; no OCR/media indexing.</td>
-<td><code>media.py</code>, <code>media_worker.py</code>, <code>media_queue.js</code>, <code>cdp_recorder.js</code>, <code>/media-artifacts/*</code>, real Chrome e2e.</td>
-</tr>
-<tr>
-<td>Local UI</td>
-<td>✅ Token-bootstrapped search/recent/timeline/detail/doctor/policy/delete panels; recent/today/doctor/policy auto-load on open.</td>
-<td><code>ui/</code>, admin API tests.</td>
-</tr>
-<tr>
-<td>CLI</td>
-<td>✅ serve/health/migrate/doctor/daily-driver-health/search/recent/timeline/detail/policy/forget/capture-fixture/media-worker/media-cache/blob-root migration.</td>
-<td><code>cli.py</code>, CLI e2e.</td>
-</tr>
-<tr>
-<td>Dedupe/versioning</td>
-<td>✅ URL normalization + text-hash snapshots.</td>
-<td>ingest tests.</td>
-</tr>
-<tr>
-<td>SPA/delayed capture</td>
-<td>✅ Delayed passes and History API hooks.</td>
-<td>real Chrome SPA fixture.</td>
-</tr>
-<tr>
-<td>Dwell/lifecycle</td>
-<td>✅ Metadata-only visit events with idempotent dwell updates.</td>
-<td>lifecycle tests + real e2e.</td>
-</tr>
-<tr>
-<td>Policy modes</td>
-<td>✅ <code>all</code>, <code>recall</code>, <code>balanced</code>, <code>strict</code>.</td>
-<td>daemon + extension unit tests.</td>
-</tr>
-<tr>
-<td>Fast quality gate</td>
-<td>✅ Network-free Ruff/mypy/branch-coverage/Python/Node/catalog/secret/diff gate with a default-XDG write sentinel and measured 80% floor.</td>
-<td><code>scripts/run-fast-gate.sh</code>, <code>docs/coverage-baseline.md</code>, ADR-0029.</td>
-</tr>
-<tr>
-<td>Daily-driver install</td>
-<td>✅ systemd user daemon + media-worker services, Windows extension copy, non-mutating dry-run/check path, token/env/unit/process-arg health checks.</td>
-<td><code>scripts/install-daily-driver.sh</code>, <code>scripts/daily-driver-health.sh</code>, daily-driver tests.</td>
-</tr>
-</tbody>
-</table>
+<p>status: accepted
+date: 2026-07-10
+decision-makers: [Michael]
+consulted: [TARS]
+informed: []</p>
 <hr />
-<h2 id="requirement-posture">Requirement posture</h2>
-<!-- BEGIN GENERATED:requirement-posture -->
-<p>The canonical catalog contains <strong>43 stable requirements</strong>: <strong>32 active</strong> and <strong>11 planned</strong>. Normative statements, implementation links, V-model evidence, and legacy aliases are owned by <a href="../requirements/catalog.toml"><code>requirements/catalog.toml</code></a>; generated tables in this doc set must not be hand-edited.</p>
-<!-- END GENERATED:requirement-posture -->
-
-<hr />
-<h2 id="current-default-posture">Current default posture</h2>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>BMD_POLICY_MODE=all
+<h1 id="adr-0030-separate-capture-observations-and-url-claims">ADR-0030: Separate capture observations and URL claims</h1>
+<h2 id="context-and-problem-statement">Context and problem statement</h2>
+<p>The current schema connects a visit directly to one document and stores <code>snapshots.visit_id</code> only when the immutable snapshot is first created. Repeated captures can replace a visit row, deduplicated snapshots can retain an earlier visit, and timeline readers select the latest document snapshot rather than the snapshot observed at that capture time. Page-provided canonical URLs also currently influence document identity.</p>
+<p>Phase 2 requires an expand-first authority model that can represent each accepted extraction, the contemporaneous snapshot relationship, and untrusted canonical/alternate claims without speculatively rewriting historical identities.</p>
+<h2 id="decision-drivers">Decision drivers</h2>
+<ul>
+<li>Observed browser URL must become the future document-identity authority.</li>
+<li>Canonical and alternate URLs are evidence claims, not merge commands.</li>
+<li>Every accepted extraction needs an idempotent temporal record.</li>
+<li>Historical ambiguity must be represented, not guessed away.</li>
+<li>Existing endpoint behavior must remain compatible during dual-write/read cutover.</li>
+<li>Rollback must remain possible by returning to the prior application while retaining additive tables.</li>
+</ul>
+<h2 id="considered-options">Considered options</h2>
+<ol>
+<li><strong>Continue inferring observations from visits and snapshots</strong> — rejected because replacement/deduplication has already lost exact relationships.</li>
+<li><strong>Rewrite documents immediately around observed URLs</strong> — rejected because ambiguous historical canonical-derived identities cannot be split safely in one migration.</li>
+<li><strong>Store canonical aliases directly on documents</strong> — rejected because a claim needs source observation, origin relationship, and explicit non-authoritative effect.</li>
+<li><strong>Add observations and claims through an expand migration, then dual-write and cut over reads in later slices</strong> — accepted.</li>
+</ol>
+<h2 id="decision-outcome">Decision outcome</h2>
+<p>Migration version 4 adds two tables without changing existing columns or readers:</p>
+<h3 id="capture_observations"><code>capture_observations</code></h3>
+<p>One row represents one accepted or historically reconstructed extraction. It carries:</p>
+<ul>
+<li>stable <code>id</code> and unique <code>idempotency_key</code>;</li>
+<li>optional navigation and visit identity;</li>
+<li>document and optional contemporaneous snapshot relationships;</li>
+<li>authoritative observed URL and its normalized form;</li>
+<li>capture time, reason, method, extraction version, disposition, and provenance quality;</li>
+<li>constrained metadata.</li>
+</ul>
+<p>Visit and snapshot foreign keys use <code>ON DELETE SET NULL</code>; document deletion cascades the observation. This permits future snapshot lifecycle changes without inventing a replacement relationship while preserving document-scoped forget behavior.</p>
+<h3 id="document_url_claims"><code>document_url_claims</code></h3>
+<p>One row records a canonical, alternate, Open Graph, or explicitly historical canonical claim. It carries:</p>
+<ul>
+<li>document and optional source-observation identity;</li>
+<li>claimed URL, normalized claim, claim origin, and same-origin assessment;</li>
+<li>explicit <code>identity_effect</code> (<code>none</code>, <code>same-origin-alias</code>, or <code>historical-authority</code>);</li>
+<li>provenance quality and first/last observation times.</li>
+</ul>
+<p>The default identity effect is <code>none</code>. A cross-origin claim cannot create or merge a document merely by being stored. Historical rows may later use <code>historical-authority</code> only to describe the old identity decision; that label does not authorize new merges.</p>
+<h2 id="migration-and-compatibility">Migration and compatibility</h2>
+<ul>
+<li>Version 4 is additive and non-destructive.</li>
+<li>Version-1 schema remains immutable; the version-4 step declares the new exact schema fingerprint.</li>
+<li><code>schema.sql</code> mirrors the latest materialized schema for documentation/fixture inspection, while fresh runtime databases continue through the ordered ledger.</li>
+<li>No historical backfill, dual-write, read cutover, or old-column contraction occurs in this slice.</li>
+<li>A prior application can continue using the old tables; rollback does not drop the new tables.</li>
+</ul>
+<h2 id="consequences">Consequences</h2>
+<h3 id="positive">Positive</h3>
+<ul>
+<li>The schema can express visit → observation → contemporaneous snapshot provenance.</li>
+<li>URL claims have origin and authority semantics instead of silently controlling identity.</li>
+<li>Later dual-write/backfill/read-cutover slices have a reversible target.</li>
+</ul>
+<h3 id="negative">Negative</h3>
+<ul>
+<li>The new tables are initially empty for existing data.</li>
+<li>Existing canonical-derived document IDs remain authoritative until the later dual-write/cutover migration proves safe relationships.</li>
+<li>Additive storage and indexes increase schema complexity before readers use them.</li>
+</ul>
+<h2 id="validation">Validation</h2>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span>/tmp/browser-memory-daemon-verify-venv/bin/python<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>-m<span style="color: #F8F8F2"> </span>pytest<span style="color: #F8F8F2"> </span>-q<span style="color: #F8F8F2"> </span>daemon/tests/integration/test_migrations.py
 </code></pre></div>
 
-<p>This means:</p>
-<ul>
-<li>no static URL/domain/path/query filtering;</li>
-<li>no daemon redaction before storage/FTS;</li>
-<li>extension DOM extraction still skips hidden/form/editable/script/style/no-script text;</li>
-<li>explicit local block rules still apply;</li>
-<li>platform limits still apply when Chrome refuses extension injection.</li>
-</ul>
-<hr />
-<h2 id="pending-roadmap-lanes">Pending roadmap lanes</h2>
-<table>
-<thead>
-<tr>
-<th>Lane</th>
-<th style="text-align: right;">Priority</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Native messaging transport</td>
-<td style="text-align: right;">Later</td>
-<td>HTTP loopback is working; native messaging can reduce network-like surface later.</td>
-</tr>
-<tr>
-<td>Semantic/vector search</td>
-<td style="text-align: right;">Later, explicit approval required</td>
-<td>Exact FTS remains current source of truth.</td>
-</tr>
-<tr>
-<td>Retention policies/export/backup</td>
-<td style="text-align: right;">Medium</td>
-<td>Design posture accepted in <code>docs/retention-compaction-backup.md</code>; implementation split into deferred maintenance and backup/export tickets.</td>
-</tr>
-<tr>
-<td>MCP/Hermes integration</td>
-<td style="text-align: right;">Later</td>
-<td>Should treat captured text as untrusted evidence.</td>
-</tr>
-<tr>
-<td>Rich policy rules</td>
-<td style="text-align: right;">Medium</td>
-<td>Future allow/redact/metadata-only modes; current explicit rules are block-only and apply in every mode, including <code>all</code>.</td>
-</tr>
-<tr>
-<td>Reconciliation for orphan lifecycle events</td>
-<td style="text-align: right;">Low/medium</td>
-<td>Some media/dynamic pages can send lifecycle before capture attaches.</td>
-</tr>
-<tr>
-<td>Packaged extension distribution</td>
-<td style="text-align: right;">Later</td>
-<td>Daily driver currently uses manual Load unpacked due Chrome Secure Preferences.</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="known-limits-and-risks">Known limits and risks</h2>
-<table>
-<thead>
-<tr>
-<th>Risk/limit</th>
-<th>Current handling</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>all</code> stores secrets if visible/exposed in page DOM.</td>
-<td>Intentional operator choice. Use <code>recall</code>/<code>balanced</code>/<code>strict</code> later if desired.</td>
-</tr>
-<tr>
-<td>Chrome internal pages may not inject.</td>
-<td>Platform limit; e2e covers web pages.</td>
-</tr>
-<tr>
-<td>Branded Chrome automation ignores unpacked extension flags.</td>
-<td>E2E uses Chrome for Testing. Daily driver uses manual Load unpacked/reload.</td>
-</tr>
-<tr>
-<td>Extension token is copied into Windows-local unpacked extension artifact.</td>
-<td>Token is generated in WSL, never committed, and can rotate.</td>
-</tr>
-<tr>
-<td>SQLite can grow over time.</td>
-<td>Media blobs have size/cache gates plus purge/rehydrate controls; ADR-0019 keeps text durable by default and splits maintenance/backup/export implementation into follow-up tickets.</td>
-</tr>
-<tr>
-<td>Captured text may contain prompt injection.</td>
-<td>UI/CLI treat it as evidence; future agents must not follow page instructions.</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="source-inventory">Source inventory</h2>
-<table>
-<thead>
-<tr>
-<th>Path</th>
-<th>Role</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>daemon/src/browser_memory_daemon/</code></td>
-<td>Python daemon package.</td>
-</tr>
-<tr>
-<td><code>daemon/tests/</code></td>
-<td>Unit/integration/e2e tests.</td>
-</tr>
-<tr>
-<td><code>extension/src/</code></td>
-<td>MV3 extension source.</td>
-</tr>
-<tr>
-<td><code>extension/tests/</code></td>
-<td>Extension unit tests.</td>
-</tr>
-<tr>
-<td><code>ui/</code></td>
-<td>Local static dashboard.</td>
-</tr>
-<tr>
-<td><code>scripts/</code></td>
-<td>E2E, install, build, dev, secret-scan helpers.</td>
-</tr>
-<tr>
-<td><code>docs/</code></td>
-<td>Operator and architecture docs.</td>
-</tr>
-</tbody>
-</table>
+<p>Required evidence includes fresh version-4 initialization, an exact version-3 fixture upgrade, schema fingerprint/ledger checks, FK integrity, constrained observation states, and a cross-origin claim whose default <code>identity_effect</code> remains <code>none</code> without creating another document.</p>
+<h2 id="supersession-and-follow-up">Supersession and follow-up</h2>
+<p>This ADR refines the capture/identity portions of ADR-0004 and ADR-0015 without superseding their local-first or idempotency decisions. Later ADRs may record observed-URL read cutover and lifecycle interval-union semantics. Contraction of legacy columns requires a separate compatibility release and decision.</p>
   </article>
   <div class="md-footer">
-    Rendered from <code>docs/STATUS.md</code> — the Markdown file is the canonical,
+    Rendered from <code>docs/architecture/adr/0030-separate-capture-observations-and-url-claims.md</code> — the Markdown file is the canonical,
     version-controlled source. This HTML is generated (regenerate with
     <code>scripts/render_docs.py</code>); do not hand-edit.
   </div>

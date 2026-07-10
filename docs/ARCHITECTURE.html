@@ -550,7 +550,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Visits, capture observations, snapshots, lifecycle events, and media provenance shall have explicit temporal relationships.</td>
 <td>Capture Observation Model</td>
 <td><code>HRD-008</code></td>
-<td><code>daemon/src/browser_memory_daemon/models.py</code><br><code>daemon/src/browser_memory_daemon/ingest.py</code></td>
+<td><code>daemon/src/browser_memory_daemon/models.py</code><br><code>daemon/src/browser_memory_daemon/ingest.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0004_capture_observations_and_url_claims.sql</code></td>
 <td>—</td>
 </tr>
 <tr>
@@ -560,7 +560,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>The normalized observed browser URL shall control document identity while page-provided canonical and alternate URLs remain untrusted claims.</td>
 <td>Document Identity / URL Claims</td>
 <td><code>HRD-009</code></td>
-<td><code>daemon/src/browser_memory_daemon/models.py</code><br><code>daemon/src/browser_memory_daemon/ingest.py</code></td>
+<td><code>daemon/src/browser_memory_daemon/models.py</code><br><code>daemon/src/browser_memory_daemon/ingest.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0004_capture_observations_and_url_claims.sql</code></td>
 <td>—</td>
 </tr>
 <tr>
@@ -800,6 +800,11 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Startup applies non-destructive steps; explicit <code>migrate --execute</code> owns destructive approval.</td>
 </tr>
 <tr>
+<td>Capture observation / URL-claim model</td>
+<td>Additive temporal observation and untrusted claim authority in SQLite.</td>
+<td>Version-4 tables are current; dual-write, historical backfill, and read cutover remain target state.</td>
+</tr>
+<tr>
 <td>Policy engine</td>
 <td>Mode-specific allow/block/redact decisions.</td>
 <td><code>all</code>, <code>recall</code>, <code>balanced</code>, <code>strict</code>.</td>
@@ -807,7 +812,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td>Ingest pipeline</td>
 <td>Normalize, store visits/documents/snapshots/chunks/FTS plus related media artifact refs/blobs.</td>
-<td><code>all</code> bypasses redaction.</td>
+<td><code>all</code> bypasses redaction; observation/claim dual-write is the next target slice.</td>
 </tr>
 <tr>
 <td>Lifecycle pipeline</td>
@@ -1177,6 +1182,14 @@ status_reason  = cache-evicted:global-oldest
 <tr>
 <td><code>visits</code></td>
 <td>Each captured visit, original/stored URL, dwell, browser profile.</td>
+</tr>
+<tr>
+<td><code>capture_observations</code></td>
+<td>Additive extraction records with idempotency, visit/document/snapshot time relationships, observed URL, capture semantics, and provenance quality. The table is current; writers/readers are not cut over yet.</td>
+</tr>
+<tr>
+<td><code>document_url_claims</code></td>
+<td>Canonical/alternate/Open Graph/historical URL claims with origin, same-origin assessment, and explicit non-authoritative identity effect. The table is current; writers/readers are not cut over yet.</td>
 </tr>
 <tr>
 <td><code>visit_events</code></td>

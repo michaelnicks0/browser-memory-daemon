@@ -236,6 +236,8 @@ def doctor(config: RuntimeConfig, conn: sqlite3.Connection, *, storage_census: b
         "sources",
         "documents",
         "visits",
+        "capture_observations",
+        "document_url_claims",
         "visit_events",
         "snapshots",
         "chunks",

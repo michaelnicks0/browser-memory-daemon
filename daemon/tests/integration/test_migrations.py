@@ -11,6 +11,10 @@ import pytest
 from browser_memory_daemon.config import load_config
 from browser_memory_daemon.db import SCHEMA_PATH, connect, init_db
 from browser_memory_daemon.ingest import ingest_capture
+from browser_memory_daemon.migration_steps import (
+    v0001_baseline_schema,
+    v0004_capture_observations_and_url_claims,
+)
 from browser_memory_daemon.migrations import (
     LATEST_SCHEMA_VERSION,
     MIGRATIONS,
@@ -41,7 +45,7 @@ def _config(tmp_path):
 def _create_unversioned_current_db(cfg, *, with_media_ref: bool = False) -> None:
     cfg.ensure_dirs()
     with sqlite3.connect(cfg.db_path) as conn:
-        conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
+        conn.executescript(v0001_baseline_schema.SQL)
         conn.execute(
             "INSERT INTO sources(id, source_type, source_name) VALUES ('chrome-extension', 'browser', 'chrome-extension')"
         )
@@ -90,27 +94,31 @@ def _capture(conn, cfg):
 
 def test_fresh_database_migrates_to_ordered_versioned_ledger_and_preserves_fts(tmp_path):
     cfg = _config(tmp_path)
+    expected_versions = list(range(1, LATEST_SCHEMA_VERSION + 1))
 
     before = migration_status(cfg)
     assert before["state"] == "uninitialized"
     assert before["ready"] is False
-    assert before["pending_versions"] == [1, 2, 3]
+    assert before["pending_versions"] == expected_versions
     assert not cfg.db_path.exists()
 
     result = migrate_database(cfg, execute=True)
     assert result["ready"] is True
-    assert result["current_version"] == LATEST_SCHEMA_VERSION == 3
-    assert result["applied_versions"] == [1, 2, 3]
+    assert result["current_version"] == LATEST_SCHEMA_VERSION
+    assert result["applied_versions"] == expected_versions
     assert result["stamped_versions"] == []
 
     with connect(cfg.db_path) as conn:
         ledger = conn.execute(
             "SELECT version, name, checksum, applied_at FROM schema_migrations ORDER BY version"
         ).fetchall()
-        assert [row["version"] for row in ledger] == [1, 2, 3]
+        assert [row["version"] for row in ledger] == expected_versions
         assert all(row["name"] and len(row["checksum"]) == 64 and row["applied_at"] for row in ledger)
         assert conn.execute("PRAGMA user_version").fetchone()[0] == LATEST_SCHEMA_VERSION
-        assert schema_fingerprint(conn) == V1_SCHEMA_FINGERPRINT
+        expected_fingerprint = next(
+            step.schema_fingerprint for step in reversed(MIGRATIONS) if step.schema_fingerprint
+        )
+        assert schema_fingerprint(conn) == expected_fingerprint
         assert conn.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
         assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
         assert conn.execute(
@@ -139,7 +147,7 @@ def test_unversioned_current_schema_is_stamped_then_historical_seed_runs_once(tm
 
     result = migrate_database(cfg, execute=True)
     assert result["stamped_versions"] == [1]
-    assert result["applied_versions"] == [2, 3]
+    assert result["applied_versions"] == list(range(2, LATEST_SCHEMA_VERSION + 1))
     with connect(cfg.db_path) as conn:
         task = conn.execute(
             "SELECT status, priority FROM media_fetch_tasks WHERE artifact_id = 'media-legacy'"
@@ -153,6 +161,102 @@ def test_unversioned_current_schema_is_stamped_then_historical_seed_runs_once(tm
         assert conn.execute(
             "SELECT COUNT(*) FROM media_fetch_tasks WHERE artifact_id = 'media-legacy'"
         ).fetchone()[0] == 0
+
+
+def test_capture_observation_and_url_claim_schema_enforces_expand_contract(tmp_path):
+    cfg = _config(tmp_path)
+    assert (
+        v0004_capture_observations_and_url_claims.SQL.strip()
+        in SCHEMA_PATH.read_text(encoding="utf-8")
+    )
+    init_db(cfg)
+    with connect(cfg.db_path) as conn:
+        stored = _capture(conn, cfg)
+        conn.execute(
+            """
+            INSERT INTO capture_observations(
+              id, idempotency_key, navigation_id, visit_id, document_id, snapshot_id,
+              observed_url, normalized_observed_url, title, captured_at,
+              capture_reason, capture_method, extraction_version
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "obs-schema-proof",
+                "idem-schema-proof",
+                "nav-schema-proof",
+                stored["visit_id"],
+                stored["document_id"],
+                stored["snapshot_id"],
+                "https://example.com/migration-proof",
+                "https://example.com/migration-proof",
+                "Migration proof",
+                "2026-07-10T00:00:00Z",
+                "test",
+                "fixture",
+                "fixture-v1",
+            ),
+        )
+        conn.execute(
+            """
+            INSERT INTO document_url_claims(
+              id, document_id, observation_id, claim_type, claimed_url,
+              normalized_claimed_url, claim_origin, same_origin,
+              first_observed_at, last_observed_at
+            ) VALUES (?, ?, ?, 'canonical', ?, ?, ?, 0, ?, ?)
+            """,
+            (
+                "claim-cross-origin",
+                stored["document_id"],
+                "obs-schema-proof",
+                "https://other.example/target",
+                "https://other.example/target",
+                "https://other.example",
+                "2026-07-10T00:00:00Z",
+                "2026-07-10T00:00:00Z",
+            ),
+        )
+        claim = conn.execute(
+            "SELECT same_origin, identity_effect, provenance_quality FROM document_url_claims"
+        ).fetchone()
+        assert dict(claim) == {
+            "same_origin": 0,
+            "identity_effect": "none",
+            "provenance_quality": "observed",
+        }
+        assert conn.execute(
+            "SELECT COUNT(*) FROM documents WHERE normalized_url = 'https://other.example/target'"
+        ).fetchone()[0] == 0
+        with pytest.raises(sqlite3.IntegrityError):
+            conn.execute(
+                "UPDATE capture_observations SET disposition = 'invalid' WHERE id = 'obs-schema-proof'"
+            )
+        assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
+
+
+def test_version_three_fixture_upgrades_once_to_capture_model_expand_schema(tmp_path):
+    cfg = _config(tmp_path)
+    init_db(cfg)
+    with connect(cfg.db_path) as conn:
+        conn.execute("DROP TABLE document_url_claims")
+        conn.execute("DROP TABLE capture_observations")
+        conn.execute("DELETE FROM schema_migrations WHERE version = 4")
+        conn.execute("PRAGMA user_version = 3")
+        conn.commit()
+
+    before = migration_status(cfg)
+    assert before["current_version"] == 3
+    assert before["pending_versions"] == [4]
+    result = migrate_database(cfg, execute=True)
+    assert result["applied_versions"] == [4]
+    with connect(cfg.db_path) as conn:
+        tables = {
+            row["name"]
+            for row in conn.execute(
+                "SELECT name FROM sqlite_schema WHERE type = 'table'"
+            ).fetchall()
+        }
+        assert {"capture_observations", "document_url_claims"} <= tables
+        assert schema_fingerprint(conn) == MIGRATIONS[3].schema_fingerprint
 
 
 def test_repeated_migration_is_a_noop_and_schema_has_no_recurring_repair_dml(tmp_path):
@@ -169,7 +273,7 @@ def test_repeated_migration_is_a_noop_and_schema_has_no_recurring_repair_dml(tmp
             "SELECT version, name, checksum, applied_at FROM schema_migrations ORDER BY version"
         ).fetchall()]
 
-    assert first["applied_versions"] == [1, 2, 3]
+    assert first["applied_versions"] == list(range(1, LATEST_SCHEMA_VERSION + 1))
     assert second["applied_versions"] == []
     assert second["stamped_versions"] == []
     assert ledger_after == ledger_before
@@ -191,9 +295,9 @@ def test_concurrent_fresh_migration_applies_each_ledger_step_once(tmp_path):
     assert all(result["ready"] is True for result in results)
     assert sorted(
         version for result in results for version in result["applied_versions"]
-    ) == [1, 2, 3]
+    ) == list(range(1, LATEST_SCHEMA_VERSION + 1))
     with connect(cfg.db_path) as conn:
-        assert conn.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0] == 3
+        assert conn.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0] == LATEST_SCHEMA_VERSION
         assert conn.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
 
 
@@ -232,24 +336,26 @@ def test_unknown_unversioned_schema_is_not_stamped(tmp_path):
 def test_injected_migration_failure_rolls_back_step_and_ledger(tmp_path):
     cfg = _config(tmp_path)
     init_db(cfg)
+    next_version = LATEST_SCHEMA_VERSION + 1
 
     def fail_after_write(conn):
         conn.execute("CREATE TABLE should_rollback(id INTEGER PRIMARY KEY)")
         raise RuntimeError("injected migration failure")
 
     failing = MigrationStep(
-        version=4,
+        version=next_version,
         name="injected_failure",
-        checksum=migration_checksum(4, "injected_failure", "fixture-v1"),
+        checksum=migration_checksum(next_version, "injected_failure", "fixture-v1"),
         apply=fail_after_write,
     )
     with pytest.raises(MigrationExecutionError, match="injected migration failure"):
         migrate_database(cfg, execute=True, steps=(*MIGRATIONS, failing))
 
     with connect(cfg.db_path) as conn:
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 3
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == LATEST_SCHEMA_VERSION
         assert conn.execute(
-            "SELECT COUNT(*) FROM schema_migrations WHERE version = 4"
+            "SELECT COUNT(*) FROM schema_migrations WHERE version = ?",
+            (next_version,),
         ).fetchone()[0] == 0
         assert conn.execute(
             "SELECT COUNT(*) FROM sqlite_schema WHERE type = 'table' AND name = 'should_rollback'"
@@ -259,6 +365,7 @@ def test_injected_migration_failure_rolls_back_step_and_ledger(tmp_path):
 def test_destructive_migration_creates_online_backup_that_restores_search(tmp_path):
     cfg = _config(tmp_path)
     init_db(cfg)
+    next_version = LATEST_SCHEMA_VERSION + 1
     with connect(cfg.db_path) as conn:
         stored = _capture(conn, cfg)
         conn.commit()
@@ -268,9 +375,9 @@ def test_destructive_migration_creates_online_backup_that_restores_search(tmp_pa
         raise RuntimeError("destructive fixture failed")
 
     destructive = MigrationStep(
-        version=4,
+        version=next_version,
         name="destructive_fixture",
-        checksum=migration_checksum(4, "destructive_fixture", "fixture-v1"),
+        checksum=migration_checksum(next_version, "destructive_fixture", "fixture-v1"),
         apply=fail_destructive_step,
         destructive=True,
     )
@@ -296,6 +403,7 @@ def test_destructive_migration_creates_online_backup_that_restores_search(tmp_pa
 def test_destructive_migration_refuses_insufficient_backup_headroom_before_writes(tmp_path):
     cfg = _config(tmp_path)
     init_db(cfg)
+    next_version = LATEST_SCHEMA_VERSION + 1
     called = False
 
     def should_not_run(conn):
@@ -303,9 +411,9 @@ def test_destructive_migration_refuses_insufficient_backup_headroom_before_write
         called = True
 
     destructive = MigrationStep(
-        version=4,
+        version=next_version,
         name="headroom_fixture",
-        checksum=migration_checksum(4, "headroom_fixture", "fixture-v1"),
+        checksum=migration_checksum(next_version, "headroom_fixture", "fixture-v1"),
         apply=should_not_run,
         destructive=True,
     )

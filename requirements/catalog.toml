@@ -492,11 +492,11 @@ rationale = "Historical reads must return contemporaneous evidence rather than t
 owner = "Capture Observation Model"
 status = "planned"
 aliases = ["HRD-008"]
-implementation = ["daemon/src/browser_memory_daemon/models.py", "daemon/src/browser_memory_daemon/ingest.py"]
+implementation = ["daemon/src/browser_memory_daemon/models.py", "daemon/src/browser_memory_daemon/ingest.py", "daemon/src/browser_memory_daemon/migration_steps/v0004_capture_observations_and_url_claims.sql"]
 unit_evidence = []
-integration_evidence = []
+integration_evidence = ["daemon/tests/integration/test_migrations.py::test_capture_observation_and_url_claim_schema_enforces_expand_contract"]
 system_evidence = []
-operational_evidence = []
+operational_evidence = ["docs/architecture/adr/0030-separate-capture-observations-and-url-claims.md"]
 validation_evidence = []
 
 [[requirements]]
@@ -507,11 +507,11 @@ rationale = "Cross-origin canonical claims must not control budgets, deletion sc
 owner = "Document Identity / URL Claims"
 status = "planned"
 aliases = ["HRD-009"]
-implementation = ["daemon/src/browser_memory_daemon/models.py", "daemon/src/browser_memory_daemon/ingest.py"]
+implementation = ["daemon/src/browser_memory_daemon/models.py", "daemon/src/browser_memory_daemon/ingest.py", "daemon/src/browser_memory_daemon/migration_steps/v0004_capture_observations_and_url_claims.sql"]
 unit_evidence = []
-integration_evidence = []
+integration_evidence = ["daemon/tests/integration/test_migrations.py::test_capture_observation_and_url_claim_schema_enforces_expand_contract"]
 system_evidence = []
-operational_evidence = []
+operational_evidence = ["docs/architecture/adr/0030-separate-capture-observations-and-url-claims.md"]
 validation_evidence = []
 
 [[requirements]]

@@ -6,6 +6,7 @@ import pytest
 import browser_memory_daemon.cli as cli_module
 from browser_memory_daemon.app import make_server
 from browser_memory_daemon.cli import main
+from browser_memory_daemon.migrations import LATEST_SCHEMA_VERSION
 from browser_memory_daemon.config import load_config
 
 
@@ -109,15 +110,15 @@ def test_cli_migrate_check_is_read_only_then_execute_applies_pending_steps(tmp_p
     assert main(base + ["migrate", "--check"]) == 2
     pending = _last_json(capsys)
     assert pending["state"] == "uninitialized"
-    assert pending["pending_versions"] == [1, 2, 3]
+    assert pending["pending_versions"] == list(range(1, LATEST_SCHEMA_VERSION + 1))
     assert not (runtime_root / "data" / "memory.sqlite3").exists()
 
     assert main(base + ["migrate", "--execute"]) == 0
     executed = _last_json(capsys)
     assert executed["ready"] is True
-    assert executed["applied_versions"] == [1, 2, 3]
+    assert executed["applied_versions"] == list(range(1, LATEST_SCHEMA_VERSION + 1))
 
     assert main(base + ["migrate", "--check"]) == 0
     current = _last_json(capsys)
     assert current["ready"] is True
-    assert current["current_version"] == 3
+    assert current["current_version"] == LATEST_SCHEMA_VERSION

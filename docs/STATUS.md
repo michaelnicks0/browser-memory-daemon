@@ -12,7 +12,7 @@
 |---|---|---|
 | Windows Chrome extension | ✅ MV3 extension with service-worker-owned injection/transport. | `extension/src/`, extension unit tests, real Chrome e2e. |
 | WSL daemon | ✅ Loopback HTTP daemon with bearer auth. | `app.py`, HTTP e2e tests. |
-| SQLite/FTS/media storage | ✅ Documents/visits/snapshots/chunks/FTS/media/audit/deletion receipts plus exact schema fingerprint, ordered checksum ledger, and restore-backed migration gate. | `schema.sql`, `migrations.py`, `migration_steps/`, integration/e2e tests. |
+| SQLite/FTS/media storage | ✅ Documents/visits/snapshots/chunks/FTS/media/audit/deletion receipts plus version-4 additive capture-observation/URL-claim tables, exact schema fingerprint, ordered checksum ledger, and restore-backed migration gate. Observation/claim writers and readers remain target state. | `schema.sql`, `migrations.py`, `migration_steps/`, integration/e2e tests. |
 | Exact search | ✅ FTS5 exact search with snippets/source metadata and media artifact counts. | `search.py`, `/search`, tests. |
 | Forget/delete | ✅ URL/domain forget with receipts and text/media blob + FTS cleanup. | `forget.py`, tests. |
 | Media artifacts | ✅ Durable image/video refs and binaries: fast text/manifest capture, browser IndexedDB lazy queue, credentialed fetch, raw blob upload, enabled-by-default X/Twitter CDP recorder with disable control, HLS/audio sidecar handling, daemon public worker, rolling cache gates, purge/rehydrate controls; no OCR/media indexing. | `media.py`, `media_worker.py`, `media_queue.js`, `cdp_recorder.js`, `/media-artifacts/*`, real Chrome e2e. |
