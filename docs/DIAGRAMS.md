@@ -30,6 +30,14 @@ flowchart LR
   Page["Chrome page light DOM"] --> Extractor["extractor.js<br/>computed/ancestor rendered visibility"]
   Extractor --> Content["content_script.js<br/>full deterministic SHA-256 digest"]
   Content -->|"BMD_CAPTURE + inline blob messages"| ServiceWorker["service_worker.js"]
+  ServiceWorker --> Config["config_store.js<br/>typed settings + durable restart context"]
+  ServiceWorker --> Visit["visit_tracker.js<br/>navigation identity + lifecycle"]
+  ServiceWorker --> Injection["injection.js<br/>active-tab reconstruction"]
+  ServiceWorker --> CDPSession["cdp_session.js<br/>attachment + provenance recovery"]
+  Injection -->|"ordered idempotent executeScript"| Page
+  Visit --> Config
+  CDPSession --> Config
+  CDPSession -->|"chrome.debugger"| Page
   ServiceWorker --> Outbox[("IndexedDB capture/lifecycle outbox")]
   Outbox -->|"atomic claim/checkpoint/ack/retry"| ServiceWorker
   ServiceWorker -->|"POST /capture<br/>Bearer JSON"| DaemonCapture["WSL daemon /capture"]
@@ -39,7 +47,7 @@ flowchart LR
   Popup["popup.js"] -->|"runtime messages"| ServiceWorker
   Options["options.js"] --> Storage[("chrome.storage.local")]
   Storage --> Content
-  Storage --> ServiceWorker
+  Storage --> Config
 ```
 
 C4 shows the extension, service worker, browser storage, and daemon containers/components. This diagram keeps protocol names, endpoint names, and popup/options/storage wiring in one place.

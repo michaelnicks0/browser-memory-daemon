@@ -6,6 +6,9 @@ const vm = require('node:vm');
 
 const { MemoryMediaQueueStore } = require('../../src/media_queue.js');
 const { MemoryOutboxStore } = require('../../src/outbox.js');
+const BrowserMemoryConfigStore = require('../../src/config_store.js');
+const BrowserMemoryInjection = require('../../src/injection.js');
+const BrowserMemoryVisitTracker = require('../../src/visit_tracker.js');
 const { normalizeDaemonUrl, authHeaders } = require('../../src/shared.js');
 const { shouldBlockUrl, normalizePolicyMode } = require('../../src/extractor.js');
 
@@ -157,6 +160,9 @@ function createServiceWorkerHarness({
     normalizeBrowserMemoryPolicyMode: normalizePolicyMode,
     BrowserMemoryOutbox: outbox,
     BrowserMemoryMediaQueue: mediaQueue,
+    BrowserMemoryConfigStore,
+    BrowserMemoryInjection,
+    BrowserMemoryVisitTracker,
     BrowserMemoryCdpRecorder: null,
     chrome,
     fetch: async (url, init = {}) => {

@@ -248,6 +248,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li><code>/health</code> exposes minimal daemon status plus <code>policy_mode</code>.</li>
 <li>Daily-driver install stores the daemon API token in protected WSL config files and injects it into the Windows-local extension artifact; the token is never committed.</li>
 <li>Capture and lifecycle payloads are durable browser-profile data in a versioned IndexedDB outbox. Atomic token-checked claims recover after MV3 suspension; aggregate telemetry excludes payload text and URLs. Legacy <code>chrome.storage.local</code> queue arrays are imported before deletion and remain only as a one-version failure fallback.</li>
+<li>Typed extension state keeps visit/navigation state and minimal CDP capture provenance (<code>document_id</code>, <code>snapshot_id</code>, <code>visit_id</code>, and observed page URL) in <code>chrome.storage.local</code> so worker restart can reconstruct ownership. It excludes page text, titles, media bodies, cookies, request headers, and tokens; tab close or an observed URL change clears the CDP context.</li>
 <li>Fetched browser media remains in a separate versioned IndexedDB task/blob queue. Atomic task-batch and blob/state transitions enforce a 500-task and 512 MiB aggregate boundary; terminal failures are quarantined for 24 hours and then removed in bounded transactions. Media telemetry exposes aggregate counts and bytes only.</li>
 <li>Token rotation is supported:</li>
 </ul>

@@ -5,7 +5,7 @@
 > **Runtime:** Python **3.11+** (`pyproject.toml` requires `>=3.11`). Use `BMD_PYTHON=/path/to/python3.11` when the host `python3` is older.
 
 <!-- BEGIN GENERATED:inventory-summary -->
-> **Current inventory:** 268 static test functions across 44 files — 219 daemon pytest tests + 49 extension node:test tests.
+> **Current inventory:** 279 static test functions across 48 files — 219 daemon pytest tests + 60 extension node:test tests.
 <!-- END GENERATED:inventory-summary -->
 
 ---
@@ -79,7 +79,7 @@ Use `--runtime-root PATH` only for explicit fixture roots; do not point the stre
 ## Generated test inventory
 
 <!-- BEGIN GENERATED:audit-run -->
-Latest inventory: **268 static test functions** across **44 files** (219 daemon pytest; 49 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
+Latest inventory: **279 static test functions** across **48 files** (219 daemon pytest; 60 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
 <!-- END GENERATED:audit-run -->
 
 ## Requirements traceability gate
@@ -100,7 +100,7 @@ Traceability gate: **✅ pass**.
 | Normative changes without revision increment | none |
 | Requirements removed without catalog disposition | none |
 | Catalog load errors | none |
-| Static test inventory measured | 268 tests / 44 files |
+| Static test inventory measured | 279 tests / 48 files |
 <!-- END GENERATED:traceability-gate -->
 
 ### Per-file counts
@@ -144,14 +144,18 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/unit/test_storage_paths.py` | pytest | 5 |
 | `extension/tests/unit/capture_digest.test.js` | node:test | 3 |
 | `extension/tests/unit/cdp_recorder.test.js` | node:test | 4 |
+| `extension/tests/unit/cdp_session.test.js` | node:test | 4 |
+| `extension/tests/unit/config_store.test.js` | node:test | 2 |
 | `extension/tests/unit/content_script.test.js` | node:test | 1 |
 | `extension/tests/unit/extractor.test.js` | node:test | 13 |
+| `extension/tests/unit/injection.test.js` | node:test | 3 |
 | `extension/tests/unit/media_queue.test.js` | node:test | 9 |
 | `extension/tests/unit/outbox.test.js` | node:test | 6 |
 | `extension/tests/unit/queue.test.js` | node:test | 1 |
 | `extension/tests/unit/service_worker.test.js` | node:test | 10 |
 | `extension/tests/unit/shared.test.js` | node:test | 2 |
-| **Total** |  | **268** |
+| `extension/tests/unit/visit_tracker.test.js` | node:test | 2 |
+| **Total** |  | **279** |
 <!-- END GENERATED:per-file-counts -->
 
 <details>
@@ -386,6 +390,12 @@ Traceability gate: **✅ pass**.
 | `extension/tests/unit/cdp_recorder.test.js` | node:test | `(module)` | `CDP recorder recognizes X video segment and HLS manifest responses` | 17 | CDP recorder recognizes X video segment and HLS manifest responses. |
 | `extension/tests/unit/cdp_recorder.test.js` | node:test | `(module)` | `CDP recorder builds stable artifact metadata without cookies or headers` | 40 | CDP recorder builds stable artifact metadata without cookies or headers. |
 | `extension/tests/unit/cdp_recorder.test.js` | node:test | `(module)` | `CDP base64 byte estimate handles padding` | 59 | CDP base64 byte estimate handles padding. |
+| `extension/tests/unit/cdp_session.test.js` | node:test | `(module)` | `CDP session restores capture provenance and clears it on tab URL reuse` | 30 | CDP session restores capture provenance and clears it on tab URL reuse. |
+| `extension/tests/unit/cdp_session.test.js` | node:test | `(module)` | `CDP session reconstructs an attachment already owned by the extension after worker restart` | 43 | CDP session reconstructs an attachment already owned by the extension after worker restart. |
+| `extension/tests/unit/cdp_session.test.js` | node:test | `(module)` | `CDP session does not hide an attach failure without matching attached target evidence` | 51 | CDP session does not hide an attach failure without matching attached target evidence. |
+| `extension/tests/unit/cdp_session.test.js` | node:test | `(module)` | `CDP capture-context writes serialize so tab close cannot be overwritten by a slower capture write` | 56 | CDP capture-context writes serialize so tab close cannot be overwritten by a slower capture write. |
+| `extension/tests/unit/config_store.test.js` | node:test | `(module)` | `config store applies the CDP default-on migration once and normalizes typed values` | 21 | Config store applies the CDP default-on migration once and normalizes typed values. |
+| `extension/tests/unit/config_store.test.js` | node:test | `(module)` | `config store persists visit and CDP capture context maps independently` | 39 | Config store persists visit and CDP capture context maps independently. |
 | `extension/tests/unit/content_script.test.js` | node:test | `(module)` | `content capture retries the same full digest until admission succeeds and then suppresses duplicates` | 23 | Content capture retries the same full digest until admission succeeds and then suppresses duplicates. |
 | `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `all mode still skips hidden/form/editable/script/style/no-script extraction surfaces` | 17 | All mode still skips hidden/form/editable/script/style/no-script extraction surfaces. |
 | `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `strict mode skips form and editable elements` | 26 | Strict mode skips form and editable elements. |
@@ -400,6 +410,9 @@ Traceability gate: **✅ pass**.
 | `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `image extraction ignores empty-src document URL fallbacks` | 235 | Image extraction ignores empty-src document URL fallbacks. |
 | `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `performance video resources are preserved even when image refs fill the cap` | 258 | Performance video resources are preserved even when image refs fill the cap. |
 | `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `collapses whitespace` | 291 | Collapses whitespace. |
+| `extension/tests/unit/injection.test.js` | node:test | `(module)` | `injection controller re-injects the complete ordered script set instead of trusting worker memory` | 17 | Injection controller re-injects the complete ordered script set instead of trusting worker memory. |
+| `extension/tests/unit/injection.test.js` | node:test | `(module)` | `injection controller preserves pause, token, and policy gates` | 32 | Injection controller preserves pause, token, and policy gates. |
+| `extension/tests/unit/injection.test.js` | node:test | `(module)` | `startup reconstruction revisits every active tab` | 48 | Startup reconstruction revisits every active tab. |
 | `extension/tests/unit/media_queue.test.js` | node:test | `(module)` | `media task normalization and due ordering` | 4 | Media task normalization and due ordering. |
 | `extension/tests/unit/media_queue.test.js` | node:test | `(module)` | `media queue retains fetched blob until task delete` | 13 | Media queue retains fetched blob until task delete. |
 | `extension/tests/unit/media_queue.test.js` | node:test | `(module)` | `future retry is not due until next_attempt_at` | 25 | Future retry is not due until next attempt at. |
@@ -416,18 +429,20 @@ Traceability gate: **✅ pass**.
 | `extension/tests/unit/outbox.test.js` | node:test | `(module)` | `serialized byte accounting uses UTF-8 payload bytes and survives claim metadata changes` | 87 | Serialized byte accounting uses UTF-8 payload bytes and survives claim metadata changes. |
 | `extension/tests/unit/outbox.test.js` | node:test | `(module)` | `serialized byte quota rejects only the new row and reports required bytes` | 99 | Serialized byte quota rejects only the new row and reports required bytes. |
 | `extension/tests/unit/queue.test.js` | node:test | `(module)` | `queue preserves FIFO order` | 4 | Queue preserves FIFO order. |
-| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker preserves queued captures while daemon is down and drains them after reload` | 190 | Service worker preserves queued captures while daemon is down and drains them after reload. |
-| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker keeps navigation identity stable per URL state and emits a new observation per extraction` | 239 | Service worker keeps navigation identity stable per URL state and emits a new observation per extraction. |
-| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker queue overflow preserves old captures and visibly rejects the new capture` | 283 | Service worker queue overflow preserves old captures and visibly rejects the new capture. |
-| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker enforces byte quota and exposes redaction-safe outbox telemetry` | 317 | Service worker enforces byte quota and exposes redaction-safe outbox telemetry. |
-| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker cleans expired terminal media while capture is paused or tokenless` | 344 | Service worker cleans expired terminal media while capture is paused or tokenless. |
-| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker skips missing token and pause without mutating capture queue, then resumes` | 360 | Service worker skips missing token and pause without mutating capture queue, then resumes. |
-| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker transactionally imports and drains the legacy lifecycle queue before deleting it` | 391 | Service worker transactionally imports and drains the legacy lifecycle queue before deleting it. |
-| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `capture result checkpoint survives suspension without reposting before media enqueue compensation` | 425 | Capture result checkpoint survives suspension without reposting before media enqueue compensation. |
-| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker injection respects stale token, pause, and strict URL controls` | 478 | Service worker injection respects stale token, pause, and strict URL controls. |
-| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker media upload retries keep fetched blob until successful upload` | 508 | Service worker media upload retries keep fetched blob until successful upload. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker preserves queued captures while daemon is down and drains them after reload` | 196 | Service worker preserves queued captures while daemon is down and drains them after reload. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker keeps navigation identity stable per URL state and emits a new observation per extraction` | 245 | Service worker keeps navigation identity stable per URL state and emits a new observation per extraction. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker queue overflow preserves old captures and visibly rejects the new capture` | 289 | Service worker queue overflow preserves old captures and visibly rejects the new capture. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker enforces byte quota and exposes redaction-safe outbox telemetry` | 323 | Service worker enforces byte quota and exposes redaction-safe outbox telemetry. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker cleans expired terminal media while capture is paused or tokenless` | 350 | Service worker cleans expired terminal media while capture is paused or tokenless. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker skips missing token and pause without mutating capture queue, then resumes` | 366 | Service worker skips missing token and pause without mutating capture queue, then resumes. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker transactionally imports and drains the legacy lifecycle queue before deleting it` | 397 | Service worker transactionally imports and drains the legacy lifecycle queue before deleting it. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `capture result checkpoint survives suspension without reposting before media enqueue compensation` | 431 | Capture result checkpoint survives suspension without reposting before media enqueue compensation. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker injection respects stale token, pause, and strict URL controls` | 484 | Service worker injection respects stale token, pause, and strict URL controls. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker media upload retries keep fetched blob until successful upload` | 514 | Service worker media upload retries keep fetched blob until successful upload. |
 | `extension/tests/unit/shared.test.js` | node:test | `(module)` | `daemon URL normalization strips trailing slashes` | 4 | Daemon URL normalization strips trailing slashes. |
 | `extension/tests/unit/shared.test.js` | node:test | `(module)` | `auth headers include bearer token` | 9 | Auth headers include bearer token. |
+| `extension/tests/unit/visit_tracker.test.js` | node:test | `(module)` | `visit identity helpers are deterministic and bound interval values` | 14 | Visit identity helpers are deterministic and bound interval values. |
+| `extension/tests/unit/visit_tracker.test.js` | node:test | `(module)` | `visit tracker preserves navigation identity for repeated captures and closes prior URL state` | 23 | Visit tracker preserves navigation identity for repeated captures and closes prior URL state. |
 <!-- END GENERATED:test-case-inventory -->
 
 </details>

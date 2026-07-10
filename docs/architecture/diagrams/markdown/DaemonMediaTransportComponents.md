@@ -26,33 +26,33 @@ graph LR
     subgraph 4 ["Browser Memory Daemon"]
       style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
 
-      subgraph 15 ["WSL Loopback HTTP Daemon"]
-        style 15 fill:#ffffff,stroke:#2e6295,color:#2e6295
+      subgraph 19 ["WSL Loopback HTTP Daemon"]
+        style 19 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
-        22["<div style='font-weight: bold'>Media Artifact Manager</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + filesystem]</div><div style='font-size: 80%; margin-top:10px'>Provides the compatibility<br />API, records media<br />references, streams bounded<br />blob uploads, delegates<br />guarded public transport, and<br />drains verified spool bytes<br />without coupling text ingest<br />to media availability.</div>"]
-        style 22 fill:#85bbf0,stroke:#1168bd,color:#000000
-        25["<div style='font-weight: bold'>Media Artifact Store</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + BlobStore]</div><div style='font-size: 80%; margin-top:10px'>Owns artifact rows,<br />transactional cross-process<br />cache reservations, unique<br />streamed publication,<br />failed-write compensation,<br />contained reads, cache<br />admission, oldest-first<br />eviction, purge/rehydration,<br />and lifecycle<br />registration/tombstones.</div>"]
-        style 25 fill:#85bbf0,stroke:#1168bd,color:#000000
-        26["<div style='font-weight: bold'>Media Transport Coordinator</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Classifies direct versus HLS<br />responses, applies the<br />aggregate HLS request budget<br />from the first network open,<br />enforces playlist sniffing<br />and byte caps, and<br />coordinates bounded streamed<br />assembly.</div>"]
+        26["<div style='font-weight: bold'>Media Artifact Manager</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + filesystem]</div><div style='font-size: 80%; margin-top:10px'>Provides the compatibility<br />API, records media<br />references, streams bounded<br />blob uploads, delegates<br />guarded public transport, and<br />drains verified spool bytes<br />without coupling text ingest<br />to media availability.</div>"]
         style 26 fill:#85bbf0,stroke:#1168bd,color:#000000
-        27["<div style='font-weight: bold'>Guarded Media Fetch</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python stdlib urllib + socket]</div><div style='font-size: 80%; margin-top:10px'>Owns streamed HTTP/data<br />transport, public-address<br />validation, redirect<br />revalidation, no-referrer<br />requests, response-byte<br />limits, process request/byte<br />leases, and shared deadlines.</div>"]
-        style 27 fill:#85bbf0,stroke:#1168bd,color:#000000
-        28["<div style='font-weight: bold'>Bounded HLS Transport</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Parses bounded playlists,<br />selects variants, expands<br />init maps/segments through<br />the guarded fetch boundary,<br />and streams assembly within<br />aggregate<br />byte/depth/request/deadline<br />limits.</div>"]
-        style 28 fill:#85bbf0,stroke:#1168bd,color:#000000
-        30["<div style='font-weight: bold'>Media Process Resource Budget</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python threading.Condition]</div><div style='font-size: 80%; margin-top:10px'>Bounds active media requests<br />and in-flight bytes across<br />threads within one daemon or<br />worker process; exposes<br />aggregate counters and<br />releases leases on failure or<br />cancellation.</div>"]
+        29["<div style='font-weight: bold'>Media Artifact Store</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + BlobStore]</div><div style='font-size: 80%; margin-top:10px'>Owns artifact rows,<br />transactional cross-process<br />cache reservations, unique<br />streamed publication,<br />failed-write compensation,<br />contained reads, cache<br />admission, oldest-first<br />eviction, purge/rehydration,<br />and lifecycle<br />registration/tombstones.</div>"]
+        style 29 fill:#85bbf0,stroke:#1168bd,color:#000000
+        30["<div style='font-weight: bold'>Media Transport Coordinator</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Classifies direct versus HLS<br />responses, applies the<br />aggregate HLS request budget<br />from the first network open,<br />enforces playlist sniffing<br />and byte caps, and<br />coordinates bounded streamed<br />assembly.</div>"]
         style 30 fill:#85bbf0,stroke:#1168bd,color:#000000
+        31["<div style='font-weight: bold'>Guarded Media Fetch</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python stdlib urllib + socket]</div><div style='font-size: 80%; margin-top:10px'>Owns streamed HTTP/data<br />transport, public-address<br />validation, redirect<br />revalidation, no-referrer<br />requests, response-byte<br />limits, process request/byte<br />leases, and shared deadlines.</div>"]
+        style 31 fill:#85bbf0,stroke:#1168bd,color:#000000
+        32["<div style='font-weight: bold'>Bounded HLS Transport</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Parses bounded playlists,<br />selects variants, expands<br />init maps/segments through<br />the guarded fetch boundary,<br />and streams assembly within<br />aggregate<br />byte/depth/request/deadline<br />limits.</div>"]
+        style 32 fill:#85bbf0,stroke:#1168bd,color:#000000
+        34["<div style='font-weight: bold'>Media Process Resource Budget</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python threading.Condition]</div><div style='font-size: 80%; margin-top:10px'>Bounds active media requests<br />and in-flight bytes across<br />threads within one daemon or<br />worker process; exposes<br />aggregate counters and<br />releases leases on failure or<br />cancellation.</div>"]
+        style 34 fill:#85bbf0,stroke:#1168bd,color:#000000
       end
 
     end
 
-    22-. "<div>Publishes, resolves, purges,<br />and rehydrates artifacts<br />through</div><div style='font-size: 70%'></div>" .->25
-    22-. "<div>Delegates daemon-public media<br />orchestration to</div><div style='font-size: 70%'></div>" .->26
-    26-. "<div>Streams the initial response<br />and every direct artifact<br />through</div><div style='font-size: 70%'></div>" .->27
-    26-. "<div>Delegates detected playlists<br />for bounded parsing and<br />assembly to</div><div style='font-size: 70%'></div>" .->28
-    26-. "<div>Leases aggregate transfer<br />bytes through</div><div style='font-size: 70%'></div>" .->30
-    27-. "<div>Leases each active HTTP<br />request through</div><div style='font-size: 70%'></div>" .->30
-    27-. "<div>Validates and fetches public<br />media from</div><div style='font-size: 70%'>[HTTP(S), no Referer or Chrome cookies]</div>" .->3
-    28-. "<div>Fetches every variant, init<br />map, and segment through</div><div style='font-size: 70%'></div>" .->27
+    26-. "<div>Publishes, resolves, purges,<br />and rehydrates artifacts<br />through</div><div style='font-size: 70%'></div>" .->29
+    26-. "<div>Delegates daemon-public media<br />orchestration to</div><div style='font-size: 70%'></div>" .->30
+    30-. "<div>Streams the initial response<br />and every direct artifact<br />through</div><div style='font-size: 70%'></div>" .->31
+    30-. "<div>Delegates detected playlists<br />for bounded parsing and<br />assembly to</div><div style='font-size: 70%'></div>" .->32
+    30-. "<div>Leases aggregate transfer<br />bytes through</div><div style='font-size: 70%'></div>" .->34
+    31-. "<div>Leases each active HTTP<br />request through</div><div style='font-size: 70%'></div>" .->34
+    31-. "<div>Validates and fetches public<br />media from</div><div style='font-size: 70%'>[HTTP(S), no Referer or Chrome cookies]</div>" .->3
+    32-. "<div>Fetches every variant, init<br />map, and segment through</div><div style='font-size: 70%'></div>" .->31
 
   end
 ```

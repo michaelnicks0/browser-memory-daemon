@@ -23,49 +23,49 @@ graph LR
     subgraph 4 ["Browser Memory Daemon"]
       style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
 
-      subgraph 15 ["WSL Loopback HTTP Daemon"]
-        style 15 fill:#ffffff,stroke:#2e6295,color:#2e6295
+      subgraph 19 ["WSL Loopback HTTP Daemon"]
+        style 19 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
-        16["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server]</div><div style='font-size: 80%; margin-top:10px'>Routes loopback API requests,<br />serves UI assets, enforces<br />bearer auth for memory/admin<br />APIs, and applies CORS for<br />allowed origins.</div>"]
-        style 16 fill:#85bbf0,stroke:#1168bd,color:#000000
-        22["<div style='font-weight: bold'>Media Artifact Manager</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + filesystem]</div><div style='font-size: 80%; margin-top:10px'>Provides the compatibility<br />API, records media<br />references, streams bounded<br />blob uploads, delegates<br />guarded public transport, and<br />drains verified spool bytes<br />without coupling text ingest<br />to media availability.</div>"]
-        style 22 fill:#85bbf0,stroke:#1168bd,color:#000000
-        24["<div style='font-weight: bold'>Media Task Repository</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Creates deterministic tasks,<br />preserves terminal state,<br />atomically leases due work,<br />recovers stale leases, and<br />applies bounded retry/backoff<br />outcomes independently from<br />media transport.</div>"]
-        style 24 fill:#85bbf0,stroke:#1168bd,color:#000000
-        25["<div style='font-weight: bold'>Media Artifact Store</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + BlobStore]</div><div style='font-size: 80%; margin-top:10px'>Owns artifact rows,<br />transactional cross-process<br />cache reservations, unique<br />streamed publication,<br />failed-write compensation,<br />contained reads, cache<br />admission, oldest-first<br />eviction, purge/rehydration,<br />and lifecycle<br />registration/tombstones.</div>"]
-        style 25 fill:#85bbf0,stroke:#1168bd,color:#000000
-        26["<div style='font-weight: bold'>Media Transport Coordinator</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Classifies direct versus HLS<br />responses, applies the<br />aggregate HLS request budget<br />from the first network open,<br />enforces playlist sniffing<br />and byte caps, and<br />coordinates bounded streamed<br />assembly.</div>"]
+        20["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server]</div><div style='font-size: 80%; margin-top:10px'>Routes loopback API requests,<br />serves UI assets, enforces<br />bearer auth for memory/admin<br />APIs, and applies CORS for<br />allowed origins.</div>"]
+        style 20 fill:#85bbf0,stroke:#1168bd,color:#000000
+        26["<div style='font-weight: bold'>Media Artifact Manager</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + filesystem]</div><div style='font-size: 80%; margin-top:10px'>Provides the compatibility<br />API, records media<br />references, streams bounded<br />blob uploads, delegates<br />guarded public transport, and<br />drains verified spool bytes<br />without coupling text ingest<br />to media availability.</div>"]
         style 26 fill:#85bbf0,stroke:#1168bd,color:#000000
-        27["<div style='font-weight: bold'>Guarded Media Fetch</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python stdlib urllib + socket]</div><div style='font-size: 80%; margin-top:10px'>Owns streamed HTTP/data<br />transport, public-address<br />validation, redirect<br />revalidation, no-referrer<br />requests, response-byte<br />limits, process request/byte<br />leases, and shared deadlines.</div>"]
-        style 27 fill:#85bbf0,stroke:#1168bd,color:#000000
-        28["<div style='font-weight: bold'>Bounded HLS Transport</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Parses bounded playlists,<br />selects variants, expands<br />init maps/segments through<br />the guarded fetch boundary,<br />and streams assembly within<br />aggregate<br />byte/depth/request/deadline<br />limits.</div>"]
+        28["<div style='font-weight: bold'>Media Task Repository</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Creates deterministic tasks,<br />preserves terminal state,<br />atomically leases due work,<br />recovers stale leases, and<br />applies bounded retry/backoff<br />outcomes independently from<br />media transport.</div>"]
         style 28 fill:#85bbf0,stroke:#1168bd,color:#000000
-        30["<div style='font-weight: bold'>Media Process Resource Budget</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python threading.Condition]</div><div style='font-size: 80%; margin-top:10px'>Bounds active media requests<br />and in-flight bytes across<br />threads within one daemon or<br />worker process; exposes<br />aggregate counters and<br />releases leases on failure or<br />cancellation.</div>"]
+        29["<div style='font-weight: bold'>Media Artifact Store</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + BlobStore]</div><div style='font-size: 80%; margin-top:10px'>Owns artifact rows,<br />transactional cross-process<br />cache reservations, unique<br />streamed publication,<br />failed-write compensation,<br />contained reads, cache<br />admission, oldest-first<br />eviction, purge/rehydration,<br />and lifecycle<br />registration/tombstones.</div>"]
+        style 29 fill:#85bbf0,stroke:#1168bd,color:#000000
+        30["<div style='font-weight: bold'>Media Transport Coordinator</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Classifies direct versus HLS<br />responses, applies the<br />aggregate HLS request budget<br />from the first network open,<br />enforces playlist sniffing<br />and byte caps, and<br />coordinates bounded streamed<br />assembly.</div>"]
         style 30 fill:#85bbf0,stroke:#1168bd,color:#000000
-        31["<div style='font-weight: bold'>Contained BlobStore</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python filesystem boundary]</div><div style='font-size: 80%; margin-top:10px'>Prefers root-relative<br />locators with contained<br />legacy fallback; streams<br />unique stages with size/hash<br />accounting; atomically<br />commits; and contains blob<br />read, stat, and delete<br />operations.</div>"]
+        31["<div style='font-weight: bold'>Guarded Media Fetch</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python stdlib urllib + socket]</div><div style='font-size: 80%; margin-top:10px'>Owns streamed HTTP/data<br />transport, public-address<br />validation, redirect<br />revalidation, no-referrer<br />requests, response-byte<br />limits, process request/byte<br />leases, and shared deadlines.</div>"]
         style 31 fill:#85bbf0,stroke:#1168bd,color:#000000
+        32["<div style='font-weight: bold'>Bounded HLS Transport</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Parses bounded playlists,<br />selects variants, expands<br />init maps/segments through<br />the guarded fetch boundary,<br />and streams assembly within<br />aggregate<br />byte/depth/request/deadline<br />limits.</div>"]
+        style 32 fill:#85bbf0,stroke:#1168bd,color:#000000
+        34["<div style='font-weight: bold'>Media Process Resource Budget</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python threading.Condition]</div><div style='font-size: 80%; margin-top:10px'>Bounds active media requests<br />and in-flight bytes across<br />threads within one daemon or<br />worker process; exposes<br />aggregate counters and<br />releases leases on failure or<br />cancellation.</div>"]
+        style 34 fill:#85bbf0,stroke:#1168bd,color:#000000
+        35["<div style='font-weight: bold'>Contained BlobStore</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python filesystem boundary]</div><div style='font-size: 80%; margin-top:10px'>Prefers root-relative<br />locators with contained<br />legacy fallback; streams<br />unique stages with size/hash<br />accounting; atomically<br />commits; and contains blob<br />read, stat, and delete<br />operations.</div>"]
+        style 35 fill:#85bbf0,stroke:#1168bd,color:#000000
       end
 
-      40[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable complete<br />cleaned-text, relational, and<br />full-text authority for<br />migration ledger, sources,<br />documents, visits, capture<br />observations, URL claims,<br />visit events, snapshots,<br />chunks, chunks_fts, media<br />provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
-      style 40 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      44[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable complete<br />cleaned-text, relational, and<br />full-text authority for<br />migration ledger, sources,<br />documents, visits, capture<br />observations, URL claims,<br />visit events, snapshots,<br />chunks, chunks_fts, media<br />provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
+      style 44 fill:#2f95c8,stroke:#20688c,color:#ffffff
     end
 
-    22-. "<div>Creates and claims durable<br />media work through</div><div style='font-size: 70%'></div>" .->24
-    22-. "<div>Publishes, resolves, purges,<br />and rehydrates artifacts<br />through</div><div style='font-size: 70%'></div>" .->25
-    22-. "<div>Delegates daemon-public media<br />orchestration to</div><div style='font-size: 70%'></div>" .->26
-    22-. "<div>Updates media artifact rows<br />in</div><div style='font-size: 70%'>[sqlite3]</div>" .->40
-    24-. "<div>Creates, leases, and advances<br />media tasks in</div><div style='font-size: 70%'>[sqlite3]</div>" .->40
-    25-. "<div>Marks stored/skipped outcomes<br />and ensures retryable fetch<br />work through</div><div style='font-size: 70%'></div>" .->24
-    25-. "<div>Reserves cache capacity and<br />advances media artifact rows<br />transactionally in</div><div style='font-size: 70%'>[sqlite3]</div>" .->40
-    25-. "<div>Stages unique candidates,<br />resolves contained reads, and<br />deletes failed candidates<br />through</div><div style='font-size: 70%'></div>" .->31
-    26-. "<div>Streams the initial response<br />and every direct artifact<br />through</div><div style='font-size: 70%'></div>" .->27
-    26-. "<div>Delegates detected playlists<br />for bounded parsing and<br />assembly to</div><div style='font-size: 70%'></div>" .->28
-    26-. "<div>Leases aggregate transfer<br />bytes through</div><div style='font-size: 70%'></div>" .->30
-    27-. "<div>Leases each active HTTP<br />request through</div><div style='font-size: 70%'></div>" .->30
-    28-. "<div>Fetches every variant, init<br />map, and segment through</div><div style='font-size: 70%'></div>" .->27
-    22-. "<div>Checks current artifact<br />presence during fetch<br />orchestration and drains<br />spool bytes through</div><div style='font-size: 70%'></div>" .->31
-    16-. "<div>Routes media requests to</div><div style='font-size: 70%'></div>" .->22
-    16-. "<div>Leases bounded media upload<br />and response capacity through</div><div style='font-size: 70%'></div>" .->30
+    20-. "<div>Routes media requests to</div><div style='font-size: 70%'></div>" .->26
+    20-. "<div>Leases bounded media upload<br />and response capacity through</div><div style='font-size: 70%'></div>" .->34
+    26-. "<div>Creates and claims durable<br />media work through</div><div style='font-size: 70%'></div>" .->28
+    26-. "<div>Publishes, resolves, purges,<br />and rehydrates artifacts<br />through</div><div style='font-size: 70%'></div>" .->29
+    26-. "<div>Delegates daemon-public media<br />orchestration to</div><div style='font-size: 70%'></div>" .->30
+    26-. "<div>Updates media artifact rows<br />in</div><div style='font-size: 70%'>[sqlite3]</div>" .->44
+    28-. "<div>Creates, leases, and advances<br />media tasks in</div><div style='font-size: 70%'>[sqlite3]</div>" .->44
+    29-. "<div>Marks stored/skipped outcomes<br />and ensures retryable fetch<br />work through</div><div style='font-size: 70%'></div>" .->28
+    29-. "<div>Reserves cache capacity and<br />advances media artifact rows<br />transactionally in</div><div style='font-size: 70%'>[sqlite3]</div>" .->44
+    29-. "<div>Stages unique candidates,<br />resolves contained reads, and<br />deletes failed candidates<br />through</div><div style='font-size: 70%'></div>" .->35
+    30-. "<div>Streams the initial response<br />and every direct artifact<br />through</div><div style='font-size: 70%'></div>" .->31
+    30-. "<div>Delegates detected playlists<br />for bounded parsing and<br />assembly to</div><div style='font-size: 70%'></div>" .->32
+    30-. "<div>Leases aggregate transfer<br />bytes through</div><div style='font-size: 70%'></div>" .->34
+    31-. "<div>Leases each active HTTP<br />request through</div><div style='font-size: 70%'></div>" .->34
+    32-. "<div>Fetches every variant, init<br />map, and segment through</div><div style='font-size: 70%'></div>" .->31
+    26-. "<div>Checks current artifact<br />presence during fetch<br />orchestration and drains<br />spool bytes through</div><div style='font-size: 70%'></div>" .->35
 
   end
 ```

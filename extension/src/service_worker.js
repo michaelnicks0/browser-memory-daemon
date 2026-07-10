@@ -1,21 +1,4 @@
-try { importScripts('shared.js', 'extractor.js', 'outbox.js', 'media_queue.js', 'cdp_recorder.js'); } catch (_) {}
-
-const DEFAULTS = {
-  daemonUrl: 'http://127.0.0.1:8765',
-  apiToken: '',
-  capturePaused: false,
-  policyMode: 'all',
-  cdpRecorderEnabled: true,
-  cdpRecorderDomains: ['x.com', 'twitter.com'],
-  cdpRecorderMediaHosts: ['video.twimg.com'],
-  captureOutboxMaxBytes: 32 * 1024 * 1024,
-  lifecycleOutboxMaxBytes: 2 * 1024 * 1024,
-  captureQueue: [],
-  visitEventQueue: [],
-  tabVisitState: {}
-};
-
-const CDP_RECORDER_DEFAULT_ON_MIGRATION_KEY = 'cdpRecorderDefaultOnMigratedAt';
+try { importScripts('shared.js', 'extractor.js', 'config_store.js', 'outbox.js', 'media_queue.js', 'cdp_recorder.js', 'cdp_session.js', 'visit_tracker.js', 'injection.js'); } catch (_) {}
 
 const MAX_CAPTURE_QUEUE = 100;
 const MAX_VISIT_EVENT_QUEUE = 200;
@@ -45,40 +28,17 @@ function ensureCaptureIdentity(payload) {
   return identified;
 }
 
-function stableHash(text) {
-  let hash = 2166136261;
-  for (const char of String(text || '')) {
-    hash ^= char.charCodeAt(0);
-    hash = Math.imul(hash, 16777619);
-  }
-  return (hash >>> 0).toString(16);
-}
-
-function stableVisitEventId(state, eventType, segmentStartedAt) {
-  return `vevt_${stableHash([state.visitId, eventType, segmentStartedAt, state.url].join('|'))}`;
-}
-
-function secondsBetween(startIso, endIso) {
-  const start = Date.parse(startIso || '');
-  const end = Date.parse(endIso || '');
-  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return 0;
-  return Math.max(0, Math.round((end - start) / 1000));
-}
-
-function sanitizedScrollPercent(value) {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) return 0;
-  return Math.max(0, Math.min(100, Math.round(parsed)));
-}
+const configStoreApi = globalThis.BrowserMemoryConfigStore;
+if (!configStoreApi) throw new Error('config store module unavailable');
+const configStore = configStoreApi.createConfigStore({ chromeApi: chrome, nowIso, normalizeImpl: globalThis.normalizeBrowserMemoryPolicyMode });
+const DEFAULTS = configStore.DEFAULTS;
 
 function normalizePolicyMode(policyMode) {
-  if (globalThis.normalizeBrowserMemoryPolicyMode) return globalThis.normalizeBrowserMemoryPolicyMode(policyMode);
-  const mode = String(policyMode || 'all').toLowerCase();
-  return ['all', 'recall', 'balanced', 'strict'].includes(mode) ? mode : 'all';
+  return configStore.normalizePolicyMode(policyMode);
 }
 
 function allowsIncognito(policyMode) {
-  return normalizePolicyMode(policyMode) === 'all';
+  return configStore.allowsIncognito(policyMode);
 }
 
 function isTrackableUrl(url, policyMode = 'all') {
@@ -87,24 +47,8 @@ function isTrackableUrl(url, policyMode = 'all') {
   return !(globalThis.shouldBlockBrowserMemoryUrl && globalThis.shouldBlockBrowserMemoryUrl(url, { policyMode }));
 }
 
-async function getConfig() {
-  const stored = await chrome.storage.local.get(DEFAULTS);
-  if (!stored[CDP_RECORDER_DEFAULT_ON_MIGRATION_KEY]) {
-    const migratedAt = nowIso();
-    stored.cdpRecorderEnabled = true;
-    stored[CDP_RECORDER_DEFAULT_ON_MIGRATION_KEY] = migratedAt;
-    const migration = {
-      cdpRecorderEnabled: true,
-      [CDP_RECORDER_DEFAULT_ON_MIGRATION_KEY]: migratedAt
-    };
-    await chrome.storage.local.set(migration);
-  }
-  return {
-    ...DEFAULTS,
-    ...stored,
-    policyMode: normalizePolicyMode(stored.policyMode || DEFAULTS.policyMode),
-    cdpRecorderEnabled: Boolean(stored.cdpRecorderEnabled)
-  };
+function getConfig() {
+  return configStore.getConfig();
 }
 
 async function saveQueue(queue) {
@@ -152,14 +96,6 @@ function nextOutboxAttemptAt(attempts) {
   return new Date(Date.now() + delayMs).toISOString();
 }
 
-async function getTabVisitState() {
-  const stored = await chrome.storage.local.get({ tabVisitState: {} });
-  return stored.tabVisitState && typeof stored.tabVisitState === 'object' ? stored.tabVisitState : {};
-}
-
-async function saveTabVisitState(state) {
-  await chrome.storage.local.set({ tabVisitState: state });
-}
 
 async function postOne(payload, config) {
   const base = normalizeDaemonUrl(config.daemonUrl);
@@ -485,53 +421,29 @@ function scheduleMediaDrain() {
   drainMediaQueue().catch((error) => chrome.storage.local.set({ lastMediaArtifactError: { at: nowIso(), error: String(error.message || error) } }));
 }
 
-const cdpCaptureContextByTab = new Map();
-const cdpRecorderByTab = new Map();
+const cdpSessionApi = globalThis.BrowserMemoryCdpSession;
+const cdpSession = cdpSessionApi && chrome.debugger
+  ? cdpSessionApi.createCdpSession({ chromeApi: chrome, configStore, nowIso })
+  : null;
+const cdpCaptureContextByTab = cdpSession?.captureContextByTab || new Map();
+const cdpRecorderByTab = cdpSession?.recorderByTab || new Map();
 
 function cdpApi() {
   return globalThis.BrowserMemoryCdpRecorder || null;
 }
 
-function cdpTarget(tabId) {
-  return { tabId };
-}
-
 function cdpCommand(tabId, method, params = {}) {
-  return new Promise((resolve, reject) => {
-    try {
-      chrome.debugger.sendCommand(cdpTarget(tabId), method, params, (result) => {
-        const lastError = chrome.runtime.lastError;
-        if (lastError) reject(new Error(lastError.message));
-        else resolve(result || {});
-      });
-    } catch (error) {
-      reject(error);
-    }
-  });
+  if (!cdpSession) return Promise.reject(new Error('CDP session unavailable'));
+  return cdpSession.command(tabId, method, params);
 }
 
 function cdpAttach(tabId) {
-  return new Promise((resolve, reject) => {
-    try {
-      chrome.debugger.attach(cdpTarget(tabId), '1.3', () => {
-        const lastError = chrome.runtime.lastError;
-        if (lastError) reject(new Error(lastError.message));
-        else resolve();
-      });
-    } catch (error) {
-      reject(error);
-    }
-  });
+  if (!cdpSession) return Promise.reject(new Error('CDP session unavailable'));
+  return cdpSession.attachOrRecover(tabId);
 }
 
 function cdpDetach(tabId) {
-  return new Promise((resolve) => {
-    try {
-      chrome.debugger.detach(cdpTarget(tabId), () => resolve());
-    } catch (_) {
-      resolve();
-    }
-  });
+  return cdpSession ? cdpSession.detach(tabId) : Promise.resolve();
 }
 
 function latestDeliveredCaptureResult(result) {
@@ -543,18 +455,19 @@ function latestDeliveredCaptureResult(result) {
   return null;
 }
 
-function rememberCdpCaptureContext(sender, payload, result) {
+async function rememberCdpCaptureContext(sender, payload, result) {
   const tabId = sender?.tab?.id;
   const captureResult = latestDeliveredCaptureResult(result);
   if (typeof tabId !== 'number' || !captureResult?.document_id || !captureResult?.snapshot_id) return;
-  cdpCaptureContextByTab.set(tabId, {
+  const context = {
     document_id: captureResult.document_id,
     snapshot_id: captureResult.snapshot_id,
     visit_id: captureResult.visit_id || payload.visit_id || '',
     page_url: payload.url || sender.tab.url || '',
-    title: payload.title || '',
     captured_at: nowIso()
-  });
+  };
+  if (cdpSession) await cdpSession.rememberCaptureContext(tabId, context);
+  else cdpCaptureContextByTab.set(tabId, context);
 }
 
 function trimCdpSeenSet(state) {
@@ -565,6 +478,10 @@ function trimCdpSeenSet(state) {
 async function ensureCdpRecorder(tabId, tabUrl) {
   const api = cdpApi();
   if (!api || !chrome.debugger?.attach || typeof tabId !== 'number') return { skipped: true, reason: 'cdp-unavailable' };
+  if (cdpSession) {
+    await cdpSession.ready();
+    await cdpSession.clearCaptureContextIfUrlChanged(tabId, tabUrl);
+  }
   const config = await getConfig();
   const domains = api.normalizeDomains(config.cdpRecorderDomains, api.DEFAULT_CDP_RECORDER_DOMAINS);
   const mediaHosts = api.normalizeDomains(config.cdpRecorderMediaHosts, api.DEFAULT_CDP_MEDIA_HOSTS);
@@ -582,15 +499,15 @@ async function ensureCdpRecorder(tabId, tabUrl) {
     return { ok: true, attached: true, existing: true };
   }
   try {
-    await cdpAttach(tabId);
+    const attachment = await cdpAttach(tabId);
     await cdpCommand(tabId, 'Network.enable', {
       maxTotalBufferSize: MAX_MEDIA_ARTIFACT_BYTES * 2,
       maxResourceBufferSize: MAX_MEDIA_ARTIFACT_BYTES
     });
     state = { attached: true, page_url: tabUrl || '', mediaHosts, requests: new Map(), seen: new Set(), attached_at: nowIso(), last_manifest_backfill_at: 0 };
     cdpRecorderByTab.set(tabId, state);
-    await chrome.storage.local.set({ lastCdpRecorderStatus: { at: nowIso(), tabId, attached: true, page_url: state.page_url } });
-    return { ok: true, attached: true };
+    await chrome.storage.local.set({ lastCdpRecorderStatus: { at: nowIso(), tabId, attached: true, recovered: Boolean(attachment?.recovered), page_url: state.page_url } });
+    return { ok: true, attached: true, recovered: Boolean(attachment?.recovered) };
   } catch (error) {
     await chrome.storage.local.set({ lastCdpRecorderError: { at: nowIso(), tabId, error: String(error.message || error), phase: 'attach' } });
     return { ok: false, error: String(error.message || error) };
@@ -600,7 +517,7 @@ async function ensureCdpRecorder(tabId, tabUrl) {
 async function recordCdpMediaBody(tabId, requestId, candidate, encodedDataLength = 0) {
   const api = cdpApi();
   const state = cdpRecorderByTab.get(tabId);
-  const context = cdpCaptureContextByTab.get(tabId);
+  const context = cdpSession ? await cdpSession.getCaptureContext(tabId) : cdpCaptureContextByTab.get(tabId);
   if (!api || !state || !context) return { skipped: true, reason: 'missing-cdp-context' };
   if (state.seen.has(candidate.source_url)) return { skipped: true, reason: 'duplicate-cdp-url' };
   state.seen.add(candidate.source_url);
@@ -933,140 +850,42 @@ async function enqueueVisitEvent(payload) {
   return drainLifecycleOutbox(api, config);
 }
 
-async function emitVisitEventForState(state, eventType, endedAt = nowIso()) {
-  const config = await getConfig();
-  if (!state || !state.url || !state.visitId || !isTrackableUrl(state.url, config.policyMode)) {
-    return { skipped: true, reason: 'missing-state' };
-  }
-  const segmentStartedAt = state.activeStartedAt || state.visitStartedAt || endedAt;
-  const activeSeconds = state.activeStartedAt ? secondsBetween(state.activeStartedAt, endedAt) : 0;
-  const payload = {
-    event_id: stableVisitEventId(state, eventType, segmentStartedAt),
-    visit_id: state.visitId,
-    url: state.url,
-    event_type: eventType,
-    event_started_at: segmentStartedAt,
-    event_ended_at: endedAt,
-    active_seconds: activeSeconds,
-    max_scroll_percent: sanitizedScrollPercent(state.maxScrollPercent),
-    metadata: { tab_id: state.tabId }
-  };
-  return enqueueVisitEvent(payload);
+const visitTrackerApi = globalThis.BrowserMemoryVisitTracker;
+if (!visitTrackerApi) throw new Error('visit tracker module unavailable');
+const visitTracker = visitTrackerApi.createVisitTracker({ configStore, getConfig, isTrackableUrl, enqueueVisitEvent, ensureCaptureIdentity, randomId, nowIso });
+
+function emitVisitEventForState(state, eventType, endedAt = nowIso()) {
+  return visitTracker.emitVisitEventForState(state, eventType, endedAt);
 }
 
-async function finishActiveSegmentsExcept(activeTabId, eventType = 'tab-deactivated') {
-  const states = await getTabVisitState();
-  const endedAt = nowIso();
-  const deliveries = [];
-  for (const [key, state] of Object.entries(states)) {
-    if (String(activeTabId) === key || !state || !state.activeStartedAt) continue;
-    const eventState = { ...state };
-    deliveries.push(emitVisitEventForState(eventState, eventType, endedAt));
-    state.activeStartedAt = null;
-    states[key] = state;
-  }
-  await saveTabVisitState(states);
-  return Promise.allSettled(deliveries);
+function finishActiveSegmentsExcept(activeTabId, eventType = 'tab-deactivated') {
+  return visitTracker.finishActiveSegmentsExcept(activeTabId, eventType);
 }
 
-async function finishTabVisit(tabId, eventType = 'tab-deactivated', { remove = false } = {}) {
-  const key = String(tabId);
-  const states = await getTabVisitState();
-  const state = states[key];
-  if (!state) return { skipped: true, reason: 'missing-state' };
-  const result = await emitVisitEventForState(state, eventType, nowIso());
-  if (remove) delete states[key];
-  else {
-    state.activeStartedAt = null;
-    states[key] = state;
-  }
-  await saveTabVisitState(states);
-  return result;
+function finishTabVisit(tabId, eventType = 'tab-deactivated', options = {}) {
+  return visitTracker.finishTabVisit(tabId, eventType, options);
 }
 
-async function ensureVisitState(tabId, url) {
-  const config = await getConfig();
-  if (config.capturePaused || !config.apiToken || !isTrackableUrl(url, config.policyMode)) return null;
-  const key = String(tabId);
-  let states = await getTabVisitState();
-  let state = states[key];
-  if (state && state.url !== url) {
-    await finishTabVisit(tabId, 'navigation-away', { remove: true });
-    states = await getTabVisitState();
-    state = null;
-  }
-  if (!state) {
-    state = {
-      tabId,
-      url,
-      visitId: randomId('visit'),
-      navigationId: randomId('navigation'),
-      visitStartedAt: nowIso(),
-      activeStartedAt: null,
-      maxScrollPercent: 0
-    };
-  } else if (!state.navigationId) {
-    state.navigationId = randomId('navigation');
-  }
-  states[key] = state;
-  await saveTabVisitState(states);
-  return state;
+function markTabActive(tabId, url) {
+  return visitTracker.markTabActive(tabId, url);
 }
 
-async function markTabActive(tabId, url) {
-  await finishActiveSegmentsExcept(tabId, 'tab-deactivated');
-  const state = await ensureVisitState(tabId, url);
-  if (!state) return { skipped: true, reason: 'untrackable-tab' };
-  if (!state.activeStartedAt) state.activeStartedAt = nowIso();
-  const states = await getTabVisitState();
-  states[String(tabId)] = state;
-  await saveTabVisitState(states);
-  return { ok: true, visit_id: state.visitId };
-}
-
-async function updateStateFromPayload(tabId, payload) {
-  const state = await ensureVisitState(tabId, payload.url);
-  if (!state) return null;
-  state.maxScrollPercent = Math.max(sanitizedScrollPercent(state.maxScrollPercent), sanitizedScrollPercent(payload.max_scroll_percent));
-  const states = await getTabVisitState();
-  states[String(tabId)] = state;
-  await saveTabVisitState(states);
-  return state;
-}
-
-async function decorateCapturePayload(payload, sender) {
-  const config = await getConfig();
-  const tab = sender && sender.tab ? sender.tab : null;
-  const decorated = { ...payload, is_incognito: Boolean(tab && tab.incognito), policy_mode: normalizePolicyMode(config.policyMode) };
-  if (!tab || typeof tab.id !== 'number' || !decorated.url || !isTrackableUrl(decorated.url, config.policyMode)) return ensureCaptureIdentity(decorated);
-  const state = await updateStateFromPayload(tab.id, decorated);
-  if (!state) return ensureCaptureIdentity(decorated);
-  if (tab.active && !state.activeStartedAt) {
-    state.activeStartedAt = state.visitStartedAt || nowIso();
-    const states = await getTabVisitState();
-    states[String(tab.id)] = state;
-    await saveTabVisitState(states);
-  }
-  decorated.visit_id = state.visitId;
-  decorated.navigation_id = state.navigationId;
-  decorated.visit_started_at = state.visitStartedAt;
-  return ensureCaptureIdentity(decorated);
+function decorateCapturePayload(payload, sender) {
+  return visitTracker.decorateCapturePayload(payload, sender);
 }
 
 async function maybeInjectCapture(tabId, tabUrl) {
-  const config = await getConfig();
-  if (config.capturePaused || !config.apiToken) return { skipped: true, reason: config.capturePaused ? 'paused' : 'missing-token' };
-  if (!isTrackableUrl(tabUrl, config.policyMode)) return { skipped: true, reason: 'blocked-url' };
-  ensureCdpRecorder(tabId, tabUrl).catch((error) => chrome.storage.local.set({ lastCdpRecorderError: { at: nowIso(), tabId, error: String(error.message || error), phase: 'ensure' } }));
-  try {
-    await chrome.scripting.executeScript({
-      target: { tabId },
-      files: ['src/extractor.js', 'src/capture_digest.js', 'src/content_script.js']
-    });
-    return { ok: true };
-  } catch (error) {
-    return { ok: false, error: String(error.message || error) };
+  return injectionController().maybeInjectCapture(tabId, tabUrl);
+}
+
+let injectionControllerInstance = null;
+function injectionController() {
+  if (!injectionControllerInstance) {
+    const api = globalThis.BrowserMemoryInjection;
+    if (!api) throw new Error('injection module unavailable');
+    injectionControllerInstance = api.createInjectionController({ chromeApi: chrome, getConfig, isTrackableUrl, ensureCdpRecorder, markTabActive, nowIso });
   }
+  return injectionControllerInstance;
 }
 
 chrome.tabs.onUpdated?.addListener((tabId, changeInfo, tab) => {
@@ -1102,22 +921,18 @@ chrome.windows.onFocusChanged?.addListener((windowId) => {
 });
 
 chrome.tabs.onRemoved?.addListener((tabId) => {
-  cdpCaptureContextByTab.delete(tabId);
+  if (cdpSession) {
+    cdpSession.clearCaptureContext(tabId)
+      .catch((error) => chrome.storage.local.set({ lastCdpRecorderError: { at: nowIso(), tabId, error: String(error.message || error), phase: 'clear-context' } }));
+  } else cdpCaptureContextByTab.delete(tabId);
   if (cdpRecorderByTab.has(tabId)) {
     cdpDetach(tabId).finally(() => cdpRecorderByTab.delete(tabId));
   }
   finishTabVisit(tabId, 'tab-closed', { remove: true });
 });
 
-function bootstrapActiveTabs() {
-  chrome.tabs.query?.({ active: true }, (tabs) => {
-    if (chrome.runtime.lastError || !Array.isArray(tabs)) return;
-    for (const tab of tabs) {
-      if (typeof tab.id !== 'number' || !tab.url) continue;
-      markTabActive(tab.id, tab.url);
-      maybeInjectCapture(tab.id, tab.url);
-    }
-  });
+function bootstrapActiveTabs(options) {
+  injectionController().bootstrapActiveTabs(options);
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -1136,8 +951,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   if (message.type !== 'BMD_CAPTURE') return false;
   decorateCapturePayload(message.payload || {}, sender)
-    .then((payload) => enqueueCapture(payload).then((result) => {
-      rememberCdpCaptureContext(sender, payload, result);
+    .then((payload) => enqueueCapture(payload).then(async (result) => {
+      await rememberCdpCaptureContext(sender, payload, result);
       return result;
     }))
     .then((result) => sendResponse({ ok: !result?.rejected, result }))
@@ -1153,3 +968,6 @@ chrome.alarms?.onAlarm?.addListener((alarm) => {
 });
 chrome.alarms?.create?.('bmd-outbox-drain', { periodInMinutes: 1 });
 chrome.alarms?.create?.('bmd-media-drain', { periodInMinutes: 1 });
+// MV3 worker evaluation is itself a recovery boundary; runtime.onStartup only
+// covers browser startup, not ordinary worker suspension and rehydration.
+bootstrapActiveTabs({ markActive: false });

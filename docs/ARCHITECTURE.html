@@ -602,8 +602,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Browser capture, lifecycle, and media queues shall be transactional, restart-safe, quota-aware, and never silently truncate.</td>
 <td>Extension Durable Outboxes</td>
 <td><code>HRD-012</code></td>
-<td><code>extension/src/outbox.js</code><br><code>extension/src/service_worker.js</code><br><code>extension/src/popup.js</code><br><code>extension/src/options.js</code><br><code>extension/src/media_queue.js</code></td>
-<td><code>extension/tests/unit/service_worker.test.js::service worker preserves queued captures while daemon is down and drains them after reload</code><br><code>extension/tests/unit/service_worker.test.js::service worker queue overflow preserves old captures and visibly rejects the new capture</code><br><code>extension/tests/unit/service_worker.test.js::service worker enforces byte quota and exposes redaction-safe outbox telemetry</code><br><code>extension/tests/unit/service_worker.test.js::capture result checkpoint survives suspension without reposting before media enqueue compensation</code><br><code>extension/tests/unit/service_worker.test.js::service worker cleans expired terminal media while capture is paused or tokenless</code><br><code>extension/tests/unit/service_worker.test.js::service worker media upload retries keep fetched blob until successful upload</code></td>
+<td><code>extension/src/config_store.js</code><br><code>extension/src/visit_tracker.js</code><br><code>extension/src/injection.js</code><br><code>extension/src/cdp_session.js</code><br><code>extension/src/outbox.js</code><br><code>extension/src/service_worker.js</code><br><code>extension/src/popup.js</code><br><code>extension/src/options.js</code><br><code>extension/src/media_queue.js</code></td>
+<td><code>extension/tests/unit/injection.test.js::startup reconstruction revisits every active tab</code><br><code>extension/tests/unit/cdp_session.test.js::CDP session reconstructs an attachment already owned by the extension after worker restart</code><br><code>extension/tests/unit/service_worker.test.js::service worker preserves queued captures while daemon is down and drains them after reload</code><br><code>extension/tests/unit/service_worker.test.js::service worker queue overflow preserves old captures and visibly rejects the new capture</code><br><code>extension/tests/unit/service_worker.test.js::service worker enforces byte quota and exposes redaction-safe outbox telemetry</code><br><code>extension/tests/unit/service_worker.test.js::capture result checkpoint survives suspension without reposting before media enqueue compensation</code><br><code>extension/tests/unit/service_worker.test.js::service worker cleans expired terminal media while capture is paused or tokenless</code><br><code>extension/tests/unit/service_worker.test.js::service worker media upload retries keep fetched blob until successful upload</code></td>
 </tr>
 <tr>
 <td>REQ-038</td>
@@ -788,8 +788,28 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Service worker</td>
-<td>Auth, injection, lifecycle state, stable observation/navigation identity, transactional outbox orchestration, browser lazy media queue/drain, daemon POST/PUTs, alarms, and CDP recorder orchestration.</td>
-<td>Text capture does not wait on media bytes; decorated queued IDs survive retry/restart and rotate with tab/URL navigation state.</td>
+<td>Register MV3 listeners and orchestrate daemon transport, transactional drains, alarms, and extracted browser-state controllers.</td>
+<td>Text capture does not wait on media bytes; capture and media bridge code remains here pending later reversible extraction.</td>
+</tr>
+<tr>
+<td>Extension config store</td>
+<td>Own typed defaults/migration plus durable visit and minimal CDP capture-context maps in <code>chrome.storage.local</code>.</td>
+<td>CDP context excludes text, title, bodies, cookies, headers, and tokens; tab close or URL change removes it.</td>
+</tr>
+<tr>
+<td>Visit tracker</td>
+<td>Own tab/navigation identity, active segments, deterministic lifecycle event IDs, and capture decoration.</td>
+<td>Decorated queued IDs survive retry/restart and rotate with tab/URL navigation state.</td>
+</tr>
+<tr>
+<td>Injection controller</td>
+<td>Revisit active tabs at startup/worker evaluation and idempotently inject extractor, digest, and content scripts in a fixed order.</td>
+<td>Does not trust process-local injected-tab memory after MV3 suspension; ordinary rehydration avoids racing or rewriting durable active-lifecycle state.</td>
+</tr>
+<tr>
+<td>CDP session controller</td>
+<td>Reconcile debugger attachment state and recover minimal capture provenance after worker restart.</td>
+<td>Accepts attachment recovery only with matching <code>chrome.debugger.getTargets</code> evidence; mismatched page URLs clear stale provenance.</td>
 </tr>
 <tr>
 <td>Capture/lifecycle outbox</td>

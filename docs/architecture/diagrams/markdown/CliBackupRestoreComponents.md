@@ -23,24 +23,24 @@ graph LR
     subgraph 4 ["Browser Memory Daemon"]
       style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
 
-      subgraph 38 ["CLI"]
-        style 38 fill:#ffffff,stroke:#2e6295,color:#2e6295
+      subgraph 42 ["CLI"]
+        style 42 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
-        39["<div style='font-weight: bold'>Backup and Restore Operator</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python sqlite3 + filesystem]</div><div style='font-size: 80%; margin-top:10px'>Creates dry-run-first SQLite<br />online backup bundles with<br />redaction-safe SHA-256<br />manifests and verifies them<br />into absent runtime roots;<br />optionally carries referenced<br />derivatives and excludes<br />media/spool/secrets.</div>"]
-        style 39 fill:#85bbf0,stroke:#1168bd,color:#000000
+        43["<div style='font-weight: bold'>Backup and Restore Operator</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python sqlite3 + filesystem]</div><div style='font-size: 80%; margin-top:10px'>Creates dry-run-first SQLite<br />online backup bundles with<br />redaction-safe SHA-256<br />manifests and verifies them<br />into absent runtime roots;<br />optionally carries referenced<br />derivatives and excludes<br />media/spool/secrets.</div>"]
+        style 43 fill:#85bbf0,stroke:#1168bd,color:#000000
       end
 
-      40[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable complete<br />cleaned-text, relational, and<br />full-text authority for<br />migration ledger, sources,<br />documents, visits, capture<br />observations, URL claims,<br />visit events, snapshots,<br />chunks, chunks_fts, media<br />provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
-      style 40 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      41[("<div style='font-weight: bold'>Local Derivative Store</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Reconstructible compatibility<br />evidence such as<br />pre-version-9 clean-text<br />sidecars; new captures create<br />no text sidecars.</div>")]
-      style 41 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      44[("<div style='font-weight: bold'>Local Backup Bundles</div><div style='font-size: 70%; margin-top: 0px'>[Container: Local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Operator-selected local<br />directories containing an<br />online SQLite snapshot,<br />redaction-safe hash manifest,<br />and optional referenced<br />derivatives; media, spool,<br />and secrets excluded by<br />default.</div>")]
+      44[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable complete<br />cleaned-text, relational, and<br />full-text authority for<br />migration ledger, sources,<br />documents, visits, capture<br />observations, URL claims,<br />visit events, snapshots,<br />chunks, chunks_fts, media<br />provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
       style 44 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      45[("<div style='font-weight: bold'>Local Derivative Store</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Reconstructible compatibility<br />evidence such as<br />pre-version-9 clean-text<br />sidecars; new captures create<br />no text sidecars.</div>")]
+      style 45 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      48[("<div style='font-weight: bold'>Local Backup Bundles</div><div style='font-size: 70%; margin-top: 0px'>[Container: Local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Operator-selected local<br />directories containing an<br />online SQLite snapshot,<br />redaction-safe hash manifest,<br />and optional referenced<br />derivatives; media, spool,<br />and secrets excluded by<br />default.</div>")]
+      style 48 fill:#2f95c8,stroke:#20688c,color:#ffffff
     end
 
-    39-. "<div>Creates and validates online<br />SQLite snapshots from</div><div style='font-size: 70%'>[sqlite3 backup API]</div>" .->40
-    39-. "<div>Optionally copies referenced<br />contained derivatives from</div><div style='font-size: 70%'>[Filesystem]</div>" .->41
-    39-. "<div>Atomically publishes and<br />verifies manifests/files in</div><div style='font-size: 70%'>[Filesystem + SHA-256]</div>" .->44
+    43-. "<div>Creates and validates online<br />SQLite snapshots from</div><div style='font-size: 70%'>[sqlite3 backup API]</div>" .->44
+    43-. "<div>Optionally copies referenced<br />contained derivatives from</div><div style='font-size: 70%'>[Filesystem]</div>" .->45
+    43-. "<div>Atomically publishes and<br />verifies manifests/files in</div><div style='font-size: 70%'>[Filesystem + SHA-256]</div>" .->48
 
   end
 ```

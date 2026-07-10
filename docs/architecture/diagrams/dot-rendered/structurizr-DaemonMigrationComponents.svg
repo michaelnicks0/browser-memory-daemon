@@ -17,14 +17,14 @@
 <text text-anchor="start" x="952" y="-72.8" font-family="Arial" font-size="19.00" fill="#444444">[Software System]</text>
 </g>
 <g id="clust2" class="cluster">
-<title>cluster_15</title>
+<title>cluster_19</title>
 <polygon fill="none" stroke="#444444" points="33,-164 33,-746 1261,-746 1261,-164 33,-164"/>
 <text text-anchor="start" x="481.5" y="-192.8" font-family="Arial" font-size="24.00" fill="#444444">WSL Loopback HTTP Daemon</text>
 <text text-anchor="start" x="445" y="-172.8" font-family="Arial" font-size="19.00" fill="#444444">[Container: Python 3.11, ThreadingHTTPServer]</text>
 </g>
-<!-- 16 -->
-<g id="16" class="node">
-<title>16</title>
+<!-- 20 -->
+<g id="20" class="node">
+<title>20</title>
 <polygon fill="#85bbf0" stroke="#1168bd" points="453,-608.5 58,-608.5 58,-377.5 453,-377.5 453,-608.5"/>
 <text text-anchor="start" x="87" y="-560.3" font-family="Arial" font-size="34.00" fill="#000000">HTTP Request Router</text>
 <text text-anchor="start" x="119" y="-538.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python http.server]</text>
@@ -34,9 +34,9 @@
 <text text-anchor="start" x="106" y="-429.3" font-family="Arial" font-size="24.00" fill="#000000">APIs, and applies CORS for</text>
 <text text-anchor="start" x="172" y="-405.3" font-family="Arial" font-size="24.00" fill="#000000">allowed origins.</text>
 </g>
-<!-- 17 -->
-<g id="17" class="node">
-<title>17</title>
+<!-- 21 -->
+<g id="21" class="node">
+<title>21</title>
 <polygon fill="#85bbf0" stroke="#1168bd" points="1236,-721.5 813,-721.5 813,-264.5 1236,-264.5 1236,-721.5"/>
 <text text-anchor="start" x="877" y="-673.3" font-family="Arial" font-size="34.00" fill="#000000">Database Migration</text>
 <text text-anchor="start" x="975.5" y="-639.3" font-family="Arial" font-size="34.00" fill="#000000">Kernel</text>
@@ -55,18 +55,18 @@
 <text text-anchor="start" x="871" y="-316.3" font-family="Arial" font-size="24.00" fill="#000000">reservations through version</text>
 <text text-anchor="start" x="1007.5" y="-292.3" font-family="Arial" font-size="24.00" fill="#000000">13.</text>
 </g>
-<!-- 16&#45;&gt;17 -->
-<g id="90" class="edge">
-<title>16&#45;&gt;17</title>
+<!-- 20&#45;&gt;21 -->
+<g id="102" class="edge">
+<title>20&#45;&gt;21</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M453.03,-493C559.77,-493 692.1,-493 802.43,-493"/>
 <polygon fill="#444444" stroke="#444444" points="802.69,-496.5 812.69,-493 802.69,-489.5 802.69,-496.5"/>
 <polygon fill="white" stroke="transparent" points="489,-493 489,-553 777,-553 777,-493 489,-493"/>
 <text text-anchor="start" x="522.5" y="-529.8" font-family="Arial" font-size="24.00" fill="#444444">Requires compatible</text>
 <text text-anchor="start" x="493" y="-503.8" font-family="Arial" font-size="24.00" fill="#444444">initialized schema through</text>
 </g>
-<!-- 40 -->
-<g id="40" class="node">
-<title>40</title>
+<!-- 44 -->
+<g id="44" class="node">
+<title>44</title>
 <path fill="#2f95c8" stroke="#20688c" d="M2025,-695.22C2025,-723.44 1936.48,-746.38 1827.5,-746.38 1718.52,-746.38 1630,-723.44 1630,-695.22 1630,-695.22 1630,-234.78 1630,-234.78 1630,-206.56 1718.52,-183.62 1827.5,-183.62 1936.48,-183.62 2025,-206.56 2025,-234.78 2025,-234.78 2025,-695.22 2025,-695.22"/>
 <path fill="none" stroke="#20688c" d="M2025,-695.22C2025,-666.99 1936.48,-644.06 1827.5,-644.06 1718.52,-644.06 1630,-666.99 1630,-695.22"/>
 <text text-anchor="start" x="1714.5" y="-621.3" font-family="Arial" font-size="34.00" fill="#ffffff">SQLite + FTS5</text>
@@ -84,9 +84,9 @@
 <text text-anchor="start" x="1702" y="-312.3" font-family="Arial" font-size="24.00" fill="#ffffff">rules, audit events, and</text>
 <text text-anchor="start" x="1735.5" y="-288.3" font-family="Arial" font-size="24.00" fill="#ffffff">deletion receipts.</text>
 </g>
-<!-- 17&#45;&gt;40 -->
-<g id="139" class="edge">
-<title>17&#45;&gt;40</title>
+<!-- 21&#45;&gt;44 -->
+<g id="151" class="edge">
+<title>21&#45;&gt;44</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1236.22,-485.63C1354.67,-481.49 1501.93,-476.35 1619.73,-472.23"/>
 <polygon fill="#444444" stroke="#444444" points="1620.09,-475.72 1629.96,-471.87 1619.84,-468.72 1620.09,-475.72"/>
 <polygon fill="white" stroke="transparent" points="1272,-483 1272,-582 1594,-582 1594,-483 1272,-483"/>
