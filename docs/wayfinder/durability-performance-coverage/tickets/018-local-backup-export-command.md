@@ -47,7 +47,8 @@ Implemented as a promoted hardening slice under ADR-0041:
 - SQLite online backup captures committed WAL state into a staged, hash-manifested bundle;
 - tokens/config, Chrome state, media cache, and media spool are excluded;
 - optional derivatives are DB-referenced, root-contained, deduplicated, and hash-verified;
-- restore rejects traversal, symlinks, undeclared files, tampering, truncation, unknown-newer schemas, active-root overlap, and existing destinations;
+- restore dry-run and execute reject traversal, symlinks, malformed provenance/types, undeclared/duplicate/missing files, tampering, truncation, schema/fingerprint/FTS/foreign-key mismatch, active-root overlap, and existing destinations;
+- bundle/restore trees enforce private permissions, source databases must be real contained files, populated config/state/media/spool fixtures remain excluded, and legacy derivative references are normalized on restore;
 - Linux no-replace publication and injected interruption tests prove no partial or raced destination overwrite;
 - restored search, snapshot detail/provenance, and forget work without media bytes.
 

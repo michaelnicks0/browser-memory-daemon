@@ -185,3 +185,28 @@ def test_cli_storage_reconcile_defaults_to_dry_run(tmp_path, capsys):
     applied = _last_json(capsys)
     assert applied["dry_run"] is False
     assert applied["tombstones"]["pending"] == 0
+
+
+def test_cli_backup_create_and_restore_validate_then_execute(tmp_path, capsys):
+    runtime_root = tmp_path / "runtime"
+    base = ["--runtime-root", str(runtime_root), "--token", "test-token", "--policy-mode", "all"]
+    assert main(base + ["migrate", "--execute"]) == 0
+    _last_json(capsys)
+
+    bundle = tmp_path / "bundle"
+    assert main(base + ["backup", "create", "--destination", str(bundle)]) == 0
+    assert _last_json(capsys)["dry_run"] is True
+    assert not bundle.exists()
+    assert main(base + ["backup", "create", "--destination", str(bundle), "--execute"]) == 0
+    assert _last_json(capsys)["dry_run"] is False
+
+    destination = tmp_path / "restored"
+    restore_args = ["backup", "restore", "--source", str(bundle), "--destination", str(destination)]
+    assert main(base + restore_args) == 0
+    preview = _last_json(capsys)
+    assert preview["dry_run"] is True
+    assert preview["database"]["ready"] is True
+    assert not destination.exists()
+    assert main(base + [*restore_args, "--execute"]) == 0
+    assert _last_json(capsys)["dry_run"] is False
+    assert (destination / "browser-memory.sqlite3").is_file()

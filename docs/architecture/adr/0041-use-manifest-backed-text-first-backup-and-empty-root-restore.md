@@ -35,12 +35,12 @@ A naked copy of a live WAL database is unsafe. A restore that overwrites an exis
 ## Decision
 
 1. `backup create` and `backup restore` are dry-run by default and require explicit absolute local paths.
-2. Execute backup uses SQLite's online backup API into a sibling staging directory, verifies integrity/foreign keys/FTS relationships/complete text/schema compatibility, writes a redaction-safe manifest last, fsyncs, and atomically publishes the bundle with Linux no-replace semantics.
+2. Execute backup rejects symlinked/out-of-root source databases, checks source inode identity around SQLite's online backup API, writes into a private `0700` sibling staging tree with `0600` files, verifies integrity/foreign keys/FTS relationships/complete text/schema compatibility, writes a redaction-safe manifest last, fsyncs, and atomically publishes the bundle with Linux no-replace semantics.
 3. The default bundle contains the SQLite snapshot and `manifest.json` only. API tokens/config, Chrome profile/extension copy, media cache, and media spool are explicitly excluded.
 4. `--include-derivatives` optionally copies only DB-referenced, root-contained, hash-verified clean-text compatibility sidecars. Orphans are not copied.
 5. Every manifest file entry records a bundle-relative path, kind, byte size, and SHA-256. The manifest contains counts and compatibility metadata but no captured text, URLs, token values, or source runtime paths.
-6. Restore accepts only a real manifest-backed bundle, rejects traversal, symlinks, undeclared files, duplicate paths, size/hash mismatches, unsupported kinds, and unknown manifest formats.
-7. Execute restore requires an absent explicit destination. It stages under the destination parent, verifies copied bytes and the restored database, then atomically renames the staged runtime into place. It never overwrites or merges into an existing runtime.
+6. Restore accepts only a real manifest-backed bundle, rejects traversal, symlinks (including `manifest.json`), undeclared files, duplicate paths, malformed provenance/types, size/hash mismatches, unsupported kinds, unknown manifest formats, and manifest/database semantic disagreement.
+7. Dry-run restore performs immutable read-only SQLite integrity, foreign-key, FTS relationship, authoritative-text, schema-version, and fingerprint checks without creating the destination. Execute restore requires an absent explicit destination, stages with private permissions under the destination parent, verifies copied bytes and the restored database, normalizes restored derivative locators, then atomically renames the staged runtime into place. It never overwrites or merges into an existing runtime.
 8. Restored media bytes are absent by design. SQLite-authoritative search, snapshot detail, and forget must work without media cache or spool.
 9. A backup predating forget can still contain forgotten content. Backup retention or erasure is a separate explicit operator action and is not implied by live-store forget.
 
@@ -60,6 +60,8 @@ A naked copy of a live WAL database is unsafe. A restore that overwrites an exis
 - Backup retention/pruning remains manual and approval-gated.
 - Restored media rows may report missing bytes until media is rehydrated or reconciled.
 - Restore creates a new runtime root but does not install services, tokens, or the Chrome extension.
+- `SIGKILL`, power loss, or host failure can leave a hidden private `0700` staging directory; automatic stale-stage deletion is intentionally not attempted because it could race a concurrent operation. Inspect and remove stale stages explicitly.
+- The Linux no-replace primitive prevents destination overwrite, but this local operator workflow does not claim protection from a hostile same-user process repeatedly replacing destination-parent namespace components during execution.
 
 ### Neutral
 
@@ -76,7 +78,13 @@ A naked copy of a live WAL database is unsafe. A restore that overwrites an exis
 - An injected restore interruption proves no partial destination is published and staging is removed.
 - A publication-race test proves a destination appearing after preflight is preserved rather than overwritten.
 - Optional derivative tests copy only referenced contained sidecars and exclude orphans.
-- CLI tests prove create/restore are dry-run first, dry-run create does not initialize a database, and restore cannot target the active runtime.
+- Adversarial manifest tests cover malformed JSON/root/provenance/types, unknown formats, unsupported kinds, duplicate/undeclared/missing files, and size/hash mismatch.
+- Dry-run semantic tests reject manifest fingerprint disagreement, FTS missing rows, foreign-key violations, corrupt SQLite, and unknown-newer schemas before destination creation.
+- Permission/source tests prove private output modes and rejection of symlinked or out-of-root source databases.
+- Derivative tests require the declared set and hashes to match DB references and normalize legacy absolute references to relative locators on restore.
+- Interruption tests cover caught I/O failure and `KeyboardInterrupt`; a post-publication parent-fsync failure reports explicitly that the destination exists and requires inspection.
+- Populated exclusion fixtures prove config/state/media/spool files and fixture secret bytes do not enter the default bundle.
+- CLI tests prove create/restore are dry-run first, execute both paths, dry-run create does not initialize a database, and restore cannot target the active runtime.
 
 ## Rollback
 

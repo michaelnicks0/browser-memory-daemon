@@ -5,10 +5,12 @@ import errno
 import hashlib
 import json
 import os
+import re
 import shutil
 import sqlite3
+import stat
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO
 
@@ -20,6 +22,7 @@ from .migrations import LATEST_SCHEMA_VERSION, MIGRATIONS, MigrationError, migra
 _FORMAT_VERSION = 1
 _DATABASE_BUNDLE_PATH = "database/memory.sqlite3"
 _DERIVATIVE_PREFIX = "derivatives/clean-text/"
+_SHA256_PATTERN = re.compile(r"[0-9a-f]{64}")
 _EXCLUSIONS = [
     "api-token-and-config",
     "chrome-profile-and-extension-copy",
@@ -37,10 +40,7 @@ def _publish_directory(stage: Path, destination: Path) -> None:
     libc = ctypes.CDLL(None, use_errno=True)
     renameat2 = getattr(libc, "renameat2", None)
     if renameat2 is None:  # pragma: no cover - WSL/Linux provides renameat2
-        if destination.exists() or destination.is_symlink():
-            raise BackupError(f"destination appeared before publication: {destination}")
-        os.rename(stage, destination)
-        return
+        raise BackupError("atomic no-replace directory publication is unavailable on this platform")
     renameat2.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_uint]
     renameat2.restype = ctypes.c_int
     if renameat2(-100, os.fsencode(stage), -100, os.fsencode(destination), 1) == 0:
@@ -51,8 +51,18 @@ def _publish_directory(stage: Path, destination: Path) -> None:
     raise OSError(error_number, os.strerror(error_number), str(destination))
 
 
+def _publish_and_sync(stage: Path, destination: Path) -> None:
+    _publish_directory(stage, destination)
+    try:
+        _fsync_dir(destination.parent)
+    except OSError as exc:
+        raise BackupError(
+            f"destination was published but parent-directory fsync failed; inspect before retrying: {destination}"
+        ) from exc
+
+
 def _utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+    return datetime.now(UTC).isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 
 def _sha256_file(path: Path) -> str:
@@ -67,7 +77,11 @@ def _copy_stream(source: BinaryIO, destination: Path) -> tuple[int, str]:
     destination.parent.mkdir(parents=True, exist_ok=True)
     digest = hashlib.sha256()
     size = 0
-    with destination.open("xb") as target:
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    fd = os.open(destination, flags, 0o600)
+    with os.fdopen(fd, "wb") as target:
         while True:
             chunk = source.read(1024 * 1024)
             if not chunk:
@@ -78,6 +92,25 @@ def _copy_stream(source: BinaryIO, destination: Path) -> tuple[int, str]:
         target.flush()
         os.fsync(target.fileno())
     return size, digest.hexdigest()
+
+
+def _write_private_text(path: Path, text: str) -> None:
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    fd = os.open(path, flags, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        handle.write(text)
+        handle.flush()
+        os.fsync(handle.fileno())
+
+
+def _secure_tree_modes(root: Path) -> None:
+    for path in root.rglob("*"):
+        if path.is_symlink():
+            raise BackupError(f"staging tree contains a symlink: {path.relative_to(root)}")
+        os.chmod(path, 0o700 if path.is_dir() else 0o600)
+    os.chmod(root, 0o700)
 
 
 def _fsync_dir(path: Path) -> None:
@@ -95,10 +128,19 @@ def _fsync_tree_directories(root: Path) -> None:
     _fsync_dir(root)
 
 
+def _reject_symlink_components(path: Path, *, label: str) -> None:
+    current = Path(path.anchor)
+    for part in path.parts[1:]:
+        current = current / part
+        if current.is_symlink():
+            raise BackupError(f"{label} must not contain symlink components: {current}")
+
+
 def _resolved_new_destination(path: Path, *, forbidden: tuple[Path, ...] = ()) -> Path:
     expanded = path.expanduser()
     if not expanded.is_absolute():
         raise BackupError("destination must be an explicit absolute path")
+    _reject_symlink_components(expanded.parent, label="destination parent")
     try:
         parent = expanded.parent.resolve(strict=True)
     except OSError as exc:
@@ -127,8 +169,37 @@ def _runtime_roots(config: RuntimeConfig) -> tuple[Path, ...]:
     return tuple(roots)
 
 
-def _database_summary(db_path: Path) -> dict[str, Any]:
-    conn = sqlite3.connect(db_path)
+def _validated_source_database(config: RuntimeConfig) -> tuple[Path, tuple[int, int]]:
+    source = config.db_path.expanduser()
+    if source.is_symlink():
+        raise BackupError("source SQLite database must not be a symlink")
+    try:
+        source_stat = os.lstat(source)
+        data_root = config.data_root.expanduser().resolve(strict=True)
+        resolved = source.resolve(strict=True)
+    except OSError as exc:
+        raise BackupError("source SQLite database does not exist") from exc
+    if not stat.S_ISREG(source_stat.st_mode):
+        raise BackupError("source SQLite database must be a regular file")
+    if resolved.parent != data_root:
+        raise BackupError("source SQLite database is outside the configured data root")
+    return source, (source_stat.st_dev, source_stat.st_ino)
+
+
+def _assert_source_identity(source: Path, expected: tuple[int, int]) -> None:
+    try:
+        current = os.lstat(source)
+    except OSError as exc:
+        raise BackupError("source SQLite database changed during backup") from exc
+    if stat.S_ISLNK(current.st_mode) or (current.st_dev, current.st_ino) != expected:
+        raise BackupError("source SQLite database changed during backup")
+
+
+def _database_summary(db_path: Path, *, read_only: bool = False) -> dict[str, Any]:
+    if read_only:
+        conn = sqlite3.connect(f"{db_path.resolve().as_uri()}?mode=ro&immutable=1", uri=True)
+    else:
+        conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     try:
         integrity = str(conn.execute("PRAGMA integrity_check").fetchone()[0])
@@ -143,9 +214,12 @@ def _database_summary(db_path: Path) -> dict[str, Any]:
                 "SELECT COUNT(*) AS n FROM chunks_fts WHERE chunk_id NOT IN (SELECT id FROM chunks)"
             ).fetchone()["n"]
         )
-        conn.execute("INSERT INTO chunks_fts(chunks_fts) VALUES ('integrity-check')")
-        conn.rollback()
-        fts_integrity = "ok"
+        if read_only:
+            fts_integrity = "relationship-check-only"
+        else:
+            conn.execute("INSERT INTO chunks_fts(chunks_fts) VALUES ('integrity-check')")
+            conn.rollback()
+            fts_integrity = "ok"
         missing_text = int(
             conn.execute("SELECT COUNT(*) AS n FROM snapshots WHERE cleaned_text IS NULL").fetchone()["n"]
         )
@@ -165,7 +239,7 @@ def _database_summary(db_path: Path) -> dict[str, Any]:
         and foreign_key_violations == 0
         and chunks_missing_fts == 0
         and fts_orphans == 0
-        and fts_integrity == "ok"
+        and (fts_integrity == "ok" or read_only)
         and missing_text == 0
         and schema_version == LATEST_SCHEMA_VERSION
         and fingerprint == expected_fingerprint
@@ -184,8 +258,11 @@ def _database_summary(db_path: Path) -> dict[str, Any]:
     }
 
 
-def _backup_database(source: Path, destination: Path) -> None:
+def _backup_database(source: Path, destination: Path, *, source_identity: tuple[int, int]) -> None:
+    _assert_source_identity(source, source_identity)
     source_uri = f"{source.resolve().as_uri()}?mode=ro"
+    fd = os.open(destination, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    os.close(fd)
     source_conn = sqlite3.connect(source_uri, uri=True)
     target_conn = sqlite3.connect(destination)
     try:
@@ -197,12 +274,16 @@ def _backup_database(source: Path, destination: Path) -> None:
     finally:
         target_conn.close()
         source_conn.close()
+    _assert_source_identity(source, source_identity)
     with destination.open("rb") as handle:
         os.fsync(handle.fileno())
 
 
-def _derivative_rows(db_path: Path) -> list[sqlite3.Row]:
-    conn = sqlite3.connect(db_path)
+def _derivative_rows(db_path: Path, *, read_only: bool = False) -> list[sqlite3.Row]:
+    if read_only:
+        conn = sqlite3.connect(f"{db_path.resolve().as_uri()}?mode=ro&immutable=1", uri=True)
+    else:
+        conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     try:
         return conn.execute(
@@ -261,14 +342,14 @@ def create_backup(
     include_derivatives: bool = False,
 ) -> dict[str, Any]:
     destination = _resolved_new_destination(Path(destination), forbidden=_runtime_roots(config))
-    if not config.db_path.is_file():
-        raise BackupError("source SQLite database does not exist")
+    source_database, source_identity = _validated_source_database(config)
     try:
         migration = migration_status(config)
     except MigrationError as exc:
         raise BackupError(f"source SQLite database is not migration-compatible: {exc}") from exc
     if not migration["ready"]:
         raise BackupError("source SQLite database is not migration-compatible")
+    _assert_source_identity(source_database, source_identity)
     preview = {
         "dry_run": not execute,
         "destination": str(destination),
@@ -282,9 +363,10 @@ def create_backup(
     if stage.exists():
         raise BackupError("backup staging path collision")
     try:
-        (stage / "database").mkdir(parents=True)
+        stage.mkdir(mode=0o700)
+        (stage / "database").mkdir(mode=0o700)
         database_path = stage / _DATABASE_BUNDLE_PATH
-        _backup_database(config.db_path, database_path)
+        _backup_database(source_database, database_path, source_identity=source_identity)
         database = _database_summary(database_path)
         if not database["ready"]:
             raise BackupError("online backup failed database integrity or compatibility smoke")
@@ -311,18 +393,19 @@ def create_backup(
             "exclusions": list(_EXCLUSIONS),
         }
         manifest_path = stage / "manifest.json"
-        manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-        with manifest_path.open("rb") as handle:
-            os.fsync(handle.fileno())
+        _write_private_text(manifest_path, json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+        _secure_tree_modes(stage)
         _fsync_tree_directories(stage)
-        _publish_directory(stage, destination)
-        _fsync_dir(destination.parent)
+        _publish_and_sync(stage, destination)
     except BackupError:
         shutil.rmtree(stage, ignore_errors=True)
         raise
     except (OSError, sqlite3.Error, ValueError) as exc:
         shutil.rmtree(stage, ignore_errors=True)
         raise BackupError(f"backup creation failed: {exc}") from exc
+    except BaseException:
+        shutil.rmtree(stage, ignore_errors=True)
+        raise
     return {
         **preview,
         "dry_run": False,
@@ -347,6 +430,36 @@ def _manifest_nonnegative_int(value: Any, *, field: str) -> int:
     return int(value)
 
 
+def _manifest_nonempty_string(value: Any, *, field: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise BackupError(f"invalid backup manifest {field}")
+    return value
+
+
+def _manifest_sha256(value: Any) -> str:
+    digest = _manifest_nonempty_string(value, field="sha256").lower()
+    if _SHA256_PATTERN.fullmatch(digest) is None:
+        raise BackupError("invalid backup manifest sha256")
+    return digest
+
+
+def _validate_manifest_provenance(manifest: dict[str, Any]) -> None:
+    version = manifest.get("format_version")
+    if isinstance(version, bool) or not isinstance(version, int) or version != _FORMAT_VERSION:
+        raise BackupError("unsupported backup manifest format")
+    created_at = _manifest_nonempty_string(manifest.get("created_at"), field="created_at")
+    try:
+        parsed = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise BackupError("invalid backup manifest created_at") from exc
+    if parsed.tzinfo is None:
+        raise BackupError("invalid backup manifest created_at")
+    _manifest_nonempty_string(manifest.get("application_version"), field="application_version")
+    _manifest_nonempty_string(manifest.get("policy_mode"), field="policy_mode")
+    if not isinstance(manifest.get("database"), dict):
+        raise BackupError("invalid backup manifest database summary")
+
+
 def _bundle_file_path(source: Path, relative: PurePosixPath) -> Path:
     candidate = source
     for part in relative.parts:
@@ -365,15 +478,14 @@ def _bundle_file_path(source: Path, relative: PurePosixPath) -> Path:
 def _load_and_verify_bundle(source: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     if source.is_symlink() or not source.is_dir():
         raise BackupError("backup source must be a real directory")
-    manifest_path = source / "manifest.json"
     try:
+        manifest_path = _bundle_file_path(source, PurePosixPath("manifest.json"))
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
+    except json.JSONDecodeError as exc:
         raise BackupError("backup manifest is missing or invalid") from exc
     if not isinstance(manifest, dict):
         raise BackupError("backup manifest root must be an object")
-    if manifest.get("format_version") != _FORMAT_VERSION:
-        raise BackupError("unsupported backup manifest format")
+    _validate_manifest_provenance(manifest)
     files = manifest.get("files")
     if not isinstance(files, list) or not files:
         raise BackupError("backup manifest contains no files")
@@ -393,8 +505,9 @@ def _load_and_verify_bundle(source: Path) -> tuple[dict[str, Any], list[dict[str
         expected_size = _manifest_nonnegative_int(item.get("bytes"), field="byte count")
         if path.stat().st_size != expected_size:
             raise BackupError(f"backup file size mismatch: {relative_text}")
+        expected_hash = _manifest_sha256(item.get("sha256"))
         actual_hash = _sha256_file(path)
-        if actual_hash != str(item.get("sha256", "")).lower():
+        if actual_hash != expected_hash:
             raise BackupError(f"backup file hash mismatch: {relative_text}")
         kind = str(item.get("kind", ""))
         if kind == "sqlite-database":
@@ -427,6 +540,94 @@ def _load_and_verify_bundle(source: Path) -> tuple[dict[str, Any], list[dict[str
     if extras:
         raise BackupError(f"backup bundle contains undeclared files: {extras[0]}")
     return manifest, verified
+
+
+def _validate_database_claim(claimed: Any, actual: dict[str, Any]) -> None:
+    if not isinstance(claimed, dict):
+        raise BackupError("invalid backup manifest database summary")
+    if not isinstance(claimed.get("ready"), bool):
+        raise BackupError("invalid backup manifest database summary: ready")
+    for field in ("integrity_check", "schema_fingerprint"):
+        _manifest_nonempty_string(claimed.get(field), field=f"database.{field}")
+    for field in (
+        "foreign_key_violations",
+        "chunks_missing_fts",
+        "fts_orphans",
+        "missing_authoritative_text",
+        "schema_version",
+    ):
+        _manifest_nonnegative_int(claimed.get(field), field=f"database.{field}")
+    counts = claimed.get("counts")
+    if not isinstance(counts, dict) or not all(isinstance(key, str) for key in counts):
+        raise BackupError("invalid backup manifest database summary: counts")
+    for key, value in counts.items():
+        _manifest_nonnegative_int(value, field=f"database.counts.{key}")
+    for field in (
+        "ready",
+        "integrity_check",
+        "foreign_key_violations",
+        "chunks_missing_fts",
+        "fts_orphans",
+        "missing_authoritative_text",
+        "schema_version",
+        "schema_fingerprint",
+        "counts",
+    ):
+        if claimed.get(field) != actual.get(field):
+            raise BackupError(f"backup manifest database summary mismatch: {field}")
+
+
+def _derivative_restore_normalizations(
+    db_path: Path,
+    files: list[dict[str, Any]],
+    *,
+    included: bool,
+) -> list[tuple[str, str]]:
+    derivative_items = [item for item in files if item["kind"] == "clean-text-derivative"]
+    if not included:
+        if derivative_items:
+            raise BackupError("derivative manifest files do not match inclusion policy")
+        return []
+    by_path = {str(item["path"]): item for item in derivative_items}
+    used: set[str] = set()
+    normalizations: list[tuple[str, str]] = []
+    for row in _derivative_rows(db_path, read_only=True):
+        locator = str(row["cleaned_text_locator"] or "")
+        legacy_path = str(row["cleaned_text_path"] or "")
+        expected_hash = str(row["text_hash"] or "").lower()
+        candidates: list[dict[str, Any]] = []
+        if locator:
+            candidates = [item for path, item in by_path.items() if path == f"{_DERIVATIVE_PREFIX}{locator}"]
+        elif legacy_path:
+            candidates = [
+                item
+                for path, item in by_path.items()
+                if legacy_path.replace("\\", "/").endswith(f"/{path[len(_DERIVATIVE_PREFIX):]}")
+            ]
+        candidates = [item for item in candidates if str(item["sha256"]).lower() == expected_hash]
+        if len(candidates) != 1:
+            raise BackupError(f"derivative manifest does not match referenced snapshot: {row['id']}")
+        item = candidates[0]
+        path = str(item["path"])
+        used.add(path)
+        normalizations.append((str(row["id"]), path[len(_DERIVATIVE_PREFIX) :]))
+    if used != set(by_path):
+        raise BackupError("derivative manifest does not match database references")
+    return normalizations
+
+
+def _normalize_restored_derivatives(db_path: Path, rows: list[tuple[str, str]]) -> None:
+    if not rows:
+        return
+    conn = sqlite3.connect(db_path)
+    try:
+        with conn:
+            conn.executemany(
+                "UPDATE snapshots SET cleaned_text_path = NULL, cleaned_text_locator = ? WHERE id = ?",
+                [(locator, snapshot_id) for snapshot_id, locator in rows],
+            )
+    finally:
+        conn.close()
 
 
 def _restore_config(root: Path) -> RuntimeConfig:
@@ -464,12 +665,24 @@ def restore_backup(
     forbidden = (source,) if active_config is None else (source, *_runtime_roots(active_config))
     destination = _resolved_new_destination(Path(destination), forbidden=forbidden)
     manifest, files = _load_and_verify_bundle(source)
+    database_item = next(item for item in files if item["kind"] == "sqlite-database")
+    bundled_database = _bundle_file_path(source, PurePosixPath(database_item["path"]))
+    verified_database = _database_summary(bundled_database, read_only=True)
+    if not verified_database["ready"]:
+        raise BackupError("backup database failed integrity, FTS, text, or schema smoke")
+    _validate_database_claim(manifest.get("database"), verified_database)
+    derivative_normalizations = _derivative_restore_normalizations(
+        bundled_database,
+        files,
+        included=bool(manifest["inclusions"]["clean_text_derivatives"]),
+    )
     preview = {
         "dry_run": not execute,
         "source": str(source),
         "destination": str(destination),
         "file_count": len(files),
         "manifest_created_at": manifest.get("created_at"),
+        "database": verified_database,
     }
     if not execute:
         return preview
@@ -478,8 +691,9 @@ def restore_backup(
     if stage.exists():
         raise BackupError("restore staging path collision")
     try:
+        stage.mkdir(mode=0o700)
         restore_config = _restore_config(stage)
-        restore_config.data_root.mkdir(parents=True)
+        restore_config.data_root.mkdir(parents=True, exist_ok=True)
         for item in files:
             source_path = _bundle_file_path(source, PurePosixPath(item["path"]))
             if item["kind"] == "sqlite-database":
@@ -494,16 +708,20 @@ def restore_backup(
                 size, digest = _copy_stream(handle, target_path)
             if size != int(item["bytes"]) or digest != str(item["sha256"]).lower():
                 raise BackupError(f"restored file verification failed: {item['path']}")
+        _normalize_restored_derivatives(restore_config.db_path, derivative_normalizations)
         database = _database_summary(restore_config.db_path)
         if not database["ready"]:
             raise BackupError("restored database failed integrity, FTS, text, or schema smoke")
+        _secure_tree_modes(stage)
         _fsync_tree_directories(stage)
-        _publish_directory(stage, destination)
-        _fsync_dir(destination.parent)
+        _publish_and_sync(stage, destination)
     except BackupError:
         shutil.rmtree(stage, ignore_errors=True)
         raise
     except (OSError, sqlite3.Error, ValueError) as exc:
         shutil.rmtree(stage, ignore_errors=True)
         raise BackupError(f"backup restore failed: {exc}") from exc
+    except BaseException:
+        shutil.rmtree(stage, ignore_errors=True)
+        raise
     return {**preview, "dry_run": False, "database": database}

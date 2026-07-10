@@ -156,12 +156,12 @@ verification:
 <h2 id="decision">Decision</h2>
 <ol>
 <li><code>backup create</code> and <code>backup restore</code> are dry-run by default and require explicit absolute local paths.</li>
-<li>Execute backup uses SQLite's online backup API into a sibling staging directory, verifies integrity/foreign keys/FTS relationships/complete text/schema compatibility, writes a redaction-safe manifest last, fsyncs, and atomically publishes the bundle with Linux no-replace semantics.</li>
+<li>Execute backup rejects symlinked/out-of-root source databases, checks source inode identity around SQLite's online backup API, writes into a private <code>0700</code> sibling staging tree with <code>0600</code> files, verifies integrity/foreign keys/FTS relationships/complete text/schema compatibility, writes a redaction-safe manifest last, fsyncs, and atomically publishes the bundle with Linux no-replace semantics.</li>
 <li>The default bundle contains the SQLite snapshot and <code>manifest.json</code> only. API tokens/config, Chrome profile/extension copy, media cache, and media spool are explicitly excluded.</li>
 <li><code>--include-derivatives</code> optionally copies only DB-referenced, root-contained, hash-verified clean-text compatibility sidecars. Orphans are not copied.</li>
 <li>Every manifest file entry records a bundle-relative path, kind, byte size, and SHA-256. The manifest contains counts and compatibility metadata but no captured text, URLs, token values, or source runtime paths.</li>
-<li>Restore accepts only a real manifest-backed bundle, rejects traversal, symlinks, undeclared files, duplicate paths, size/hash mismatches, unsupported kinds, and unknown manifest formats.</li>
-<li>Execute restore requires an absent explicit destination. It stages under the destination parent, verifies copied bytes and the restored database, then atomically renames the staged runtime into place. It never overwrites or merges into an existing runtime.</li>
+<li>Restore accepts only a real manifest-backed bundle, rejects traversal, symlinks (including <code>manifest.json</code>), undeclared files, duplicate paths, malformed provenance/types, size/hash mismatches, unsupported kinds, unknown manifest formats, and manifest/database semantic disagreement.</li>
+<li>Dry-run restore performs immutable read-only SQLite integrity, foreign-key, FTS relationship, authoritative-text, schema-version, and fingerprint checks without creating the destination. Execute restore requires an absent explicit destination, stages with private permissions under the destination parent, verifies copied bytes and the restored database, normalizes restored derivative locators, then atomically renames the staged runtime into place. It never overwrites or merges into an existing runtime.</li>
 <li>Restored media bytes are absent by design. SQLite-authoritative search, snapshot detail, and forget must work without media cache or spool.</li>
 <li>A backup predating forget can still contain forgotten content. Backup retention or erasure is a separate explicit operator action and is not implied by live-store forget.</li>
 </ol>
@@ -180,6 +180,8 @@ verification:
 <li>Backup retention/pruning remains manual and approval-gated.</li>
 <li>Restored media rows may report missing bytes until media is rehydrated or reconciled.</li>
 <li>Restore creates a new runtime root but does not install services, tokens, or the Chrome extension.</li>
+<li><code>SIGKILL</code>, power loss, or host failure can leave a hidden private <code>0700</code> staging directory; automatic stale-stage deletion is intentionally not attempted because it could race a concurrent operation. Inspect and remove stale stages explicitly.</li>
+<li>The Linux no-replace primitive prevents destination overwrite, but this local operator workflow does not claim protection from a hostile same-user process repeatedly replacing destination-parent namespace components during execution.</li>
 </ul>
 <h3 id="neutral">Neutral</h3>
 <ul>
@@ -196,7 +198,13 @@ verification:
 <li>An injected restore interruption proves no partial destination is published and staging is removed.</li>
 <li>A publication-race test proves a destination appearing after preflight is preserved rather than overwritten.</li>
 <li>Optional derivative tests copy only referenced contained sidecars and exclude orphans.</li>
-<li>CLI tests prove create/restore are dry-run first, dry-run create does not initialize a database, and restore cannot target the active runtime.</li>
+<li>Adversarial manifest tests cover malformed JSON/root/provenance/types, unknown formats, unsupported kinds, duplicate/undeclared/missing files, and size/hash mismatch.</li>
+<li>Dry-run semantic tests reject manifest fingerprint disagreement, FTS missing rows, foreign-key violations, corrupt SQLite, and unknown-newer schemas before destination creation.</li>
+<li>Permission/source tests prove private output modes and rejection of symlinked or out-of-root source databases.</li>
+<li>Derivative tests require the declared set and hashes to match DB references and normalize legacy absolute references to relative locators on restore.</li>
+<li>Interruption tests cover caught I/O failure and <code>KeyboardInterrupt</code>; a post-publication parent-fsync failure reports explicitly that the destination exists and requires inspection.</li>
+<li>Populated exclusion fixtures prove config/state/media/spool files and fixture secret bytes do not enter the default bundle.</li>
+<li>CLI tests prove create/restore are dry-run first, execute both paths, dry-run create does not initialize a database, and restore cannot target the active runtime.</li>
 </ul>
 <h2 id="rollback">Rollback</h2>
 <p>The slice is additive and repository-local. Roll back the backup module, CLI commands, tests, and docs together. Existing runtime databases and storage roots are unchanged. Bundles already created remain ordinary local directories and require explicit operator handling; rollback does not delete them.</p>

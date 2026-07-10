@@ -5,7 +5,7 @@
 > **Runtime:** Python **3.11+** (`pyproject.toml` requires `>=3.11`). Use `BMD_PYTHON=/path/to/python3.11` when the host `python3` is older.
 
 <!-- BEGIN GENERATED:inventory-summary -->
-> **Current inventory:** 214 static test functions across 36 files — 184 daemon pytest tests + 30 extension node:test tests.
+> **Current inventory:** 224 static test functions across 36 files — 194 daemon pytest tests + 30 extension node:test tests.
 <!-- END GENERATED:inventory-summary -->
 
 ---
@@ -79,7 +79,7 @@ Use `--runtime-root PATH` only for explicit fixture roots; do not point the stre
 ## Generated test inventory
 
 <!-- BEGIN GENERATED:audit-run -->
-Latest inventory: **214 static test functions** across **36 files** (184 daemon pytest; 30 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
+Latest inventory: **224 static test functions** across **36 files** (194 daemon pytest; 30 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
 <!-- END GENERATED:audit-run -->
 
 ## Requirements traceability gate
@@ -100,7 +100,7 @@ Traceability gate: **✅ pass**.
 | Normative changes without revision increment | none |
 | Requirements removed without catalog disposition | none |
 | Catalog load errors | none |
-| Static test inventory measured | 214 tests / 36 files |
+| Static test inventory measured | 224 tests / 36 files |
 <!-- END GENERATED:traceability-gate -->
 
 ### Per-file counts
@@ -108,7 +108,7 @@ Traceability gate: **✅ pass**.
 | Test file | Runner | Test functions |
 |---|---|---:|
 | `daemon/tests/e2e/test_admin_api.py` | pytest | 3 |
-| `daemon/tests/e2e/test_cli_admin.py` | pytest | 5 |
+| `daemon/tests/e2e/test_cli_admin.py` | pytest | 6 |
 | `daemon/tests/e2e/test_concurrency_stress.py` | pytest | 2 |
 | `daemon/tests/e2e/test_daily_driver_install.py` | pytest | 2 |
 | `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | 4 |
@@ -116,7 +116,7 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | 5 |
 | `daemon/tests/e2e/test_read_model_indexes.py` | pytest | 1 |
 | `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | 4 |
-| `daemon/tests/integration/test_backup_restore.py` | pytest | 9 |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | 18 |
 | `daemon/tests/integration/test_capture_observations.py` | pytest | 8 |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | 25 |
 | `daemon/tests/integration/test_media_storage.py` | pytest | 5 |
@@ -143,7 +143,7 @@ Traceability gate: **✅ pass**.
 | `extension/tests/unit/queue.test.js` | node:test | 1 |
 | `extension/tests/unit/service_worker.test.js` | node:test | 6 |
 | `extension/tests/unit/shared.test.js` | node:test | 2 |
-| **Total** |  | **214** |
+| **Total** |  | **224** |
 <!-- END GENERATED:per-file-counts -->
 
 <details>
@@ -160,6 +160,7 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/e2e/test_cli_admin.py` | pytest | `(module)` | `test_cli_snapshot_text_reconcile_defaults_to_dry_run` | 126 | Cli snapshot text reconcile defaults to dry run. |
 | `daemon/tests/e2e/test_cli_admin.py` | pytest | `(module)` | `test_cli_media_spool_status_and_drain_are_dry_run_safe` | 150 | Cli media spool status and drain are dry run safe. |
 | `daemon/tests/e2e/test_cli_admin.py` | pytest | `(module)` | `test_cli_storage_reconcile_defaults_to_dry_run` | 170 | Cli storage reconcile defaults to dry run. |
+| `daemon/tests/e2e/test_cli_admin.py` | pytest | `(module)` | `test_cli_backup_create_and_restore_validate_then_execute` | 190 | Cli backup create and restore validate then execute. |
 | `daemon/tests/e2e/test_concurrency_stress.py` | pytest | `(module)` | `test_concurrency_stress_harness_exercises_shared_sqlite_db` | 6 | Concurrency stress harness exercises shared sqlite db. |
 | `daemon/tests/e2e/test_concurrency_stress.py` | pytest | `(module)` | `test_concurrency_stress_cli_prints_json_for_explicit_runtime` | 36 | Concurrency stress cli prints json for explicit runtime. |
 | `daemon/tests/e2e/test_daily_driver_install.py` | pytest | `(module)` | `test_install_daily_driver_dry_run_is_non_mutating` | 11 | Install daily driver dry run is non mutating. |
@@ -184,15 +185,24 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | `(module)` | `test_ui_dashboard_static_asset_path_traversal_is_rejected` | 72 | Ui dashboard static asset path traversal is rejected. |
 | `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | `(module)` | `test_ui_dashboard_rejects_non_loopback_host_header` | 82 | Ui dashboard rejects non loopback host header. |
 | `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | `(module)` | `test_ui_dashboard_smoke_runner_executes_bootstrap_empty_and_error_states` | 93 | Ui dashboard smoke runner executes bootstrap empty and error states. |
-| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_backup_create_is_dry_run_first_and_manifest_excludes_media_and_secrets` | 72 | Backup create is dry run first and manifest excludes media and secrets. |
-| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_backup_restore_recreates_search_detail_and_forget_without_media_cache` | 116 | Backup restore recreates search detail and forget without media cache. |
-| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_restore_rejects_tampered_bundle_and_existing_destination_without_mutation` | 143 | Restore rejects tampered bundle and existing destination without mutation. |
-| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_restore_rejects_traversal_and_symlinked_bundle_paths` | 174 | Restore rejects traversal and symlinked bundle paths. |
-| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_restore_rejects_truncated_and_newer_schema_databases_after_manifest_verification` | 203 | Restore rejects truncated and newer schema databases after manifest verification. |
-| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_atomic_publication_refuses_a_destination_created_after_preflight` | 231 | Atomic publication refuses a destination created after preflight. |
-| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_interrupted_restore_removes_staging_and_never_publishes_destination` | 248 | Interrupted restore removes staging and never publishes destination. |
-| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_backup_optionally_includes_only_referenced_contained_derivatives` | 268 | Backup optionally includes only referenced contained derivatives. |
-| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_backup_cli_is_dry_run_first_for_create_and_restore` | 293 | Backup cli is dry run first for create and restore. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_backup_create_is_dry_run_first_and_manifest_excludes_media_and_secrets` | 83 | Backup create is dry run first and manifest excludes media and secrets. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_backup_restore_recreates_search_detail_and_forget_without_media_cache` | 127 | Backup restore recreates search detail and forget without media cache. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_restore_rejects_tampered_bundle_and_existing_destination_without_mutation` | 154 | Restore rejects tampered bundle and existing destination without mutation. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_restore_rejects_traversal_and_symlinked_bundle_paths` | 192 | Restore rejects traversal and symlinked bundle paths. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_restore_rejects_truncated_and_newer_schema_databases_after_manifest_verification` | 221 | Restore rejects truncated and newer schema databases after manifest verification. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_atomic_publication_refuses_a_destination_created_after_preflight` | 249 | Atomic publication refuses a destination created after preflight. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_interrupted_restore_removes_staging_and_never_publishes_destination` | 266 | Interrupted restore removes staging and never publishes destination. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_backup_optionally_includes_only_referenced_contained_derivatives` | 286 | Backup optionally includes only referenced contained derivatives. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_backup_and_restore_force_private_tree_permissions_despite_umask` | 311 | Backup and restore force private tree permissions despite umask. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_backup_rejects_symlinked_or_out_of_root_source_database` | 328 | Backup rejects symlinked or out of root source database. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_restore_rejects_symlinked_manifest_and_validates_database_during_dry_run` | 339 | Restore rejects symlinked manifest and validates database during dry run. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_restore_rejects_malformed_or_incomplete_manifest_contract` | 372 | Restore rejects malformed or incomplete manifest contract. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_restore_requires_derivative_manifest_to_match_database_and_rebases_legacy_reference` | 401 | Restore requires derivative manifest to match database and rebases legacy reference. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_restore_rejects_invalid_json_root_and_unknown_manifest_version` | 438 | Restore rejects invalid json root and unknown manifest version. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_restore_dry_run_rejects_database_semantic_mismatch_matrix` | 448 | Restore dry run rejects database semantic mismatch matrix. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_default_bundle_excludes_populated_config_state_media_spool_and_secret_bytes` | 473 | Default bundle excludes populated config state media spool and secret bytes. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_backup_interrupt_cleanup_and_post_publication_fsync_state_are_explicit` | 494 | Backup interrupt cleanup and post publication fsync state are explicit. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_backup_cli_is_dry_run_first_for_create_and_restore` | 527 | Backup cli is dry run first for create and restore. |
 | `daemon/tests/integration/test_capture_observations.py` | pytest | `(module)` | `test_same_visit_records_multiple_unchanged_observations_without_replacing_visit` | 36 | Same visit records multiple unchanged observations without replacing visit. |
 | `daemon/tests/integration/test_capture_observations.py` | pytest | `(module)` | `test_same_visit_changed_content_links_each_observation_to_contemporaneous_snapshot` | 86 | Same visit changed content links each observation to contemporaneous snapshot. |
 | `daemon/tests/integration/test_capture_observations.py` | pytest | `(module)` | `test_multiple_visits_can_observe_one_deduplicated_snapshot` | 111 | Multiple visits can observe one deduplicated snapshot. |

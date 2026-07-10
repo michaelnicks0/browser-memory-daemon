@@ -342,12 +342,12 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td><code>backup create --destination ABS_PATH [--include-derivatives] [--execute]</code></td>
 <td>Preview or atomically create a manifest-backed SQLite-authoritative local bundle.</td>
-<td>Dry-run by default. Media/spool/secrets are excluded; optional derivatives are reference- and hash-verified.</td>
+<td>Dry-run by default. Source DB must be real/contained; output is private <code>0700</code>/<code>0600</code>; media/spool/secrets are excluded; optional derivatives are reference- and hash-verified.</td>
 </tr>
 <tr>
 <td><code>backup restore --source ABS_PATH --destination ABS_PATH [--execute]</code></td>
-<td>Preview or verify/restore a bundle into an absent explicit runtime root.</td>
-<td>Dry-run by default. Rejects existing destinations and any path/hash/schema/integrity mismatch.</td>
+<td>Validate or restore a bundle into an absent explicit runtime root.</td>
+<td>Dry-run performs immutable SQLite/schema/FTS/FK/manifest validation without creating the destination. Execute publishes a private runtime and rejects existing destinations or any path/hash/semantic mismatch.</td>
 </tr>
 </tbody>
 </table>
@@ -459,8 +459,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li><code>capture-fixture</code> exists for tests/smoke checks, not browser capture replacement.</li>
 <li><code>migrate --check/--execute</code>, <code>blob-root migrate</code>, <code>snapshot-text reconcile</code>, and <code>storage reconcile</code> are current repository migration/reconciliation helpers; dry-run remains the default for filesystem-backed reconciliation.</li>
 <li><code>storage reconcile</code> never traverses an unavailable external media root and never deletes outside configured roots.</li>
-<li><code>backup create</code> and <code>backup restore</code> require absolute paths and are dry-run first. Create rejects active runtime/storage overlap; restore never overwrites or merges an existing destination.</li>
-<li>Backup defaults to SQLite plus manifest. Tokens/config, Chrome state, final media, and spool bytes are excluded; <code>--include-derivatives</code> adds only referenced contained clean-text sidecars.</li>
+<li><code>backup create</code> and <code>backup restore</code> require absolute paths and are dry-run first. Create rejects active runtime/storage overlap and symlinked destination parents; restore never overwrites or merges an existing destination.</li>
+<li>Backup defaults to private SQLite plus manifest files. Tokens/config, Chrome state, final media, and spool bytes are excluded; <code>--include-derivatives</code> adds only referenced contained clean-text sidecars and restore normalizes legacy absolute references.</li>
 <li>Future CLI changes should update this contract and <code>daemon/tests/e2e/test_cli_admin.py</code> together.</li>
 </ul>
   </article>

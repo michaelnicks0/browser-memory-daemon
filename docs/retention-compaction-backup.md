@@ -120,7 +120,9 @@ python -m browser_memory_daemon backup restore --source /absolute/local/path/bac
 python -m browser_memory_daemon backup restore --source /absolute/local/path/backup-bundle --destination /absolute/local/path/restored-runtime --execute
 ```
 
-`--include-derivatives` adds only referenced, contained, hash-verified clean-text compatibility sidecars. Restore rejects existing destinations, path traversal, symlinks, undeclared files, and any size/hash/schema/integrity mismatch before publishing the new runtime root.
+`--include-derivatives` adds only referenced, contained, hash-verified clean-text compatibility sidecars. Restore requires the derivative manifest to match database references and rebases legacy absolute references to contained relative locators. Restore rejects existing destinations, path traversal, symlinks, malformed manifests, undeclared files, and any size/hash/schema/fingerprint/FTS/foreign-key mismatch before publishing the new runtime root. Dry-run performs the immutable read-only database checks without creating the destination.
+
+Backup bundles and restored roots are forced to private `0700` directories with `0600` files, independent of the caller's umask. A process kill or power failure can leave a hidden private `.NAME.staging-*` directory; inspect it and remove it explicitly rather than relying on automatic stale-stage deletion. If publication succeeds but the parent-directory fsync fails, the command reports that the destination exists and must be inspected before retrying.
 
 ### 6. Forget and backups
 

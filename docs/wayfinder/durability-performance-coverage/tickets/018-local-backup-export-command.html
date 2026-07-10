@@ -166,7 +166,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>SQLite online backup captures committed WAL state into a staged, hash-manifested bundle;</li>
 <li>tokens/config, Chrome state, media cache, and media spool are excluded;</li>
 <li>optional derivatives are DB-referenced, root-contained, deduplicated, and hash-verified;</li>
-<li>restore rejects traversal, symlinks, undeclared files, tampering, truncation, unknown-newer schemas, active-root overlap, and existing destinations;</li>
+<li>restore dry-run and execute reject traversal, symlinks, malformed provenance/types, undeclared/duplicate/missing files, tampering, truncation, schema/fingerprint/FTS/foreign-key mismatch, active-root overlap, and existing destinations;</li>
+<li>bundle/restore trees enforce private permissions, source databases must be real contained files, populated config/state/media/spool fixtures remain excluded, and legacy derivative references are normalized on restore;</li>
 <li>Linux no-replace publication and injected interruption tests prove no partial or raced destination overwrite;</li>
 <li>restored search, snapshot detail/provenance, and forget work without media bytes.</li>
 </ul>
