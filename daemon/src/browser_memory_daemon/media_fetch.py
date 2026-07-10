@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import base64
+import io
 import ipaddress
 import socket
-import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, BinaryIO, Protocol, cast
+from typing import Any, BinaryIO, Protocol
 from urllib.error import HTTPError, URLError
 from urllib.parse import unquote_to_bytes, urljoin, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
@@ -274,6 +274,7 @@ def _guarded_public_fetch(
     deadline: float | None = None,
     budget: _FetchBudget | None = None,
     output_stream: BinaryIO | None = None,
+    hls_playlist_max_bytes: int | None = None,
 ) -> tuple[bytes, str, str, str]:
     del page_url  # Public daemon fetch intentionally sends no Referer.
     current_url = source_url
@@ -315,15 +316,30 @@ def _guarded_public_fetch(
                         continue
                     if status >= 400:
                         return b"", "", current_url, f"fetch-status-{status}"
+                    content_type = str(response.headers.get("content-type", ""))
+                    response_max_bytes = max_bytes
+                    sniff_hls_max_bytes = hls_playlist_max_bytes
+                    if hls_playlist_max_bytes is not None and _is_hls_candidate(current_url, content_type):
+                        response_max_bytes = min(max_bytes, hls_playlist_max_bytes)
+                        sniff_hls_max_bytes = None
                     if output_stream is not None:
                         _size, read_reason = _read_http_response_to_stream(
                             response,
                             output_stream,
-                            max_bytes=max_bytes,
+                            max_bytes=response_max_bytes,
+                            timeout_seconds=timeout_seconds,
+                            deadline=deadline,
+                            sniff_hls_max_bytes=sniff_hls_max_bytes,
                         )
-                        return b"", str(response.headers.get("content-type", "")), current_url, read_reason
-                    content, read_reason = _read_http_response_limited(response, max_bytes=max_bytes)
-                    return content, str(response.headers.get("content-type", "")), current_url, read_reason
+                        return b"", content_type, current_url, read_reason
+                    content, read_reason = _read_http_response_limited(
+                        response,
+                        max_bytes=response_max_bytes,
+                        timeout_seconds=timeout_seconds,
+                        deadline=deadline,
+                        sniff_hls_max_bytes=sniff_hls_max_bytes,
+                    )
+                    return content, content_type, current_url, read_reason
             except HTTPError as exc:
                 if 300 <= int(exc.code) < 400:
                     location = _response_header(exc.headers, "location")
@@ -360,27 +376,48 @@ def _looks_like_hls_playlist(content: bytes) -> bool:
     return content.lstrip().startswith(b"#EXTM3U")
 
 
-def _read_http_response_limited(response: Any, *, max_bytes: int) -> tuple[bytes, str]:
-    try:
-        content_length = int(response.headers.get("content-length") or "0")
-    except ValueError:
-        content_length = 0
-    if content_length > max_bytes:
-        return b"", "media-too-large"
-    chunks: list[bytes] = []
-    total = 0
-    while True:
-        chunk = response.read(64 * 1024)
-        if not chunk:
-            break
-        total += len(chunk)
-        if total > max_bytes:
-            return b"", "media-too-large"
-        chunks.append(chunk)
-    return b"".join(chunks), ""
+def _set_response_read_timeout(response: Any, timeout_seconds: float) -> None:
+    candidates = [
+        getattr(getattr(getattr(response, "fp", None), "raw", None), "_sock", None),
+        getattr(getattr(response, "fp", None), "_sock", None),
+        getattr(response, "_sock", None),
+    ]
+    for candidate in candidates:
+        setter = getattr(candidate, "settimeout", None)
+        if callable(setter):
+            setter(max(0.001, timeout_seconds))
+            return
 
 
-def _read_http_response_to_stream(response: Any, stream: BinaryIO, *, max_bytes: int) -> tuple[int, str]:
+def _read_http_response_limited(
+    response: Any,
+    *,
+    max_bytes: int,
+    timeout_seconds: float,
+    deadline: float | None = None,
+    sniff_hls_max_bytes: int | None = None,
+) -> tuple[bytes, str]:
+    output = io.BytesIO()
+    _size, reason = _read_http_response_to_stream(
+        response,
+        output,
+        max_bytes=max_bytes,
+        timeout_seconds=timeout_seconds,
+        deadline=deadline,
+        sniff_hls_max_bytes=sniff_hls_max_bytes,
+    )
+    return (b"" if reason else output.getvalue()), reason
+
+
+def _read_http_response_to_stream(
+    response: Any,
+    stream: BinaryIO,
+    *,
+    max_bytes: int,
+    timeout_seconds: float,
+    deadline: float | None = None,
+    sniff_hls_max_bytes: int | None = None,
+) -> tuple[int, str]:
     try:
         content_length = int(response.headers.get("content-length") or "0")
     except ValueError:
@@ -388,147 +425,38 @@ def _read_http_response_to_stream(response: Any, stream: BinaryIO, *, max_bytes:
     if content_length > max_bytes:
         return 0, "media-too-large"
     total = 0
+    sniff_prefix = bytearray()
+    active_sniff_limit = sniff_hls_max_bytes
+    effective_max_bytes = max_bytes
     while True:
-        chunk = response.read(64 * 1024)
+        if _deadline_expired(deadline):
+            return 0, "hls-time-budget-exceeded"
+        remaining_timeout = _remaining_timeout(timeout_seconds, deadline)
+        _set_response_read_timeout(response, remaining_timeout)
+        read_size = min(64 * 1024, max(1, effective_max_bytes + 1 - total))
+        if active_sniff_limit is not None:
+            read_size = min(read_size, max(1, active_sniff_limit + 1 - len(sniff_prefix)))
+        try:
+            chunk = response.read(read_size)
+        except TimeoutError:
+            reason = "hls-time-budget-exceeded" if _deadline_expired(deadline) else "fetch-timeout"
+            return 0, reason
         if not chunk:
             break
+        if _deadline_expired(deadline):
+            return 0, "hls-time-budget-exceeded"
         total += len(chunk)
-        if total > max_bytes:
+        if active_sniff_limit is not None:
+            sniff_prefix.extend(chunk)
+            stripped = bytes(sniff_prefix).lstrip()
+            if stripped.startswith(b"#EXTM3U"):
+                effective_max_bytes = min(max_bytes, active_sniff_limit)
+                active_sniff_limit = None
+            elif stripped and not b"#EXTM3U".startswith(stripped):
+                active_sniff_limit = None
+            elif len(sniff_prefix) > active_sniff_limit:
+                return 0, "media-too-large"
+        if total > effective_max_bytes:
             return 0, "media-too-large"
         stream.write(chunk)
     return total, ""
-
-
-
-
-def _stream_size(stream: BinaryIO) -> int:
-    position = stream.tell()
-    stream.seek(0, 2)
-    size = stream.tell()
-    stream.seek(position)
-    return size
-
-
-def _fetch_media_stream(
-    source_url: str,
-    page_url: str,
-    *,
-    media_type: str,
-    max_bytes: int,
-    timeout_seconds: float,
-    config: RuntimeConfig,
-) -> FetchedMediaStream:
-    try:
-        resource_lease = media_resource_budget(config).acquire(
-            byte_count=max_bytes,
-            request_count=0,
-            timeout=timeout_seconds,
-        )
-    except MediaResourceUnavailable:
-        return FetchedMediaStream(None, 0, "", "media-resource-budget")
-    spool = cast(BinaryIO, tempfile.SpooledTemporaryFile(max_size=1024 * 1024, mode="w+b"))
-    try:
-        parts = urlsplit(source_url)
-        if parts.scheme == "data":
-            content, mime_type, reason = _data_url_to_media(source_url, media_type=media_type, max_bytes=max_bytes)
-            if reason:
-                spool.close()
-                resource_lease.release()
-                return FetchedMediaStream(None, 0, mime_type, reason)
-            spool.write(content)
-            spool.seek(0)
-            return FetchedMediaStream(spool, len(content), mime_type, "", resource_lease)
-        if parts.scheme not in {"http", "https"}:
-            spool.close()
-            resource_lease.release()
-            return FetchedMediaStream(None, 0, "", "unsupported-media-url-scheme")
-        deadline = time.monotonic() + max(0.001, timeout_seconds)
-        initial_max_bytes = max_bytes
-        if media_type == "video" and parts.path.lower().endswith(".m3u8"):
-            initial_max_bytes = min(max_bytes, config.media_hls_playlist_max_bytes)
-        _content, raw_content_type, final_url, reason = _guarded_public_fetch(
-            config,
-            source_url,
-            page_url,
-            accept="image/*,video/*,audio/*,application/vnd.apple.mpegurl,application/x-mpegURL,application/octet-stream,*/*;q=0.8",
-            max_bytes=initial_max_bytes,
-            timeout_seconds=timeout_seconds,
-            deadline=deadline,
-            output_stream=spool,
-        )
-        if reason:
-            spool.close()
-            resource_lease.release()
-            return FetchedMediaStream(None, 0, "", reason)
-        raw_mime = _content_type_mime(raw_content_type)
-        response_mime = _safe_response_mime(raw_content_type, media_type=media_type)
-        hls_candidate = media_type == "video" and _is_hls_candidate(final_url or source_url, raw_content_type)
-        spool.seek(0)
-        playlist_probe = spool.read(config.media_hls_playlist_max_bytes + 1) if media_type == "video" else b""
-        looks_hls = media_type == "video" and _looks_like_hls_playlist(playlist_probe)
-        if raw_mime and not response_mime and not hls_candidate and not looks_hls:
-            spool.close()
-            resource_lease.release()
-            return FetchedMediaStream(None, 0, "", "non-media-content-type")
-        if hls_candidate or looks_hls:
-            if len(playlist_probe) > config.media_hls_playlist_max_bytes:
-                spool.close()
-                resource_lease.release()
-                return FetchedMediaStream(None, 0, "", "media-too-large")
-            from .media_hls import _fetch_hls_media_bytes, _HlsFetchBudget
-
-            spool.seek(0)
-            spool.truncate()
-            hls_budget = _HlsFetchBudget(
-                requests_remaining=max(0, config.media_hls_max_requests - 1),
-                deadline=deadline,
-            )
-            _assembled, hls_mime, hls_reason = _fetch_hls_media_bytes(
-                final_url or source_url,
-                page_url,
-                playlist_probe,
-                max_bytes=max_bytes,
-                timeout_seconds=timeout_seconds,
-                config=config,
-                budget=hls_budget,
-                deadline=deadline,
-                output_stream=spool,
-            )
-            if hls_reason:
-                spool.close()
-                resource_lease.release()
-                return FetchedMediaStream(None, 0, hls_mime, hls_reason)
-            response_mime = hls_mime
-        byte_size = _stream_size(spool)
-        if byte_size <= 0:
-            spool.close()
-            resource_lease.release()
-            return FetchedMediaStream(None, 0, response_mime, "empty-media-response")
-        spool.seek(0)
-        return FetchedMediaStream(spool, byte_size, response_mime, "", resource_lease)
-    except BaseException:
-        spool.close()
-        resource_lease.release()
-        raise
-
-
-def _fetch_media_bytes(
-    source_url: str,
-    page_url: str,
-    *,
-    media_type: str,
-    max_bytes: int,
-    timeout_seconds: float,
-    config: RuntimeConfig,
-) -> tuple[bytes, str, str]:
-    with _fetch_media_stream(
-        source_url,
-        page_url,
-        config=config,
-        media_type=media_type,
-        max_bytes=max_bytes,
-        timeout_seconds=timeout_seconds,
-    ) as fetched:
-        if fetched.reason or fetched.stream is None:
-            return b"", fetched.mime_type, fetched.reason
-        return fetched.stream.read(), fetched.mime_type, ""

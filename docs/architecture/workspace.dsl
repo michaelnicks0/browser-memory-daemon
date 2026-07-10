@@ -36,6 +36,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
                 mediaStateModel = component "Media State Model" "Owns caller-visible and internal artifact/task status taxonomies, fetch-error classification, and explicit ordinary versus force-reset transition matrices." "Python" "Current"
                 mediaTaskRepository = component "Media Task Repository" "Creates deterministic tasks, preserves terminal state, atomically leases due work, recovers stale leases, and applies bounded retry/backoff outcomes independently from media transport." "Python + sqlite3" "Current"
                 mediaArtifactStore = component "Media Artifact Store" "Owns artifact rows, transactional cross-process cache reservations, unique streamed publication, failed-write compensation, contained reads, cache admission, oldest-first eviction, purge/rehydration, and lifecycle registration/tombstones." "Python + sqlite3 + BlobStore" "Current"
+                mediaTransportCoordinator = component "Media Transport Coordinator" "Classifies direct versus HLS responses, applies the aggregate HLS request budget from the first network open, enforces playlist sniffing and byte caps, and coordinates bounded streamed assembly." "Python" "Current"
                 guardedMediaFetch = component "Guarded Media Fetch" "Owns streamed HTTP/data transport, public-address validation, redirect revalidation, no-referrer requests, response-byte limits, process request/byte leases, and shared deadlines." "Python stdlib urllib + socket" "Current"
                 mediaHlsTransport = component "Bounded HLS Transport" "Parses bounded playlists, selects variants, expands init maps/segments through the guarded fetch boundary, and streams assembly within aggregate byte/depth/request/deadline limits." "Python" "Current"
                 mediaOps = component "Media Operator and Reconciliation Workflow" "Owns scoped dry-run-first budget requeue plus bounded current-state CDP/blob and stored-task reconciliation." "Python + sqlite3" "Current"
@@ -140,7 +141,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
         mediaManager -> mediaStateModel "Classifies artifact outcomes and transition intent through"
         mediaManager -> mediaTaskRepository "Creates and claims durable media work through"
         mediaManager -> mediaArtifactStore "Publishes, resolves, purges, and rehydrates artifacts through"
-        mediaManager -> guardedMediaFetch "Delegates daemon-public media transport to"
+        mediaManager -> mediaTransportCoordinator "Delegates daemon-public media orchestration to"
         mediaManager -> sqliteDatabase "Updates media artifact rows in" "sqlite3"
         mediaTaskRepository -> mediaStateModel "Validates task status vocabulary and retry classification through"
         mediaTaskRepository -> sqliteDatabase "Creates, leases, and advances media tasks in" "sqlite3"
@@ -149,8 +150,10 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
         mediaArtifactStore -> sqliteDatabase "Reserves cache capacity and advances media artifact rows transactionally in" "sqlite3"
         mediaArtifactStore -> blobStore "Stages unique candidates, resolves contained reads, and deletes failed candidates through"
         mediaArtifactStore -> storageReconciler "Registers committed blobs and tombstones replacement, eviction, and purge bytes through"
-        guardedMediaFetch -> mediaHlsTransport "Delegates detected playlists for bounded parsing and assembly to"
-        guardedMediaFetch -> mediaResourceBudget "Leases aggregate transfer bytes and each active HTTP request through"
+        mediaTransportCoordinator -> guardedMediaFetch "Streams the initial response and every direct artifact through"
+        mediaTransportCoordinator -> mediaHlsTransport "Delegates detected playlists for bounded parsing and assembly to"
+        mediaTransportCoordinator -> mediaResourceBudget "Leases aggregate transfer bytes through"
+        guardedMediaFetch -> mediaResourceBudget "Leases each active HTTP request through"
         guardedMediaFetch -> webSites "Validates and fetches public media from" "HTTP(S), no Referer or Chrome cookies"
         mediaHlsTransport -> guardedMediaFetch "Fetches every variant, init map, and segment through"
         mediaOps -> mediaTaskRepository "Resets explicitly selected tasks and closes bounded stale stored work through"
@@ -304,6 +307,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
             include mediaStateModel
             include mediaTaskRepository
             include mediaArtifactStore
+            include mediaTransportCoordinator
             include guardedMediaFetch
             include mediaHlsTransport
             include mediaOps
@@ -318,6 +322,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
 
         component wslLoopbackDaemon "DaemonMediaTransportComponents" {
             include mediaManager
+            include mediaTransportCoordinator
             include guardedMediaFetch
             include mediaHlsTransport
             include mediaArtifactStore
@@ -331,6 +336,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
             include mediaManager
             include mediaTaskRepository
             include mediaArtifactStore
+            include mediaTransportCoordinator
             include guardedMediaFetch
             include mediaHlsTransport
             include mediaResourceBudget

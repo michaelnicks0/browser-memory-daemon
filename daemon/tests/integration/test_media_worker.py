@@ -12,6 +12,7 @@ from pathlib import Path
 
 import browser_memory_daemon.media_fetch as media_fetch_module
 import browser_memory_daemon.media_hls as media_hls_module
+import browser_memory_daemon.media_transport as media_transport_module
 from browser_memory_daemon.app import make_server
 from browser_memory_daemon.config import load_config
 from browser_memory_daemon.db import connect, init_db
@@ -72,6 +73,8 @@ class FakeFetchResponse:
         self.status = status
         self.headers = {"content-length": str(len(body)), **(headers or {})}
         self._body = io.BytesIO(body)
+        self._sock: object | None = None
+        self.bytes_read = 0
 
     def __enter__(self):
         return self
@@ -80,7 +83,9 @@ class FakeFetchResponse:
         return False
 
     def read(self, size: int = -1) -> bytes:
-        return self._body.read(size)
+        chunk = self._body.read(size)
+        self.bytes_read += len(chunk)
+        return chunk
 
 
 def fake_resolver_for(mapping: dict[str, str]):
@@ -100,7 +105,7 @@ def test_guarded_public_fetch_rejects_dns_to_private_without_opening(monkeypatch
     monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"cdn.example": "10.0.0.5"}))
     monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", lambda request, *, timeout: opened.append(request.full_url))
 
-    content, mime_type, reason = media_fetch_module._fetch_media_bytes(
+    content, mime_type, reason = media_transport_module._fetch_media_bytes(
         "https://cdn.example/private.png",
         "https://page.example/full/path?secret=1",
         media_type="image",
@@ -122,7 +127,7 @@ def test_guarded_public_fetch_rejects_ipv6_loopback_literal_without_resolving(mo
     monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_RESOLVER", lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("resolver should not run")))
     monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", lambda request, *, timeout: opened.append(request.full_url))
 
-    _content, _mime_type, reason = media_fetch_module._fetch_media_bytes(
+    _content, _mime_type, reason = media_transport_module._fetch_media_bytes(
         "http://[::1]/loopback.png",
         "https://page.example/full/path?secret=1",
         media_type="image",
@@ -147,7 +152,7 @@ def test_guarded_public_fetch_allowlisted_private_host_omits_referer(monkeypatch
     monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"private.example": "10.0.0.8"}))
     monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", opener)
 
-    content, mime_type, reason = media_fetch_module._fetch_media_bytes(
+    content, mime_type, reason = media_transport_module._fetch_media_bytes(
         "https://private.example/image.png",
         "https://page.example/full/path?secret=1",
         media_type="image",
@@ -174,7 +179,7 @@ def test_guarded_public_fetch_revalidates_public_to_private_redirect(monkeypatch
     monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"public.example": "8.8.8.8", "private.internal": "10.0.0.9"}))
     monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", opener)
 
-    _content, _mime_type, reason = media_fetch_module._fetch_media_bytes(
+    _content, _mime_type, reason = media_transport_module._fetch_media_bytes(
         "https://public.example/redirect.png",
         "https://page.example/full/path?secret=1",
         media_type="image",
@@ -198,7 +203,7 @@ def test_guarded_public_fetch_detects_redirect_loop(monkeypatch, tmp_path):
     monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"loop.example": "8.8.8.8"}))
     monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", opener)
 
-    _content, _mime_type, reason = media_fetch_module._fetch_media_bytes(
+    _content, _mime_type, reason = media_transport_module._fetch_media_bytes(
         "https://loop.example/media.png",
         "https://page.example/full/path?secret=1",
         media_type="image",
@@ -225,7 +230,7 @@ def test_guarded_hls_revalidates_private_child_url(monkeypatch, tmp_path):
     monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"media.example": "8.8.8.8"}))
     monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", opener)
 
-    _content, _mime_type, reason = media_fetch_module._fetch_media_bytes(
+    _content, _mime_type, reason = media_transport_module._fetch_media_bytes(
         "https://media.example/master.m3u8",
         "https://page.example/full/path?secret=1",
         media_type="video",
@@ -253,7 +258,7 @@ def test_guarded_hls_enforces_total_request_budget(monkeypatch, tmp_path):
     monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"media.example": "8.8.8.8"}))
     monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", opener)
 
-    _content, _mime_type, reason = media_fetch_module._fetch_media_bytes(
+    _content, _mime_type, reason = media_transport_module._fetch_media_bytes(
         "https://media.example/master.m3u8",
         "https://page.example/full/path?secret=1",
         media_type="video",
@@ -266,22 +271,93 @@ def test_guarded_hls_enforces_total_request_budget(monkeypatch, tmp_path):
     assert opened == ["https://media.example/master.m3u8"]
 
 
+def test_guarded_hls_initial_redirect_claims_total_request_budget(monkeypatch, tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    cfg = replace(cfg, media_hls_max_requests=1)
+    opened: list[str] = []
+
+    def opener(request, *, timeout):
+        opened.append(request.full_url)
+        return FakeFetchResponse(status=302, headers={"location": "https://media.example/master.m3u8"})
+
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"media.example": "8.8.8.8"}))
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", opener)
+
+    _content, _mime_type, reason = media_transport_module._fetch_media_bytes(
+        "https://media.example/redirect",
+        "https://page.example/full/path?secret=1",
+        media_type="video",
+        max_bytes=1000,
+        timeout_seconds=1,
+        config=cfg,
+    )
+
+    assert reason == "hls-request-budget-exceeded"
+    assert opened == ["https://media.example/redirect"]
+
+
+def test_guarded_fetch_enforces_deadline_during_slow_response_body(monkeypatch, tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    clock = {"now": 100.0}
+
+    class SlowFetchResponse(FakeFetchResponse):
+        def read(self, size: int = -1) -> bytes:
+            chunk = super().read(size)
+            clock["now"] += 2.0
+            return chunk
+
+    read_timeouts: list[float] = []
+
+    class FakeSocket:
+        def settimeout(self, timeout: float) -> None:
+            read_timeouts.append(timeout)
+
+    response = SlowFetchResponse(headers={"content-type": "video/mp2t"}, body=b"abc")
+    response._sock = FakeSocket()
+
+    def monotonic() -> float:
+        return clock["now"]
+
+    monkeypatch.setattr(media_fetch_module.time, "monotonic", monotonic)
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"media.example": "8.8.8.8"}))
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", lambda request, *, timeout: response)
+    output = io.BytesIO()
+
+    _content, _content_type, _final_url, reason = media_fetch_module._guarded_public_fetch(
+        cfg,
+        "https://media.example/segment.ts",
+        "https://page.example/full/path?secret=1",
+        accept="video/*",
+        max_bytes=1000,
+        timeout_seconds=10,
+        deadline=101.0,
+        output_stream=output,
+    )
+
+    assert reason == "hls-time-budget-exceeded"
+    assert response.bytes_read == 3
+    assert read_timeouts == [1.0]
+    assert output.getvalue() == b""
+
+
 def test_guarded_hls_enforces_initial_playlist_byte_budget(monkeypatch, tmp_path):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
     cfg = replace(cfg, media_hls_playlist_max_bytes=32)
     opened: list[str] = []
 
+    response = FakeFetchResponse(
+        headers={"content-type": "application/octet-stream"},
+        body=b"#EXTM3U\n" + b"# oversized playlist padding\n" * 4,
+    )
+
     def opener(request, *, timeout):
         opened.append(request.full_url)
-        return FakeFetchResponse(
-            headers={"content-type": "application/x-mpegURL"},
-            body=b"#EXTM3U\n" + b"# oversized playlist padding\n" * 4,
-        )
+        return response
 
     monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"media.example": "8.8.8.8"}))
     monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", opener)
 
-    _content, _mime_type, reason = media_fetch_module._fetch_media_bytes(
+    _content, _mime_type, reason = media_transport_module._fetch_media_bytes(
         "https://media.example/disguised.bin",
         "https://page.example/full/path?secret=1",
         media_type="video",
@@ -292,6 +368,7 @@ def test_guarded_hls_enforces_initial_playlist_byte_budget(monkeypatch, tmp_path
 
     assert reason == "media-too-large"
     assert opened == ["https://media.example/disguised.bin"]
+    assert response.bytes_read == cfg.media_hls_playlist_max_bytes + 1
 
 
 def test_media_worker_processes_data_url_task_and_marks_success(tmp_path):

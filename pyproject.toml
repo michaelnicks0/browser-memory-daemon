@@ -33,6 +33,7 @@ files = [
   "daemon/src/browser_memory_daemon/text_authority.py",
   "daemon/src/browser_memory_daemon/media_storage.py",
   "daemon/src/browser_memory_daemon/media_fetch.py",
+  "daemon/src/browser_memory_daemon/media_transport.py",
   "daemon/src/browser_memory_daemon/media_hls.py",
   "daemon/src/browser_memory_daemon/media_ops.py",
   "daemon/src/browser_memory_daemon/media_resources.py",

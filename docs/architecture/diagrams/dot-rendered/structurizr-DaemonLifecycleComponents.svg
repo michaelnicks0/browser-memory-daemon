@@ -48,16 +48,16 @@
 <text text-anchor="start" x="946" y="-345.3" font-family="Arial" font-size="24.00" fill="#000000">unions.</text>
 </g>
 <!-- 15&#45;&gt;20 -->
-<g id="89" class="edge">
+<g id="90" class="edge">
 <title>15&#45;&gt;20</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M453.03,-445C559.81,-445 691.18,-445 796.6,-445"/>
 <polygon fill="#444444" stroke="#444444" points="796.71,-448.5 806.71,-445 796.71,-441.5 796.71,-448.5"/>
 <polygon fill="white" stroke="transparent" points="489,-445 489,-479 771,-479 771,-445 489,-445"/>
 <text text-anchor="start" x="493" y="-455.8" font-family="Arial" font-size="24.00" fill="#444444">Routes lifecycle events to</text>
 </g>
-<!-- 38 -->
-<g id="38" class="node">
-<title>38</title>
+<!-- 39 -->
+<g id="39" class="node">
+<title>39</title>
 <path fill="#2f95c8" stroke="#20688c" d="M1894,-675.22C1894,-703.44 1805.48,-726.38 1696.5,-726.38 1587.52,-726.38 1499,-703.44 1499,-675.22 1499,-675.22 1499,-214.78 1499,-214.78 1499,-186.56 1587.52,-163.62 1696.5,-163.62 1805.48,-163.62 1894,-186.56 1894,-214.78 1894,-214.78 1894,-675.22 1894,-675.22"/>
 <path fill="none" stroke="#20688c" d="M1894,-675.22C1894,-646.99 1805.48,-624.06 1696.5,-624.06 1587.52,-624.06 1499,-646.99 1499,-675.22"/>
 <text text-anchor="start" x="1583.5" y="-601.3" font-family="Arial" font-size="34.00" fill="#ffffff">SQLite + FTS5</text>
@@ -75,9 +75,9 @@
 <text text-anchor="start" x="1571" y="-292.3" font-family="Arial" font-size="24.00" fill="#ffffff">rules, audit events, and</text>
 <text text-anchor="start" x="1604.5" y="-268.3" font-family="Arial" font-size="24.00" fill="#ffffff">deletion receipts.</text>
 </g>
-<!-- 20&#45;&gt;38 -->
-<g id="98" class="edge">
-<title>20&#45;&gt;38</title>
+<!-- 20&#45;&gt;39 -->
+<g id="99" class="edge">
+<title>20&#45;&gt;39</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1164.04,-445C1262.58,-445 1385.67,-445 1488.56,-445"/>
 <polygon fill="#444444" stroke="#444444" points="1488.77,-448.5 1498.77,-445 1488.77,-441.5 1488.77,-448.5"/>
 <polygon fill="white" stroke="transparent" points="1200,-445 1200,-544 1463,-544 1463,-445 1200,-445"/>

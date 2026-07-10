@@ -178,8 +178,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Media artifacts</td>
-<td>✅ Durable image/video refs and streamed binaries: fast text/manifest capture, browser IndexedDB lazy queue, credentialed raw upload, enabled-by-default X/Twitter CDP recorder, guarded public transport, bounded streamed HLS/audio assembly, process request/byte budgets, transactional cross-process cache reservations, just-in-time task claiming, explicit state/task stores, bounded current-state reconciliation, scoped dry-run-first budget requeue, and failed-write compensation; no OCR/media indexing.</td>
-<td><code>media_models.py</code>, <code>media_tasks.py</code>, <code>media_store.py</code>, <code>media_fetch.py</code>, <code>media_hls.py</code>, <code>media_resources.py</code>, <code>media_ops.py</code>, worker/extension tests, ADR-0042 through ADR-0047.</td>
+<td>✅ Durable image/video refs and streamed binaries: fast text/manifest capture, browser IndexedDB lazy queue, credentialed raw upload, enabled-by-default X/Twitter CDP recorder, guarded public transport, acyclic direct/HLS coordination, total request budgeting from the first open, bounded path/MIME/magic playlist detection, per-read deadlines, bounded streamed HLS/audio assembly, process request/byte budgets, transactional cross-process cache reservations, just-in-time task claiming, explicit state/task stores, bounded current-state reconciliation, scoped dry-run-first budget requeue, and failed-write compensation; no OCR/media indexing.</td>
+<td><code>media_models.py</code>, <code>media_tasks.py</code>, <code>media_store.py</code>, <code>media_transport.py</code>, <code>media_fetch.py</code>, <code>media_hls.py</code>, <code>media_resources.py</code>, <code>media_ops.py</code>, worker/extension tests, ADR-0042 through ADR-0047.</td>
 </tr>
 <tr>
 <td>Local UI</td>

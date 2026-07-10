@@ -2,6 +2,7 @@
 
 - Status: accepted
 - Date: 2026-07-10
+- Amended: 2026-07-10 after late adversarial transport review
 - Decision owners: Browser Memory Daemon maintainers
 - Related: ADR-0014, ADR-0039, ADR-0043, ADR-0044, ADR-0045, ADR-0046, REQ-032, REQ-035, REQ-036
 
@@ -30,6 +31,7 @@ Task callers could claim a batch before processing its first item. A task lease 
 6. Manual fetch and the long-running worker claim one task immediately before processing it rather than holding a preclaimed batch behind earlier work.
 7. Process-capacity exhaustion is classified as `media-resource-budget` and remains retryable. It never rolls back or weakens the prior local SQLite text/provenance commit.
 8. Queue status exposes only aggregate configured/current request and byte counters; it exposes no captured content, URL, or storage path.
+9. `media_transport.py` coordinates direct-versus-HLS classification without creating a fetch/HLS module cycle. Potential HLS video transport creates its aggregate request budget before the initial open, caps path/MIME playlists before body consumption, applies bounded magic-prefix sniffing to disguised playlists, and enforces the shared deadline before and after every response-body read.
 
 No live database migration, service restart, media-root write, or daily-driver install is performed by this repository change.
 
@@ -60,6 +62,9 @@ No live database migration, service restart, media-root write, or daily-driver i
 - `daemon/tests/integration/test_media_storage.py::test_cache_reservation_blocks_publication_until_released_and_expired_rows_are_reclaimed`
 - `daemon/tests/integration/test_media_storage.py::test_cancellation_like_stage_failure_releases_spool_and_cache_reservations`
 - `daemon/tests/integration/test_media_worker.py::test_media_resource_pressure_does_not_roll_back_searchable_text`
+- `daemon/tests/integration/test_media_worker.py::test_guarded_hls_initial_redirect_claims_total_request_budget`
+- `daemon/tests/integration/test_media_worker.py::test_guarded_fetch_enforces_deadline_during_slow_response_body`
+- `daemon/tests/integration/test_media_worker.py::test_guarded_hls_enforces_initial_playlist_byte_budget`
 - `daemon/tests/integration/test_migrations.py::test_version_thirteen_adds_cache_reservations_from_exact_prior_schema`
 - `daemon/tests/e2e/test_http_api.py::test_http_upload_get_and_purge_use_bounded_spool_during_media_root_outage`
 - `daemon/tests/e2e/test_http_api.py::test_http_raw_media_upload_returns_503_when_global_byte_budget_cannot_admit_body`

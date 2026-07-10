@@ -13,8 +13,6 @@ from urllib.parse import urlsplit
 from .config import RuntimeConfig
 from .media_fetch import _PUBLIC_FETCH_OPENER as _PUBLIC_FETCH_OPENER
 from .media_fetch import _PUBLIC_FETCH_RESOLVER as _PUBLIC_FETCH_RESOLVER
-from .media_fetch import _fetch_media_bytes as _fetch_media_bytes
-from .media_fetch import _fetch_media_stream as _fetch_media_stream
 from .media_fetch import _file_extension as _file_extension
 from .media_fetch import _guarded_public_fetch as _guarded_public_fetch
 from .media_fetch import _infer_mime_from_url as _infer_mime_from_url
@@ -61,6 +59,8 @@ from .media_tasks import (
 from .media_tasks import (
     process_media_fetch_task_rows as _process_media_fetch_task_rows,
 )
+from .media_transport import _fetch_media_bytes as _fetch_media_bytes
+from .media_transport import _fetch_media_stream as _fetch_media_stream
 from .normalize import normalize_url
 from .policy import POLICY_MODE_ALL, redact_text, redact_url
 from .storage_paths import validate_media_artifact_id

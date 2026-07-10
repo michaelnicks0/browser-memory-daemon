@@ -3,6 +3,7 @@ from dataclasses import replace
 from threading import Event
 
 import browser_memory_daemon.media_fetch as media_fetch
+import browser_memory_daemon.media_transport as media_transport
 import pytest
 from browser_memory_daemon.config import load_config
 from browser_memory_daemon.media_models import media_capture_status_for_fetch_reason
@@ -70,7 +71,7 @@ def test_guarded_fetch_reports_retryable_global_request_pressure(tmp_path, monke
     )
     budget = media_resource_budget(cfg)
     with budget.acquire(byte_count=0, request_count=1, timeout=0):
-        content, mime_type, reason = media_fetch._fetch_media_bytes(
+        content, mime_type, reason = media_transport._fetch_media_bytes(
             "https://example.com/image.png",
             "https://example.org/page",
             media_type="image",
