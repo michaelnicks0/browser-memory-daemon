@@ -612,12 +612,12 @@ rationale = "Destructive operations need proven recovery authority rather than d
 owner = "Operations / Installer"
 status = "planned"
 aliases = ["HRD-016"]
-implementation = ["scripts/install-daily-driver.sh", "docs/retention-compaction-backup.md"]
+implementation = ["daemon/src/browser_memory_daemon/backup_ops.py", "daemon/src/browser_memory_daemon/cli.py", "scripts/install-daily-driver.sh", "docs/retention-compaction-backup.md"]
 unit_evidence = []
-integration_evidence = []
+integration_evidence = ["daemon/tests/integration/test_backup_restore.py"]
 system_evidence = []
-operational_evidence = []
-validation_evidence = []
+operational_evidence = ["docs/architecture/adr/0041-use-manifest-backed-text-first-backup-and-empty-root-restore.md", "docs/retention-compaction-backup.md", "docs/CLI_UX_CONTRACT.md"]
+validation_evidence = ["daemon/tests/integration/test_backup_restore.py::test_backup_create_is_dry_run_first_and_manifest_excludes_media_and_secrets", "daemon/tests/integration/test_backup_restore.py::test_backup_restore_recreates_search_detail_and_forget_without_media_cache", "daemon/tests/integration/test_backup_restore.py::test_restore_rejects_tampered_bundle_and_existing_destination_without_mutation", "daemon/tests/integration/test_backup_restore.py::test_restore_rejects_traversal_and_symlinked_bundle_paths", "daemon/tests/integration/test_backup_restore.py::test_restore_rejects_truncated_and_newer_schema_databases_after_manifest_verification", "daemon/tests/integration/test_backup_restore.py::test_atomic_publication_refuses_a_destination_created_after_preflight", "daemon/tests/integration/test_backup_restore.py::test_interrupted_restore_removes_staging_and_never_publishes_destination", "daemon/tests/integration/test_backup_restore.py::test_backup_optionally_includes_only_referenced_contained_derivatives", "daemon/tests/integration/test_backup_restore.py::test_backup_cli_is_dry_run_first_for_create_and_restore"]
 
 [[requirements]]
 id = "REQ-042"

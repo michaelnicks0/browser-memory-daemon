@@ -126,7 +126,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
   <article class="md-body">
 <h1 id="implement-local-backupexport-command">Implement local backup/export command</h1>
 <h2 id="status">Status</h2>
-<p>deferred-split</p>
+<p>closed — implemented 2026-07-10</p>
 <h2 id="question">Question</h2>
 <p>Can Browser Memory Daemon create a local backup/export bundle with a manifest, consistent SQLite snapshot, optional blob inclusion, restore smoke checks, and honest forget/backups caveats?</p>
 <h2 id="type">Type</h2>
@@ -135,6 +135,9 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <ul>
 <li><code>docs/retention-compaction-backup.md</code></li>
 <li><code>docs/architecture/adr/0019-use-durable-text-retention-with-wal-aware-local-backup.md</code></li>
+<li><code>docs/architecture/adr/0041-use-manifest-backed-text-first-backup-and-empty-root-restore.md</code></li>
+<li><code>daemon/src/browser_memory_daemon/backup_ops.py</code></li>
+<li><code>daemon/tests/integration/test_backup_restore.py</code></li>
 <li><code>daemon/src/browser_memory_daemon/schema.sql</code></li>
 <li><code>daemon/src/browser_memory_daemon/forget.py</code></li>
 <li><code>docs/api.md#deletion-payloads</code></li>
@@ -150,15 +153,29 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>Local-only backup/export destination; no remote upload or publishing.</li>
 <li>Consistent SQLite backup via online backup / <code>VACUUM INTO</code> or explicit quiesced copy mode.</li>
 <li>Manifest with counts, file sizes, hashes, created-at, policy mode, and include/exclude flags; no tokens/secrets/raw captured content.</li>
-<li>Include <code>blobs/clean-text/</code> by default; make <code>blobs/media/</code> optional and explicit.</li>
+<li>Include SQLite-authoritative complete text by default; make referenced clean-text compatibility derivatives optional.</li>
+<li>Exclude disposable media and spool bytes. ADR-0041 intentionally tightens the older ticket's optional-media wording to the adopted backup boundary.</li>
 <li>Exclude token/env/unit files and Windows extension artifact by default.</li>
 <li>Restore smoke against the exported DB: opens read-only and passes <code>PRAGMA integrity_check</code> plus FTS consistency.</li>
 <li>Docs and tests that state forget deletes the live store, not historical backups already created.</li>
 </ul>
 <h2 id="resolution">Resolution</h2>
-<p>Deferred split from ticket 012; not part of the current durability/performance/coverage closeout unless explicitly promoted.</p>
+<p>Implemented as a promoted hardening slice under ADR-0041:</p>
+<ul>
+<li><code>backup create</code> and <code>backup restore</code> are dry-run first and require explicit absolute local paths;</li>
+<li>SQLite online backup captures committed WAL state into a staged, hash-manifested bundle;</li>
+<li>tokens/config, Chrome state, media cache, and media spool are excluded;</li>
+<li>optional derivatives are DB-referenced, root-contained, deduplicated, and hash-verified;</li>
+<li>restore rejects traversal, symlinks, undeclared files, tampering, truncation, unknown-newer schemas, active-root overlap, and existing destinations;</li>
+<li>Linux no-replace publication and injected interruption tests prove no partial or raced destination overwrite;</li>
+<li>restored search, snapshot detail/provenance, and forget work without media bytes.</li>
+</ul>
+<p>Focused evidence:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>/tmp/browser-memory-daemon-verify-venv/bin/python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pytest<span style="color: #F8F8F2"> </span>-q<span style="color: #F8F8F2"> </span>daemon/tests/integration/test_backup_restore.py
+</code></pre></div>
+
 <h2 id="new-tickets-fog-updates">New tickets / fog updates</h2>
-<p>Pending implementation.</p>
+<p>Backup retention/pruning, encryption/signing, and automatic compaction remain separate approval-gated work. Ticket 017 remains open for retention maintenance.</p>
   </article>
   <div class="md-footer">
     Rendered from <code>docs/wayfinder/durability-performance-coverage/tickets/018-local-backup-export-command.md</code> — the Markdown file is the canonical,

@@ -212,6 +212,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li><code>BMD_MEDIA_SPOOL_ROOT</code> plus positive <code>BMD_MAX_MEDIA_SPOOL_BYTES</code> enables a local durable outage spool contained under the WSL data root. SQLite reservations count distinct in-flight writers while filesystem census counts committed and orphaned spool files.</li>
 <li>Migration version 10 records each artifact's <code>media-root</code> or <code>spool</code> tier. Dry-run-first spool draining streams and hash-verifies the destination, commits the tier transition, and only then removes the source.</li>
 <li>Migration version 11 adds durable <code>blob_storage_records</code>. Forget, purge, eviction, spool drain, replacement, and blob migration register committed/tombstoned lifecycle state before filesystem deletion; <code>failed</code>/<code>blocked</code> work remains pending and visible until <code>storage reconcile --execute</code> converges it.</li>
+<li>Text-first backup uses SQLite's online backup API plus a redaction-safe SHA-256 manifest. Restore verifies into an absent runtime root; media/spool/secrets remain excluded by default.</li>
 </ul>
 <hr />
 <h2 id="requirements-trace">Requirements trace</h2>
@@ -638,8 +639,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Backup, restore, and staged install rollback shall be executable and verified before retention or destructive maintenance.</td>
 <td>Operations / Installer</td>
 <td><code>HRD-016</code></td>
-<td><code>scripts/install-daily-driver.sh</code><br><code>docs/retention-compaction-backup.md</code></td>
-<td>—</td>
+<td><code>daemon/src/browser_memory_daemon/backup_ops.py</code><br><code>daemon/src/browser_memory_daemon/cli.py</code><br><code>scripts/install-daily-driver.sh</code><br><code>docs/retention-compaction-backup.md</code></td>
+<td><code>daemon/tests/integration/test_backup_restore.py::test_backup_create_is_dry_run_first_and_manifest_excludes_media_and_secrets</code><br><code>daemon/tests/integration/test_backup_restore.py::test_backup_restore_recreates_search_detail_and_forget_without_media_cache</code><br><code>daemon/tests/integration/test_backup_restore.py::test_restore_rejects_tampered_bundle_and_existing_destination_without_mutation</code><br><code>daemon/tests/integration/test_backup_restore.py::test_restore_rejects_traversal_and_symlinked_bundle_paths</code><br><code>daemon/tests/integration/test_backup_restore.py::test_restore_rejects_truncated_and_newer_schema_databases_after_manifest_verification</code><br><code>daemon/tests/integration/test_backup_restore.py::test_atomic_publication_refuses_a_destination_created_after_preflight</code><br><code>daemon/tests/integration/test_backup_restore.py::test_interrupted_restore_removes_staging_and_never_publishes_destination</code><br><code>daemon/tests/integration/test_backup_restore.py::test_backup_optionally_includes_only_referenced_contained_derivatives</code><br><code>daemon/tests/integration/test_backup_restore.py::test_backup_cli_is_dry_run_first_for_create_and_restore</code></td>
 </tr>
 <tr>
 <td>REQ-042</td>
@@ -852,6 +853,11 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Domain/URL forget, same-transaction receipt/tombstone creation, and post-commit contained deletion.</td>
 <td>Database memory is removed atomically; byte deletion reports complete only when every tombstone is <code>deleted</code> or <code>missing</code>, otherwise reconciliation owns the durable retry.</td>
 </tr>
+<tr>
+<td>Backup/restore operator</td>
+<td>Dry-run-first online SQLite bundle creation, optional referenced derivatives, strict manifest verification, and empty-root atomic restore.</td>
+<td>Complete search/detail/forget survives without media cache; no service install, token copy, or live destination overwrite occurs.</td>
+</tr>
 </tbody>
 </table>
 <hr />
@@ -888,6 +894,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td>How is SQLite version compatibility and migration recovery controlled?</td>
 <td><code>DaemonMigrationComponents</code></td>
+</tr>
+<tr>
+<td>How are text-first backup bundles created and restored?</td>
+<td><code>CliBackupRestoreComponents</code></td>
 </tr>
 <tr>
 <td>What runs where on the daily-driver workstation?</td>

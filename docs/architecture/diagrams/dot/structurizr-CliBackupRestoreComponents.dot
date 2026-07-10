@@ -1,0 +1,36 @@
+digraph {
+  compound=true
+  graph [fontname="Arial", rankdir=LR, ranksep=1.0, nodesep=1.0]
+  node [fontname="Arial", shape=box, margin="0.4,0.3"]
+  edge [fontname="Arial"]
+  label=<<br /><font point-size="34">Component View: Browser Memory Daemon - CLI</font>>
+
+  subgraph cluster_4 {
+    margin=25
+    label=<<font point-size="24"><br />Browser Memory Daemon</font><br /><font point-size="19">[Software System]</font>>
+    labelloc=b
+    color="#444444"
+    fontcolor="#444444"
+    fillcolor="#444444"
+
+    subgraph cluster_29 {
+      margin=25
+      label=<<font point-size="24"><br />CLI</font><br /><font point-size="19">[Container: Python argparse]</font>>
+      labelloc=b
+      color="#444444"
+      fontcolor="#444444"
+      fillcolor="#444444"
+
+      30 [id=30,shape=rect, label=<<font point-size="34">Backup and Restore<br />Operator</font><br /><font point-size="19">[Component: Python sqlite3 + filesystem]</font><br /><br /><font point-size="24">Creates dry-run-first SQLite<br />online backup bundles with<br />redaction-safe SHA-256<br />manifests and verifies them<br />into absent runtime roots;<br />optionally carries referenced<br />derivatives and excludes<br />media/spool/secrets.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
+    }
+
+    31 [id=31,shape=cylinder, label=<<font point-size="34">SQLite + FTS5<br />Database</font><br /><font point-size="19">[Container: SQLite with FTS5]</font><br /><br /><font point-size="24">Durable complete cleaned-text,<br />relational, and full-text<br />authority for migration<br />ledger, sources, documents,<br />visits, capture observations,<br />URL claims, visit events,<br />snapshots, chunks, chunks_fts,<br />media provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+    32 [id=32,shape=cylinder, label=<<font point-size="34">Local Derivative<br />Store</font><br /><font point-size="19">[Container: WSL local filesystem]</font><br /><br /><font point-size="24">Reconstructible compatibility<br />evidence such as pre-version-9<br />clean-text sidecars; new<br />captures create no text<br />sidecars.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+    35 [id=35,shape=cylinder, label=<<font point-size="34">Local Backup Bundles</font><br /><font point-size="19">[Container: Local filesystem]</font><br /><br /><font point-size="24">Operator-selected local<br />directories containing an<br />online SQLite snapshot,<br />redaction-safe hash manifest,<br />and optional referenced<br />derivatives; media, spool, and<br />secrets excluded by default.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+  }
+
+  30 -> 31 [id=103, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Creates and validates<br />online SQLite snapshots<br />from</font><br /><font point-size="19">[sqlite3 backup API]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  30 -> 32 [id=104, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Optionally copies<br />referenced contained<br />derivatives from</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  30 -> 35 [id=106, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Atomically publishes and<br />verifies manifests/files<br />in</font><br /><font point-size="19">[Filesystem + SHA-256]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+
+}

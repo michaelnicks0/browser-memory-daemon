@@ -29,6 +29,7 @@
 - [012 — Design retention, compaction, and backup posture](tickets/012-retention-compaction-backup-design.md) — accepted durable-text/default, disposable-media-cache, WAL-aware local backup/export posture; recorded ADR-0019 and split implementation follow-ups 017/018.
 - [013 — Add local UI smoke coverage](tickets/013-ui-dashboard-smoke-coverage.md) — added daemon-served shell/bootstrap checks plus a low-dependency mocked DOM/fetch harness for initial API calls, empty states, no-token state, and panel error rendering.
 - [014 — Add coverage gates and requirements traceability enforcement](tickets/014-coverage-gates-traceability.md) — promoted `generate_test_inventory.py --check` into a static inventory + architecture requirement traceability gate; recorded ADR-0020.
+- [018 — Implement local backup/export command](tickets/018-local-backup-export-command.md) — added WAL-consistent manifest-backed SQLite backup, strict empty-root restore validation, optional referenced derivatives, and VAL-009 search/detail/forget evidence without media; recorded ADR-0041.
 
 ## Frontier
 
@@ -37,7 +38,6 @@ None. The current durability/performance/coverage frontier is closed.
 ## Split follow-ups not in current frontier
 
 - [017 — Implement retention maintenance command](tickets/017-retention-maintenance-command.md) — dry-run/execute checkpoint/optimize/orphan-audit/compacted-copy implementation from ADR-0019.
-- [018 — Implement local backup/export command](tickets/018-local-backup-export-command.md) — local manifest-backed backup/export and restore-smoke implementation from ADR-0019.
 
 ## Blocked
 
@@ -54,12 +54,12 @@ None.
 
 ## Handoff
 
-Open frontier tickets: 0. Blocked tickets: 0. Deferred split follow-ups: 2.
+Open frontier tickets: 0. Blocked tickets: 0. Deferred split follow-ups: 1.
 
-Recommended next ticket: none in the current frontier. If work continues beyond this queue, choose one of the deferred split follow-ups only after explicitly accepting that it is a new implementation lane, not unfinished current-frontier work.
+Recommended next ticket: none in the current frontier. Ticket 017 remains the only deferred split follow-up and still requires explicit promotion because it can introduce destructive maintenance.
 
 Copy into a fresh session:
 
 ```text
-Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md. Current frontier is closed; deferred split follow-ups are tickets/017-retention-maintenance-command.md and tickets/018-local-backup-export-command.md.
+Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md. Current frontier is closed; ticket 018 backup/restore is implemented under ADR-0041, and ticket 017 retention maintenance remains deferred.
 ```

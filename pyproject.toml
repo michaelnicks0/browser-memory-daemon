@@ -34,6 +34,7 @@ files = [
   "daemon/src/browser_memory_daemon/media_storage.py",
   "daemon/src/browser_memory_daemon/blob_lifecycle.py",
   "daemon/src/browser_memory_daemon/storage_reconcile.py",
+  "daemon/src/browser_memory_daemon/backup_ops.py",
 ]
 
 [tool.coverage.run]

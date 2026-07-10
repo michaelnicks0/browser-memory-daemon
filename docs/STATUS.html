@@ -172,6 +172,11 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td><code>forget.py</code>, <code>blob_lifecycle.py</code>, <code>test_storage_reconcile.py</code>, ADR-0040.</td>
 </tr>
 <tr>
+<td>Backup/restore</td>
+<td>✅ Dry-run-first manifest-backed SQLite online backup, optional referenced derivatives, strict hash/path verification, and atomic restore into an absent runtime root; media/spool/secrets excluded by default.</td>
+<td><code>backup_ops.py</code>, <code>test_backup_restore.py</code>, ADR-0041.</td>
+</tr>
+<tr>
 <td>Media artifacts</td>
 <td>✅ Durable image/video refs and binaries: fast text/manifest capture, browser IndexedDB lazy queue, credentialed fetch, raw blob upload, enabled-by-default X/Twitter CDP recorder with disable control, HLS/audio sidecar handling, daemon public worker, rolling cache gates, purge/rehydrate controls; no OCR/media indexing.</td>
 <td><code>media.py</code>, <code>media_worker.py</code>, <code>media_queue.js</code>, <code>cdp_recorder.js</code>, <code>/media-artifacts/*</code>, real Chrome e2e.</td>
@@ -183,8 +188,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>CLI</td>
-<td>✅ serve/health/migrate/doctor/daily-driver-health/search/recent/timeline/detail/policy/forget/capture-fixture/media-worker/media-cache/media-spool/blob-root migration/snapshot-text reconciliation/storage reconciliation.</td>
-<td><code>cli.py</code>, CLI e2e.</td>
+<td>✅ serve/health/migrate/doctor/daily-driver-health/search/recent/timeline/detail/policy/forget/capture-fixture/media-worker/media-cache/media-spool/blob-root migration/snapshot-text reconciliation/storage reconciliation/backup create/restore.</td>
+<td><code>cli.py</code>, CLI and backup integration tests.</td>
 </tr>
 <tr>
 <td>Dedupe/versioning</td>
@@ -259,9 +264,9 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Exact FTS remains current source of truth.</td>
 </tr>
 <tr>
-<td>Retention policies/export/backup</td>
+<td>Retention/compaction/backup pruning</td>
 <td style="text-align: right;">Medium</td>
-<td>Design posture accepted in <code>docs/retention-compaction-backup.md</code>; implementation split into deferred maintenance and backup/export tickets.</td>
+<td>Text-first backup/restore is implemented; automatic retention, compaction, encryption/signing, and backup pruning remain approval-gated.</td>
 </tr>
 <tr>
 <td>MCP/Hermes integration</td>

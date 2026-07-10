@@ -58,9 +58,9 @@
 <text text-anchor="start" x="637.5" y="-962.86" font-family="Arial" font-size="24.00" fill="#ffffff">rules, doctor, durable forget,</text>
 <text text-anchor="start" x="676" y="-938.86" font-family="Arial" font-size="24.00" fill="#ffffff">and static UI serving.</text>
 </g>
-<!-- 30 -->
-<g id="30" class="node">
-<title>30</title>
+<!-- 31 -->
+<g id="31" class="node">
+<title>31</title>
 <path fill="#2f95c8" stroke="#20688c" d="M517.5,-675.4C517.5,-703.63 428.98,-726.56 320,-726.56 211.02,-726.56 122.5,-703.63 122.5,-675.4 122.5,-675.4 122.5,-214.97 122.5,-214.97 122.5,-186.74 211.02,-163.81 320,-163.81 428.98,-163.81 517.5,-186.74 517.5,-214.97 517.5,-214.97 517.5,-675.4 517.5,-675.4"/>
 <path fill="none" stroke="#20688c" d="M517.5,-675.4C517.5,-647.17 428.98,-624.24 320,-624.24 211.02,-624.24 122.5,-647.17 122.5,-675.4"/>
 <text text-anchor="start" x="207" y="-601.49" font-family="Arial" font-size="34.00" fill="#ffffff">SQLite + FTS5</text>
@@ -78,9 +78,9 @@
 <text text-anchor="start" x="194.5" y="-292.49" font-family="Arial" font-size="24.00" fill="#ffffff">rules, audit events, and</text>
 <text text-anchor="start" x="228" y="-268.49" font-family="Arial" font-size="24.00" fill="#ffffff">deletion receipts.</text>
 </g>
-<!-- 14&#45;&gt;30 -->
-<g id="49" class="edge">
-<title>14&#45;&gt;30</title>
+<!-- 14&#45;&gt;31 -->
+<g id="52" class="edge">
+<title>14&#45;&gt;31</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M557.89,-921.02C545.46,-912.96 533.1,-905.03 521,-897.38 494.39,-880.55 479.83,-885.82 460,-861.38 430.02,-824.41 406.33,-780.72 387.65,-735.79"/>
 <polygon fill="#444444" stroke="#444444" points="390.88,-734.43 383.86,-726.49 384.4,-737.07 390.88,-734.43"/>
 <polygon fill="white" stroke="transparent" points="460,-762.38 460,-861.38 770,-861.38 770,-762.38 460,-762.38"/>
@@ -89,9 +89,9 @@
 <text text-anchor="start" x="559.5" y="-790.67" font-family="Arial" font-size="24.00" fill="#444444">receipts in</text>
 <text text-anchor="start" x="581.5" y="-770.67" font-family="Arial" font-size="19.00" fill="#444444">[sqlite3]</text>
 </g>
-<!-- 31 -->
-<g id="31" class="node">
-<title>31</title>
+<!-- 32 -->
+<g id="32" class="node">
+<title>32</title>
 <path fill="#2f95c8" stroke="#20688c" d="M984.5,-594.4C984.5,-612.7 895.98,-627.56 787,-627.56 678.02,-627.56 589.5,-612.7 589.5,-594.4 589.5,-594.4 589.5,-295.97 589.5,-295.97 589.5,-277.67 678.02,-262.81 787,-262.81 895.98,-262.81 984.5,-277.67 984.5,-295.97 984.5,-295.97 984.5,-594.4 984.5,-594.4"/>
 <path fill="none" stroke="#20688c" d="M984.5,-594.4C984.5,-576.11 895.98,-561.24 787,-561.24 678.02,-561.24 589.5,-576.11 589.5,-594.4"/>
 <text text-anchor="start" x="665.5" y="-529.49" font-family="Arial" font-size="34.00" fill="#ffffff">Local Derivative</text>
@@ -103,9 +103,9 @@
 <text text-anchor="start" x="663.5" y="-364.49" font-family="Arial" font-size="24.00" fill="#ffffff">captures create no text</text>
 <text text-anchor="start" x="738.5" y="-340.49" font-family="Arial" font-size="24.00" fill="#ffffff">sidecars.</text>
 </g>
-<!-- 14&#45;&gt;31 -->
-<g id="50" class="edge">
-<title>14&#45;&gt;31</title>
+<!-- 14&#45;&gt;32 -->
+<g id="53" class="edge">
+<title>14&#45;&gt;32</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M788.47,-910.76C788.2,-826.81 787.88,-724.82 787.61,-637.81"/>
 <polygon fill="#444444" stroke="#444444" points="791.11,-637.54 787.57,-627.55 784.11,-637.56 791.11,-637.54"/>
 <polygon fill="white" stroke="transparent" points="789,-762.38 789,-861.38 1057,-861.38 1057,-762.38 789,-762.38"/>
@@ -129,7 +129,7 @@
 <text text-anchor="start" x="477.5" y="-1484.55" font-family="Arial" font-size="24.00" fill="#ffffff">daemon.</text>
 </g>
 <!-- 5&#45;&gt;2 -->
-<g id="39" class="edge">
+<g id="41" class="edge">
 <title>5&#45;&gt;2</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M742.14,-1561.56C909.52,-1531.39 1122.75,-1482.43 1186,-1420.75 1243.41,-1364.76 1268.02,-1277.58 1278.35,-1205.49"/>
 <polygon fill="#444444" stroke="#444444" points="1281.84,-1205.8 1279.72,-1195.42 1274.91,-1204.86 1281.84,-1205.8"/>
@@ -140,7 +140,7 @@
 <text text-anchor="start" x="1301" y="-1318.05" font-family="Arial" font-size="19.00" fill="#444444">[Chrome extension APIs]</text>
 </g>
 <!-- 5&#45;&gt;13 -->
-<g id="41" class="edge">
+<g id="43" class="edge">
 <title>5&#45;&gt;13</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M313.7,-1456.47C304.4,-1445.22 296.04,-1433.31 289,-1420.75 263.99,-1376.15 252.43,-1322.98 248.09,-1272.09"/>
 <polygon fill="#444444" stroke="#444444" points="251.57,-1271.65 247.32,-1261.95 244.59,-1272.18 251.57,-1271.65"/>
@@ -152,7 +152,7 @@
 <text text-anchor="start" x="293.5" y="-1306.05" font-family="Arial" font-size="19.00" fill="#444444">[chrome.storage.local + IndexedDB]</text>
 </g>
 <!-- 5&#45;&gt;14 -->
-<g id="42" class="edge">
+<g id="44" class="edge">
 <title>5&#45;&gt;14</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M596.09,-1456.65C627.53,-1395.37 664.86,-1322.58 698.27,-1257.44"/>
 <polygon fill="#444444" stroke="#444444" points="701.51,-1258.8 702.96,-1248.3 695.28,-1255.6 701.51,-1258.8"/>

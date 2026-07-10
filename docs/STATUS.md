@@ -16,9 +16,10 @@
 | Blob filesystem boundary | ✅ `BlobStore` contains DB locators; stages streaming media writes with size/hash accounting; atomically commits; and owns media plus legacy-sidecar read/stat/delete operations. Derivative and media roots are separate; external media is identity-guarded; the local spool is bounded; durable tombstones and dry-run-first reconciliation cover failed deletion, missing references, orphans, and stale stages. | `blob_store.py`, `blob_lifecycle.py`, `storage_reconcile.py`, storage integration tests, ADR-0036 through ADR-0040. |
 | Exact search | ✅ FTS5 exact search with snippets/source metadata and media artifact counts. | `search.py`, `/search`, tests. |
 | Forget/delete | ✅ URL/domain forget commits receipt plus blob tombstones with the relational cascade, suppresses pending bytes from serving, reports incomplete deletion honestly, and retries failures through reconciliation. | `forget.py`, `blob_lifecycle.py`, `test_storage_reconcile.py`, ADR-0040. |
+| Backup/restore | ✅ Dry-run-first manifest-backed SQLite online backup, optional referenced derivatives, strict hash/path verification, and atomic restore into an absent runtime root; media/spool/secrets excluded by default. | `backup_ops.py`, `test_backup_restore.py`, ADR-0041. |
 | Media artifacts | ✅ Durable image/video refs and binaries: fast text/manifest capture, browser IndexedDB lazy queue, credentialed fetch, raw blob upload, enabled-by-default X/Twitter CDP recorder with disable control, HLS/audio sidecar handling, daemon public worker, rolling cache gates, purge/rehydrate controls; no OCR/media indexing. | `media.py`, `media_worker.py`, `media_queue.js`, `cdp_recorder.js`, `/media-artifacts/*`, real Chrome e2e. |
 | Local UI | ✅ Token-bootstrapped search/recent/timeline/detail/doctor/policy/delete panels; recent/today/doctor/policy auto-load on open. | `ui/`, admin API tests. |
-| CLI | ✅ serve/health/migrate/doctor/daily-driver-health/search/recent/timeline/detail/policy/forget/capture-fixture/media-worker/media-cache/media-spool/blob-root migration/snapshot-text reconciliation/storage reconciliation. | `cli.py`, CLI e2e. |
+| CLI | ✅ serve/health/migrate/doctor/daily-driver-health/search/recent/timeline/detail/policy/forget/capture-fixture/media-worker/media-cache/media-spool/blob-root migration/snapshot-text reconciliation/storage reconciliation/backup create/restore. | `cli.py`, CLI and backup integration tests. |
 | Dedupe/versioning | ✅ Observed-URL document identity, text-hash snapshots, browser-authored per-extraction observation idempotency, per-tab/URL navigation identity, and non-authoritative canonical URL claims. | ingest/observation/migration/extension tests. |
 | SPA/delayed capture | ✅ Delayed passes and History API hooks. | real Chrome SPA fixture. |
 | Dwell/lifecycle | ✅ Metadata-only visit events with exact claimed/resolved visit identity, delayed-capture reconciliation, explicit legacy fallback labels, and validated interval-union dwell. | lifecycle/migration tests + real e2e. |
@@ -58,7 +59,7 @@ This means:
 |---|---:|---|
 | Native messaging transport | Later | HTTP loopback is working; native messaging can reduce network-like surface later. |
 | Semantic/vector search | Later, explicit approval required | Exact FTS remains current source of truth. |
-| Retention policies/export/backup | Medium | Design posture accepted in `docs/retention-compaction-backup.md`; implementation split into deferred maintenance and backup/export tickets. |
+| Retention/compaction/backup pruning | Medium | Text-first backup/restore is implemented; automatic retention, compaction, encryption/signing, and backup pruning remain approval-gated. |
 | MCP/Hermes integration | Later | Should treat captured text as untrusted evidence. |
 | Rich policy rules | Medium | Future allow/redact/metadata-only modes; current explicit rules are block-only and apply in every mode, including `all`. |
 | Packaged extension distribution | Later | Daily driver currently uses manual Load unpacked due Chrome Secure Preferences. |

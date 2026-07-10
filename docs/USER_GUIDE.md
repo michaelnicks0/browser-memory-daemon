@@ -239,6 +239,29 @@ PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
 
 Review `tombstones`, `missing`, `corrupt`, `recovered`, `wrong_root`, `unavailable`, `orphans`, and `stale_stages`. Add `--execute` only to retry contained tombstones, mark confirmed missing media, and remove reported in-root orphan/stage files. Outside-root locators and unavailable external roots remain pending rather than being followed. A non-zero pending count means a prior forget/purge/eviction has not completed byte deletion even if its database rows are already gone.
 
+Create a text-first local backup by previewing first, then executing to a new absolute path:
+
+```bash
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
+  --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
+  backup create --destination /absolute/local/path/backup-bundle
+
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
+  --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
+  backup create --destination /absolute/local/path/backup-bundle --execute
+```
+
+Restore is also dry-run first and only publishes into an absent destination:
+
+```bash
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
+  --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
+  backup restore --source /absolute/local/path/backup-bundle \
+  --destination /absolute/local/path/restored-runtime
+```
+
+The default bundle includes SQLite-authoritative text/provenance plus a hash manifest. It excludes API tokens/config, Chrome state, final media, and spool bytes. Add `--include-derivatives` only when legacy clean-text sidecars are useful. A backup created before a forget can still contain the forgotten data; backup erasure/retention remains a separate operator action.
+
 Dry-run a domain purge:
 
 ```bash

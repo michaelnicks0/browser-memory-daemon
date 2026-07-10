@@ -236,6 +236,16 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>WSL daemon diagnostics internals: router, doctor/audit, SQLite checks, and storage counts.</td>
 </tr>
 <tr>
+<td><code>DaemonStorageReconcileComponents</code></td>
+<td>C3 Component</td>
+<td>Durable tombstone retry, missing/corrupt/recovered references, contained orphan detection, and stale-stage cleanup.</td>
+</tr>
+<tr>
+<td><code>CliBackupRestoreComponents</code></td>
+<td>C3 Component</td>
+<td>CLI online SQLite backup, redaction-safe manifest, optional derivative inclusion, and absent-root restore path.</td>
+</tr>
+<tr>
 <td><code>DaemonMigrationComponents</code></td>
 <td>C3 Component</td>
 <td>WSL daemon migration internals: exact fingerprint, ordered checksum ledger, transactional steps, and SQLite backup boundary.</td>
@@ -355,7 +365,11 @@ python3<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;<
 <td><code>daemon/src/browser_memory_daemon/blob_lifecycle.py</code>, <code>daemon/src/browser_memory_daemon/storage_reconcile.py</code>, <code>daemon/src/browser_memory_daemon/migration_steps/v0011_add_blob_lifecycle_records.sql</code>, ADR-0040</td>
 </tr>
 <tr>
-<td>Local UI and CLI are operator surfaces; CLI read/admin commands use daemon APIs, while media-worker/cache/spool/storage-reconcile commands also run direct SQLite/filesystem paths.</td>
+<td>Text-first backup uses SQLite online backup plus a redaction-safe hash manifest and restores into an absent runtime root without media/spool/secrets.</td>
+<td><code>daemon/src/browser_memory_daemon/backup_ops.py</code>, <code>daemon/src/browser_memory_daemon/cli.py</code>, <code>daemon/tests/integration/test_backup_restore.py</code>, ADR-0041</td>
+</tr>
+<tr>
+<td>Local UI and CLI are operator surfaces; CLI read/admin commands use daemon APIs, while media-worker/cache/spool/storage-reconcile/backup commands also run direct SQLite/filesystem paths.</td>
 <td><code>ui/app.js</code>, <code>daemon/src/browser_memory_daemon/cli.py</code>, <code>docs/daily-driver-deployment.md</code></td>
 </tr>
 <tr>

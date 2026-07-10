@@ -44,7 +44,9 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
 
             localWebUi = container "Local Web UI" "Static browser UI for exact search, recent/timeline views, document/snapshot detail, media artifact opening, policy rules, doctor, and forget-domain operations." "HTML/CSS/JavaScript served by daemon"
 
-            cli = container "CLI" "Command-line interface for serving the daemon, migration, snapshot-text and storage reconciliation, media-spool status/drain, health/doctor/search/recent/timeline/detail, policy/forget, capture fixtures, media worker, and media cache operations." "Python argparse"
+            cli = container "CLI" "Command-line interface for serving the daemon, migration, snapshot-text and storage reconciliation, manifest-backed backup/restore, media-spool status/drain, health/doctor/search/recent/timeline/detail, policy/forget, capture fixtures, media worker, and media cache operations." "Python argparse" {
+                backupRestore = component "Backup and Restore Operator" "Creates dry-run-first SQLite online backup bundles with redaction-safe SHA-256 manifests and verifies them into absent runtime roots; optionally carries referenced derivatives and excludes media/spool/secrets." "Python sqlite3 + filesystem" "Current"
+            }
 
             sqliteDatabase = container "SQLite + FTS5 Database" "Durable complete cleaned-text, relational, and full-text authority for migration ledger, sources, documents, visits, capture observations, URL claims, visit events, snapshots, chunks, chunks_fts, media provenance/tasks, blob lifecycle records, policy rules, audit events, and deletion receipts." "SQLite with FTS5" {
                 tags "Database", "Data Store"
@@ -59,6 +61,10 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
             }
 
             mediaSpool = container "Bounded Local Media Spool" "Opt-in durable outage buffer beneath the local WSL data root; admission counts committed files and distinct in-flight SQLite reservations, and drain verifies bytes before tier transition/source cleanup." "WSL local filesystem" {
+                tags "Data Store"
+            }
+
+            localBackupBundles = container "Local Backup Bundles" "Operator-selected local directories containing an online SQLite snapshot, redaction-safe hash manifest, and optional referenced derivatives; media, spool, and secrets excluded by default." "Local filesystem" {
                 tags "Data Store"
             }
 
@@ -81,6 +87,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
         cli -> storageReconciler "Previews or executes contained storage convergence through"
         cli -> mediaBlobCache "Purges and rehydrates media blobs through" "Filesystem"
         cli -> mediaSpool "Reports and drains bounded outage bytes through" "Filesystem"
+        cli -> localBackupBundles "Previews, creates, verifies, and restores text-first bundles through" "Filesystem"
 
         wslLoopbackDaemon -> sqliteDatabase "Reads and writes metadata, FTS, tasks, audit, and receipts in" "sqlite3"
         wslLoopbackDaemon -> cleanTextBlobStore "Reads or deletes legacy text sidecars when required" "Filesystem"
@@ -135,6 +142,9 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
         opsDoctor -> mediaBlobCache "Counts media blob files in" "Filesystem"
         opsDoctor -> mediaSpool "Reports filesystem bytes, reservations, and capacity for" "Filesystem"
         migrationKernel -> sqliteDatabase "Validates and advances schema ledger/fingerprint in" "sqlite3 online backup + transactions"
+        backupRestore -> sqliteDatabase "Creates and validates online SQLite snapshots from" "sqlite3 backup API"
+        backupRestore -> cleanTextBlobStore "Optionally copies referenced contained derivatives from" "Filesystem"
+        backupRestore -> localBackupBundles "Atomically publishes and verifies manifests/files in" "Filesystem + SHA-256"
 
         dailyDriver = deploymentEnvironment "Daily-driver local" {
             workstation = deploymentNode "Local workstation" "Windows workstation running Windows Chrome and WSL2." "Windows + WSL2" {
@@ -312,6 +322,14 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
             include cleanTextBlobStore
             include mediaBlobCache
             include mediaSpool
+            autoLayout lr
+        }
+
+        component cli "CliBackupRestoreComponents" {
+            include backupRestore
+            include sqliteDatabase
+            include cleanTextBlobStore
+            include localBackupBundles
             autoLayout lr
         }
 

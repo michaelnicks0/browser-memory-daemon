@@ -62,6 +62,6 @@ Evidence:
 Split deferred implementation tickets:
 
 - [017 — Implement retention maintenance command](017-retention-maintenance-command.md)
-- [018 — Implement local backup/export command](018-local-backup-export-command.md)
+- [018 — Implement local backup/export command](018-local-backup-export-command.md) — closed 2026-07-10 under ADR-0041.
 
-These are sharper follow-ups from the design and are not counted as current frontier tickets unless explicitly promoted.
+Ticket 017 remains a deferred follow-up. Ticket 018 was later promoted and closed under ADR-0041; this historical design ticket remains closed.

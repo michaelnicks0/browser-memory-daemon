@@ -1,7 +1,7 @@
 # Retention, Compaction, Export, and Backup Posture
 
 > **Audience:** operator and future agents.
-> **Status:** accepted design posture; implementation is split into follow-up tickets.
+> **Status:** backup/create/restore implemented; retention, compaction, and backup pruning remain future approval-gated work.
 > **Scope:** Browser Memory Daemon WSL-owned runtime data, SQLite/FTS5/WAL sidecars, local derivatives, guarded media root, bounded local media spool, backup/export boundaries, and forget/deletion semantics.
 
 ---
@@ -12,7 +12,7 @@ Browser Memory Daemon should preserve text/FTS recall by default and treat media
 
 This design does **not** add automatic age-based deletion yet. That would be a separate operator-approved retention policy because the daily-driver default is maximum local recall.
 
-ADR-0028 implements a narrower migration-only SQLite online backup gate before destructive schema steps. That backup excludes blob roots and is not the full manifest-backed backup/export command described here.
+ADR-0028 implements a narrower migration-only SQLite online backup gate before destructive schema steps. ADR-0041 and `backup create` / `backup restore` implement the manifest-backed text-first bundle and empty-root restore path described here.
 
 ---
 
@@ -25,7 +25,7 @@ Operational sequence:
 1. Chrome and the daemon keep writing visits, snapshots, FTS chunks, audit rows, lifecycle events, media refs, and bounded media blobs.
 2. Health checks expose headroom, DB/WAL/blob/media sizes, and worker churn without dumping captured content.
 3. A future maintenance command performs dry-run-first checkpoint/optimize/audit/optional-compaction work under local runtime paths.
-4. A future backup/export command creates a local bundle or snapshot with a manifest and explicit inclusion/exclusion choices.
+4. `backup create` creates a local text-first bundle with a manifest and explicit inclusion/exclusion choices; `backup restore` verifies it into an absent runtime root.
 5. Forget remains a live-store deletion operation; backup lifecycle must be documented and eventually automatable separately.
 
 ---
@@ -48,9 +48,9 @@ Operational sequence:
 |---|---|---|
 | RCB-001 | Full text/FTS recall remains durable by default unless the operator explicitly enables a narrower retention policy. | ADR-0019; no automatic text expiration in this design. |
 | RCB-002 | Media blobs remain a bounded, disposable cache while media refs/provenance remain durable. | ADR-0005 and current media cache gates. |
-| RCB-003 | SQLite backup/compaction handling must respect WAL sidecars and avoid copying an inconsistent live database. | ADR-0014; future backup command ticket. |
-| RCB-004 | Maintenance/export tools must be local-only and redaction-safe by default. | Future tickets require dry-run/manifest tests and secret scan. |
-| RCB-005 | Forget semantics must distinguish live-store deletion from historical backup copies. | This doc and ADR-0019; future backup retention ticket. |
+| RCB-003 | SQLite backup/compaction handling must respect WAL sidecars and avoid copying an inconsistent live database. | ADR-0014; ADR-0041; online backup/restore tests. |
+| RCB-004 | Maintenance/export tools must be local-only and redaction-safe by default. | Backup path/manifest tests and secret scan; maintenance remains future. |
+| RCB-005 | Forget semantics must distinguish live-store deletion from historical backup copies. | This doc, ADR-0019, and ADR-0041; backup retention remains future. |
 | RCB-006 | Any destructive retention, purge, compaction, or backup-prune action must have dry-run output before execute. | Follow-up implementation tickets. |
 
 ---
@@ -111,6 +111,17 @@ A complete local backup/export should include:
 
 Export is not a publishing workflow. It stays on local filesystem paths unless the operator explicitly approves a destination.
 
+Both commands are dry-run first:
+
+```bash
+python -m browser_memory_daemon backup create --destination /absolute/local/path/backup-bundle
+python -m browser_memory_daemon backup create --destination /absolute/local/path/backup-bundle --execute
+python -m browser_memory_daemon backup restore --source /absolute/local/path/backup-bundle --destination /absolute/local/path/restored-runtime
+python -m browser_memory_daemon backup restore --source /absolute/local/path/backup-bundle --destination /absolute/local/path/restored-runtime --execute
+```
+
+`--include-derivatives` adds only referenced, contained, hash-verified clean-text compatibility sidecars. Restore rejects existing destinations, path traversal, symlinks, undeclared files, and any size/hash/schema/integrity mismatch before publishing the new runtime root.
+
 ### 6. Forget and backups
 
 Current forget guarantees live-store deletion from:
@@ -131,25 +142,24 @@ Backups are different. A backup created before a forget may still contain the fo
 
 ## V-model traceability
 
-| Requirement | Logical component | Future implementation unit | Verification gate |
+| Requirement | Logical component | Implementation unit | Verification gate |
 |---|---|---|---|
 | RCB-001 | Retention policy | Retention config + dry-run sweep report | Unit/e2e proving default keeps text; explicit sweep requires `--execute`. |
 | RCB-002 | Media cache | Existing media purge/rehydrate controls | Existing media tests plus future orphan audit. |
-| RCB-003 | WAL-aware backup | Backup/export command | Test online backup while WAL exists; restore opens with `integrity_check=ok`. |
-| RCB-004 | Redaction-safe maintenance | Maintenance report serializer | Golden tests asserting no raw captured text/URLs/tokens. |
-| RCB-005 | Forget/backup boundary | Docs + manifest metadata | Forget test plus backup manifest timestamp/prune tests. |
+| RCB-003 | WAL-aware backup | `backup_ops.py` + CLI | Online backup/restore tests with `integrity_check=ok`, foreign keys, FTS, and schema fingerprint. |
+| RCB-004 | Redaction-safe backup/maintenance | Manifest serializer; future maintenance report | Manifest tests assert no raw captured text/URLs/tokens. |
+| RCB-005 | Forget/backup boundary | Docs + manifest metadata | Restored search/detail/forget test plus documented pre-forget backup caveat. |
 | RCB-006 | Dry-run before destructive work | CLI/API command guards | CLI tests for no mutation in dry-run and mutation only with `--execute`. |
 
 ---
 
 ## Split follow-up tickets
 
-This design intentionally stops before implementation. Follow-ups:
+Backup/restore is implemented. Remaining follow-ups:
 
 - `017-retention-maintenance-command.md` — dry-run/execute maintenance command for checkpoint/optimize/orphan audit/optional compacted copy.
-- `018-local-backup-export-command.md` — local backup/export bundle with manifest, restore smoke, and backup/forget caveats.
 
-These are split follow-ups, not blockers for closing the current durability/performance/coverage queue.
+The former local backup/export follow-up is closed by ADR-0041 and `daemon/src/browser_memory_daemon/backup_ops.py`.
 
 ---
 

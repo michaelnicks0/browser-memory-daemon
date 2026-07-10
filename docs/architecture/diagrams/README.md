@@ -1,11 +1,14 @@
-# Browser Memory Daemon Architecture Diagrams
+# Architecture C4 Diagrams
 
 > Generated Markdown index for Structurizr-derived diagrams. Canonical model: [`workspace.dsl`](../workspace.dsl).
+
+<!-- Generated from docs/architecture/diagrams/*.mmd; refresh from docs/architecture/workspace.dsl. -->
 
 | View | Markdown | Preferred render | Mermaid | Graphviz SVG | Graphviz PNG |
 |---|---|---|---|---|---|
 | `BrowserMediaContainers` | [`BrowserMediaContainers.md`](markdown/BrowserMediaContainers.md) | [`Graphviz SVG`](dot-rendered/structurizr-BrowserMediaContainers.svg) | [`structurizr-BrowserMediaContainers.mmd`](structurizr-BrowserMediaContainers.mmd) | [`structurizr-BrowserMediaContainers.svg`](dot-rendered/structurizr-BrowserMediaContainers.svg) | [`structurizr-BrowserMediaContainers.png`](dot-rendered/structurizr-BrowserMediaContainers.png) |
 | `CaptureContainers` | [`CaptureContainers.md`](markdown/CaptureContainers.md) | [`Graphviz SVG`](dot-rendered/structurizr-CaptureContainers.svg) | [`structurizr-CaptureContainers.mmd`](structurizr-CaptureContainers.mmd) | [`structurizr-CaptureContainers.svg`](dot-rendered/structurizr-CaptureContainers.svg) | [`structurizr-CaptureContainers.png`](dot-rendered/structurizr-CaptureContainers.png) |
+| `CliBackupRestoreComponents` | [`CliBackupRestoreComponents.md`](markdown/CliBackupRestoreComponents.md) | [`Graphviz SVG`](dot-rendered/structurizr-CliBackupRestoreComponents.svg) | [`structurizr-CliBackupRestoreComponents.mmd`](structurizr-CliBackupRestoreComponents.mmd) | [`structurizr-CliBackupRestoreComponents.svg`](dot-rendered/structurizr-CliBackupRestoreComponents.svg) | [`structurizr-CliBackupRestoreComponents.png`](dot-rendered/structurizr-CliBackupRestoreComponents.png) |
 | `CredentialedMediaSidecarFlow` | [`CredentialedMediaSidecarFlow.md`](markdown/CredentialedMediaSidecarFlow.md) | [`Graphviz SVG`](dot-rendered/structurizr-CredentialedMediaSidecarFlow.svg) | [`structurizr-CredentialedMediaSidecarFlow.mmd`](structurizr-CredentialedMediaSidecarFlow.mmd) | [`structurizr-CredentialedMediaSidecarFlow.svg`](dot-rendered/structurizr-CredentialedMediaSidecarFlow.svg) | [`structurizr-CredentialedMediaSidecarFlow.png`](dot-rendered/structurizr-CredentialedMediaSidecarFlow.png) |
 | `DaemonDoctorComponents` | [`DaemonDoctorComponents.md`](markdown/DaemonDoctorComponents.md) | [`Graphviz SVG`](dot-rendered/structurizr-DaemonDoctorComponents.svg) | [`structurizr-DaemonDoctorComponents.mmd`](structurizr-DaemonDoctorComponents.mmd) | [`structurizr-DaemonDoctorComponents.svg`](dot-rendered/structurizr-DaemonDoctorComponents.svg) | [`structurizr-DaemonDoctorComponents.png`](dot-rendered/structurizr-DaemonDoctorComponents.png) |
 | `DaemonForgetComponents` | [`DaemonForgetComponents.md`](markdown/DaemonForgetComponents.md) | [`Graphviz SVG`](dot-rendered/structurizr-DaemonForgetComponents.svg) | [`structurizr-DaemonForgetComponents.mmd`](structurizr-DaemonForgetComponents.mmd) | [`structurizr-DaemonForgetComponents.svg`](dot-rendered/structurizr-DaemonForgetComponents.svg) | [`structurizr-DaemonForgetComponents.png`](dot-rendered/structurizr-DaemonForgetComponents.png) |

@@ -48,6 +48,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0038](0038-make-sqlite-authoritative-for-cleaned-snapshot-text.md) | accepted | Commit complete cleaned text to SQLite, stop creating new text sidecars, and hash-verify legacy promotion. |
 | [ADR-0039](0039-split-media-root-and-add-bounded-durable-spool.md) | accepted | Split derivative and media roots, guard external identity, and bound local outage buffering. |
 | [ADR-0040](0040-use-durable-deletion-intents-and-reconciliation.md) | accepted | Persist blob deletion intent before cascades and reconcile failures through contained retryable operations. |
+| [ADR-0041](0041-use-manifest-backed-text-first-backup-and-empty-root-restore.md) | accepted | Create manifest-backed text-first online backups and restore only into an absent explicit runtime root. |
 
 ## Backfilled decision history
 

@@ -154,13 +154,13 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li><a href="tickets/012-retention-compaction-backup-design.html">012 — Design retention, compaction, and backup posture</a> — accepted durable-text/default, disposable-media-cache, WAL-aware local backup/export posture; recorded ADR-0019 and split implementation follow-ups 017/018.</li>
 <li><a href="tickets/013-ui-dashboard-smoke-coverage.html">013 — Add local UI smoke coverage</a> — added daemon-served shell/bootstrap checks plus a low-dependency mocked DOM/fetch harness for initial API calls, empty states, no-token state, and panel error rendering.</li>
 <li><a href="tickets/014-coverage-gates-traceability.html">014 — Add coverage gates and requirements traceability enforcement</a> — promoted <code>generate_test_inventory.py --check</code> into a static inventory + architecture requirement traceability gate; recorded ADR-0020.</li>
+<li><a href="tickets/018-local-backup-export-command.html">018 — Implement local backup/export command</a> — added WAL-consistent manifest-backed SQLite backup, strict empty-root restore validation, optional referenced derivatives, and VAL-009 search/detail/forget evidence without media; recorded ADR-0041.</li>
 </ul>
 <h2 id="frontier">Frontier</h2>
 <p>None. The current durability/performance/coverage frontier is closed.</p>
 <h2 id="split-follow-ups-not-in-current-frontier">Split follow-ups not in current frontier</h2>
 <ul>
 <li><a href="tickets/017-retention-maintenance-command.html">017 — Implement retention maintenance command</a> — dry-run/execute checkpoint/optimize/orphan-audit/compacted-copy implementation from ADR-0019.</li>
-<li><a href="tickets/018-local-backup-export-command.html">018 — Implement local backup/export command</a> — local manifest-backed backup/export and restore-smoke implementation from ADR-0019.</li>
 </ul>
 <h2 id="blocked">Blocked</h2>
 <p>None.</p>
@@ -174,10 +174,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>Whether operational alerts should integrate with an external notification channel; remote delivery requires explicit approval.</li>
 </ul>
 <h2 id="handoff">Handoff</h2>
-<p>Open frontier tickets: 0. Blocked tickets: 0. Deferred split follow-ups: 2.</p>
-<p>Recommended next ticket: none in the current frontier. If work continues beyond this queue, choose one of the deferred split follow-ups only after explicitly accepting that it is a new implementation lane, not unfinished current-frontier work.</p>
+<p>Open frontier tickets: 0. Blocked tickets: 0. Deferred split follow-ups: 1.</p>
+<p>Recommended next ticket: none in the current frontier. Ticket 017 remains the only deferred split follow-up and still requires explicit promotion because it can introduce destructive maintenance.</p>
 <p>Copy into a fresh session:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md. Current frontier is closed; deferred split follow-ups are tickets/017-retention-maintenance-command.md and tickets/018-local-backup-export-command.md.
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>Use the wayfinder skill on docs/wayfinder/durability-performance-coverage/map.md. Current frontier is closed; ticket 018 backup/restore is implemented under ADR-0041, and ticket 017 retention maintenance remains deferred.
 </code></pre></div>
   </article>
   <div class="md-footer">

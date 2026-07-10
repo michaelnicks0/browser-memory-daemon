@@ -11,50 +11,50 @@
 <polygon fill="white" stroke="transparent" points="-4,4 -4,-2117.38 2652,-2117.38 2652,4 -4,4"/>
 <text text-anchor="start" x="843.5" y="-11.8" font-family="Arial" font-size="34.00">Deployment View: Browser Memory Daemon &#45; Daily&#45;driver local</text>
 <g id="clust1" class="cluster">
-<title>cluster_100</title>
+<title>cluster_107</title>
 <polygon fill="none" stroke="#444444" points="8,-64 8,-2105.38 2640,-2105.38 2640,-64 8,-64"/>
 <text text-anchor="start" x="1230.5" y="-92.8" font-family="Arial" font-size="24.00" fill="#444444">Local workstation</text>
 <text text-anchor="start" x="1162" y="-72.8" font-family="Arial" font-size="19.00" fill="#444444">[Deployment Node: Windows + WSL2]</text>
 </g>
 <g id="clust2" class="cluster">
-<title>cluster_101</title>
+<title>cluster_108</title>
 <polygon fill="none" stroke="#444444" points="581,-1599.38 581,-2080.38 1699,-2080.38 1699,-1599.38 581,-1599.38"/>
 <text text-anchor="start" x="1027.5" y="-1628.17" font-family="Arial" font-size="24.00" fill="#444444">Windows user profile</text>
 <text text-anchor="start" x="986.5" y="-1608.17" font-family="Arial" font-size="19.00" fill="#444444">[Deployment Node: Windows profile]</text>
 </g>
 <g id="clust3" class="cluster">
-<title>cluster_102</title>
+<title>cluster_109</title>
 <polygon fill="none" stroke="#444444" points="606,-1675.38 606,-2055.38 1674,-2055.38 1674,-1675.38 606,-1675.38"/>
 <text text-anchor="start" x="945.5" y="-1704.17" font-family="Arial" font-size="24.00" fill="#444444">Windows Chrome daily&#45;driver profile</text>
 <text text-anchor="start" x="964.5" y="-1684.17" font-family="Arial" font-size="19.00" fill="#444444">[Deployment Node: Google Chrome MV3]</text>
 </g>
 <g id="clust4" class="cluster">
-<title>cluster_108</title>
+<title>cluster_115</title>
 <polygon fill="none" stroke="#444444" points="33,-140 33,-1460.38 2615,-1460.38 2615,-140 33,-140"/>
 <text text-anchor="start" x="1248.5" y="-168.8" font-family="Arial" font-size="24.00" fill="#444444">WSL2 Ubuntu</text>
 <text text-anchor="start" x="1133.5" y="-148.8" font-family="Arial" font-size="19.00" fill="#444444">[Deployment Node: Ubuntu + systemd &#45;&#45;user]</text>
 </g>
 <g id="clust5" class="cluster">
-<title>cluster_109</title>
+<title>cluster_116</title>
 <polygon fill="none" stroke="#444444" points="864,-997.38 864,-1435.38 1802,-1435.38 1802,-997.38 864,-997.38"/>
 <text text-anchor="start" x="1205" y="-1026.17" font-family="Arial" font-size="24.00" fill="#444444">systemd &#45;&#45;user services</text>
 <text text-anchor="start" x="1184" y="-1006.17" font-family="Arial" font-size="19.00" fill="#444444">[Deployment Node: systemd &#45;&#45;user]</text>
 </g>
 <g id="clust7" class="cluster">
-<title>cluster_117</title>
+<title>cluster_124</title>
 <polygon fill="none" stroke="#444444" points="58,-216 58,-879.38 1429,-879.38 1429,-216 58,-216"/>
 <text text-anchor="start" x="584.5" y="-244.8" font-family="Arial" font-size="24.00" fill="#444444">WSL XDG runtime data paths</text>
 <text text-anchor="start" x="591.5" y="-224.8" font-family="Arial" font-size="19.00" fill="#444444">[Deployment Node: WSL filesystem]</text>
 </g>
 <g id="clust8" class="cluster">
-<title>cluster_129</title>
+<title>cluster_137</title>
 <polygon fill="none" stroke="#444444" points="1723,-282 1723,-813.38 2317,-813.38 2317,-282 1723,-282"/>
 <text text-anchor="start" x="1833.5" y="-310.8" font-family="Arial" font-size="24.00" fill="#444444">WSL&#45;mounted guarded media root</text>
 <text text-anchor="start" x="1779.5" y="-290.8" font-family="Arial" font-size="19.00" fill="#444444">[Deployment Node: NAS mount of TrueNAS ZFS dataset]</text>
 </g>
-<!-- 103 -->
-<g id="103" class="node">
-<title>103</title>
+<!-- 110 -->
+<g id="110" class="node">
+<title>110</title>
 <polygon fill="#438dd5" stroke="#2e6295" points="1065,-2030.38 631,-2030.38 631,-1751.38 1065,-1751.38 1065,-2030.38"/>
 <text text-anchor="start" x="668" y="-1982.17" font-family="Arial" font-size="34.00" fill="#ffffff">Chrome MV3 Extension</text>
 <text text-anchor="start" x="660" y="-1960.17" font-family="Arial" font-size="19.00" fill="#ffffff">[Container: JavaScript, Chrome Manifest V3]</text>
@@ -66,9 +66,9 @@
 <text text-anchor="start" x="689" y="-1803.17" font-family="Arial" font-size="24.00" fill="#ffffff">durably and posts to the WSL</text>
 <text text-anchor="start" x="800.5" y="-1779.17" font-family="Arial" font-size="24.00" fill="#ffffff">daemon.</text>
 </g>
-<!-- 110 -->
-<g id="110" class="node">
-<title>110</title>
+<!-- 117 -->
+<g id="117" class="node">
+<title>117</title>
 <polygon fill="#438dd5" stroke="#2e6295" points="1351,-1410.38 889,-1410.38 889,-1073.38 1351,-1073.38 1351,-1410.38"/>
 <text text-anchor="start" x="955.5" y="-1362.17" font-family="Arial" font-size="34.00" fill="#ffffff">WSL Loopback HTTP</text>
 <text text-anchor="start" x="1055.5" y="-1328.17" font-family="Arial" font-size="34.00" fill="#ffffff">Daemon</text>
@@ -82,9 +82,9 @@
 <text text-anchor="start" x="968.5" y="-1125.17" font-family="Arial" font-size="24.00" fill="#ffffff">rules, doctor, durable forget,</text>
 <text text-anchor="start" x="1007" y="-1101.17" font-family="Arial" font-size="24.00" fill="#ffffff">and static UI serving.</text>
 </g>
-<!-- 103&#45;&gt;110 -->
-<g id="111" class="edge">
-<title>103&#45;&gt;110</title>
+<!-- 110&#45;&gt;117 -->
+<g id="118" class="edge">
+<title>110&#45;&gt;117</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M804.96,-1750.95C786.42,-1665.19 777.67,-1555.33 821,-1468.38 836.04,-1438.19 857.27,-1410.97 881.56,-1386.77"/>
 <polygon fill="#444444" stroke="#444444" points="884.11,-1389.17 888.83,-1379.69 879.22,-1384.15 884.11,-1389.17"/>
 <polygon fill="white" stroke="transparent" points="821,-1468.38 821,-1591.38 1316,-1591.38 1316,-1468.38 821,-1468.38"/>
@@ -94,9 +94,9 @@
 <text text-anchor="start" x="1013" y="-1496.67" font-family="Arial" font-size="24.00" fill="#444444">uploads to</text>
 <text text-anchor="start" x="825.5" y="-1476.67" font-family="Arial" font-size="19.00" fill="#444444">[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</text>
 </g>
-<!-- 106 -->
-<g id="106" class="node">
-<title>106</title>
+<!-- 113 -->
+<g id="113" class="node">
+<title>113</title>
 <polygon fill="#438dd5" stroke="#2e6295" points="1649,-2018.38 1137,-2018.38 1137,-1763.38 1649,-1763.38 1649,-2018.38"/>
 <text text-anchor="start" x="1290.5" y="-1970.17" font-family="Arial" font-size="34.00" fill="#ffffff">Local Web UI</text>
 <text text-anchor="start" x="1166" y="-1948.17" font-family="Arial" font-size="19.00" fill="#ffffff">[Container: HTML/CSS/JavaScript served by daemon]</text>
@@ -107,9 +107,9 @@
 <text text-anchor="start" x="1299.5" y="-1815.17" font-family="Arial" font-size="24.00" fill="#ffffff">rules, doctor, and</text>
 <text text-anchor="start" x="1254.5" y="-1791.17" font-family="Arial" font-size="24.00" fill="#ffffff">forget&#45;domain operations.</text>
 </g>
-<!-- 106&#45;&gt;110 -->
-<g id="112" class="edge">
-<title>106&#45;&gt;110</title>
+<!-- 113&#45;&gt;117 -->
+<g id="119" class="edge">
+<title>113&#45;&gt;117</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1393.48,-1763.34C1389.28,-1676.49 1374.49,-1560.69 1330,-1468.38 1321.79,-1451.34 1311.85,-1434.72 1300.8,-1418.71"/>
 <polygon fill="#444444" stroke="#444444" points="1303.56,-1416.54 1294.93,-1410.4 1297.84,-1420.58 1303.56,-1416.54"/>
 <polygon fill="white" stroke="transparent" points="1370,-1480.38 1370,-1579.38 1647,-1579.38 1647,-1480.38 1370,-1480.38"/>
@@ -118,9 +118,9 @@
 <text text-anchor="start" x="1466.5" y="-1508.67" font-family="Arial" font-size="24.00" fill="#444444">APIs on</text>
 <text text-anchor="start" x="1451" y="-1488.67" font-family="Arial" font-size="19.00" fill="#444444">[HTTP/JSON]</text>
 </g>
-<!-- 118 -->
-<g id="118" class="node">
-<title>118</title>
+<!-- 125 -->
+<g id="125" class="node">
+<title>125</title>
 <path fill="#2f95c8" stroke="#20688c" d="M945.5,-803.4C945.5,-831.63 856.98,-854.56 748,-854.56 639.02,-854.56 550.5,-831.63 550.5,-803.4 550.5,-803.4 550.5,-342.97 550.5,-342.97 550.5,-314.74 639.02,-291.81 748,-291.81 856.98,-291.81 945.5,-314.74 945.5,-342.97 945.5,-342.97 945.5,-803.4 945.5,-803.4"/>
 <path fill="none" stroke="#20688c" d="M945.5,-803.4C945.5,-775.17 856.98,-752.24 748,-752.24 639.02,-752.24 550.5,-775.17 550.5,-803.4"/>
 <text text-anchor="start" x="635" y="-729.49" font-family="Arial" font-size="34.00" fill="#ffffff">SQLite + FTS5</text>
@@ -138,9 +138,9 @@
 <text text-anchor="start" x="622.5" y="-420.49" font-family="Arial" font-size="24.00" fill="#ffffff">rules, audit events, and</text>
 <text text-anchor="start" x="656" y="-396.49" font-family="Arial" font-size="24.00" fill="#ffffff">deletion receipts.</text>
 </g>
-<!-- 110&#45;&gt;118 -->
-<g id="119" class="edge">
-<title>110&#45;&gt;118</title>
+<!-- 117&#45;&gt;125 -->
+<g id="126" class="edge">
+<title>117&#45;&gt;125</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M888.87,-1212.55C749.29,-1182.22 581.89,-1119.4 494,-989.38 469.36,-952.92 471.22,-928.02 494,-890.38 499.45,-881.36 506.95,-886.17 515,-879.38 528.65,-867.86 542,-855.42 554.95,-842.36"/>
 <polygon fill="#444444" stroke="#444444" points="557.62,-844.64 562.11,-835.05 552.61,-839.75 557.62,-844.64"/>
 <polygon fill="white" stroke="transparent" points="494,-890.38 494,-989.38 804,-989.38 804,-890.38 494,-890.38"/>
@@ -149,9 +149,9 @@
 <text text-anchor="start" x="593.5" y="-918.67" font-family="Arial" font-size="24.00" fill="#444444">receipts in</text>
 <text text-anchor="start" x="615.5" y="-898.67" font-family="Arial" font-size="19.00" fill="#444444">[sqlite3]</text>
 </g>
-<!-- 122 -->
-<g id="122" class="node">
-<title>122</title>
+<!-- 129 -->
+<g id="129" class="node">
+<title>129</title>
 <path fill="#2f95c8" stroke="#20688c" d="M478.5,-722.4C478.5,-740.7 389.98,-755.56 281,-755.56 172.02,-755.56 83.5,-740.7 83.5,-722.4 83.5,-722.4 83.5,-423.97 83.5,-423.97 83.5,-405.67 172.02,-390.81 281,-390.81 389.98,-390.81 478.5,-405.67 478.5,-423.97 478.5,-423.97 478.5,-722.4 478.5,-722.4"/>
 <path fill="none" stroke="#20688c" d="M478.5,-722.4C478.5,-704.11 389.98,-689.24 281,-689.24 172.02,-689.24 83.5,-704.11 83.5,-722.4"/>
 <text text-anchor="start" x="159.5" y="-657.49" font-family="Arial" font-size="34.00" fill="#ffffff">Local Derivative</text>
@@ -163,9 +163,9 @@
 <text text-anchor="start" x="157.5" y="-492.49" font-family="Arial" font-size="24.00" fill="#ffffff">captures create no text</text>
 <text text-anchor="start" x="232.5" y="-468.49" font-family="Arial" font-size="24.00" fill="#ffffff">sidecars.</text>
 </g>
-<!-- 110&#45;&gt;122 -->
-<g id="123" class="edge">
-<title>110&#45;&gt;122</title>
+<!-- 117&#45;&gt;129 -->
+<g id="130" class="edge">
+<title>117&#45;&gt;129</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M888.95,-1210.61C642.03,-1172.96 274.57,-1099.86 190,-989.38 141.29,-925.74 150.28,-841.37 176.79,-765.32"/>
 <polygon fill="#444444" stroke="#444444" points="180.19,-766.2 180.29,-755.6 173.61,-763.83 180.19,-766.2"/>
 <polygon fill="white" stroke="transparent" points="190,-890.38 190,-989.38 458,-989.38 458,-890.38 190,-890.38"/>
@@ -174,9 +174,9 @@
 <text text-anchor="start" x="279" y="-918.67" font-family="Arial" font-size="24.00" fill="#444444">required</text>
 <text text-anchor="start" x="272.5" y="-898.67" font-family="Arial" font-size="19.00" fill="#444444">[Filesystem]</text>
 </g>
-<!-- 124 -->
-<g id="124" class="node">
-<title>124</title>
+<!-- 132 -->
+<g id="132" class="node">
+<title>132</title>
 <path fill="#2f95c8" stroke="#20688c" d="M1404,-762.9C1404,-786.17 1317.49,-805.06 1211,-805.06 1104.51,-805.06 1018,-786.17 1018,-762.9 1018,-762.9 1018,-383.47 1018,-383.47 1018,-360.21 1104.51,-341.31 1211,-341.31 1317.49,-341.31 1404,-360.21 1404,-383.47 1404,-383.47 1404,-762.9 1404,-762.9"/>
 <path fill="none" stroke="#20688c" d="M1404,-762.9C1404,-739.64 1317.49,-720.74 1211,-720.74 1104.51,-720.74 1018,-739.64 1018,-762.9"/>
 <text text-anchor="start" x="1047" y="-693.49" font-family="Arial" font-size="34.00" fill="#ffffff">Bounded Local Media</text>
@@ -191,9 +191,9 @@
 <text text-anchor="start" x="1063.5" y="-456.49" font-family="Arial" font-size="24.00" fill="#ffffff">before tier transition/source</text>
 <text text-anchor="start" x="1165" y="-432.49" font-family="Arial" font-size="24.00" fill="#ffffff">cleanup.</text>
 </g>
-<!-- 110&#45;&gt;124 -->
-<g id="125" class="edge">
-<title>110&#45;&gt;124</title>
+<!-- 117&#45;&gt;132 -->
+<g id="133" class="edge">
+<title>117&#45;&gt;132</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M888.67,-1078.27C829.05,-1017.44 795.08,-948.94 849,-890.38 869.09,-868.56 956.04,-893.72 982,-879.38 1015.26,-860.99 1045.12,-835.52 1071.43,-807.07"/>
 <polygon fill="#444444" stroke="#444444" points="1074.28,-809.13 1078.39,-799.37 1069.09,-804.43 1074.28,-809.13"/>
 <polygon fill="white" stroke="transparent" points="849,-890.38 849,-989.38 1125,-989.38 1125,-890.38 849,-890.38"/>
@@ -202,9 +202,9 @@
 <text text-anchor="start" x="931" y="-918.67" font-family="Arial" font-size="24.00" fill="#444444">outages in</text>
 <text text-anchor="start" x="935.5" y="-898.67" font-family="Arial" font-size="19.00" fill="#444444">[Filesystem]</text>
 </g>
-<!-- 130 -->
-<g id="130" class="node">
-<title>130</title>
+<!-- 138 -->
+<g id="138" class="node">
+<title>138</title>
 <path fill="#2f95c8" stroke="#20688c" d="M2292,-749.4C2292,-771.01 2170.09,-788.56 2020,-788.56 1869.91,-788.56 1748,-771.01 1748,-749.4 1748,-749.4 1748,-396.97 1748,-396.97 1748,-375.36 1869.91,-357.81 2020,-357.81 2170.09,-357.81 2292,-375.36 2292,-396.97 2292,-396.97 2292,-749.4 2292,-749.4"/>
 <path fill="none" stroke="#20688c" d="M2292,-749.4C2292,-727.8 2170.09,-710.24 2020,-710.24 1869.91,-710.24 1748,-727.8 1748,-749.4"/>
 <text text-anchor="start" x="1864.5" y="-681.49" font-family="Arial" font-size="34.00" fill="#ffffff">Guarded Media Blob</text>
@@ -218,9 +218,9 @@
 <text text-anchor="start" x="1870.5" y="-468.49" font-family="Arial" font-size="24.00" fill="#ffffff">identity&#45;marker proof before</text>
 <text text-anchor="start" x="1979" y="-444.49" font-family="Arial" font-size="24.00" fill="#ffffff">access.</text>
 </g>
-<!-- 110&#45;&gt;130 -->
-<g id="131" class="edge">
-<title>110&#45;&gt;130</title>
+<!-- 117&#45;&gt;138 -->
+<g id="139" class="edge">
+<title>117&#45;&gt;138</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1137.87,-1072.92C1149.86,-995.23 1168.93,-914.76 1198,-890.38 1219.22,-872.58 1420.29,-886.68 1447,-879.38 1546.96,-852.06 1649.02,-805 1738.79,-755.9"/>
 <polygon fill="#444444" stroke="#444444" points="1740.64,-758.88 1747.72,-750.99 1737.27,-752.75 1740.64,-758.88"/>
 <polygon fill="white" stroke="transparent" points="1198,-890.38 1198,-989.38 1506,-989.38 1506,-890.38 1198,-890.38"/>
@@ -229,9 +229,9 @@
 <text text-anchor="start" x="1342.5" y="-918.67" font-family="Arial" font-size="24.00" fill="#444444">in</text>
 <text text-anchor="start" x="1300.5" y="-898.67" font-family="Arial" font-size="19.00" fill="#444444">[Filesystem]</text>
 </g>
-<!-- 113 -->
-<g id="113" class="node">
-<title>113</title>
+<!-- 120 -->
+<g id="120" class="node">
+<title>120</title>
 <polygon fill="#438dd5" stroke="#2e6295" points="1777,-1393.38 1423,-1393.38 1423,-1090.38 1777,-1090.38 1777,-1393.38"/>
 <text text-anchor="start" x="1453" y="-1345.17" font-family="Arial" font-size="34.00" fill="#ffffff">WSL Media Worker</text>
 <text text-anchor="start" x="1460" y="-1323.17" font-family="Arial" font-size="19.00" fill="#ffffff">[Container: Python 3.11 CLI loop]</text>
@@ -244,9 +244,9 @@
 <text text-anchor="start" x="1454" y="-1142.17" font-family="Arial" font-size="24.00" fill="#ffffff">states, and updates artifact</text>
 <text text-anchor="start" x="1571" y="-1118.17" font-family="Arial" font-size="24.00" fill="#ffffff">rows.</text>
 </g>
-<!-- 113&#45;&gt;118 -->
-<g id="120" class="edge">
-<title>113&#45;&gt;118</title>
+<!-- 120&#45;&gt;125 -->
+<g id="127" class="edge">
+<title>120&#45;&gt;125</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1585.86,-1090.33C1574.65,-1007.47 1555.49,-916.3 1524,-890.38 1500.75,-871.23 1008.87,-892.97 982,-879.38 963.31,-869.92 945.69,-858.2 929.16,-844.91"/>
 <polygon fill="#444444" stroke="#444444" points="931.06,-841.94 921.13,-838.26 926.6,-847.34 931.06,-841.94"/>
 <polygon fill="white" stroke="transparent" points="1567,-902.38 1567,-977.38 1867,-977.38 1867,-902.38 1567,-902.38"/>
@@ -254,9 +254,9 @@
 <text text-anchor="start" x="1676" y="-930.67" font-family="Arial" font-size="24.00" fill="#444444">tasks in</text>
 <text text-anchor="start" x="1683.5" y="-910.67" font-family="Arial" font-size="19.00" fill="#444444">[sqlite3]</text>
 </g>
-<!-- 113&#45;&gt;124 -->
-<g id="126" class="edge">
-<title>113&#45;&gt;124</title>
+<!-- 120&#45;&gt;132 -->
+<g id="134" class="edge">
+<title>120&#45;&gt;132</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1777.2,-1140.27C1881.07,-1068.97 1978.08,-971.9 1901,-890.38 1886.01,-874.53 1725.81,-885.92 1705,-879.38 1601.7,-846.88 1498.1,-787.92 1412.66,-730.43"/>
 <polygon fill="#444444" stroke="#444444" points="1414.42,-727.4 1404.18,-724.69 1410.5,-733.19 1414.42,-727.4"/>
 <polygon fill="white" stroke="transparent" points="1928,-890.38 1928,-989.38 2164,-989.38 2164,-890.38 1928,-890.38"/>
@@ -265,9 +265,9 @@
 <text text-anchor="start" x="1989" y="-918.67" font-family="Arial" font-size="24.00" fill="#444444">outages to</text>
 <text text-anchor="start" x="1994.5" y="-898.67" font-family="Arial" font-size="19.00" fill="#444444">[Filesystem]</text>
 </g>
-<!-- 113&#45;&gt;130 -->
-<g id="132" class="edge">
-<title>113&#45;&gt;130</title>
+<!-- 120&#45;&gt;138 -->
+<g id="140" class="edge">
+<title>120&#45;&gt;138</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1777.31,-1216.68C1913.51,-1187.77 2092.9,-1124.94 2182,-989.38 2220.48,-930.83 2211.47,-861.76 2183.76,-796.93"/>
 <polygon fill="#444444" stroke="#444444" points="2186.78,-795.12 2179.53,-787.4 2180.38,-797.96 2186.78,-795.12"/>
 <polygon fill="white" stroke="transparent" points="2207,-902.38 2207,-977.38 2507,-977.38 2507,-902.38 2207,-902.38"/>

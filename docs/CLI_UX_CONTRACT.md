@@ -69,6 +69,8 @@ Global defaults:
 | `media-spool status` | Report final-root readiness plus configured cap, DB-backed artifact/reservation counts, filesystem-accounted bytes, and available capacity. | Pretty JSON; read-only. |
 | `media-spool drain [--limit N] [--execute]` | Preview or execute bounded spool-to-media-root transitions. | Dry-run by default. Execute streams and verifies size/SHA-256, commits the SQLite tier switch, then removes the spool source. |
 | `storage reconcile [--limit N] [--stale-stage-seconds N] [--execute]` | Preview or execute contained blob convergence across pending tombstones, missing references, in-root orphans, and stale stages. | Dry-run by default. Exit `0` when no retryable tombstones remain; exit `2` when deletion work remains blocked/failed. |
+| `backup create --destination ABS_PATH [--include-derivatives] [--execute]` | Preview or atomically create a manifest-backed SQLite-authoritative local bundle. | Dry-run by default. Media/spool/secrets are excluded; optional derivatives are reference- and hash-verified. |
+| `backup restore --source ABS_PATH --destination ABS_PATH [--execute]` | Preview or verify/restore a bundle into an absent explicit runtime root. | Dry-run by default. Rejects existing destinations and any path/hash/schema/integrity mismatch. |
 
 ---
 
@@ -162,4 +164,6 @@ PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
 - `capture-fixture` exists for tests/smoke checks, not browser capture replacement.
 - `migrate --check/--execute`, `blob-root migrate`, `snapshot-text reconcile`, and `storage reconcile` are current repository migration/reconciliation helpers; dry-run remains the default for filesystem-backed reconciliation.
 - `storage reconcile` never traverses an unavailable external media root and never deletes outside configured roots.
+- `backup create` and `backup restore` require absolute paths and are dry-run first. Create rejects active runtime/storage overlap; restore never overwrites or merges an existing destination.
+- Backup defaults to SQLite plus manifest. Tokens/config, Chrome state, final media, and spool bytes are excluded; `--include-derivatives` adds only referenced contained clean-text sidecars.
 - Future CLI changes should update this contract and `daemon/tests/e2e/test_cli_admin.py` together.

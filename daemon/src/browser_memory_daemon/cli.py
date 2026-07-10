@@ -4,8 +4,10 @@ import argparse
 import json
 import urllib.parse
 import urllib.request
+from pathlib import Path
 
 from .app import make_server
+from .backup_ops import BackupError, create_backup, restore_backup
 from .blob_migration import migrate_blob_root
 from .config import load_config
 from .daily_driver_health import daily_driver_health_snapshot
@@ -123,6 +125,16 @@ def main(argv: list[str] | None = None) -> int:
     reconcile_blobs.add_argument("--execute", action="store_true")
     reconcile_blobs.add_argument("--limit", type=int, default=1_000)
     reconcile_blobs.add_argument("--stale-stage-seconds", type=int, default=3_600)
+    backup = sub.add_parser("backup")
+    backup_sub = backup.add_subparsers(dest="backup_command", required=True)
+    backup_create = backup_sub.add_parser("create")
+    backup_create.add_argument("--destination", type=Path, required=True)
+    backup_create.add_argument("--include-derivatives", action="store_true")
+    backup_create.add_argument("--execute", action="store_true")
+    backup_restore = backup_sub.add_parser("restore")
+    backup_restore.add_argument("--source", type=Path, required=True)
+    backup_restore.add_argument("--destination", type=Path, required=True)
+    backup_restore.add_argument("--execute", action="store_true")
     args = parser.parse_args(argv)
 
     cfg = load_config(
@@ -295,6 +307,27 @@ def main(argv: list[str] | None = None) -> int:
             )
             print(json.dumps(result, indent=2))
         return 0 if result["tombstones"]["pending"] == 0 else 2
+    if args.command == "backup":
+        try:
+            if args.backup_command == "create":
+                result = create_backup(
+                    cfg,
+                    args.destination,
+                    execute=args.execute,
+                    include_derivatives=args.include_derivatives,
+                )
+            else:
+                result = restore_backup(
+                    args.source,
+                    args.destination,
+                    execute=args.execute,
+                    active_config=cfg,
+                )
+        except BackupError as exc:
+            print(json.dumps({"error": str(exc)}, indent=2))
+            return 1
+        print(json.dumps(result, indent=2))
+        return 0
     if args.command == "capture-fixture":
         print(json.dumps(_request("POST", f"{base}/capture", token=cfg.api_token, body={"url": args.url, "title": args.title, "text": args.text}), indent=2))
         return 0
