@@ -69,6 +69,8 @@ Read-only installed-state check, with no rebuild/copy/unit writes/restarts:
 ./scripts/install-daily-driver.sh --check
 ```
 
+Database compatibility is separately inspectable with `memory migrate --check`; see [`database-migrations.md`](database-migrations.md). Service startup applies only non-destructive pending migrations. A future destructive step fails closed until the operator runs explicit `migrate --execute`, which requires disk headroom and a verified online SQLite backup. Repository verification must use temporary roots and must not run either install or migration execution against the live daily driver.
+
 To place blobs on a WSL-mounted NAS dataset while keeping SQLite/WAL local:
 
 ```bash

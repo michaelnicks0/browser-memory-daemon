@@ -153,8 +153,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>SQLite/FTS/media storage</td>
-<td>✅ Documents/visits/snapshots/chunks/FTS/media/audit/deletion receipts.</td>
-<td><code>schema.sql</code>, integration/e2e tests.</td>
+<td>✅ Documents/visits/snapshots/chunks/FTS/media/audit/deletion receipts plus exact schema fingerprint, ordered checksum ledger, and restore-backed migration gate.</td>
+<td><code>schema.sql</code>, <code>migrations.py</code>, <code>migration_steps/</code>, integration/e2e tests.</td>
 </tr>
 <tr>
 <td>Exact search</td>
@@ -178,7 +178,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>CLI</td>
-<td>✅ serve/health/doctor/daily-driver-health/search/recent/timeline/detail/policy/forget/capture-fixture/media-worker/media-cache/blob-root migration.</td>
+<td>✅ serve/health/migrate/doctor/daily-driver-health/search/recent/timeline/detail/policy/forget/capture-fixture/media-worker/media-cache/blob-root migration.</td>
 <td><code>cli.py</code>, CLI e2e.</td>
 </tr>
 <tr>
@@ -211,7 +211,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <hr />
 <h2 id="requirement-posture">Requirement posture</h2>
 <!-- BEGIN GENERATED:requirement-posture -->
-<p>The canonical catalog contains <strong>43 stable requirements</strong>: <strong>31 active</strong> and <strong>12 planned</strong>. Normative statements, implementation links, V-model evidence, and legacy aliases are owned by <a href="../requirements/catalog.toml"><code>requirements/catalog.toml</code></a>; generated tables in this doc set must not be hand-edited.</p>
+<p>The canonical catalog contains <strong>43 stable requirements</strong>: <strong>32 active</strong> and <strong>11 planned</strong>. Normative statements, implementation links, V-model evidence, and legacy aliases are owned by <a href="../requirements/catalog.toml"><code>requirements/catalog.toml</code></a>; generated tables in this doc set must not be hand-edited.</p>
 <!-- END GENERATED:requirement-posture -->
 
 <hr />

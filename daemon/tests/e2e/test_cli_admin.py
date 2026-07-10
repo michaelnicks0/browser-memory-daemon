@@ -92,3 +92,32 @@ def test_cli_admin_commands(cli_server, capsys, monkeypatch):
     assert main(_base_args(cli_server) + ["daily-driver-health", "--skip-windows-loopback", "--extension-dir", "/tmp/bmd-extension"]) == 0
     daily_driver_health = _last_json(capsys)
     assert daily_driver_health["ok"] is True
+
+
+def test_cli_migrate_check_is_read_only_then_execute_applies_pending_steps(tmp_path, capsys):
+    runtime_root = tmp_path / "runtime"
+    blob_root = tmp_path / "blobs"
+    base = [
+        "--runtime-root",
+        str(runtime_root),
+        "--blob-root",
+        str(blob_root),
+        "--token",
+        "test-token",
+    ]
+
+    assert main(base + ["migrate", "--check"]) == 2
+    pending = _last_json(capsys)
+    assert pending["state"] == "uninitialized"
+    assert pending["pending_versions"] == [1, 2, 3]
+    assert not (runtime_root / "data" / "memory.sqlite3").exists()
+
+    assert main(base + ["migrate", "--execute"]) == 0
+    executed = _last_json(capsys)
+    assert executed["ready"] is True
+    assert executed["applied_versions"] == [1, 2, 3]
+
+    assert main(base + ["migrate", "--check"]) == 0
+    current = _last_json(capsys)
+    assert current["ready"] is True
+    assert current["current_version"] == 3

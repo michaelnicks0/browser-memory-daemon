@@ -207,6 +207,16 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Raw JSON string.</td>
 </tr>
 <tr>
+<td><code>migrate --check</code></td>
+<td>Read-only schema fingerprint, version, ledger checksum, and pending-step report.</td>
+<td>Pretty JSON; exits <code>0</code> when current, <code>2</code> when compatible work is pending, and <code>1</code> when incompatible.</td>
+</tr>
+<tr>
+<td><code>migrate --execute</code></td>
+<td>Apply pending ordered migrations. Future destructive steps require disk headroom and a verified online backup.</td>
+<td>Pretty JSON including applied/stamped versions and backup path when applicable.</td>
+</tr>
+<tr>
 <td><code>doctor [--storage-census]</code></td>
 <td>Fetch <code>/doctor</code>; default uses fast DB-derived storage counts, <code>--storage-census</code> opts into an exact filesystem walk.</td>
 <td>Pretty JSON.</td>
@@ -295,6 +305,14 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td>Unauthorized API call</td>
 <td>HTTP <code>401</code>; CLI surfaces exception/non-zero.</td>
+</tr>
+<tr>
+<td>Compatible migration work pending</td>
+<td><code>migrate --check</code> prints the pending ordered steps and exits <code>2</code> without creating or mutating the database.</td>
+</tr>
+<tr>
+<td>Migration incompatibility/failure</td>
+<td><code>migrate</code> prints JSON with <code>compatible=false</code>, <code>ready=false</code>, and a redaction-safe error, then exits <code>1</code>.</td>
 </tr>
 <tr>
 <td><code>daily-driver-health</code> hard error</td>

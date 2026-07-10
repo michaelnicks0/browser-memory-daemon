@@ -4,6 +4,16 @@ version = "0.1.0"
 description = "Local-first Windows Chrome to WSL browser memory daemon"
 requires-python = ">=3.11"
 
+[project.scripts]
+memory = "browser_memory_daemon.cli:main"
+
+[tool.setuptools.package-data]
+"browser_memory_daemon.migration_steps" = ["*.sql"]
+
+[tool.setuptools.packages.find]
+where = ["daemon/src"]
+include = ["browser_memory_daemon*"]
+
 [tool.pytest.ini_options]
 pythonpath = ["daemon/src"]
 testpaths = ["daemon/tests"]

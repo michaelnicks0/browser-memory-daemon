@@ -27,6 +27,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
 
             wslLoopbackDaemon = container "WSL Loopback HTTP Daemon" "Authenticated loopback HTTP API that handles capture, visit events, media artifact upload/fetch/purge, exact search, recent/timeline/detail, policy rules, doctor, forget, and static UI serving." "Python 3.11, ThreadingHTTPServer" {
                 httpRouter = component "HTTP Request Router" "Routes loopback API requests, serves UI assets, enforces bearer auth for memory/admin APIs, and applies CORS for allowed origins." "Python http.server" "Current"
+                migrationKernel = component "Database Migration Kernel" "Validates exact schema fingerprints, ordered migration names/checksums, and PRAGMA user_version; applies transactional steps and backup-gates destructive changes." "Python + sqlite3" "Current"
                 policyEngine = component "Policy Engine" "Evaluates all/recall/balanced/strict capture mode decisions and redacts URL/title/body text outside all mode." "Python" "Current"
                 policyStore = component "Policy Store" "Persists and evaluates explicit local block-domain and URL-prefix rules for every policy mode." "Python + SQLite" "Current"
                 ingestPipeline = component "Ingest Pipeline" "Normalizes URLs, computes document/snapshot IDs, stores visits/snapshots/chunks/FTS rows, writes clean text blobs, and records media references." "Python + sqlite3" "Current"
@@ -41,9 +42,9 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
 
             localWebUi = container "Local Web UI" "Static browser UI for exact search, recent/timeline views, document/snapshot detail, media artifact opening, policy rules, doctor, and forget-domain operations." "HTML/CSS/JavaScript served by daemon"
 
-            cli = container "CLI" "Command-line interface for serving the daemon, health/doctor/search/recent/timeline/detail, policy/forget, capture fixtures, media worker, and media cache operations." "Python argparse"
+            cli = container "CLI" "Command-line interface for serving the daemon, migration check/execute, health/doctor/search/recent/timeline/detail, policy/forget, capture fixtures, media worker, and media cache operations." "Python argparse"
 
-            sqliteDatabase = container "SQLite + FTS5 Database" "Durable relational and full-text store for sources, documents, visits, visit events, snapshots, chunks, chunks_fts, media artifacts, media fetch tasks, policy rules, audit events, and deletion receipts." "SQLite with FTS5" {
+            sqliteDatabase = container "SQLite + FTS5 Database" "Durable relational and full-text store for migration ledger, sources, documents, visits, visit events, snapshots, chunks, chunks_fts, media artifacts, media fetch tasks, policy rules, audit events, and deletion receipts." "SQLite with FTS5" {
                 tags "Database", "Data Store"
             }
 
@@ -70,7 +71,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
 
         localWebUi -> wslLoopbackDaemon "Calls authenticated read, admin, media, and forget APIs on" "HTTP/JSON"
         cli -> wslLoopbackDaemon "Calls health, read, admin, capture-fixture, and forget APIs on" "HTTP/JSON"
-        cli -> sqliteDatabase "Runs media-worker and media-cache commands against" "sqlite3"
+        cli -> sqliteDatabase "Runs migration, media-worker, and media-cache commands against" "sqlite3"
         cli -> mediaBlobCache "Purges and rehydrates media blobs through" "Filesystem"
 
         wslLoopbackDaemon -> sqliteDatabase "Reads and writes metadata, FTS, tasks, audit, and receipts in" "sqlite3"
@@ -94,6 +95,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
         popupOptions -> wslLoopbackDaemon "Checks health and triggers forget/policy actions on" "HTTP/JSON"
 
         httpRouter -> policyEngine "Gets capture decisions from"
+        httpRouter -> migrationKernel "Requires compatible initialized schema through"
         httpRouter -> policyStore "Manages policy rules through"
         httpRouter -> ingestPipeline "Routes accepted captures to"
         httpRouter -> lifecyclePipeline "Routes lifecycle events to"
@@ -117,6 +119,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
         opsDoctor -> sqliteDatabase "Checks integrity and counts in" "sqlite3"
         opsDoctor -> cleanTextBlobStore "Counts text blob files in" "Filesystem"
         opsDoctor -> mediaBlobCache "Counts media blob files in" "Filesystem"
+        migrationKernel -> sqliteDatabase "Validates and advances schema ledger/fingerprint in" "sqlite3 online backup + transactions"
 
         dailyDriver = deploymentEnvironment "Daily-driver local" {
             workstation = deploymentNode "Local workstation" "Windows workstation running Windows Chrome and WSL2." "Windows + WSL2" {
@@ -270,6 +273,13 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
             include sqliteDatabase
             include cleanTextBlobStore
             include mediaBlobCache
+            autoLayout lr
+        }
+
+        component wslLoopbackDaemon "DaemonMigrationComponents" {
+            include httpRouter
+            include migrationKernel
+            include sqliteDatabase
             autoLayout lr
         }
 

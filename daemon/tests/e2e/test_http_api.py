@@ -61,12 +61,13 @@ def binary_request(method, url, token="test-token", body=b"", content_type="appl
 def test_http_capture_skips_request_time_db_initialization_after_startup(tmp_path, monkeypatch):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", host="127.0.0.1", port=0, policy_mode="all")
     cfg = replace(cfg, media_fetch_on_capture=False)
-    seed_calls = []
+    init_calls = 0
     real_init_db = app_module.init_db
 
-    def spy_init_db(config, *, seed_media_tasks=True):
-        seed_calls.append(seed_media_tasks)
-        return real_init_db(config, seed_media_tasks=seed_media_tasks)
+    def spy_init_db(config):
+        nonlocal init_calls
+        init_calls += 1
+        return real_init_db(config)
 
     monkeypatch.setattr(app_module, "init_db", spy_init_db)
     server = app_module.make_server(cfg)
@@ -86,8 +87,7 @@ def test_http_capture_skips_request_time_db_initialization_after_startup(tmp_pat
         server.shutdown()
         thread.join(timeout=5)
 
-    assert seed_calls[0] is True
-    assert seed_calls == [True]
+    assert init_calls == 1
 
 
 def test_http_media_fetch_raw_upload_and_purge_rehydrate_controls(tmp_path):

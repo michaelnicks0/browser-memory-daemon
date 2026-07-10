@@ -536,12 +536,12 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td>REQ-032</td>
 <td style="text-align: right;">1</td>
-<td>planned</td>
+<td>active</td>
 <td>Every supported database shall have an explicit version and ordered, auditable, restore-backed migrations.</td>
 <td>Database Migration Kernel</td>
 <td><code>HRD-007</code></td>
-<td><code>daemon/src/browser_memory_daemon/migrations.py</code><br><code>daemon/src/browser_memory_daemon/db.py</code></td>
-<td>—</td>
+<td><code>daemon/src/browser_memory_daemon/migrations.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps</code><br><code>daemon/src/browser_memory_daemon/db.py</code></td>
+<td><code>daemon/tests/integration/test_migrations.py::test_destructive_migration_creates_online_backup_that_restores_search</code></td>
 </tr>
 <tr>
 <td>REQ-033</td>
@@ -795,6 +795,11 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td><code>/health</code> public loopback; <code>/ui</code> HTML gets same-origin token bootstrap; memory APIs tokened.</td>
 </tr>
 <tr>
+<td>Migration kernel</td>
+<td>Exact schema fingerprinting, ordered checksummed migrations, compatibility refusal, and backup-gated destructive steps.</td>
+<td>Startup applies non-destructive steps; explicit <code>migrate --execute</code> owns destructive approval.</td>
+</tr>
+<tr>
 <td>Policy engine</td>
 <td>Mode-specific allow/block/redact decisions.</td>
 <td><code>all</code>, <code>recall</code>, <code>balanced</code>, <code>strict</code>.</td>
@@ -861,6 +866,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td>How do read/search/forget/doctor operations reach storage?</td>
 <td><code>OpsContainers</code>, <code>DaemonReadComponents</code>, <code>DaemonForgetComponents</code>, <code>DaemonDoctorComponents</code></td>
+</tr>
+<tr>
+<td>How is SQLite version compatibility and migration recovery controlled?</td>
+<td><code>DaemonMigrationComponents</code></td>
 </tr>
 <tr>
 <td>What runs where on the daily-driver workstation?</td>
@@ -1180,6 +1189,10 @@ status_reason  = cache-evicted:global-oldest
 <tr>
 <td><code>chunks</code> / <code>chunks_fts</code></td>
 <td>Searchable text chunks and exact FTS index.</td>
+</tr>
+<tr>
+<td><code>schema_migrations</code> + <code>PRAGMA user_version</code></td>
+<td>Ordered migration version, immutable name/checksum ledger, and compatibility invariant; see ADR-0028.</td>
 </tr>
 <tr>
 <td>SQLite WAL sidecars (<code>*.sqlite3-wal</code>, <code>*.sqlite3-shm</code>)</td>

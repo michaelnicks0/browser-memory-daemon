@@ -47,9 +47,9 @@ flowchart TB
 | Capability | Current behavior | Evidence |
 |---|---|---|
 | Chrome capture | MV3 extension captures visible page text, delayed/SPAs, lifecycle signals, and media references. | `extension/src/`, real Chrome e2e. |
-| Local storage/search | WSL daemon persists documents, visits, snapshots, chunks, FTS rows, lifecycle events, media refs, audit events, and deletion receipts. | `daemon/src/browser_memory_daemon/schema.sql`, integration tests. |
+| Local storage/search | WSL daemon persists documents, visits, snapshots, chunks, FTS rows, lifecycle events, media refs, audit events, and deletion receipts behind an exact schema fingerprint and ordered migration ledger. | `schema.sql`, `migrations.py`, migration integration tests. |
 | Default recall posture | `policy_mode=all` captures the broadest Chrome-allowed URL surface with no daemon redaction while preserving DOM skip surfaces and explicit local block rules. | `policy.py`, `policy_store.py`, tests. |
-| Operator controls | CLI, local UI, HTTP API, popup/options controls, policy rules, forget receipts, doctor diagnostics. | `cli.py`, `ui/`, `docs/api.md`, e2e tests. |
+| Operator controls | CLI, local UI, HTTP API, popup/options controls, policy rules, forget receipts, migration check/execute, and doctor diagnostics. | `cli.py`, `ui/`, `docs/api.md`, e2e tests. |
 | Media sidecars | Browser lazy queue, raw blob upload, X/Twitter CDP recorder, daemon public worker, HLS/audio handling, purge/rehydrate, rolling cache gates. | `media.py`, `media_worker.py`, `media_queue.js`, `cdp_recorder.js`. |
 | Verification | Python daemon tests, extension node tests/build, real Chrome e2e, secret scan, generated doc checks, diff checks. | `docs/TESTS.md`, `scripts/run-e2e.sh`. |
 
@@ -72,8 +72,8 @@ flowchart TB
 
 - **Implemented:** local capture/search/delete/UI/API/CLI/media sidecars/daily-driver install.
 <!-- BEGIN GENERATED:verification-depth -->
-- **Verification depth:** 137 static test functions across 24 files (110 daemon pytest; 27 extension node:test), plus real Chrome for Testing e2e.
-- **Requirement authority:** `requirements/catalog.toml` defines 31 active and 12 planned stable requirements with generated traceability tables.
+- **Verification depth:** 147 static test functions across 25 files (120 daemon pytest; 27 extension node:test), plus real Chrome for Testing e2e.
+- **Requirement authority:** `requirements/catalog.toml` defines 32 active and 11 planned stable requirements with generated traceability tables.
 <!-- END GENERATED:verification-depth -->
 - **Architecture depth:** C4/Structurizr atlas, ADR history, behavioral Mermaid diagrams, API/CLI/security docs.
 - **Known future lanes:** semantic/vector search, native messaging hardening, retention/export/backup, MCP/Hermes tools, richer policy actions.

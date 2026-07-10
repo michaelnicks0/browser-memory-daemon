@@ -134,6 +134,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <h2 id="bottom-line">Bottom line</h2>
 <p>Browser Memory Daemon should preserve text/FTS recall by default and treat media bytes as a bounded disposable cache. Backups must be local, explicit, manifest-backed, and WAL-aware. Forget deletes the current live store; any backup made before the forget can still contain forgotten data until backup retention/pruning removes it.</p>
 <p>This design does <strong>not</strong> add automatic age-based deletion yet. That would be a separate operator-approved retention policy because the daily-driver default is maximum local recall.</p>
+<p>ADR-0028 implements a narrower migration-only SQLite online backup gate before destructive schema steps. That backup excludes blob roots and is not the full manifest-backed backup/export command described here.</p>
 <hr />
 <h2 id="mission-conops">Mission / ConOps</h2>
 <p>Browser Memory Daemon exists to provide local-first browser recall from Windows Chrome with durable WSL storage and a configurable WSL-visible blob root. Long-term operation needs enough storage hygiene to avoid SQLite/media growth surprises without undermining recall or deletion receipts.</p>

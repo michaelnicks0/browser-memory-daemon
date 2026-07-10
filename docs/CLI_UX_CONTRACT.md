@@ -40,6 +40,8 @@ Global defaults:
 |---|---|---|
 | `serve` | Start the loopback daemon. | Human startup line; process stays running. |
 | `health` | Fetch `/health`. | Raw JSON string. |
+| `migrate --check` | Read-only schema fingerprint, version, ledger checksum, and pending-step report. | Pretty JSON; exits `0` when current, `2` when compatible work is pending, and `1` when incompatible. |
+| `migrate --execute` | Apply pending ordered migrations. Future destructive steps require disk headroom and a verified online backup. | Pretty JSON including applied/stamped versions and backup path when applicable. |
 | `doctor [--storage-census]` | Fetch `/doctor`; default uses fast DB-derived storage counts, `--storage-census` opts into an exact filesystem walk. | Pretty JSON. |
 | `daily-driver-health [--journal-since WINDOW] [--extension-dir PATH] [--powershell PATH] [--skip-windows-loopback] [--no-fail]` | Redaction-safe daily-driver snapshot across services, loopback, journals, DB freshness, media queue, storage, and extension artifact state. | Pretty JSON. Exits non-zero on hard errors unless `--no-fail` is set. |
 | `recent --limit N` | Recent captures. | Pretty JSON list. |
@@ -63,6 +65,8 @@ Global defaults:
 |---|---|
 | Missing production token | `load_config` raises and CLI exits non-zero. |
 | Unauthorized API call | HTTP `401`; CLI surfaces exception/non-zero. |
+| Compatible migration work pending | `migrate --check` prints the pending ordered steps and exits `2` without creating or mutating the database. |
+| Migration incompatibility/failure | `migrate` prints JSON with `compatible=false`, `ready=false`, and a redaction-safe error, then exits `1`. |
 | `daily-driver-health` hard error | Prints JSON with `ok=false` and exits `1`; use `--no-fail` for report-only collection. |
 | Bad capture payload | HTTP `400` with JSON error. |
 | Blocked capture by static policy or explicit local rule | HTTP `200`, `{"stored": false, "blocked": true, "reason": "..."}`. |

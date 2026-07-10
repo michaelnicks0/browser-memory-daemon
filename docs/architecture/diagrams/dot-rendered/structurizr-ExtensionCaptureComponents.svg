@@ -58,7 +58,7 @@
 <text text-anchor="start" x="992.5" y="-860.8" font-family="Arial" font-size="24.00" fill="#000000">recorder orchestration.</text>
 </g>
 <!-- 12&#45;&gt;9 -->
-<g id="59" class="edge">
+<g id="60" class="edge">
 <title>12&#45;&gt;9</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M426.24,-1128.96C439.36,-1117.76 451.84,-1105.9 463,-1093.5 485.36,-1068.67 471.42,-1046.36 499,-1027.5 560.9,-985.19 737.53,-965.53 885.7,-956.41"/>
 <polygon fill="#444444" stroke="#444444" points="886.1,-959.89 895.87,-955.79 885.67,-952.9 886.1,-959.89"/>
@@ -85,7 +85,7 @@
 <text text-anchor="start" x="1869.5" y="-1051.8" font-family="Arial" font-size="24.00" fill="#ffffff">static UI serving.</text>
 </g>
 <!-- 12&#45;&gt;14 -->
-<g id="60" class="edge">
+<g id="61" class="edge">
 <title>12&#45;&gt;14</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M457.08,-1231.49C732.63,-1229.51 1250.79,-1223.79 1692,-1207.5 1700.39,-1207.19 1708.92,-1206.85 1717.55,-1206.48"/>
 <polygon fill="#444444" stroke="#444444" points="1717.86,-1209.97 1727.7,-1206.04 1717.56,-1202.98 1717.86,-1209.97"/>
@@ -130,7 +130,7 @@
 <text text-anchor="start" x="159.5" y="-540.8" font-family="Arial" font-size="24.00" fill="#000000">the service worker.</text>
 </g>
 <!-- 8&#45;&gt;7 -->
-<g id="49" class="edge">
+<g id="50" class="edge">
 <title>8&#45;&gt;7</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M456.01,-628.5C590.73,-628.5 769.82,-628.5 907.14,-628.5"/>
 <polygon fill="#444444" stroke="#444444" points="907.37,-632 917.37,-628.5 907.37,-625 907.37,-632"/>
@@ -139,7 +139,7 @@
 <text text-anchor="start" x="658.5" y="-639.3" font-family="Arial" font-size="24.00" fill="#444444">with</text>
 </g>
 <!-- 8&#45;&gt;9 -->
-<g id="50" class="edge">
+<g id="51" class="edge">
 <title>8&#45;&gt;9</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M456.01,-701.51C584.03,-749.57 752.11,-812.66 886.34,-863.04"/>
 <polygon fill="#444444" stroke="#444444" points="885.36,-866.41 895.95,-866.65 887.82,-859.86 885.36,-866.41"/>
@@ -163,7 +163,7 @@
 <text text-anchor="start" x="1807.5" y="-664.8" font-family="Arial" font-size="24.00" fill="#ffffff">fetched blobs in IndexedDB.</text>
 </g>
 <!-- 9&#45;&gt;13 -->
-<g id="51" class="edge">
+<g id="52" class="edge">
 <title>9&#45;&gt;13</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1334.21,-872C1346.26,-868.59 1358.25,-865.4 1370,-862.5 1484.71,-834.23 1614.21,-812.66 1722.42,-797.45"/>
 <polygon fill="#444444" stroke="#444444" points="1723.07,-800.89 1732.49,-796.04 1722.11,-793.96 1723.07,-800.89"/>
@@ -174,7 +174,7 @@
 <text text-anchor="start" x="1471.5" y="-873.3" font-family="Arial" font-size="24.00" fill="#444444">IndexedDB</text>
 </g>
 <!-- 9&#45;&gt;14 -->
-<g id="52" class="edge">
+<g id="53" class="edge">
 <title>9&#45;&gt;14</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1334.26,-998.12C1442.59,-1024.19 1574.99,-1058.22 1692,-1094.5 1700.63,-1097.18 1709.39,-1099.97 1718.22,-1102.86"/>
 <polygon fill="#444444" stroke="#444444" points="1717.23,-1106.22 1727.82,-1106.02 1719.42,-1099.57 1717.23,-1106.22"/>

@@ -206,16 +206,15 @@ def _truthy_query_value(value: str | None) -> bool:
 
 
 def _ensure_db(config: RuntimeConfig) -> None:
-    # Request handlers still ensure the schema exists, but they must not run the
-    # legacy media-task backfill on every capture/event. That backfill can scan
-    # and write thousands of rows and contend with the media worker.
+    # Request handlers still ensure the versioned schema is ready, but the
+    # process-level cache prevents repeated migration compatibility checks.
     key = _db_ready_key(config)
     if key in _DB_READY_PATHS and config.db_path.exists():
         return
     with _DB_READY_LOCK:
         if key in _DB_READY_PATHS and config.db_path.exists():
             return
-        init_db(config, seed_media_tasks=False)
+        init_db(config)
         _DB_READY_PATHS.add(key)
 
 

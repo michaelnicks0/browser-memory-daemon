@@ -75,7 +75,7 @@ The machine-readable source of truth is [`../requirements/catalog.toml`](../requ
 | REQ-029 | 1 | active | Every blob read, write, move, and delete shall resolve under its configured root and resist traversal and symlink escape. | Storage Path Boundary | `HRD-004` | `daemon/src/browser_memory_daemon/storage_paths.py`<br>`daemon/src/browser_memory_daemon/media.py`<br>`daemon/src/browser_memory_daemon/forget.py` | `daemon/tests/integration/test_ingest_search_forget.py::test_blob_path_consumers_reject_db_paths_outside_configured_roots` |
 | REQ-030 | 1 | planned | Destructive selectors shall be literal, validated, policy-aware, previewable, and bounded to the stated scope. | Forget Pipeline | `HRD-005` | `daemon/src/browser_memory_daemon/forget.py`<br>`daemon/src/browser_memory_daemon/cli.py` | — |
 | REQ-031 | 1 | planned | Deletion and eviction shall be crash-recoverable and shall not report full success while required bytes remain. | BlobStore / Forget / Media Store | `HRD-006` | `daemon/src/browser_memory_daemon/forget.py`<br>`daemon/src/browser_memory_daemon/media.py` | — |
-| REQ-032 | 1 | planned | Every supported database shall have an explicit version and ordered, auditable, restore-backed migrations. | Database Migration Kernel | `HRD-007` | `daemon/src/browser_memory_daemon/migrations.py`<br>`daemon/src/browser_memory_daemon/db.py` | — |
+| REQ-032 | 1 | active | Every supported database shall have an explicit version and ordered, auditable, restore-backed migrations. | Database Migration Kernel | `HRD-007` | `daemon/src/browser_memory_daemon/migrations.py`<br>`daemon/src/browser_memory_daemon/migration_steps`<br>`daemon/src/browser_memory_daemon/db.py` | `daemon/tests/integration/test_migrations.py::test_destructive_migration_creates_online_backup_that_restores_search` |
 | REQ-033 | 1 | planned | Visits, capture observations, snapshots, lifecycle events, and media provenance shall have explicit temporal relationships. | Capture Observation Model | `HRD-008` | `daemon/src/browser_memory_daemon/models.py`<br>`daemon/src/browser_memory_daemon/ingest.py` | — |
 | REQ-034 | 1 | planned | The normalized observed browser URL shall control document identity while page-provided canonical and alternate URLs remain untrusted claims. | Document Identity / URL Claims | `HRD-009` | `daemon/src/browser_memory_daemon/models.py`<br>`daemon/src/browser_memory_daemon/ingest.py` | — |
 | REQ-035 | 1 | planned | Searchable text and capture provenance shall commit locally without NAS or media dependency. | SQLite Text Authority / Ingest | `HRD-010` | `daemon/src/browser_memory_daemon/ingest.py`<br>`daemon/src/browser_memory_daemon/config.py` | — |
@@ -118,6 +118,7 @@ The machine-readable source of truth is [`../requirements/catalog.toml`](../requ
 | Extension media queue | Durable IndexedDB queue for credentialed media fetch/upload. | Stores fetched blobs until raw upload succeeds. |
 | CDP recorder | Enabled-by-default, operator-disableable domain-gated Chrome DevTools Protocol recorder for X/Twitter media network responses. | Captures `video.twimg.com` HLS manifests/segments before they collapse into opaque `blob:` player refs, but Chrome shows a native debugging banner while attached. |
 | Daemon API | Auth, CORS, routing, UI serving, token bootstrap, raw media blob upload, cache controls. | `/health` public loopback; `/ui` HTML gets same-origin token bootstrap; memory APIs tokened. |
+| Migration kernel | Exact schema fingerprinting, ordered checksummed migrations, compatibility refusal, and backup-gated destructive steps. | Startup applies non-destructive steps; explicit `migrate --execute` owns destructive approval. |
 | Policy engine | Mode-specific allow/block/redact decisions. | `all`, `recall`, `balanced`, `strict`. |
 | Ingest pipeline | Normalize, store visits/documents/snapshots/chunks/FTS plus related media artifact refs/blobs. | `all` bypasses redaction. |
 | Lifecycle pipeline | Store metadata-only visit events and update dwell. | Uses policy mode for URL redaction/filtering. |
@@ -139,6 +140,7 @@ The canonical C4 model lives in [`architecture/workspace.dsl`](architecture/work
 | How do browser-side media sidecars work at architecture level? | `BrowserMediaContainers`, `ExtensionMediaComponents`, `CredentialedMediaSidecarFlow` |
 | How does daemon-public media backfill work? | `DaemonMediaWorkerContainers`, `DaemonMediaComponents`, `DaemonPublicMediaWorkerFlow` |
 | How do read/search/forget/doctor operations reach storage? | `OpsContainers`, `DaemonReadComponents`, `DaemonForgetComponents`, `DaemonDoctorComponents` |
+| How is SQLite version compatibility and migration recovery controlled? | `DaemonMigrationComponents` |
 | What runs where on the daily-driver workstation? | `DailyDriverDeployment` |
 
 Hand-authored Mermaid diagrams for behavior that C4 intentionally omits — policy ladders, redaction branches, state machines, dedupe formulas, endpoint maps, media status/cache semantics, and delete cascades — live in [`DIAGRAMS.md`](DIAGRAMS.md).
@@ -261,6 +263,7 @@ status_reason  = cache-evicted:global-oldest
 | `visit_events` | Metadata-only lifecycle segments. |
 | `snapshots` | Distinct text versions per document. |
 | `chunks` / `chunks_fts` | Searchable text chunks and exact FTS index. |
+| `schema_migrations` + `PRAGMA user_version` | Ordered migration version, immutable name/checksum ledger, and compatibility invariant; see ADR-0028. |
 | SQLite WAL sidecars (`*.sqlite3-wal`, `*.sqlite3-shm`) | Expected live companions for concurrent local reads/writes; see ADR-0014. |
 | `media_artifacts` | Related image/video refs, current blob status, provenance, purge state. |
 | `media_fetch_tasks` | Durable daemon-public media backfill leases/retries/status. |

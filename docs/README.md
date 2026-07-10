@@ -25,6 +25,7 @@
 | Model storage growth | [`storage-growth-model.md`](storage-growth-model.md) |
 | Understand retention, compaction, export, and backup posture | [`retention-compaction-backup.md`](retention-compaction-backup.md) |
 | Review the current blob-root migration helper and its safety limits | [`blob-root-migration.md`](blob-root-migration.md) |
+| Inspect or operate SQLite schema migrations | [`database-migrations.md`](database-migrations.md), [`architecture/adr/0028-use-versioned-restore-backed-sqlite-migrations.md`](architecture/adr/0028-use-versioned-restore-backed-sqlite-migrations.md) |
 | Understand durable lazy media sidecars | [`ARCHITECTURE.md`](ARCHITECTURE.md#durable-media-sidecar-architecture), [`media-artifacts.md`](media-artifacts.md) |
 | Run verification gates | [`TESTS.md`](TESTS.md), [`test-plan.md`](test-plan.md) |
 | Review Phase 0 gate evidence | [`verification/phase-0-gate-2026-07-10.md`](verification/phase-0-gate-2026-07-10.md) |
@@ -41,6 +42,7 @@
 | Daemon runtime/config | `daemon/src/browser_memory_daemon/config.py`, `scripts/install-daily-driver.sh` |
 | HTTP API and UI serving | `daemon/src/browser_memory_daemon/app.py`, `ui/` |
 | Ingest/storage/search/forget | `ingest.py`, `schema.sql`, `search.py`, `forget.py` |
+| SQLite migration lifecycle | `migrations.py`, `migration_steps/`, `database-migrations.md` |
 | Capture policy modes | `policy.py`, `policy_store.py`, `extension/src/extractor.js`, `service_worker.js` |
 | Media sidecars | `daemon/src/browser_memory_daemon/media.py`, `media_worker.py`, `extension/src/media_queue.js`, `service_worker.js` |
 | Chrome extension extraction/bridge | `extension/src/extractor.js`, `content_script.js`, `service_worker.js` |

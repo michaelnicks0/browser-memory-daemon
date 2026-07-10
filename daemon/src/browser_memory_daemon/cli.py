@@ -13,6 +13,7 @@ from .daily_driver_health import daily_driver_health_snapshot
 from .db import connect, init_db
 from .media import purge_media_cache
 from .media_worker import run_loop as run_media_worker_loop, run_once as run_media_worker_once
+from .migrations import MigrationError, migrate_database, migration_status
 
 
 def _request(method: str, url: str, *, token: str, body: dict | None = None) -> dict:
@@ -36,6 +37,10 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("serve")
     sub.add_parser("health")
+    migrate_cmd = sub.add_parser("migrate")
+    migrate_mode = migrate_cmd.add_mutually_exclusive_group(required=True)
+    migrate_mode.add_argument("--check", action="store_true")
+    migrate_mode.add_argument("--execute", action="store_true")
     doctor_cmd = sub.add_parser("doctor")
     doctor_cmd.add_argument("--storage-census", action="store_true", help="walk clean-text/media roots for exact file counts; default uses DB-derived counts")
     daily_health = sub.add_parser("daily-driver-health")
@@ -119,6 +124,22 @@ def main(argv: list[str] | None = None) -> int:
         with urllib.request.urlopen(f"{base}/health", timeout=10) as response:
             print(response.read().decode("utf-8"))
         return 0
+    if args.command == "migrate":
+        try:
+            result = (
+                migrate_database(cfg, execute=True, allow_destructive=True)
+                if args.execute
+                else migration_status(cfg)
+            )
+        except MigrationError as exc:
+            error = {"compatible": False, "ready": False, "error": str(exc)}
+            backup_path = getattr(exc, "backup_path", None)
+            if backup_path is not None:
+                error["backup_path"] = str(backup_path)
+            print(json.dumps(error, indent=2))
+            return 1
+        print(json.dumps(result, indent=2))
+        return 0 if result["ready"] else 2
     if args.command == "search":
         q = urllib.parse.urlencode({"q": args.query, "limit": str(args.limit)})
         print(json.dumps(_request("GET", f"{base}/search?{q}", token=cfg.api_token), indent=2))

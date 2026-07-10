@@ -397,10 +397,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td>REQ-032 — Every supported database shall have an explicit version and ordered, auditable, restore-backed migrations.</td>
 <td>—</td>
-<td>—</td>
-<td>—</td>
-<td>—</td>
-<td>—</td>
+<td><code>daemon/tests/integration/test_migrations.py</code></td>
+<td><code>scripts/run-e2e.sh</code></td>
+<td><code>docs/database-migrations.md</code><br><code>docs/architecture/adr/0028-use-versioned-restore-backed-sqlite-migrations.md</code></td>
+<td><code>daemon/tests/integration/test_migrations.py::test_destructive_migration_creates_online_backup_that_restores_search</code></td>
 </tr>
 <tr>
 <td>REQ-033 — Visits, capture observations, snapshots, lifecycle events, and media provenance shall have explicit temporal relationships.</td>

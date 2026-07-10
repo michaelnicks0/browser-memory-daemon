@@ -12,6 +12,8 @@ Browser Memory Daemon should preserve text/FTS recall by default and treat media
 
 This design does **not** add automatic age-based deletion yet. That would be a separate operator-approved retention policy because the daily-driver default is maximum local recall.
 
+ADR-0028 implements a narrower migration-only SQLite online backup gate before destructive schema steps. That backup excludes blob roots and is not the full manifest-backed backup/export command described here.
+
 ---
 
 ## Mission / ConOps

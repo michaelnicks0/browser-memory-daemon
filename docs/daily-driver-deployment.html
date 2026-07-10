@@ -222,6 +222,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>./scripts/install-daily-driver.sh<span style="color: #F8F8F2"> </span>--check
 </code></pre></div>
 
+<p>Database compatibility is separately inspectable with <code>memory migrate --check</code>; see <a href="database-migrations.html"><code>database-migrations.md</code></a>. Service startup applies only non-destructive pending migrations. A future destructive step fails closed until the operator runs explicit <code>migrate --execute</code>, which requires disk headroom and a verified online SQLite backup. Repository verification must use temporary roots and must not run either install or migration execution against the live daily driver.</p>
 <p>To place blobs on a WSL-mounted NAS dataset while keeping SQLite/WAL local:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_BLOB_ROOT</span><span style="color: #FF4689">=</span>/mnt/nas/browser-memory-daemon/blobs<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  BMD_REQUIRE_BLOB_ROOT_MOUNT</span><span style="color: #FF4689">=</span><span style="color: #AE81FF">1</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>

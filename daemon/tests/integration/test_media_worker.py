@@ -278,7 +278,7 @@ def test_media_worker_processes_data_url_task_and_marks_success(tmp_path):
         assert task["status"] == "succeeded"
 
 
-def test_media_worker_tasks_are_seeded_when_existing_unresolved_refs_have_no_task(tmp_path):
+def test_init_db_does_not_repeat_historical_media_task_seed(tmp_path):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
     init_db(cfg)
     payload = CapturePayload.from_dict(
@@ -297,8 +297,7 @@ def test_media_worker_tasks_are_seeded_when_existing_unresolved_refs_have_no_tas
         assert conn.execute("SELECT COUNT(*) FROM media_fetch_tasks").fetchone()[0] == 0
     init_db(cfg)
     with connect(cfg.db_path) as conn:
-        task = conn.execute("SELECT status FROM media_fetch_tasks").fetchone()
-        assert task["status"] == "pending"
+        assert conn.execute("SELECT COUNT(*) FROM media_fetch_tasks").fetchone()[0] == 0
 
 
 def test_media_worker_marks_pending_task_succeeded_when_artifact_already_stored(tmp_path):

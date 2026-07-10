@@ -34,9 +34,9 @@
 <text text-anchor="start" x="106" y="-604.3" font-family="Arial" font-size="24.00" fill="#000000">APIs, and applies CORS for</text>
 <text text-anchor="start" x="172" y="-580.3" font-family="Arial" font-size="24.00" fill="#000000">allowed origins.</text>
 </g>
-<!-- 20 -->
-<g id="20" class="node">
-<title>20</title>
+<!-- 21 -->
+<g id="21" class="node">
+<title>21</title>
 <polygon fill="#85bbf0" stroke="#1168bd" points="1231,-824.5 810,-824.5 810,-511.5 1231,-511.5 1231,-824.5"/>
 <text text-anchor="start" x="917" y="-776.3" font-family="Arial" font-size="34.00" fill="#000000">Media Artifact</text>
 <text text-anchor="start" x="953.5" y="-742.3" font-family="Arial" font-size="34.00" fill="#000000">Manager</text>
@@ -49,44 +49,44 @@
 <text text-anchor="start" x="880.5" y="-563.3" font-family="Arial" font-size="24.00" fill="#000000">fetch tasks, and purges or</text>
 <text text-anchor="start" x="884" y="-539.3" font-family="Arial" font-size="24.00" fill="#000000">rehydrates cache entries.</text>
 </g>
-<!-- 15&#45;&gt;20 -->
-<g id="65" class="edge">
-<title>15&#45;&gt;20</title>
+<!-- 15&#45;&gt;21 -->
+<g id="67" class="edge">
+<title>15&#45;&gt;21</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M453.49,-668C559.46,-668 690.46,-668 799.73,-668"/>
 <polygon fill="#444444" stroke="#444444" points="799.9,-671.5 809.9,-668 799.9,-664.5 799.9,-671.5"/>
 <polygon fill="white" stroke="transparent" points="489,-668 489,-702 774,-702 774,-668 489,-668"/>
 <text text-anchor="start" x="493.5" y="-678.8" font-family="Arial" font-size="24.00" fill="#444444">Routes media requests to</text>
 </g>
-<!-- 27 -->
-<g id="27" class="node">
-<title>27</title>
-<path fill="#2f95c8" stroke="#20688c" d="M1974,-585.72C1974,-608.98 1895.11,-627.88 1798,-627.88 1700.89,-627.88 1622,-608.98 1622,-585.72 1622,-585.72 1622,-206.28 1622,-206.28 1622,-183.02 1700.89,-164.12 1798,-164.12 1895.11,-164.12 1974,-183.02 1974,-206.28 1974,-206.28 1974,-585.72 1974,-585.72"/>
-<path fill="none" stroke="#20688c" d="M1974,-585.72C1974,-562.45 1895.11,-543.56 1798,-543.56 1700.89,-543.56 1622,-562.45 1622,-585.72"/>
+<!-- 28 -->
+<g id="28" class="node">
+<title>28</title>
+<path fill="#2f95c8" stroke="#20688c" d="M1995.5,-585.72C1995.5,-608.98 1906.98,-627.88 1798,-627.88 1689.02,-627.88 1600.5,-608.98 1600.5,-585.72 1600.5,-585.72 1600.5,-206.28 1600.5,-206.28 1600.5,-183.02 1689.02,-164.12 1798,-164.12 1906.98,-164.12 1995.5,-183.02 1995.5,-206.28 1995.5,-206.28 1995.5,-585.72 1995.5,-585.72"/>
+<path fill="none" stroke="#20688c" d="M1995.5,-585.72C1995.5,-562.45 1906.98,-543.56 1798,-543.56 1689.02,-543.56 1600.5,-562.45 1600.5,-585.72"/>
 <text text-anchor="start" x="1685" y="-516.3" font-family="Arial" font-size="34.00" fill="#ffffff">SQLite + FTS5</text>
 <text text-anchor="start" x="1725" y="-482.3" font-family="Arial" font-size="34.00" fill="#ffffff">Database</text>
 <text text-anchor="start" x="1672" y="-460.3" font-family="Arial" font-size="19.00" fill="#ffffff">[Container: SQLite with FTS5]</text>
 <text text-anchor="start" x="1679" y="-423.3" font-family="Arial" font-size="24.00" fill="#ffffff">Durable relational and</text>
-<text text-anchor="start" x="1661.5" y="-399.3" font-family="Arial" font-size="24.00" fill="#ffffff">full&#45;text store for sources,</text>
-<text text-anchor="start" x="1677.5" y="-375.3" font-family="Arial" font-size="24.00" fill="#ffffff">documents, visits, visit</text>
-<text text-anchor="start" x="1652" y="-351.3" font-family="Arial" font-size="24.00" fill="#ffffff">events, snapshots, chunks,</text>
-<text text-anchor="start" x="1651" y="-327.3" font-family="Arial" font-size="24.00" fill="#ffffff">chunks_fts, media artifacts,</text>
-<text text-anchor="start" x="1666" y="-303.3" font-family="Arial" font-size="24.00" fill="#ffffff">media fetch tasks, policy</text>
-<text text-anchor="start" x="1672.5" y="-279.3" font-family="Arial" font-size="24.00" fill="#ffffff">rules, audit events, and</text>
-<text text-anchor="start" x="1706" y="-255.3" font-family="Arial" font-size="24.00" fill="#ffffff">deletion receipts.</text>
+<text text-anchor="start" x="1657.5" y="-399.3" font-family="Arial" font-size="24.00" fill="#ffffff">full&#45;text store for migration</text>
+<text text-anchor="start" x="1646" y="-375.3" font-family="Arial" font-size="24.00" fill="#ffffff">ledger, sources, documents,</text>
+<text text-anchor="start" x="1701.5" y="-351.3" font-family="Arial" font-size="24.00" fill="#ffffff">visits, visit events,</text>
+<text text-anchor="start" x="1629.5" y="-327.3" font-family="Arial" font-size="24.00" fill="#ffffff">snapshots, chunks, chunks_fts,</text>
+<text text-anchor="start" x="1649.5" y="-303.3" font-family="Arial" font-size="24.00" fill="#ffffff">media artifacts, media fetch</text>
+<text text-anchor="start" x="1669.5" y="-279.3" font-family="Arial" font-size="24.00" fill="#ffffff">tasks, policy rules, audit</text>
+<text text-anchor="start" x="1640" y="-255.3" font-family="Arial" font-size="24.00" fill="#ffffff">events, and deletion receipts.</text>
 </g>
-<!-- 20&#45;&gt;27 -->
-<g id="74" class="edge">
-<title>20&#45;&gt;27</title>
-<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1231.11,-594.48C1350.11,-552.74 1497.72,-500.97 1612.34,-460.77"/>
-<polygon fill="#444444" stroke="#444444" points="1613.65,-464.02 1621.93,-457.4 1611.34,-457.41 1613.65,-464.02"/>
+<!-- 21&#45;&gt;28 -->
+<g id="76" class="edge">
+<title>21&#45;&gt;28</title>
+<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1231.11,-594.48C1342.69,-555.35 1479.42,-507.39 1590.53,-468.42"/>
+<polygon fill="#444444" stroke="#444444" points="1591.9,-471.65 1600.18,-465.03 1589.59,-465.04 1591.9,-471.65"/>
 <polygon fill="white" stroke="transparent" points="1267,-580 1267,-655 1543,-655 1543,-580 1267,-580"/>
 <text text-anchor="start" x="1271" y="-632.3" font-family="Arial" font-size="24.00" fill="#444444">Updates media rows and</text>
 <text text-anchor="start" x="1364" y="-608.3" font-family="Arial" font-size="24.00" fill="#444444">tasks in</text>
 <text text-anchor="start" x="1371.5" y="-588.3" font-family="Arial" font-size="19.00" fill="#444444">[sqlite3]</text>
 </g>
-<!-- 29 -->
-<g id="29" class="node">
-<title>29</title>
+<!-- 30 -->
+<g id="30" class="node">
+<title>30</title>
 <path fill="#2f95c8" stroke="#20688c" d="M2017,-1138.28C2017,-1162.47 1918.84,-1182.13 1798,-1182.13 1677.16,-1182.13 1579,-1162.47 1579,-1138.28 1579,-1138.28 1579,-743.72 1579,-743.72 1579,-719.53 1677.16,-699.87 1798,-699.87 1918.84,-699.87 2017,-719.53 2017,-743.72 2017,-743.72 2017,-1138.28 2017,-1138.28"/>
 <path fill="none" stroke="#20688c" d="M2017,-1138.28C2017,-1114.09 1918.84,-1094.44 1798,-1094.44 1677.16,-1094.44 1579,-1114.09 1579,-1138.28"/>
 <text text-anchor="start" x="1659" y="-1068.3" font-family="Arial" font-size="34.00" fill="#ffffff">Media Blob Cache</text>
@@ -102,9 +102,9 @@
 <text text-anchor="start" x="1661.5" y="-817.3" font-family="Arial" font-size="24.00" fill="#ffffff">when bytes are absent or</text>
 <text text-anchor="start" x="1756.5" y="-793.3" font-family="Arial" font-size="24.00" fill="#ffffff">purged.</text>
 </g>
-<!-- 20&#45;&gt;29 -->
-<g id="75" class="edge">
-<title>20&#45;&gt;29</title>
+<!-- 21&#45;&gt;30 -->
+<g id="77" class="edge">
+<title>21&#45;&gt;30</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1231.11,-741.79C1335.61,-778.58 1462.18,-823.13 1569.09,-860.77"/>
 <polygon fill="#444444" stroke="#444444" points="1568.12,-864.14 1578.71,-864.16 1570.44,-857.53 1568.12,-864.14"/>
 <polygon fill="white" stroke="transparent" points="1283.5,-848 1283.5,-923 1526.5,-923 1526.5,-848 1283.5,-848"/>

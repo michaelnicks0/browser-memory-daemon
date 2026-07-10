@@ -473,16 +473,16 @@ validation_evidence = []
 id = "REQ-032"
 revision = 1
 statement = "Every supported database shall have an explicit version and ordered, auditable, restore-backed migrations."
-rationale = "Schema redesign cannot proceed safely on implicit startup DDL and repair scans."
+rationale = "Schema evolution must fail closed and remain recoverable."
 owner = "Database Migration Kernel"
-status = "planned"
+status = "active"
 aliases = ["HRD-007"]
-implementation = ["daemon/src/browser_memory_daemon/migrations.py", "daemon/src/browser_memory_daemon/db.py"]
+implementation = ["daemon/src/browser_memory_daemon/migrations.py", "daemon/src/browser_memory_daemon/migration_steps", "daemon/src/browser_memory_daemon/db.py"]
 unit_evidence = []
-integration_evidence = []
-system_evidence = []
-operational_evidence = []
-validation_evidence = []
+integration_evidence = ["daemon/tests/integration/test_migrations.py"]
+system_evidence = ["scripts/run-e2e.sh"]
+operational_evidence = ["docs/database-migrations.md", "docs/architecture/adr/0028-use-versioned-restore-backed-sqlite-migrations.md"]
+validation_evidence = ["daemon/tests/integration/test_migrations.py::test_destructive_migration_creates_online_backup_that_restores_search"]
 
 [[requirements]]
 id = "REQ-033"

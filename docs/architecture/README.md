@@ -70,6 +70,7 @@ Every component in `workspace.dsl` carries the `Current` tag. Planned target-sta
 | `DaemonReadComponents` | C3 Component | WSL daemon read internals: router, search/read model, SQLite/FTS, text blobs, and media cache. |
 | `DaemonForgetComponents` | C3 Component | WSL daemon deletion internals: router, forget pipeline, SQLite receipts, text blobs, and media cache. |
 | `DaemonDoctorComponents` | C3 Component | WSL daemon diagnostics internals: router, doctor/audit, SQLite checks, and storage counts. |
+| `DaemonMigrationComponents` | C3 Component | WSL daemon migration internals: exact fingerprint, ordered checksum ledger, transactional steps, and SQLite backup boundary. |
 | `FastCaptureFlow` | Dynamic | Fast text/ref capture path that stores FTS recall, returns IDs, and queues lazy media work before media bytes arrive. |
 | `CredentialedMediaSidecarFlow` | Dynamic | Browser-side media fetch/upload path that keeps Chrome cookies inside Chrome. |
 | `DaemonPublicMediaWorkerFlow` | Dynamic | Public no-cookie daemon media backfill path. |
@@ -134,6 +135,7 @@ Primary source evidence used for this model:
 | Extension browser storage keeps capture/visit queues in `chrome.storage.local` and durable media tasks/blobs in IndexedDB. | `extension/src/service_worker.js`, `extension/src/media_queue.js` |
 | Credentialed media fetch stays inside Chrome; raw blobs upload to WSL. | `docs/media-artifacts.md`, `extension/src/service_worker.js`, `daemon/src/browser_memory_daemon/media.py` |
 | Daemon media worker leases public media tasks and writes blob/status updates. | `daemon/src/browser_memory_daemon/media_worker.py`, `daemon/src/browser_memory_daemon/media.py` |
+| SQLite schema evolution uses an exact version-1 fingerprint, contiguous ledger checksums, and backup-gated destructive steps. | `daemon/src/browser_memory_daemon/migrations.py`, `daemon/src/browser_memory_daemon/migration_steps/`, `docs/database-migrations.md` |
 | Local UI and CLI are operator surfaces; CLI read/admin commands use daemon APIs, while media-worker/cache commands also run direct SQLite/filesystem paths. | `ui/app.js`, `daemon/src/browser_memory_daemon/cli.py`, `docs/daily-driver-deployment.md` |
 | Daily-driver deployment uses WSL systemd user services and Windows unpacked extension copy. | `scripts/install-daily-driver.sh`, `docs/daily-driver-deployment.md` |
 
@@ -141,7 +143,7 @@ Primary source evidence used for this model:
 
 - Deployment view is limited to the documented **Daily-driver local** workstation topology. No separate staging/production topology is modeled.
 - Non-runtime deployment artifacts such as the Windows unpacked extension copy and protected token/env files are modeled in the DSL but excluded from the rendered deployment view to keep the runtime topology legible. Durable audit events live in SQLite; there is no separate `audit.jsonl` deployment node. The WSL CLI and in-browser extension storage are also excluded from the deployment render because their relationships are covered in C2/C3 views and made the deployment topology unreadable.
-- Semantic/vector search, MCP/Hermes integration, native messaging transport, encrypted backup/restore, and multi-source importers are explicitly pending and are not modeled as current runtime containers.
+- Semantic/vector search, MCP/Hermes integration, native messaging transport, full encrypted backup/restore, and multi-source importers are explicitly pending and are not modeled as current runtime containers. The narrower migration-only online backup boundary is current.
 - Chrome extension manual Load unpacked/Reload is an operational step, not a runtime container.
 - Media blobs are modeled as a bounded disposable cache; text/FTS/media refs remain authoritative.
 - Captured page text is untrusted evidence and must not be treated as agent instructions.
