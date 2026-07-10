@@ -132,7 +132,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </blockquote>
 <!-- BEGIN GENERATED:inventory-summary -->
 <blockquote>
-<p><strong>Current inventory:</strong> 135 static test functions across 24 files — 108 daemon pytest tests + 27 extension node:test tests.</p>
+<p><strong>Current inventory:</strong> 137 static test functions across 24 files — 110 daemon pytest tests + 27 extension node:test tests.</p>
 </blockquote>
 <!-- END GENERATED:inventory-summary -->
 
@@ -164,7 +164,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 </code></pre></div>
 
 <p><code>./scripts/run-e2e.sh</code> runs daemon tests, extension tests/build, the real Chrome e2e matrix unless <code>BMD_SKIP_REAL_CHROME_E2E=1</code>, secret scan, and whitespace check.</p>
-<p><code>python3.11 scripts/generate_test_inventory.py --check</code> is a hard static gate: it enforces the generated test inventory, verifies every <code>REQ-*</code> row in <code>docs/ARCHITECTURE.md</code> appears in <code>docs/test-plan.md</code>, and fails when test-plan file/test references drift to missing paths.</p>
+<p><code>python3.11 scripts/generate_test_inventory.py --check</code> is a hard static gate over <code>requirements/catalog.toml</code>: it enforces unique stable IDs/aliases, explicit normative revisions, existing implementation/evidence paths, resolvable test node IDs, and validation evidence for active requirements. It also regenerates the catalog-owned requirement tables and volatile static test counts across the documentation set.</p>
 <p><code>./scripts/run-performance-benchmarks.sh --small --json</code> emits machine-readable synthetic benchmark evidence for ingest, search, recent/timeline/detail, read endpoint audit writes, media-worker task selection/run, and DB/WAL/blob sidecar growth. Budgets are advisory until a later ticket/ADR promotes measured thresholds to hard gates.</p>
 <hr />
 <h2 id="durabilityconcurrency-stress-harness">Durability/concurrency stress harness</h2>
@@ -185,7 +185,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <hr />
 <h2 id="generated-test-inventory">Generated test inventory</h2>
 <!-- BEGIN GENERATED:audit-run -->
-<p>Latest inventory: <strong>135 static test functions</strong> across <strong>24 files</strong> (108 daemon pytest; 27 extension node:test). Regenerate with <code>python3.11 scripts/generate_test_inventory.py --write</code>; enforce with <code>--check</code>. Counts are source-level test functions, not pytest parametrized case expansions.</p>
+<p>Latest inventory: <strong>137 static test functions</strong> across <strong>24 files</strong> (110 daemon pytest; 27 extension node:test). Regenerate with <code>python3.11 scripts/generate_test_inventory.py --write</code>; enforce with <code>--check</code>. Counts are source-level test functions, not pytest parametrized case expansions.</p>
 <!-- END GENERATED:audit-run -->
 
 <h2 id="requirements-traceability-gate">Requirements traceability gate</h2>
@@ -200,24 +200,52 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 </thead>
 <tbody>
 <tr>
-<td>Architecture requirements found</td>
-<td>17</td>
+<td>Catalog requirements</td>
+<td>43 (31 active; 12 planned)</td>
 </tr>
 <tr>
-<td>Test-plan requirement rows found</td>
-<td>24</td>
-</tr>
-<tr>
-<td>Missing architecture requirements in <code>docs/test-plan.md</code></td>
+<td>Duplicate stable IDs</td>
 <td>none</td>
 </tr>
 <tr>
-<td>Unresolved file/test references in <code>docs/test-plan.md</code></td>
+<td>Invalid requirement definitions</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Duplicate plan/local aliases</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Legacy alias errors</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Missing implementation paths</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Unresolved evidence/test nodes</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Active requirements without validation evidence</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Normative changes without revision increment</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Requirements removed without catalog disposition</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Catalog load errors</td>
 <td>none</td>
 </tr>
 <tr>
 <td>Static test inventory measured</td>
-<td>135 tests / 24 files</td>
+<td>137 tests / 24 files</td>
 </tr>
 </tbody>
 </table>
@@ -257,7 +285,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <tr>
 <td><code>daemon/tests/e2e/test_generate_test_inventory.py</code></td>
 <td>pytest</td>
-<td style="text-align: right;">2</td>
+<td style="text-align: right;">4</td>
 </tr>
 <tr>
 <td><code>daemon/tests/e2e/test_http_api.py</code></td>
@@ -357,7 +385,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <tr>
 <td><strong>Total</strong></td>
 <td></td>
-<td style="text-align: right;"><strong>135</strong></td>
+<td style="text-align: right;"><strong>137</strong></td>
 </tr>
 </tbody>
 </table>
@@ -377,8 +405,10 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 | `daemon/tests/e2e/test_concurrency_stress.py` | pytest | `(module)` | `test_concurrency_stress_cli_prints_json_for_explicit_runtime` | 36 | Concurrency stress cli prints json for explicit runtime. |
 | `daemon/tests/e2e/test_daily_driver_install.py` | pytest | `(module)` | `test_install_daily_driver_dry_run_is_non_mutating` | 12 | Install daily driver dry run is non mutating. |
 | `daemon/tests/e2e/test_daily_driver_install.py` | pytest | `(module)` | `test_install_daily_driver_required_mount_guard_fails_before_writes` | 54 | Install daily driver required mount guard fails before writes. |
-| `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_generate_test_inventory_reports_traceability_success` | 69 | Generate test inventory reports traceability success. |
-| `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_generate_test_inventory_check_fails_for_traceability_gaps` | 87 | Generate test inventory check fails for traceability gaps. |
+| `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_generate_test_inventory_reports_catalog_traceability_success` | 140 | Generate test inventory reports catalog traceability success. |
+| `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_generate_test_inventory_check_fails_for_catalog_gaps` | 162 | Generate test inventory check fails for catalog gaps. |
+| `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_catalog_rejects_duplicate_ids` | 188 | Catalog rejects duplicate ids. |
+| `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_catalog_statement_change_requires_revision_increment` | 202 | Catalog statement change requires revision increment. |
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_skips_request_time_db_initialization_after_startup` | 61 | Http capture skips request time db initialization after startup. |
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_media_fetch_raw_upload_and_purge_rehydrate_controls` | 93 | Http media fetch raw upload and purge rehydrate controls. |
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_search_forget_round_trip` | 162 | Http capture search forget round trip. |

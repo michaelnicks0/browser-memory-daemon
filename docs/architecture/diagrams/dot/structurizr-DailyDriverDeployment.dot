@@ -54,7 +54,7 @@ digraph {
         103 [id=103,shape=cylinder, label=<<font point-size="34">SQLite + FTS5<br />Database</font><br /><font point-size="19">[Container: SQLite with FTS5]</font><br /><br /><font point-size="24">Durable relational and<br />full-text store for sources,<br />documents, visits, visit<br />events, snapshots, chunks,<br />chunks_fts, media artifacts,<br />media fetch tasks, policy<br />rules, audit events, and<br />deletion receipts.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
       }
 
-      subgraph cluster_109 {
+      subgraph cluster_108 {
         margin=25
         label=<<font point-size="24">WSL-mounted NAS blob root</font><br /><font point-size="19">[Deployment Node: NAS mount of TrueNAS ZFS dataset]</font>>
         labelloc=b
@@ -62,8 +62,8 @@ digraph {
         fontcolor="#444444"
         fillcolor="#ffffff"
 
-        110 [id=110,shape=cylinder, label=<<font point-size="34">Clean Text Blob Store</font><br /><font point-size="19">[Container: WSL or NAS-mounted filesystem]</font><br /><br /><font point-size="24">Filesystem store for snapshot<br />text blobs under the<br />configured WSL-visible blob<br />root.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
-        112 [id=112,shape=cylinder, label=<<font point-size="34">Media Blob Cache</font><br /><font point-size="19">[Container: WSL or NAS-mounted filesystem]</font><br /><br /><font point-size="24">Bounded and disposable<br />filesystem cache for stored<br />image/video/audio blobs under<br />the configured WSL-visible<br />blob root, with<br />purge/rehydrate semantics that<br />preserve media refs, hashes,<br />status reasons, and provenance<br />when bytes are absent or<br />purged.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+        109 [id=109,shape=cylinder, label=<<font point-size="34">Clean Text Blob Store</font><br /><font point-size="19">[Container: WSL or NAS-mounted filesystem]</font><br /><br /><font point-size="24">Filesystem store for snapshot<br />text blobs under the<br />configured WSL-visible blob<br />root.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+        111 [id=111,shape=cylinder, label=<<font point-size="34">Media Blob Cache</font><br /><font point-size="19">[Container: WSL or NAS-mounted filesystem]</font><br /><br /><font point-size="24">Bounded and disposable<br />filesystem cache for stored<br />image/video/audio blobs under<br />the configured WSL-visible<br />blob root, with<br />purge/rehydrate semantics that<br />preserve media refs, hashes,<br />status reasons, and provenance<br />when bytes are absent or<br />purged.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
       }
 
       subgraph cluster_94 {
@@ -94,9 +94,9 @@ digraph {
 
   95 -> 103 [id=104, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Reads and writes metadata,<br />FTS, tasks, audit, and<br />receipts in</font><br /><font point-size="19">[sqlite3]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
   98 -> 103 [id=105, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Leases and updates media<br />tasks in</font><br /><font point-size="19">[sqlite3]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-  95 -> 110 [id=111, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Reads and writes text<br />snapshots in</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-  95 -> 112 [id=113, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Stores, serves, purges,<br />and rehydrates media blobs<br />in</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-  98 -> 112 [id=114, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Writes fetched media blobs<br />to</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  95 -> 109 [id=110, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Reads and writes text<br />snapshots in</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  95 -> 111 [id=112, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Stores, serves, purges,<br />and rehydrates media blobs<br />in</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  98 -> 111 [id=113, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Writes fetched media blobs<br />to</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
   88 -> 95 [id=96, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Posts /capture,<br />/visit-events, media<br />metadata, and raw blob<br />uploads to</font><br /><font point-size="19">[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
   91 -> 95 [id=97, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Calls authenticated read,<br />admin, media, and forget<br />APIs on</font><br /><font point-size="19">[HTTP/JSON]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
 

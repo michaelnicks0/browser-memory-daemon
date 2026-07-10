@@ -27,9 +27,9 @@ graph LR
         style 14 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
         15["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server]</div><div style='font-size: 80%; margin-top:10px'>Routes loopback API requests,<br />serves UI assets, enforces<br />bearer auth for memory/admin<br />APIs, and applies CORS for<br />allowed origins.</div>"]
-        style 15 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 15 fill:#85bbf0,stroke:#1168bd,color:#000000
         18["<div style='font-weight: bold'>Ingest Pipeline</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Normalizes URLs, computes<br />document/snapshot IDs, stores<br />visits/snapshots/chunks/FTS<br />rows, writes clean text<br />blobs, and records media<br />references.</div>"]
-        style 18 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 18 fill:#85bbf0,stroke:#1168bd,color:#000000
       end
 
       27[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable relational and<br />full-text store for sources,<br />documents, visits, visit<br />events, snapshots, chunks,<br />chunks_fts, media artifacts,<br />media fetch tasks, policy<br />rules, audit events, and<br />deletion receipts.</div>")]

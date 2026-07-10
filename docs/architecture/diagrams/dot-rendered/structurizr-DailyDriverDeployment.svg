@@ -41,7 +41,7 @@
 <text text-anchor="start" x="314" y="-234.43" font-family="Arial" font-size="19.00" fill="#444444">[Deployment Node: WSL filesystem]</text>
 </g>
 <g id="clust6" class="cluster">
-<title>cluster_109</title>
+<title>cluster_108</title>
 <polygon fill="none" stroke="#444444" points="899,-216 899,-799.62 1897,-799.62 1897,-216 899,-216"/>
 <text text-anchor="start" x="1242" y="-244.8" font-family="Arial" font-size="24.00" fill="#444444">WSL&#45;mounted NAS blob root</text>
 <text text-anchor="start" x="1157.5" y="-224.8" font-family="Arial" font-size="19.00" fill="#444444">[Deployment Node: NAS mount of TrueNAS ZFS dataset]</text>
@@ -135,9 +135,9 @@
 <text text-anchor="start" x="340.5" y="-416.61" font-family="Arial" font-size="24.00" fill="#ffffff">rules, audit events, and</text>
 <text text-anchor="start" x="374" y="-392.61" font-family="Arial" font-size="24.00" fill="#ffffff">deletion receipts.</text>
 </g>
-<!-- 110 -->
-<g id="110" class="node">
-<title>110</title>
+<!-- 109 -->
+<g id="109" class="node">
+<title>109</title>
 <path fill="#2f95c8" stroke="#20688c" d="M1872,-649.6C1872,-663.86 1773.84,-675.44 1653,-675.44 1532.16,-675.44 1434,-663.86 1434,-649.6 1434,-649.6 1434,-417.03 1434,-417.03 1434,-402.77 1532.16,-391.19 1653,-391.19 1773.84,-391.19 1872,-402.77 1872,-417.03 1872,-417.03 1872,-649.6 1872,-649.6"/>
 <path fill="none" stroke="#20688c" d="M1872,-649.6C1872,-635.34 1773.84,-623.76 1653,-623.76 1532.16,-623.76 1434,-635.34 1434,-649.6"/>
 <text text-anchor="start" x="1488.5" y="-588.61" font-family="Arial" font-size="34.00" fill="#ffffff">Clean Text Blob Store</text>
@@ -147,9 +147,9 @@
 <text text-anchor="start" x="1503" y="-481.61" font-family="Arial" font-size="24.00" fill="#ffffff">configured WSL&#45;visible blob</text>
 <text text-anchor="start" x="1628.5" y="-457.61" font-family="Arial" font-size="24.00" fill="#ffffff">root.</text>
 </g>
-<!-- 112 -->
-<g id="112" class="node">
-<title>112</title>
+<!-- 111 -->
+<g id="111" class="node">
+<title>111</title>
 <path fill="#2f95c8" stroke="#20688c" d="M1362,-730.6C1362,-754.79 1263.84,-774.44 1143,-774.44 1022.16,-774.44 924,-754.79 924,-730.6 924,-730.6 924,-336.03 924,-336.03 924,-311.84 1022.16,-292.19 1143,-292.19 1263.84,-292.19 1362,-311.84 1362,-336.03 1362,-336.03 1362,-730.6 1362,-730.6"/>
 <path fill="none" stroke="#20688c" d="M1362,-730.6C1362,-706.41 1263.84,-686.76 1143,-686.76 1022.16,-686.76 924,-706.41 924,-730.6"/>
 <text text-anchor="start" x="1004" y="-660.61" font-family="Arial" font-size="34.00" fill="#ffffff">Media Blob Cache</text>
@@ -176,9 +176,9 @@
 <text text-anchor="start" x="957.5" y="-838.92" font-family="Arial" font-size="24.00" fill="#444444">receipts in</text>
 <text text-anchor="start" x="979.5" y="-818.92" font-family="Arial" font-size="19.00" fill="#444444">[sqlite3]</text>
 </g>
-<!-- 95&#45;&gt;110 -->
-<g id="111" class="edge">
-<title>95&#45;&gt;110</title>
+<!-- 95&#45;&gt;109 -->
+<g id="110" class="edge">
+<title>95&#45;&gt;109</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1218.03,-1103.5C1328.32,-1065.2 1454.02,-1004.08 1537,-909.62 1591.49,-847.6 1620.39,-760.3 1635.71,-685.51"/>
 <polygon fill="#444444" stroke="#444444" points="1639.18,-686 1637.69,-675.51 1632.31,-684.64 1639.18,-686"/>
 <polygon fill="white" stroke="transparent" points="1593,-822.62 1593,-897.62 1834,-897.62 1834,-822.62 1593,-822.62"/>
@@ -186,9 +186,9 @@
 <text text-anchor="start" x="1646" y="-850.92" font-family="Arial" font-size="24.00" fill="#444444">snapshots in</text>
 <text text-anchor="start" x="1662.5" y="-830.92" font-family="Arial" font-size="19.00" fill="#444444">[Filesystem]</text>
 </g>
-<!-- 95&#45;&gt;112 -->
-<g id="113" class="edge">
-<title>95&#45;&gt;112</title>
+<!-- 95&#45;&gt;111 -->
+<g id="112" class="edge">
+<title>95&#45;&gt;111</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1151.05,-993.33C1168.97,-967.02 1184.49,-938.81 1195,-909.62 1209.18,-870.23 1213.09,-827.23 1210.97,-784.84"/>
 <polygon fill="#444444" stroke="#444444" points="1214.45,-784.43 1210.35,-774.66 1207.47,-784.86 1214.45,-784.43"/>
 <polygon fill="white" stroke="transparent" points="1211,-810.62 1211,-909.62 1519,-909.62 1519,-810.62 1211,-810.62"/>
@@ -222,9 +222,9 @@
 <text text-anchor="start" x="226" y="-850.92" font-family="Arial" font-size="24.00" fill="#444444">tasks in</text>
 <text text-anchor="start" x="233.5" y="-830.92" font-family="Arial" font-size="19.00" fill="#444444">[sqlite3]</text>
 </g>
-<!-- 98&#45;&gt;112 -->
-<g id="114" class="edge">
-<title>98&#45;&gt;112</title>
+<!-- 98&#45;&gt;111 -->
+<g id="113" class="edge">
+<title>98&#45;&gt;111</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M454.37,-1010.48C440.37,-941.09 440.72,-862.76 490,-810.62 504.91,-794.85 664.21,-805.85 685,-799.62 764.15,-775.95 844.19,-736.18 914.74,-694.54"/>
 <polygon fill="#444444" stroke="#444444" points="916.93,-697.31 923.74,-689.19 913.36,-691.29 916.93,-697.31"/>
 <polygon fill="white" stroke="transparent" points="490,-822.62 490,-897.62 790,-897.62 790,-822.62 490,-822.62"/>

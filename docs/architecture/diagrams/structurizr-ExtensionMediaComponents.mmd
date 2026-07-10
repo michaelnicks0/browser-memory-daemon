@@ -14,11 +14,11 @@ graph TB
         style 5 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
         10["<div style='font-weight: bold'>Browser Media Queue Adapter</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Persists media tasks and<br />fetched blobs in IndexedDB so<br />browser-side media<br />fetch/upload can survive MV3<br />worker suspension.</div>"]
-        style 10 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 10 fill:#85bbf0,stroke:#1168bd,color:#000000
         11["<div style='font-weight: bold'>CDP Recorder</div><div style='font-size: 70%; margin-top: 0px'>[Component: Chrome DevTools Protocol]</div><div style='font-size: 80%; margin-top:10px'>Uses chrome.debugger on<br />configured X/Twitter tabs to<br />capture video.twimg.com HLS<br />manifests and media segments<br />before they become opaque<br />blob player URLs.</div>"]
-        style 11 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 11 fill:#85bbf0,stroke:#1168bd,color:#000000
         9["<div style='font-weight: bold'>Service Worker</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript MV3 service worker]</div><div style='font-size: 80%; margin-top:10px'>Owns daemon transport, bearer<br />token use, capture and visit<br />queues, lifecycle state,<br />media queue draining, and CDP<br />recorder orchestration.</div>"]
-        style 9 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 9 fill:#85bbf0,stroke:#1168bd,color:#000000
       end
 
       13[("<div style='font-weight: bold'>Extension Browser Storage</div><div style='font-size: 70%; margin-top: 0px'>[Container: chrome.storage.local + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Browser-side storage for<br />capture and visit queues in<br />chrome.storage.local plus<br />durable media tasks and<br />fetched blobs in IndexedDB.</div>")]

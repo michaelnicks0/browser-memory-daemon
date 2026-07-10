@@ -1,0 +1,730 @@
+schema_version = 1
+catalog_revision = 1
+
+# Canonical normative requirements. Generated Markdown tables consume this file;
+# they are not independent sources of requirement semantics.
+
+[[requirements]]
+id = "REQ-001"
+revision = 1
+statement = "The system shall capture useful rendered page text, title, observed URL, timestamps, and constrained metadata."
+rationale = "Recall needs a useful local text record rather than navigation history alone."
+owner = "Chrome MV3 Extension / WSL Daemon Ingest"
+status = "active"
+aliases = []
+implementation = ["extension/src/content_script.js", "extension/src/service_worker.js", "daemon/src/browser_memory_daemon/ingest.py"]
+unit_evidence = ["extension/tests/unit/extractor.test.js"]
+integration_evidence = ["daemon/tests/integration/test_ingest_search_forget.py"]
+system_evidence = ["scripts/run-real-chrome-e2e.sh"]
+operational_evidence = ["docs/api.md"]
+validation_evidence = ["scripts/run-real-chrome-e2e.sh"]
+
+[[requirements]]
+id = "REQ-002"
+revision = 1
+statement = "The system shall keep durable database and blob data outside the repository and browser profile."
+rationale = "Runtime authority must survive code updates without contaminating source control or Chrome profile state."
+owner = "WSL Daemon Configuration / Storage"
+status = "active"
+aliases = []
+implementation = ["daemon/src/browser_memory_daemon/config.py", "daemon/src/browser_memory_daemon/storage_paths.py", ".gitignore"]
+unit_evidence = ["daemon/tests/unit/test_config.py"]
+integration_evidence = ["daemon/tests/integration/test_ingest_search_forget.py"]
+system_evidence = ["scripts/run-e2e.sh"]
+operational_evidence = ["docs/daily-driver-deployment.md"]
+validation_evidence = ["scripts/run-e2e.sh"]
+
+[[requirements]]
+id = "REQ-003"
+revision = 1
+statement = "The extension shall send captures to the local daemon over the authenticated loopback transport."
+rationale = "The extension-to-WSL bridge preserves the local-first ownership boundary."
+owner = "Chrome MV3 Extension / WSL HTTP Daemon"
+status = "active"
+aliases = []
+implementation = ["extension/src/service_worker.js", "daemon/src/browser_memory_daemon/app.py"]
+unit_evidence = ["extension/tests/unit/service_worker.test.js"]
+integration_evidence = ["daemon/tests/e2e/test_http_api.py"]
+system_evidence = ["scripts/run-real-chrome-e2e.sh"]
+operational_evidence = ["docs/security-model.md"]
+validation_evidence = ["scripts/run-real-chrome-e2e.sh"]
+
+[[requirements]]
+id = "REQ-004"
+revision = 1
+statement = "The daemon shall expose an authenticated HTTP API on the loopback boundary."
+rationale = "A loopback-only authenticated API is the current stable browser and operator transport."
+owner = "WSL HTTP Daemon"
+status = "active"
+aliases = []
+implementation = ["daemon/src/browser_memory_daemon/app.py", "daemon/src/browser_memory_daemon/config.py"]
+unit_evidence = ["daemon/tests/unit/test_config.py"]
+integration_evidence = ["daemon/tests/e2e/test_http_api.py", "daemon/tests/e2e/test_ui_dashboard_smoke.py"]
+system_evidence = ["scripts/run-real-chrome-e2e.sh"]
+operational_evidence = ["docs/api.md", "docs/security-model.md"]
+validation_evidence = ["daemon/tests/e2e/test_http_api.py"]
+
+[[requirements]]
+id = "REQ-005"
+revision = 1
+statement = "The system shall preserve the all, recall, balanced, and strict policy modes with all as the daily-driver default."
+rationale = "Operators need maximum-recall default behavior and explicit stricter alternatives without code changes."
+owner = "Static Policy Engine"
+status = "active"
+aliases = []
+implementation = ["daemon/src/browser_memory_daemon/policy.py", "daemon/src/browser_memory_daemon/config.py", "extension/src/extractor.js"]
+unit_evidence = ["daemon/tests/unit/test_policy.py", "extension/tests/unit/extractor.test.js"]
+integration_evidence = ["daemon/tests/integration/test_ingest_search_forget.py"]
+system_evidence = ["scripts/run-real-chrome-e2e.sh"]
+operational_evidence = ["docs/security-model.md"]
+validation_evidence = ["scripts/run-real-chrome-e2e.sh"]
+
+[[requirements]]
+id = "REQ-006"
+revision = 1
+statement = "The all policy mode shall disable built-in URL filtering and daemon redaction while retaining password, hidden, form, editable, script, style, noscript, and extension-UI DOM skip surfaces plus explicit local block rules."
+rationale = "Maximum recall mode must remain broad without turning non-content DOM surfaces or operator block rules into captured text."
+owner = "Extension Extractor"
+status = "active"
+aliases = []
+implementation = ["extension/src/extractor.js", "extension/src/content_script.js"]
+unit_evidence = ["extension/tests/unit/extractor.test.js"]
+integration_evidence = []
+system_evidence = ["scripts/run-real-chrome-e2e.sh"]
+operational_evidence = ["docs/security-model.md"]
+validation_evidence = ["extension/tests/unit/extractor.test.js"]
+
+[[requirements]]
+id = "REQ-007"
+revision = 1
+statement = "The system shall apply URL, token, email, and identifier redaction before storage whenever the selected policy mode requires redaction."
+rationale = "Policy-required minimization must occur before durable storage and indexing."
+owner = "Static Policy Engine / Ingest Pipeline"
+status = "active"
+aliases = []
+implementation = ["daemon/src/browser_memory_daemon/policy.py", "daemon/src/browser_memory_daemon/ingest.py"]
+unit_evidence = ["daemon/tests/unit/test_policy.py"]
+integration_evidence = ["daemon/tests/integration/test_ingest_search_forget.py::test_metadata_redacted_before_fts_and_forget_by_original_url"]
+system_evidence = ["scripts/run-e2e.sh"]
+operational_evidence = ["docs/security-model.md"]
+validation_evidence = ["daemon/tests/integration/test_ingest_search_forget.py::test_metadata_redacted_before_fts_and_forget_by_original_url"]
+
+[[requirements]]
+id = "REQ-008"
+revision = 1
+statement = "The system shall support local FTS5 search with snippets, metadata filters, and source-backed detail retrieval."
+rationale = "Recall must remain local, inspectable, and tied to stored source records."
+owner = "SQLite/FTS Read Model"
+status = "active"
+aliases = []
+implementation = ["daemon/src/browser_memory_daemon/search.py", "daemon/src/browser_memory_daemon/ops.py"]
+unit_evidence = []
+integration_evidence = ["daemon/tests/integration/test_ingest_search_forget.py"]
+system_evidence = ["scripts/run-real-chrome-e2e.sh"]
+operational_evidence = ["docs/api.md"]
+validation_evidence = ["scripts/run-real-chrome-e2e.sh"]
+
+[[requirements]]
+id = "REQ-009"
+revision = 1
+statement = "The system shall deduplicate immutable snapshots by normalized document identity and cleaned-content hash."
+rationale = "Repeated capture should preserve provenance without duplicating identical searchable content."
+owner = "Daemon Ingest Pipeline"
+status = "active"
+aliases = []
+implementation = ["daemon/src/browser_memory_daemon/ingest.py", "daemon/src/browser_memory_daemon/models.py"]
+unit_evidence = []
+integration_evidence = ["daemon/tests/integration/test_ingest_search_forget.py::test_repeat_capture_dedupes_snapshot_but_adds_visit"]
+system_evidence = ["scripts/run-e2e.sh"]
+operational_evidence = ["docs/ARCHITECTURE.md"]
+validation_evidence = ["daemon/tests/integration/test_ingest_search_forget.py::test_repeat_capture_dedupes_snapshot_but_adds_visit"]
+
+[[requirements]]
+id = "REQ-010"
+revision = 1
+statement = "The extension shall recapture changed SPA and late-rendered page content using bounded observation behavior."
+rationale = "Modern pages change after initial navigation and need bounded recapture to remain useful."
+owner = "Extension Content Script / Service Worker"
+status = "active"
+aliases = []
+implementation = ["extension/src/content_script.js", "extension/src/service_worker.js"]
+unit_evidence = ["extension/tests/unit/service_worker.test.js"]
+integration_evidence = []
+system_evidence = ["scripts/run-real-chrome-e2e.sh"]
+operational_evidence = ["docs/ARCHITECTURE.md"]
+validation_evidence = ["scripts/run-real-chrome-e2e.sh"]
+
+[[requirements]]
+id = "REQ-011"
+revision = 1
+statement = "The system shall record visit lifecycle events and apply bounded idempotent dwell updates."
+rationale = "Recall timelines need explicit visit activity rather than only capture timestamps; full interval-union semantics remain planned under REQ-038."
+owner = "Visit Lifecycle Pipeline"
+status = "active"
+aliases = []
+implementation = ["daemon/src/browser_memory_daemon/lifecycle.py", "extension/src/service_worker.js"]
+unit_evidence = ["extension/tests/unit/service_worker.test.js"]
+integration_evidence = ["daemon/tests/integration/test_visit_lifecycle.py"]
+system_evidence = ["scripts/run-e2e.sh"]
+operational_evidence = ["docs/api.md"]
+validation_evidence = ["daemon/tests/integration/test_visit_lifecycle.py"]
+
+[[requirements]]
+id = "REQ-012"
+revision = 1
+statement = "The system shall provide authenticated local UI and CLI workflows for search, recent activity, detail, health, policy, and destructive operations."
+rationale = "The sole operator needs usable local surfaces without bypassing daemon authorization."
+owner = "Local UI / CLI"
+status = "active"
+aliases = []
+implementation = ["ui/app.js", "daemon/src/browser_memory_daemon/cli.py"]
+unit_evidence = []
+integration_evidence = ["daemon/tests/e2e/test_admin_api.py", "daemon/tests/e2e/test_ui_dashboard_smoke.py"]
+system_evidence = ["scripts/run-e2e.sh"]
+operational_evidence = ["docs/CLI_UX_CONTRACT.md"]
+validation_evidence = ["daemon/tests/e2e/test_admin_api.py"]
+
+[[requirements]]
+id = "REQ-013"
+revision = 1
+statement = "The system shall forget selected records with durable minimized deletion receipts and contained byte cleanup."
+rationale = "Deletion must be accountable without retaining the deleted sensitive selector material."
+owner = "Forget Pipeline"
+status = "active"
+aliases = []
+implementation = ["daemon/src/browser_memory_daemon/forget.py", "daemon/src/browser_memory_daemon/db.py"]
+unit_evidence = []
+integration_evidence = ["daemon/tests/integration/test_ingest_search_forget.py"]
+system_evidence = ["daemon/tests/e2e/test_http_api.py"]
+operational_evidence = ["docs/CLI_UX_CONTRACT.md"]
+validation_evidence = ["daemon/tests/integration/test_ingest_search_forget.py"]
+
+[[requirements]]
+id = "REQ-014"
+revision = 1
+statement = "The repository shall provide a guarded and testable daily-driver installation path for the daemon, worker, extension build, and configuration."
+rationale = "Repository artifacts must be deployable reproducibly without ad hoc manual mutation."
+owner = "Daily-driver Installer"
+status = "active"
+aliases = []
+implementation = ["scripts/install-daily-driver.sh", "daemon/src/browser_memory_daemon/daily_driver_health.py"]
+unit_evidence = ["daemon/tests/unit/test_daily_driver_health.py"]
+integration_evidence = ["daemon/tests/e2e/test_daily_driver_install.py"]
+system_evidence = ["scripts/run-e2e.sh"]
+operational_evidence = ["docs/daily-driver-deployment.md"]
+validation_evidence = ["daemon/tests/e2e/test_daily_driver_install.py"]
+
+[[requirements]]
+id = "REQ-015"
+revision = 1
+statement = "Text capture shall commit before asynchronous media acquisition while preserving durable media reference provenance."
+rationale = "Media networking and storage must not block searchable text recall."
+owner = "Daemon Ingest / Media Task Pipeline"
+status = "active"
+aliases = []
+implementation = ["daemon/src/browser_memory_daemon/ingest.py", "daemon/src/browser_memory_daemon/media.py"]
+unit_evidence = []
+integration_evidence = ["daemon/tests/integration/test_media_worker.py"]
+system_evidence = ["scripts/run-real-chrome-e2e.sh"]
+operational_evidence = ["docs/media-artifacts.md"]
+validation_evidence = ["daemon/tests/integration/test_media_worker.py"]
+
+[[requirements]]
+id = "REQ-016"
+revision = 1
+statement = "Credentialed media fetch shall remain inside Chrome and shall upload only explicit raw bytes and constrained metadata to the daemon."
+rationale = "Browser credentials must not be copied into daemon-public network requests."
+owner = "Extension Media Bridge"
+status = "active"
+aliases = []
+implementation = ["extension/src/service_worker.js", "extension/src/cdp_recorder.js", "extension/src/media_queue.js"]
+unit_evidence = ["extension/tests/unit/cdp_recorder.test.js", "extension/tests/unit/media_queue.test.js"]
+integration_evidence = ["daemon/tests/e2e/test_http_api.py"]
+system_evidence = ["scripts/run-real-chrome-e2e.sh"]
+operational_evidence = ["docs/media-artifacts.md"]
+validation_evidence = ["scripts/run-real-chrome-e2e.sh"]
+
+[[requirements]]
+id = "REQ-017"
+revision = 1
+statement = "Media bytes shall be managed as a bounded disposable cache with status, provenance, purge, and rehydration behavior."
+rationale = "Media bytes are useful but must not become unbounded authority."
+owner = "Media Artifact Store"
+status = "active"
+aliases = []
+implementation = ["daemon/src/browser_memory_daemon/media.py", "daemon/src/browser_memory_daemon/media_worker.py"]
+unit_evidence = []
+integration_evidence = ["daemon/tests/integration/test_ingest_search_forget.py", "daemon/tests/integration/test_media_worker.py"]
+system_evidence = ["scripts/run-e2e.sh"]
+operational_evidence = ["docs/media-artifacts.md"]
+validation_evidence = ["daemon/tests/integration/test_ingest_search_forget.py::test_media_global_cache_rolls_oldest_blob_when_limit_would_be_exceeded"]
+
+[[requirements]]
+id = "REQ-018"
+revision = 1
+statement = "Durable mutation and security audit events shall be stored in SQLite with redaction-safe details."
+rationale = "Audit authority belongs in the transactional local database rather than an unimplemented side log."
+owner = "Daemon Audit Store"
+status = "active"
+aliases = []
+implementation = ["daemon/src/browser_memory_daemon/db.py", "daemon/src/browser_memory_daemon/schema.sql"]
+unit_evidence = []
+integration_evidence = ["daemon/tests/e2e/test_http_api.py"]
+system_evidence = ["scripts/run-e2e.sh"]
+operational_evidence = ["docs/security-model.md"]
+validation_evidence = ["daemon/tests/e2e/test_http_api.py"]
+
+[[requirements]]
+id = "REQ-019"
+revision = 1
+statement = "The system shall provide fast health and doctor diagnostics with optional bounded storage census and redaction-safe output."
+rationale = "Daily operation needs actionable health without mandatory unbounded filesystem walks."
+owner = "Doctor / Daily-driver Health"
+status = "active"
+aliases = []
+implementation = ["daemon/src/browser_memory_daemon/ops.py", "daemon/src/browser_memory_daemon/daily_driver_health.py"]
+unit_evidence = ["daemon/tests/unit/test_daily_driver_health.py"]
+integration_evidence = ["daemon/tests/e2e/test_admin_api.py"]
+system_evidence = ["scripts/run-e2e.sh"]
+operational_evidence = ["docs/USER_GUIDE.md"]
+validation_evidence = ["daemon/tests/unit/test_daily_driver_health.py"]
+
+[[requirements]]
+id = "REQ-020"
+revision = 1
+statement = "Tests, benchmarks, and normal repository commands shall not leave runtime databases, blobs, logs, tokens, or browser profiles in the repository."
+rationale = "The repository must remain a source artifact rather than an accidental runtime root."
+owner = "Verification Harness"
+status = "active"
+aliases = []
+implementation = [".gitignore", "scripts/run-e2e.sh", "scripts/secret-scan.sh"]
+unit_evidence = []
+integration_evidence = ["daemon/tests/e2e/test_performance_benchmarks.py"]
+system_evidence = ["scripts/secret-scan.sh"]
+operational_evidence = ["AGENTS.md"]
+validation_evidence = ["daemon/tests/e2e/test_performance_benchmarks.py::test_performance_benchmark_subprocess_does_not_write_default_home_blob_root"]
+
+[[requirements]]
+id = "REQ-021"
+revision = 1
+statement = "Release verification shall exercise the unpacked extension against an isolated Chrome for Testing profile without using the operator Chrome profile."
+rationale = "Real branded-browser behavior is the authority for extension and service-worker integration."
+owner = "Real Chrome E2E Harness"
+status = "active"
+aliases = []
+implementation = ["scripts/run-real-chrome-e2e.sh", "scripts/real-chrome-e2e.mjs"]
+unit_evidence = []
+integration_evidence = []
+system_evidence = ["scripts/run-real-chrome-e2e.sh"]
+operational_evidence = ["docs/test-plan.md"]
+validation_evidence = ["scripts/run-real-chrome-e2e.sh"]
+
+[[requirements]]
+id = "REQ-022"
+revision = 1
+statement = "Durable media sidecar tasks shall preserve provenance and terminal status independently from successful searchable text capture."
+rationale = "Media acquisition may fail or be deferred without corrupting text recall."
+owner = "Extension and Daemon Media Pipelines"
+status = "active"
+aliases = []
+implementation = ["extension/src/media_queue.js", "daemon/src/browser_memory_daemon/media.py", "daemon/src/browser_memory_daemon/media_worker.py"]
+unit_evidence = ["extension/tests/unit/media_queue.test.js"]
+integration_evidence = ["daemon/tests/integration/test_media_worker.py"]
+system_evidence = ["scripts/run-real-chrome-e2e.sh"]
+operational_evidence = ["docs/media-artifacts.md"]
+validation_evidence = ["daemon/tests/integration/test_media_worker.py"]
+
+[[requirements]]
+id = "REQ-023"
+revision = 1
+statement = "The SQLite schema shall contain the documented authority tables, constraints, indexes, FTS structures, and audit records required by the current release."
+rationale = "The legacy test-plan REQ-009 schema meaning remains valid but cannot reuse architecture REQ-009."
+owner = "SQLite Schema"
+status = "active"
+aliases = []
+implementation = ["daemon/src/browser_memory_daemon/schema.sql"]
+unit_evidence = []
+integration_evidence = ["daemon/tests/integration/test_ingest_search_forget.py::test_schema_has_planned_core_tables"]
+system_evidence = ["scripts/run-e2e.sh"]
+operational_evidence = ["docs/ARCHITECTURE.md"]
+validation_evidence = ["daemon/tests/integration/test_ingest_search_forget.py::test_schema_has_planned_core_tables"]
+
+[[requirements]]
+id = "REQ-024"
+revision = 1
+statement = "Search and detail responses shall cite source URL, title, document identity, snapshot identity, and stored text or snippet as applicable."
+rationale = "The legacy test-plan REQ-014 evidence contract is distinct from the architecture installation requirement."
+owner = "SQLite/FTS Read Model"
+status = "active"
+aliases = []
+implementation = ["daemon/src/browser_memory_daemon/search.py", "daemon/src/browser_memory_daemon/ops.py"]
+unit_evidence = []
+integration_evidence = ["daemon/tests/integration/test_ingest_search_forget.py", "daemon/tests/e2e/test_admin_api.py"]
+system_evidence = ["scripts/run-real-chrome-e2e.sh"]
+operational_evidence = ["docs/api.md"]
+validation_evidence = ["daemon/tests/e2e/test_admin_api.py"]
+
+[[requirements]]
+id = "REQ-025"
+revision = 1
+statement = "The extension shall provide pause, resume, policy selection, queue status, and bounded local operational controls without exposing captured content."
+rationale = "The legacy test-plan REQ-015 extension-control meaning is separate from architecture media REQ-015."
+owner = "Extension Popup / Options / Service Worker"
+status = "active"
+aliases = []
+implementation = ["extension/src/popup.js", "extension/src/options.js", "extension/src/service_worker.js"]
+unit_evidence = ["extension/tests/unit/service_worker.test.js"]
+integration_evidence = []
+system_evidence = ["scripts/run-real-chrome-e2e.sh"]
+operational_evidence = ["docs/USER_GUIDE.md"]
+validation_evidence = ["extension/tests/unit/service_worker.test.js"]
+
+[[requirements]]
+id = "REQ-026"
+revision = 1
+statement = "Every test, benchmark, and fixture write shall be confined to an explicit temporary root."
+rationale = "Hermetic verification must not touch default XDG or operator storage."
+owner = "Verification Harness"
+status = "active"
+aliases = ["HRD-001"]
+implementation = ["daemon/src/browser_memory_daemon/performance_benchmarks.py", "scripts/run-e2e.sh"]
+unit_evidence = []
+integration_evidence = ["daemon/tests/e2e/test_performance_benchmarks.py"]
+system_evidence = ["scripts/run-e2e.sh"]
+operational_evidence = ["docs/verification/phase-0-gate-2026-07-10.md"]
+validation_evidence = ["daemon/tests/e2e/test_performance_benchmarks.py::test_performance_benchmark_subprocess_does_not_write_default_home_blob_root"]
+
+[[requirements]]
+id = "REQ-027"
+revision = 1
+statement = "Daemon-public network fetches shall contact only approved destinations and shall revalidate every redirect and HLS-derived request."
+rationale = "Untrusted page media references must not become SSRF or data-leak channels."
+owner = "Guarded Media Fetch"
+status = "active"
+aliases = ["HRD-002"]
+implementation = ["daemon/src/browser_memory_daemon/media.py", "daemon/src/browser_memory_daemon/config.py"]
+unit_evidence = []
+integration_evidence = ["daemon/tests/integration/test_media_worker.py"]
+system_evidence = ["scripts/run-e2e.sh"]
+operational_evidence = ["docs/security-model.md"]
+validation_evidence = ["daemon/tests/integration/test_media_worker.py::test_guarded_public_fetch_revalidates_public_to_private_redirect"]
+
+[[requirements]]
+id = "REQ-028"
+revision = 1
+statement = "The daemon shall not expose a durable API token through a remotely reachable unauthenticated UI."
+rationale = "UI bootstrap authorization material must remain inside the actual loopback peer boundary."
+owner = "WSL HTTP Daemon"
+status = "active"
+aliases = ["HRD-003"]
+implementation = ["daemon/src/browser_memory_daemon/app.py"]
+unit_evidence = []
+integration_evidence = ["daemon/tests/e2e/test_ui_dashboard_smoke.py"]
+system_evidence = ["scripts/run-e2e.sh"]
+operational_evidence = ["docs/security-model.md"]
+validation_evidence = ["daemon/tests/e2e/test_ui_dashboard_smoke.py::test_ui_dashboard_rejects_non_loopback_host_header"]
+
+[[requirements]]
+id = "REQ-029"
+revision = 1
+statement = "Every blob read, write, move, and delete shall resolve under its configured root and resist traversal and symlink escape."
+rationale = "Caller and persisted identifiers must never grant arbitrary filesystem authority."
+owner = "Storage Path Boundary"
+status = "active"
+aliases = ["HRD-004"]
+implementation = ["daemon/src/browser_memory_daemon/storage_paths.py", "daemon/src/browser_memory_daemon/media.py", "daemon/src/browser_memory_daemon/forget.py"]
+unit_evidence = []
+integration_evidence = ["daemon/tests/integration/test_ingest_search_forget.py", "daemon/tests/integration/test_media_worker.py"]
+system_evidence = ["scripts/run-e2e.sh"]
+operational_evidence = ["docs/security-model.md"]
+validation_evidence = ["daemon/tests/integration/test_ingest_search_forget.py::test_blob_path_consumers_reject_db_paths_outside_configured_roots"]
+
+[[requirements]]
+id = "REQ-030"
+revision = 1
+statement = "Destructive selectors shall be literal, validated, policy-aware, previewable, and bounded to the stated scope."
+rationale = "Current literal and policy-aware selection exists, but preview and broad-scope guards remain planned."
+owner = "Forget Pipeline"
+status = "planned"
+aliases = ["HRD-005"]
+implementation = ["daemon/src/browser_memory_daemon/forget.py", "daemon/src/browser_memory_daemon/cli.py"]
+unit_evidence = []
+integration_evidence = ["daemon/tests/integration/test_ingest_search_forget.py"]
+system_evidence = []
+operational_evidence = ["docs/CLI_UX_CONTRACT.md"]
+validation_evidence = []
+
+[[requirements]]
+id = "REQ-031"
+revision = 1
+statement = "Deletion and eviction shall be crash-recoverable and shall not report full success while required bytes remain."
+rationale = "Filesystem side effects require durable tombstones and retryable reconciliation."
+owner = "BlobStore / Forget / Media Store"
+status = "planned"
+aliases = ["HRD-006"]
+implementation = ["daemon/src/browser_memory_daemon/forget.py", "daemon/src/browser_memory_daemon/media.py"]
+unit_evidence = []
+integration_evidence = []
+system_evidence = []
+operational_evidence = []
+validation_evidence = []
+
+[[requirements]]
+id = "REQ-032"
+revision = 1
+statement = "Every supported database shall have an explicit version and ordered, auditable, restore-backed migrations."
+rationale = "Schema redesign cannot proceed safely on implicit startup DDL and repair scans."
+owner = "Database Migration Kernel"
+status = "planned"
+aliases = ["HRD-007"]
+implementation = ["daemon/src/browser_memory_daemon/migrations.py", "daemon/src/browser_memory_daemon/db.py"]
+unit_evidence = []
+integration_evidence = []
+system_evidence = []
+operational_evidence = []
+validation_evidence = []
+
+[[requirements]]
+id = "REQ-033"
+revision = 1
+statement = "Visits, capture observations, snapshots, lifecycle events, and media provenance shall have explicit temporal relationships."
+rationale = "Historical reads must return contemporaneous evidence rather than the latest document state."
+owner = "Capture Observation Model"
+status = "planned"
+aliases = ["HRD-008"]
+implementation = ["daemon/src/browser_memory_daemon/models.py", "daemon/src/browser_memory_daemon/ingest.py"]
+unit_evidence = []
+integration_evidence = []
+system_evidence = []
+operational_evidence = []
+validation_evidence = []
+
+[[requirements]]
+id = "REQ-034"
+revision = 1
+statement = "The normalized observed browser URL shall control document identity while page-provided canonical and alternate URLs remain untrusted claims."
+rationale = "Cross-origin canonical claims must not control budgets, deletion scope, or document merges."
+owner = "Document Identity / URL Claims"
+status = "planned"
+aliases = ["HRD-009"]
+implementation = ["daemon/src/browser_memory_daemon/models.py", "daemon/src/browser_memory_daemon/ingest.py"]
+unit_evidence = []
+integration_evidence = []
+system_evidence = []
+operational_evidence = []
+validation_evidence = []
+
+[[requirements]]
+id = "REQ-035"
+revision = 1
+statement = "Searchable text and capture provenance shall commit locally without NAS or media dependency."
+rationale = "Text recall is authoritative and must remain available during media or mount outages."
+owner = "SQLite Text Authority / Ingest"
+status = "planned"
+aliases = ["HRD-010"]
+implementation = ["daemon/src/browser_memory_daemon/ingest.py", "daemon/src/browser_memory_daemon/config.py"]
+unit_evidence = []
+integration_evidence = []
+system_evidence = []
+operational_evidence = []
+validation_evidence = []
+
+[[requirements]]
+id = "REQ-036"
+revision = 1
+statement = "Media transitions, cache admission, leases, retries, and resource budgets shall be closed, bounded, and concurrency-safe."
+rationale = "Concurrent media workers must not exceed budgets or leave non-convergent state."
+owner = "Media State Machine"
+status = "planned"
+aliases = ["HRD-011"]
+implementation = ["daemon/src/browser_memory_daemon/media.py", "daemon/src/browser_memory_daemon/media_worker.py"]
+unit_evidence = []
+integration_evidence = []
+system_evidence = []
+operational_evidence = []
+validation_evidence = []
+
+[[requirements]]
+id = "REQ-037"
+revision = 1
+statement = "Browser capture, lifecycle, and media queues shall be transactional, restart-safe, quota-aware, and never silently truncate."
+rationale = "MV3 suspension and quota exhaustion must not silently lose accepted browser work."
+owner = "Extension Durable Outboxes"
+status = "planned"
+aliases = ["HRD-012"]
+implementation = ["extension/src/service_worker.js", "extension/src/media_queue.js"]
+unit_evidence = []
+integration_evidence = []
+system_evidence = []
+operational_evidence = []
+validation_evidence = []
+
+[[requirements]]
+id = "REQ-038"
+revision = 1
+statement = "Dwell shall be derived from validated interval unions rather than additive overlapping reports."
+rationale = "Equal-start deduplication does not prevent partial-overlap double counting."
+owner = "Visit Lifecycle Pipeline"
+status = "planned"
+aliases = ["HRD-013"]
+implementation = ["daemon/src/browser_memory_daemon/lifecycle.py"]
+unit_evidence = []
+integration_evidence = []
+system_evidence = []
+operational_evidence = []
+validation_evidence = []
+
+[[requirements]]
+id = "REQ-039"
+revision = 1
+statement = "DOM extraction shall follow a documented rendered-visibility contract verified in a real browser."
+rationale = "Class, inherited, responsive, and ancestor-hidden content require computed visibility evidence."
+owner = "Extension Extractor"
+status = "planned"
+aliases = ["HRD-014"]
+implementation = ["extension/src/extractor.js"]
+unit_evidence = []
+integration_evidence = []
+system_evidence = []
+operational_evidence = []
+validation_evidence = []
+
+[[requirements]]
+id = "REQ-040"
+revision = 1
+statement = "HTTP behavior shall provide stable typed errors, request IDs, secure headers, and bounded streaming."
+rationale = "Transport failures must remain compatible, diagnosable, secure, and memory-bounded."
+owner = "WSL HTTP Transport"
+status = "planned"
+aliases = ["HRD-015"]
+implementation = ["daemon/src/browser_memory_daemon/app.py"]
+unit_evidence = []
+integration_evidence = []
+system_evidence = []
+operational_evidence = []
+validation_evidence = []
+
+[[requirements]]
+id = "REQ-041"
+revision = 1
+statement = "Backup, restore, and staged install rollback shall be executable and verified before retention or destructive maintenance."
+rationale = "Destructive operations need proven recovery authority rather than documentation-only intent."
+owner = "Operations / Installer"
+status = "planned"
+aliases = ["HRD-016"]
+implementation = ["scripts/install-daily-driver.sh", "docs/retention-compaction-backup.md"]
+unit_evidence = []
+integration_evidence = []
+system_evidence = []
+operational_evidence = []
+validation_evidence = []
+
+[[requirements]]
+id = "REQ-042"
+revision = 1
+statement = "Requirement statements, implementation links, and verification evidence shall have one machine-readable source of truth."
+rationale = "Conflicting Markdown requirement IDs previously passed a shallow static gate."
+owner = "Requirement Catalog / Verification Generator"
+status = "active"
+aliases = ["HRD-017"]
+implementation = ["requirements/catalog.toml", "scripts/generate_test_inventory.py"]
+unit_evidence = []
+integration_evidence = ["daemon/tests/e2e/test_generate_test_inventory.py"]
+system_evidence = ["scripts/run-e2e.sh"]
+operational_evidence = ["docs/TESTS.md"]
+validation_evidence = ["daemon/tests/e2e/test_generate_test_inventory.py::test_generate_test_inventory_reports_catalog_traceability_success"]
+
+[[requirements]]
+id = "REQ-043"
+revision = 1
+statement = "Local-first policy modes, explicit block rules, and the no-cloud processing boundary shall remain intact."
+rationale = "Hardening must not replatform the product or weaken operator-controlled local policy."
+owner = "Policy Engine / System Boundary"
+status = "active"
+aliases = ["HRD-018"]
+implementation = ["daemon/src/browser_memory_daemon/policy.py", "daemon/src/browser_memory_daemon/policy_store.py", "extension/src/extractor.js"]
+unit_evidence = ["daemon/tests/unit/test_policy.py", "daemon/tests/unit/test_policy_store.py"]
+integration_evidence = ["daemon/tests/e2e/test_admin_api.py"]
+system_evidence = ["scripts/run-e2e.sh"]
+operational_evidence = ["AGENTS.md", "docs/security-model.md"]
+validation_evidence = ["daemon/tests/e2e/test_admin_api.py::test_policy_rule_blocks_future_capture_and_can_be_deleted"]
+
+# Explicit reconciliation of pre-catalog test-plan aliases and meanings that
+# collided with architecture-owned REQ-009 through REQ-017 meanings.
+
+[[legacy_aliases]]
+source = "docs/test-plan.md before catalog revision 1"
+legacy_id = "REQ-006A"
+canonical_ids = ["REQ-043"]
+disposition = "superseded"
+reason = "Legacy test-plan REQ-006A isolated explicit block-rule behavior now covered by canonical boundary requirement REQ-043."
+
+[[legacy_aliases]]
+source = "docs/test-plan.md before catalog revision 1"
+legacy_id = "REQ-009"
+canonical_ids = ["REQ-023"]
+disposition = "superseded"
+reason = "Legacy test-plan REQ-009 meant schema completeness; architecture REQ-009 remains snapshot deduplication."
+
+[[legacy_aliases]]
+source = "docs/test-plan.md before catalog revision 1"
+legacy_id = "REQ-010"
+canonical_ids = ["REQ-009"]
+disposition = "superseded"
+reason = "Legacy test-plan REQ-010 meant snapshot deduplication."
+
+[[legacy_aliases]]
+source = "docs/test-plan.md before catalog revision 1"
+legacy_id = "REQ-011"
+canonical_ids = ["REQ-010"]
+disposition = "superseded"
+reason = "Legacy test-plan REQ-011 meant SPA and late-content recapture."
+
+[[legacy_aliases]]
+source = "docs/test-plan.md before catalog revision 1"
+legacy_id = "REQ-012"
+canonical_ids = ["REQ-011"]
+disposition = "superseded"
+reason = "Legacy test-plan REQ-012 meant lifecycle and dwell behavior."
+
+[[legacy_aliases]]
+source = "docs/test-plan.md before catalog revision 1"
+legacy_id = "REQ-013"
+canonical_ids = ["REQ-013"]
+disposition = "alias"
+reason = "Legacy test-plan and architecture REQ-013 both meant forget behavior."
+
+[[legacy_aliases]]
+source = "docs/test-plan.md before catalog revision 1"
+legacy_id = "REQ-014"
+canonical_ids = ["REQ-024"]
+disposition = "superseded"
+reason = "Legacy test-plan REQ-014 meant cited search/detail results; architecture REQ-014 remains installation."
+
+[[legacy_aliases]]
+source = "docs/test-plan.md before catalog revision 1"
+legacy_id = "REQ-015"
+canonical_ids = ["REQ-025"]
+disposition = "superseded"
+reason = "Legacy test-plan REQ-015 meant extension controls; architecture REQ-015 remains text-first media provenance."
+
+[[legacy_aliases]]
+source = "docs/test-plan.md before catalog revision 1"
+legacy_id = "REQ-015A"
+canonical_ids = ["REQ-014"]
+disposition = "superseded"
+reason = "Legacy test-plan REQ-015A installation consistency is covered by canonical installation REQ-014."
+
+[[legacy_aliases]]
+source = "docs/test-plan.md before catalog revision 1"
+legacy_id = "REQ-016"
+canonical_ids = ["REQ-012"]
+disposition = "superseded"
+reason = "Legacy test-plan REQ-016 local UI semantics are part of canonical operator-surface REQ-012."
+
+[[legacy_aliases]]
+source = "docs/test-plan.md before catalog revision 1"
+legacy_id = "REQ-017"
+canonical_ids = ["REQ-012"]
+disposition = "superseded"
+reason = "Legacy test-plan REQ-017 CLI semantics are part of canonical operator-surface REQ-012."

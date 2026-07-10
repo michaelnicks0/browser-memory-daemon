@@ -17,12 +17,20 @@
 | Forget/delete | ✅ URL/domain forget with receipts and text/media blob + FTS cleanup. | `forget.py`, tests. |
 | Media artifacts | ✅ Durable image/video refs and binaries: fast text/manifest capture, browser IndexedDB lazy queue, credentialed fetch, raw blob upload, enabled-by-default X/Twitter CDP recorder with disable control, HLS/audio sidecar handling, daemon public worker, rolling cache gates, purge/rehydrate controls; no OCR/media indexing. | `media.py`, `media_worker.py`, `media_queue.js`, `cdp_recorder.js`, `/media-artifacts/*`, real Chrome e2e. |
 | Local UI | ✅ Token-bootstrapped search/recent/timeline/detail/doctor/policy/delete panels; recent/today/doctor/policy auto-load on open. | `ui/`, admin API tests. |
-| CLI | ✅ serve/health/search/recent/timeline/detail/policy/forget/capture-fixture/media-worker/media-cache. | `cli.py`, CLI e2e. |
+| CLI | ✅ serve/health/doctor/daily-driver-health/search/recent/timeline/detail/policy/forget/capture-fixture/media-worker/media-cache/blob-root migration. | `cli.py`, CLI e2e. |
 | Dedupe/versioning | ✅ URL normalization + text-hash snapshots. | ingest tests. |
 | SPA/delayed capture | ✅ Delayed passes and History API hooks. | real Chrome SPA fixture. |
 | Dwell/lifecycle | ✅ Metadata-only visit events with idempotent dwell updates. | lifecycle tests + real e2e. |
 | Policy modes | ✅ `all`, `recall`, `balanced`, `strict`. | daemon + extension unit tests. |
 | Daily-driver install | ✅ systemd user daemon + media-worker services, Windows extension copy, non-mutating dry-run/check path, token/env/unit/process-arg health checks. | `scripts/install-daily-driver.sh`, `scripts/daily-driver-health.sh`, daily-driver tests. |
+
+---
+
+## Requirement posture
+
+<!-- BEGIN GENERATED:requirement-posture -->
+The canonical catalog contains **43 stable requirements**: **31 active** and **12 planned**. Normative statements, implementation links, V-model evidence, and legacy aliases are owned by [`requirements/catalog.toml`](../requirements/catalog.toml); generated tables in this doc set must not be hand-edited.
+<!-- END GENERATED:requirement-posture -->
 
 ---
 

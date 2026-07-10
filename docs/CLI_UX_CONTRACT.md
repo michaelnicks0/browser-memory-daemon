@@ -16,6 +16,7 @@ PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   [--port PORT] \
   [--token TOKEN] \
   [--runtime-root PATH] \
+  [--blob-root PATH] \
   [--policy-mode all|recall|balanced|strict] \
   COMMAND [COMMAND_ARGS]
 ```
@@ -28,6 +29,7 @@ Global defaults:
 | `--port` / `BMD_PORT` | `8765` | Daily-driver default. |
 | `--token` / `BMD_API_TOKEN` | required | Test mode can synthesize, production cannot. |
 | `--runtime-root` / `BMD_RUNTIME_ROOT` | XDG paths | Tests/e2e use temp runtime roots. |
+| `--blob-root` / `BMD_BLOB_ROOT` | `<runtime-root>/blobs` | Overrides clean-text/media blob placement while SQLite/WAL remains local. |
 | `--policy-mode` / `BMD_POLICY_MODE` | `all` | Daily-driver default is maximum recall. |
 
 ---
@@ -51,6 +53,7 @@ Global defaults:
 | `media-worker [--once|--loop] [--limit N] [--interval SEC]` | Run daemon public-media worker manually or as service. | Pretty JSON for `--once`; long-running loop for `--loop`. |
 | `media-cache purge [--domain DOMAIN] [--document-id ID] [--snapshot-id ID] [--older-than ISO] [--max-bytes-to-purge N] [--dry-run|--execute] [--rehydrate]` | Dry-run/execute media blob cache purge without deleting text/FTS/ref rows. | Pretty JSON purge summary. |
 | `media-cache rehydrate [--domain DOMAIN] [--document-id ID] [--snapshot-id ID] [--limit N]` | Queue/refetch purged public media refs. | Pretty JSON worker summary. |
+| `blob-root migrate [--from-root PATH] [--execute] [--remove-source]` | Dry-run by default; copies DB-referenced clean-text/media blobs to the configured root and rewrites paths only with `--execute`. | Pretty JSON migration summary. `--remove-source` remains an explicit post-copy action. |
 
 ---
 
@@ -139,4 +142,5 @@ PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
 
 - CLI output is currently JSON but not formally versioned.
 - `capture-fixture` exists for tests/smoke checks, not browser capture replacement.
+- `blob-root migrate` is the current repository migration helper; versioned schema `migrate --check/--execute` commands are planned but do not exist yet.
 - Future CLI changes should update this contract and `daemon/tests/e2e/test_cli_admin.py` together.

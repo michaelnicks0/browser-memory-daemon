@@ -37,7 +37,7 @@
 <!-- 10 -->
 <g id="10" class="node">
 <title>10</title>
-<polygon fill="#85bbf0" stroke="#5d82a8" points="854,-1012.38 458,-1012.38 458,-747.38 854,-747.38 854,-1012.38"/>
+<polygon fill="#85bbf0" stroke="#1168bd" points="854,-1012.38 458,-1012.38 458,-747.38 854,-747.38 854,-1012.38"/>
 <text text-anchor="start" x="487" y="-964.17" font-family="Arial" font-size="34.00" fill="#000000">Browser Media Queue</text>
 <text text-anchor="start" x="596.5" y="-930.17" font-family="Arial" font-size="34.00" fill="#000000">Adapter</text>
 <text text-anchor="start" x="494" y="-908.17" font-family="Arial" font-size="19.00" fill="#000000">[Component: JavaScript + IndexedDB]</text>
@@ -74,7 +74,7 @@
 <!-- 11 -->
 <g id="11" class="node">
 <title>11</title>
-<polygon fill="#85bbf0" stroke="#5d82a8" points="1339.5,-1007.38 926.5,-1007.38 926.5,-752.38 1339.5,-752.38 1339.5,-1007.38"/>
+<polygon fill="#85bbf0" stroke="#1168bd" points="1339.5,-1007.38 926.5,-1007.38 926.5,-752.38 1339.5,-752.38 1339.5,-1007.38"/>
 <text text-anchor="start" x="1022.5" y="-959.17" font-family="Arial" font-size="34.00" fill="#000000">CDP Recorder</text>
 <text text-anchor="start" x="960.5" y="-937.17" font-family="Arial" font-size="19.00" fill="#000000">[Component: Chrome DevTools Protocol]</text>
 <text text-anchor="start" x="990" y="-900.17" font-family="Arial" font-size="24.00" fill="#000000">Uses chrome.debugger on</text>
@@ -123,7 +123,7 @@
 <!-- 9 -->
 <g id="9" class="node">
 <title>9</title>
-<polygon fill="#85bbf0" stroke="#5d82a8" points="1117,-1375.38 679,-1375.38 679,-1144.38 1117,-1144.38 1117,-1375.38"/>
+<polygon fill="#85bbf0" stroke="#1168bd" points="1117,-1375.38 679,-1375.38 679,-1144.38 1117,-1144.38 1117,-1375.38"/>
 <text text-anchor="start" x="782" y="-1327.17" font-family="Arial" font-size="34.00" fill="#000000">Service Worker</text>
 <text text-anchor="start" x="708" y="-1305.17" font-family="Arial" font-size="19.00" fill="#000000">[Component: JavaScript MV3 service worker]</text>
 <text text-anchor="start" x="726.5" y="-1268.17" font-family="Arial" font-size="24.00" fill="#000000">Owns daemon transport, bearer</text>

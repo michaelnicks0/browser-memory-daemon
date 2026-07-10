@@ -71,7 +71,10 @@ flowchart TB
 ## Maturity snapshot
 
 - **Implemented:** local capture/search/delete/UI/API/CLI/media sidecars/daily-driver install.
-- **Verification depth:** 80 static test functions across daemon pytest and extension node:test sources, plus real Chrome for Testing e2e.
+<!-- BEGIN GENERATED:verification-depth -->
+- **Verification depth:** 137 static test functions across 24 files (110 daemon pytest; 27 extension node:test), plus real Chrome for Testing e2e.
+- **Requirement authority:** `requirements/catalog.toml` defines 31 active and 12 planned stable requirements with generated traceability tables.
+<!-- END GENERATED:verification-depth -->
 - **Architecture depth:** C4/Structurizr atlas, ADR history, behavioral Mermaid diagrams, API/CLI/security docs.
 - **Known future lanes:** semantic/vector search, native messaging hardening, retention/export/backup, MCP/Hermes tools, richer policy actions.
 

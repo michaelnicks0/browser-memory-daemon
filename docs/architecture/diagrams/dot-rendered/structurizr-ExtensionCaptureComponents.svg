@@ -37,7 +37,7 @@
 <!-- 12 -->
 <g id="12" class="node">
 <title>12</title>
-<polygon fill="#85bbf0" stroke="#5d82a8" points="457,-1336 64,-1336 64,-1129 457,-1129 457,-1336"/>
+<polygon fill="#85bbf0" stroke="#1168bd" points="457,-1336 64,-1336 64,-1129 457,-1129 457,-1336"/>
 <text text-anchor="start" x="93" y="-1287.8" font-family="Arial" font-size="34.00" fill="#000000">Popup and Options UI</text>
 <text text-anchor="start" x="128" y="-1265.8" font-family="Arial" font-size="19.00" fill="#000000">[Component: HTML/JavaScript]</text>
 <text text-anchor="start" x="102" y="-1228.8" font-family="Arial" font-size="24.00" fill="#000000">Lets the operator view status,</text>
@@ -48,7 +48,7 @@
 <!-- 9 -->
 <g id="9" class="node">
 <title>9</title>
-<polygon fill="#85bbf0" stroke="#5d82a8" points="1334,-1064 896,-1064 896,-833 1334,-833 1334,-1064"/>
+<polygon fill="#85bbf0" stroke="#1168bd" points="1334,-1064 896,-1064 896,-833 1334,-833 1334,-1064"/>
 <text text-anchor="start" x="999" y="-1015.8" font-family="Arial" font-size="34.00" fill="#000000">Service Worker</text>
 <text text-anchor="start" x="925" y="-993.8" font-family="Arial" font-size="19.00" fill="#000000">[Component: JavaScript MV3 service worker]</text>
 <text text-anchor="start" x="943.5" y="-956.8" font-family="Arial" font-size="24.00" fill="#000000">Owns daemon transport, bearer</text>
@@ -97,7 +97,7 @@
 <!-- 6 -->
 <g id="6" class="node">
 <title>6</title>
-<polygon fill="#85bbf0" stroke="#5d82a8" points="463,-1057 58,-1057 58,-816 463,-816 463,-1057"/>
+<polygon fill="#85bbf0" stroke="#1168bd" points="463,-1057 58,-1057 58,-816 463,-816 463,-1057"/>
 <text text-anchor="start" x="162.5" y="-1008.8" font-family="Arial" font-size="34.00" fill="#000000">Manifest and</text>
 <text text-anchor="start" x="101" y="-974.8" font-family="Arial" font-size="34.00" fill="#000000">Permission Envelope</text>
 <text text-anchor="start" x="144.5" y="-952.8" font-family="Arial" font-size="19.00" fill="#000000">[Component: manifest.json]</text>
@@ -109,7 +109,7 @@
 <!-- 7 -->
 <g id="7" class="node">
 <title>7</title>
-<polygon fill="#85bbf0" stroke="#5d82a8" points="1312.5,-732 917.5,-732 917.5,-525 1312.5,-525 1312.5,-732"/>
+<polygon fill="#85bbf0" stroke="#1168bd" points="1312.5,-732 917.5,-732 917.5,-525 1312.5,-525 1312.5,-732"/>
 <text text-anchor="start" x="1046.5" y="-683.8" font-family="Arial" font-size="34.00" fill="#000000">Extractor</text>
 <text text-anchor="start" x="1011" y="-661.8" font-family="Arial" font-size="19.00" fill="#000000">[Component: JavaScript]</text>
 <text text-anchor="start" x="946.5" y="-624.8" font-family="Arial" font-size="24.00" fill="#000000">Traverses visible DOM text and</text>
@@ -120,7 +120,7 @@
 <!-- 8 -->
 <g id="8" class="node">
 <title>8</title>
-<polygon fill="#85bbf0" stroke="#5d82a8" points="456,-744 65,-744 65,-513 456,-513 456,-744"/>
+<polygon fill="#85bbf0" stroke="#1168bd" points="456,-744 65,-744 65,-513 456,-513 456,-744"/>
 <text text-anchor="start" x="152" y="-695.8" font-family="Arial" font-size="34.00" fill="#000000">Content Script</text>
 <text text-anchor="start" x="97" y="-673.8" font-family="Arial" font-size="19.00" fill="#000000">[Component: JavaScript content script]</text>
 <text text-anchor="start" x="120.5" y="-636.8" font-family="Arial" font-size="24.00" fill="#000000">Schedules initial, delayed,</text>

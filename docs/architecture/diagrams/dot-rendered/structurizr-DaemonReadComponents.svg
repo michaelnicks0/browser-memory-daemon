@@ -25,7 +25,7 @@
 <!-- 15 -->
 <g id="15" class="node">
 <title>15</title>
-<polygon fill="#85bbf0" stroke="#5d82a8" points="453,-957.5 58,-957.5 58,-726.5 453,-726.5 453,-957.5"/>
+<polygon fill="#85bbf0" stroke="#1168bd" points="453,-957.5 58,-957.5 58,-726.5 453,-726.5 453,-957.5"/>
 <text text-anchor="start" x="87" y="-909.3" font-family="Arial" font-size="34.00" fill="#000000">HTTP Request Router</text>
 <text text-anchor="start" x="119" y="-887.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python http.server]</text>
 <text text-anchor="start" x="90" y="-850.3" font-family="Arial" font-size="24.00" fill="#000000">Routes loopback API requests,</text>
@@ -37,7 +37,7 @@
 <!-- 21 -->
 <g id="21" class="node">
 <title>21</title>
-<polygon fill="#85bbf0" stroke="#5d82a8" points="1217,-957.5 792,-957.5 792,-726.5 1217,-726.5 1217,-957.5"/>
+<polygon fill="#85bbf0" stroke="#1168bd" points="1217,-957.5 792,-957.5 792,-726.5 1217,-726.5 1217,-957.5"/>
 <text text-anchor="start" x="821" y="-909.3" font-family="Arial" font-size="34.00" fill="#000000">Search and Read Model</text>
 <text text-anchor="start" x="849.5" y="-887.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python + SQLite FTS5]</text>
 <text text-anchor="start" x="855.5" y="-850.3" font-family="Arial" font-size="24.00" fill="#000000">Provides exact FTS search,</text>

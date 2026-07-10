@@ -5,7 +5,7 @@
 > **Runtime:** Python **3.11+** (`pyproject.toml` requires `>=3.11`). Use `BMD_PYTHON=/path/to/python3.11` when the host `python3` is older.
 
 <!-- BEGIN GENERATED:inventory-summary -->
-> **Current inventory:** 135 static test functions across 24 files — 108 daemon pytest tests + 27 extension node:test tests.
+> **Current inventory:** 137 static test functions across 24 files — 110 daemon pytest tests + 27 extension node:test tests.
 <!-- END GENERATED:inventory-summary -->
 
 ---
@@ -40,7 +40,7 @@ git diff --check -- .
 
 `./scripts/run-e2e.sh` runs daemon tests, extension tests/build, the real Chrome e2e matrix unless `BMD_SKIP_REAL_CHROME_E2E=1`, secret scan, and whitespace check.
 
-`python3.11 scripts/generate_test_inventory.py --check` is a hard static gate: it enforces the generated test inventory, verifies every `REQ-*` row in `docs/ARCHITECTURE.md` appears in `docs/test-plan.md`, and fails when test-plan file/test references drift to missing paths.
+`python3.11 scripts/generate_test_inventory.py --check` is a hard static gate over `requirements/catalog.toml`: it enforces unique stable IDs/aliases, explicit normative revisions, existing implementation/evidence paths, resolvable test node IDs, and validation evidence for active requirements. It also regenerates the catalog-owned requirement tables and volatile static test counts across the documentation set.
 
 `./scripts/run-performance-benchmarks.sh --small --json` emits machine-readable synthetic benchmark evidence for ingest, search, recent/timeline/detail, read endpoint audit writes, media-worker task selection/run, and DB/WAL/blob sidecar growth. Budgets are advisory until a later ticket/ADR promotes measured thresholds to hard gates.
 
@@ -73,7 +73,7 @@ Use `--runtime-root PATH` only for explicit fixture roots; do not point the stre
 ## Generated test inventory
 
 <!-- BEGIN GENERATED:audit-run -->
-Latest inventory: **135 static test functions** across **24 files** (108 daemon pytest; 27 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
+Latest inventory: **137 static test functions** across **24 files** (110 daemon pytest; 27 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
 <!-- END GENERATED:audit-run -->
 
 ## Requirements traceability gate
@@ -83,11 +83,18 @@ Traceability gate: **✅ pass**.
 
 | Check | Result |
 |---|---|
-| Architecture requirements found | 17 |
-| Test-plan requirement rows found | 24 |
-| Missing architecture requirements in `docs/test-plan.md` | none |
-| Unresolved file/test references in `docs/test-plan.md` | none |
-| Static test inventory measured | 135 tests / 24 files |
+| Catalog requirements | 43 (31 active; 12 planned) |
+| Duplicate stable IDs | none |
+| Invalid requirement definitions | none |
+| Duplicate plan/local aliases | none |
+| Legacy alias errors | none |
+| Missing implementation paths | none |
+| Unresolved evidence/test nodes | none |
+| Active requirements without validation evidence | none |
+| Normative changes without revision increment | none |
+| Requirements removed without catalog disposition | none |
+| Catalog load errors | none |
+| Static test inventory measured | 137 tests / 24 files |
 <!-- END GENERATED:traceability-gate -->
 
 ### Per-file counts
@@ -98,7 +105,7 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/e2e/test_cli_admin.py` | pytest | 1 |
 | `daemon/tests/e2e/test_concurrency_stress.py` | pytest | 2 |
 | `daemon/tests/e2e/test_daily_driver_install.py` | pytest | 2 |
-| `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | 2 |
+| `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | 4 |
 | `daemon/tests/e2e/test_http_api.py` | pytest | 5 |
 | `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | 5 |
 | `daemon/tests/e2e/test_read_model_indexes.py` | pytest | 1 |
@@ -118,7 +125,7 @@ Traceability gate: **✅ pass**.
 | `extension/tests/unit/queue.test.js` | node:test | 1 |
 | `extension/tests/unit/service_worker.test.js` | node:test | 4 |
 | `extension/tests/unit/shared.test.js` | node:test | 2 |
-| **Total** |  | **135** |
+| **Total** |  | **137** |
 <!-- END GENERATED:per-file-counts -->
 
 <details>
@@ -135,8 +142,10 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/e2e/test_concurrency_stress.py` | pytest | `(module)` | `test_concurrency_stress_cli_prints_json_for_explicit_runtime` | 36 | Concurrency stress cli prints json for explicit runtime. |
 | `daemon/tests/e2e/test_daily_driver_install.py` | pytest | `(module)` | `test_install_daily_driver_dry_run_is_non_mutating` | 12 | Install daily driver dry run is non mutating. |
 | `daemon/tests/e2e/test_daily_driver_install.py` | pytest | `(module)` | `test_install_daily_driver_required_mount_guard_fails_before_writes` | 54 | Install daily driver required mount guard fails before writes. |
-| `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_generate_test_inventory_reports_traceability_success` | 69 | Generate test inventory reports traceability success. |
-| `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_generate_test_inventory_check_fails_for_traceability_gaps` | 87 | Generate test inventory check fails for traceability gaps. |
+| `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_generate_test_inventory_reports_catalog_traceability_success` | 140 | Generate test inventory reports catalog traceability success. |
+| `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_generate_test_inventory_check_fails_for_catalog_gaps` | 162 | Generate test inventory check fails for catalog gaps. |
+| `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_catalog_rejects_duplicate_ids` | 188 | Catalog rejects duplicate ids. |
+| `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_catalog_statement_change_requires_revision_increment` | 202 | Catalog statement change requires revision increment. |
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_skips_request_time_db_initialization_after_startup` | 61 | Http capture skips request time db initialization after startup. |
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_media_fetch_raw_upload_and_purge_rehydrate_controls` | 93 | Http media fetch raw upload and purge rehydrate controls. |
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_search_forget_round_trip` | 162 | Http capture search forget round trip. |

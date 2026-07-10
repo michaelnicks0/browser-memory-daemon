@@ -25,7 +25,7 @@
 <!-- 15 -->
 <g id="15" class="node">
 <title>15</title>
-<polygon fill="#85bbf0" stroke="#5d82a8" points="453,-660.5 58,-660.5 58,-429.5 453,-429.5 453,-660.5"/>
+<polygon fill="#85bbf0" stroke="#1168bd" points="453,-660.5 58,-660.5 58,-429.5 453,-429.5 453,-660.5"/>
 <text text-anchor="start" x="87" y="-612.3" font-family="Arial" font-size="34.00" fill="#000000">HTTP Request Router</text>
 <text text-anchor="start" x="119" y="-590.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python http.server]</text>
 <text text-anchor="start" x="90" y="-553.3" font-family="Arial" font-size="24.00" fill="#000000">Routes loopback API requests,</text>
@@ -37,7 +37,7 @@
 <!-- 18 -->
 <g id="18" class="node">
 <title>18</title>
-<polygon fill="#85bbf0" stroke="#5d82a8" points="1207,-660.5 815,-660.5 815,-429.5 1207,-429.5 1207,-660.5"/>
+<polygon fill="#85bbf0" stroke="#1168bd" points="1207,-660.5 815,-660.5 815,-429.5 1207,-429.5 1207,-660.5"/>
 <text text-anchor="start" x="899.5" y="-612.3" font-family="Arial" font-size="34.00" fill="#000000">Ingest Pipeline</text>
 <text text-anchor="start" x="883" y="-590.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python + sqlite3]</text>
 <text text-anchor="start" x="857.5" y="-553.3" font-family="Arial" font-size="24.00" fill="#000000">Normalizes URLs, computes</text>

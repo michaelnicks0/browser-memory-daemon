@@ -1,4 +1,4 @@
-# Architecture C4 Diagrams
+# Browser Memory Daemon Architecture C4 Diagrams
 
 > Single-file generated C4 diagram atlas. Canonical model: [`workspace.dsl`](workspace.dsl).
 
@@ -253,9 +253,9 @@ graph LR
         style 14 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
         15["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server]</div><div style='font-size: 80%; margin-top:10px'>Routes loopback API requests,<br />serves UI assets, enforces<br />bearer auth for memory/admin<br />APIs, and applies CORS for<br />allowed origins.</div>"]
-        style 15 fill:#85bbf0,stroke:#5d82a8,color:#000000
-        23["<div style='font-weight: bold'>Ops Doctor and Audit</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Reports health, DB integrity,<br />FTS consistency, runtime<br />paths, storage counts, media<br />queue status, and writes<br />metadata-only audit events.</div>"]
-        style 23 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 15 fill:#85bbf0,stroke:#1168bd,color:#000000
+        23["<div style='font-weight: bold'>Ops Doctor and Audit</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Reports health, DB integrity,<br />FTS consistency, runtime<br />paths, storage counts, media<br />queue status, and writes<br />metadata-only audit events to<br />SQLite.</div>"]
+        style 23 fill:#85bbf0,stroke:#1168bd,color:#000000
       end
 
       27[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable relational and<br />full-text store for sources,<br />documents, visits, visit<br />events, snapshots, chunks,<br />chunks_fts, media artifacts,<br />media fetch tasks, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
@@ -317,9 +317,9 @@ graph LR
         style 14 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
         15["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server]</div><div style='font-size: 80%; margin-top:10px'>Routes loopback API requests,<br />serves UI assets, enforces<br />bearer auth for memory/admin<br />APIs, and applies CORS for<br />allowed origins.</div>"]
-        style 15 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 15 fill:#85bbf0,stroke:#1168bd,color:#000000
         22["<div style='font-weight: bold'>Forget Pipeline</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Deletes URL/domain-scoped<br />memory rows, FTS entries,<br />clean-text blobs, media<br />blobs, lifecycle rows, and<br />records deletion receipts.</div>"]
-        style 22 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 22 fill:#85bbf0,stroke:#1168bd,color:#000000
       end
 
       27[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable relational and<br />full-text store for sources,<br />documents, visits, visit<br />events, snapshots, chunks,<br />chunks_fts, media artifacts,<br />media fetch tasks, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
@@ -381,9 +381,9 @@ graph LR
         style 14 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
         15["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server]</div><div style='font-size: 80%; margin-top:10px'>Routes loopback API requests,<br />serves UI assets, enforces<br />bearer auth for memory/admin<br />APIs, and applies CORS for<br />allowed origins.</div>"]
-        style 15 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 15 fill:#85bbf0,stroke:#1168bd,color:#000000
         18["<div style='font-weight: bold'>Ingest Pipeline</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Normalizes URLs, computes<br />document/snapshot IDs, stores<br />visits/snapshots/chunks/FTS<br />rows, writes clean text<br />blobs, and records media<br />references.</div>"]
-        style 18 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 18 fill:#85bbf0,stroke:#1168bd,color:#000000
       end
 
       27[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable relational and<br />full-text store for sources,<br />documents, visits, visit<br />events, snapshots, chunks,<br />chunks_fts, media artifacts,<br />media fetch tasks, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
@@ -442,9 +442,9 @@ graph LR
         style 14 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
         15["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server]</div><div style='font-size: 80%; margin-top:10px'>Routes loopback API requests,<br />serves UI assets, enforces<br />bearer auth for memory/admin<br />APIs, and applies CORS for<br />allowed origins.</div>"]
-        style 15 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 15 fill:#85bbf0,stroke:#1168bd,color:#000000
         19["<div style='font-weight: bold'>Lifecycle Pipeline</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Stores metadata-only tab<br />lifecycle events and updates<br />visit dwell seconds<br />idempotently.</div>"]
-        style 19 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 19 fill:#85bbf0,stroke:#1168bd,color:#000000
       end
 
       27[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable relational and<br />full-text store for sources,<br />documents, visits, visit<br />events, snapshots, chunks,<br />chunks_fts, media artifacts,<br />media fetch tasks, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
@@ -500,9 +500,9 @@ graph LR
         style 14 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
         15["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server]</div><div style='font-size: 80%; margin-top:10px'>Routes loopback API requests,<br />serves UI assets, enforces<br />bearer auth for memory/admin<br />APIs, and applies CORS for<br />allowed origins.</div>"]
-        style 15 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 15 fill:#85bbf0,stroke:#1168bd,color:#000000
         20["<div style='font-weight: bold'>Media Artifact Manager</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + filesystem]</div><div style='font-size: 80%; margin-top:10px'>Records media references,<br />validates blob uploads,<br />enforces MIME/size/cache<br />gates, writes blobs<br />atomically, queues public<br />fetch tasks, and purges or<br />rehydrates cache entries.</div>"]
-        style 20 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 20 fill:#85bbf0,stroke:#1168bd,color:#000000
       end
 
       27[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable relational and<br />full-text store for sources,<br />documents, visits, visit<br />events, snapshots, chunks,<br />chunks_fts, media artifacts,<br />media fetch tasks, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
@@ -618,11 +618,11 @@ graph LR
         style 14 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
         15["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server]</div><div style='font-size: 80%; margin-top:10px'>Routes loopback API requests,<br />serves UI assets, enforces<br />bearer auth for memory/admin<br />APIs, and applies CORS for<br />allowed origins.</div>"]
-        style 15 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 15 fill:#85bbf0,stroke:#1168bd,color:#000000
         16["<div style='font-weight: bold'>Policy Engine</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Evaluates<br />all/recall/balanced/strict<br />capture mode decisions and<br />redacts URL/title/body text<br />outside all mode.</div>"]
-        style 16 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 16 fill:#85bbf0,stroke:#1168bd,color:#000000
         17["<div style='font-weight: bold'>Policy Store</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + SQLite]</div><div style='font-size: 80%; margin-top:10px'>Persists and evaluates<br />explicit local block-domain<br />and URL-prefix rules for<br />every policy mode.</div>"]
-        style 17 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 17 fill:#85bbf0,stroke:#1168bd,color:#000000
       end
 
     end
@@ -735,9 +735,9 @@ graph LR
         style 14 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
         15["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server]</div><div style='font-size: 80%; margin-top:10px'>Routes loopback API requests,<br />serves UI assets, enforces<br />bearer auth for memory/admin<br />APIs, and applies CORS for<br />allowed origins.</div>"]
-        style 15 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 15 fill:#85bbf0,stroke:#1168bd,color:#000000
         21["<div style='font-weight: bold'>Search and Read Model</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + SQLite FTS5]</div><div style='font-size: 80%; margin-top:10px'>Provides exact FTS search,<br />recent captures, timeline,<br />document detail, snapshot<br />detail, and media artifact<br />detail views.</div>"]
-        style 21 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 21 fill:#85bbf0,stroke:#1168bd,color:#000000
       end
 
       27[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable relational and<br />full-text store for sources,<br />documents, visits, visit<br />events, snapshots, chunks,<br />chunks_fts, media artifacts,<br />media fetch tasks, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
@@ -819,13 +819,13 @@ graph TB
           style 103 fill:#2f95c8,stroke:#20688c,color:#ffffff
         end
 
-        subgraph 109 ["WSL-mounted NAS blob root"]
-          style 109 fill:#ffffff,stroke:#444444,color:#444444
+        subgraph 108 ["WSL-mounted NAS blob root"]
+          style 108 fill:#ffffff,stroke:#444444,color:#444444
 
-          110[("<div style='font-weight: bold'>Clean Text Blob Store</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Filesystem store for snapshot<br />text blobs under the<br />configured WSL-visible blob<br />root.</div>")]
-          style 110 fill:#2f95c8,stroke:#20688c,color:#ffffff
-          112[("<div style='font-weight: bold'>Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded and disposable<br />filesystem cache for stored<br />image/video/audio blobs under<br />the configured WSL-visible<br />blob root, with<br />purge/rehydrate semantics<br />that preserve media refs,<br />hashes, status reasons, and<br />provenance when bytes are<br />absent or purged.</div>")]
-          style 112 fill:#2f95c8,stroke:#20688c,color:#ffffff
+          109[("<div style='font-weight: bold'>Clean Text Blob Store</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Filesystem store for snapshot<br />text blobs under the<br />configured WSL-visible blob<br />root.</div>")]
+          style 109 fill:#2f95c8,stroke:#20688c,color:#ffffff
+          111[("<div style='font-weight: bold'>Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded and disposable<br />filesystem cache for stored<br />image/video/audio blobs under<br />the configured WSL-visible<br />blob root, with<br />purge/rehydrate semantics<br />that preserve media refs,<br />hashes, status reasons, and<br />provenance when bytes are<br />absent or purged.</div>")]
+          style 111 fill:#2f95c8,stroke:#20688c,color:#ffffff
         end
 
         subgraph 94 ["systemd --user services"]
@@ -848,9 +848,9 @@ graph TB
 
     95-. "<div>Reads and writes metadata,<br />FTS, tasks, audit, and<br />receipts in</div><div style='font-size: 70%'>[sqlite3]</div>" .->103
     98-. "<div>Leases and updates media<br />tasks in</div><div style='font-size: 70%'>[sqlite3]</div>" .->103
-    95-. "<div>Reads and writes text<br />snapshots in</div><div style='font-size: 70%'>[Filesystem]</div>" .->110
-    95-. "<div>Stores, serves, purges, and<br />rehydrates media blobs in</div><div style='font-size: 70%'>[Filesystem]</div>" .->112
-    98-. "<div>Writes fetched media blobs to</div><div style='font-size: 70%'>[Filesystem]</div>" .->112
+    95-. "<div>Reads and writes text<br />snapshots in</div><div style='font-size: 70%'>[Filesystem]</div>" .->109
+    95-. "<div>Stores, serves, purges, and<br />rehydrates media blobs in</div><div style='font-size: 70%'>[Filesystem]</div>" .->111
+    98-. "<div>Writes fetched media blobs to</div><div style='font-size: 70%'>[Filesystem]</div>" .->111
     88-. "<div>Posts /capture,<br />/visit-events, media<br />metadata, and raw blob<br />uploads to</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</div>" .->95
     91-. "<div>Calls authenticated read,<br />admin, media, and forget APIs<br />on</div><div style='font-size: 70%'>[HTTP/JSON]</div>" .->95
 
@@ -903,15 +903,15 @@ graph LR
         style 5 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
         12["<div style='font-weight: bold'>Popup and Options UI</div><div style='font-size: 70%; margin-top: 0px'>[Component: HTML/JavaScript]</div><div style='font-size: 80%; margin-top:10px'>Lets the operator view<br />status, pause/resume capture,<br />select policy mode, and<br />trigger local controls from<br />the extension.</div>"]
-        style 12 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 12 fill:#85bbf0,stroke:#1168bd,color:#000000
         6["<div style='font-weight: bold'>Manifest and Permission Envelope</div><div style='font-size: 70%; margin-top: 0px'>[Component: manifest.json]</div><div style='font-size: 80%; margin-top:10px'>Declares MV3 permissions,<br />host permissions, service<br />worker, popup, and options<br />entrypoints.</div>"]
-        style 6 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 6 fill:#85bbf0,stroke:#1168bd,color:#000000
         7["<div style='font-weight: bold'>Extractor</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript]</div><div style='font-size: 80%; margin-top:10px'>Traverses visible DOM text<br />and discovers image/video<br />references while applying the<br />selected policy mode.</div>"]
-        style 7 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 7 fill:#85bbf0,stroke:#1168bd,color:#000000
         8["<div style='font-weight: bold'>Content Script</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript content script]</div><div style='font-size: 80%; margin-top:10px'>Schedules initial, delayed,<br />and SPA captures; tracks<br />scroll; sends capture and<br />inline blob upload messages<br />to the service worker.</div>"]
-        style 8 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 8 fill:#85bbf0,stroke:#1168bd,color:#000000
         9["<div style='font-weight: bold'>Service Worker</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript MV3 service worker]</div><div style='font-size: 80%; margin-top:10px'>Owns daemon transport, bearer<br />token use, capture and visit<br />queues, lifecycle state,<br />media queue draining, and CDP<br />recorder orchestration.</div>"]
-        style 9 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 9 fill:#85bbf0,stroke:#1168bd,color:#000000
       end
 
       13[("<div style='font-weight: bold'>Extension Browser Storage</div><div style='font-size: 70%; margin-top: 0px'>[Container: chrome.storage.local + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Browser-side storage for<br />capture and visit queues in<br />chrome.storage.local plus<br />durable media tasks and<br />fetched blobs in IndexedDB.</div>")]
@@ -976,11 +976,11 @@ graph TB
         style 5 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
         10["<div style='font-weight: bold'>Browser Media Queue Adapter</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Persists media tasks and<br />fetched blobs in IndexedDB so<br />browser-side media<br />fetch/upload can survive MV3<br />worker suspension.</div>"]
-        style 10 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 10 fill:#85bbf0,stroke:#1168bd,color:#000000
         11["<div style='font-weight: bold'>CDP Recorder</div><div style='font-size: 70%; margin-top: 0px'>[Component: Chrome DevTools Protocol]</div><div style='font-size: 80%; margin-top:10px'>Uses chrome.debugger on<br />configured X/Twitter tabs to<br />capture video.twimg.com HLS<br />manifests and media segments<br />before they become opaque<br />blob player URLs.</div>"]
-        style 11 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 11 fill:#85bbf0,stroke:#1168bd,color:#000000
         9["<div style='font-weight: bold'>Service Worker</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript MV3 service worker]</div><div style='font-size: 80%; margin-top:10px'>Owns daemon transport, bearer<br />token use, capture and visit<br />queues, lifecycle state,<br />media queue draining, and CDP<br />recorder orchestration.</div>"]
-        style 9 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 9 fill:#85bbf0,stroke:#1168bd,color:#000000
       end
 
       13[("<div style='font-weight: bold'>Extension Browser Storage</div><div style='font-size: 70%; margin-top: 0px'>[Container: chrome.storage.local + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Browser-side storage for<br />capture and visit queues in<br />chrome.storage.local plus<br />durable media tasks and<br />fetched blobs in IndexedDB.</div>")]

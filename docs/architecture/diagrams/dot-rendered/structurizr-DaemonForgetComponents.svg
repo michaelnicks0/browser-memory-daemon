@@ -25,7 +25,7 @@
 <!-- 15 -->
 <g id="15" class="node">
 <title>15</title>
-<polygon fill="#85bbf0" stroke="#5d82a8" points="453,-957.5 58,-957.5 58,-726.5 453,-726.5 453,-957.5"/>
+<polygon fill="#85bbf0" stroke="#1168bd" points="453,-957.5 58,-957.5 58,-726.5 453,-726.5 453,-957.5"/>
 <text text-anchor="start" x="87" y="-909.3" font-family="Arial" font-size="34.00" fill="#000000">HTTP Request Router</text>
 <text text-anchor="start" x="119" y="-887.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python http.server]</text>
 <text text-anchor="start" x="90" y="-850.3" font-family="Arial" font-size="24.00" fill="#000000">Routes loopback API requests,</text>
@@ -37,7 +37,7 @@
 <!-- 22 -->
 <g id="22" class="node">
 <title>22</title>
-<polygon fill="#85bbf0" stroke="#5d82a8" points="1185,-957.5 806,-957.5 806,-726.5 1185,-726.5 1185,-957.5"/>
+<polygon fill="#85bbf0" stroke="#1168bd" points="1185,-957.5 806,-957.5 806,-726.5 1185,-726.5 1185,-957.5"/>
 <text text-anchor="start" x="881" y="-909.3" font-family="Arial" font-size="34.00" fill="#000000">Forget Pipeline</text>
 <text text-anchor="start" x="867.5" y="-887.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python + sqlite3]</text>
 <text text-anchor="start" x="840.5" y="-850.3" font-family="Arial" font-size="24.00" fill="#000000">Deletes URL/domain&#45;scoped</text>

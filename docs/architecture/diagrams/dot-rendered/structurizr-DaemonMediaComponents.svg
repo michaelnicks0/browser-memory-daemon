@@ -25,7 +25,7 @@
 <!-- 15 -->
 <g id="15" class="node">
 <title>15</title>
-<polygon fill="#85bbf0" stroke="#5d82a8" points="453,-783.5 58,-783.5 58,-552.5 453,-552.5 453,-783.5"/>
+<polygon fill="#85bbf0" stroke="#1168bd" points="453,-783.5 58,-783.5 58,-552.5 453,-552.5 453,-783.5"/>
 <text text-anchor="start" x="87" y="-735.3" font-family="Arial" font-size="34.00" fill="#000000">HTTP Request Router</text>
 <text text-anchor="start" x="119" y="-713.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python http.server]</text>
 <text text-anchor="start" x="90" y="-676.3" font-family="Arial" font-size="24.00" fill="#000000">Routes loopback API requests,</text>
@@ -37,7 +37,7 @@
 <!-- 20 -->
 <g id="20" class="node">
 <title>20</title>
-<polygon fill="#85bbf0" stroke="#5d82a8" points="1231,-824.5 810,-824.5 810,-511.5 1231,-511.5 1231,-824.5"/>
+<polygon fill="#85bbf0" stroke="#1168bd" points="1231,-824.5 810,-824.5 810,-511.5 1231,-511.5 1231,-824.5"/>
 <text text-anchor="start" x="917" y="-776.3" font-family="Arial" font-size="34.00" fill="#000000">Media Artifact</text>
 <text text-anchor="start" x="953.5" y="-742.3" font-family="Arial" font-size="34.00" fill="#000000">Manager</text>
 <text text-anchor="start" x="839" y="-720.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python + sqlite3 + filesystem]</text>

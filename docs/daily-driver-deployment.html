@@ -192,8 +192,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td><code>${BMD_BLOB_ROOT}/media/</code></td>
 </tr>
 <tr>
-<td>Audit log</td>
-<td><code>~/.local/state/browser-memory-daemon/audit.jsonl</code></td>
+<td>Durable audit events</td>
+<td>SQLite <code>audit_events</code> table; no <code>audit.jsonl</code> writer exists. <code>BMD_AUDIT_LOG</code> is a reserved/unused compatibility field.</td>
 </tr>
 </tbody>
 </table>
@@ -228,7 +228,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <span style="color: #F8F8F2">  BMD_POLICY_MODE</span><span style="color: #FF4689">=</span>all<span style="color: #F8F8F2"> </span>./scripts/install-daily-driver.sh
 </code></pre></div>
 
-<p><code>BMD_BLOB_ROOT</code> affects only clean-text/media blob files. The SQLite DB, WAL/SHM sidecars, token/env files, audit state, and systemd units remain under WSL XDG paths.</p>
+<p><code>BMD_BLOB_ROOT</code> affects only clean-text/media blob files. The SQLite DB, WAL/SHM sidecars, SQLite audit events, token/env files, and systemd units remain under WSL XDG paths. <code>BMD_RAW_HTML_ENABLED</code> and <code>BMD_AUDIT_LOG</code> are currently parsed compatibility fields only: the daemon does not persist raw HTML or write an <code>audit.jsonl</code> side log.</p>
 <p>The mount only needs to be a normal WSL-visible filesystem path. Prefer NFS for simple kernel-mounted NAS storage when it works in the local WSL/network boundary; SSHFS is an acceptable fallback for blob payloads because SQLite/WAL stays local. <code>BMD_REQUIRE_BLOB_ROOT_MOUNT=1</code> makes the installer and daemon fail before writing blobs if the configured root no longer has a non-root mounted ancestor; leave it unset or <code>0</code> only when the blob root is intentionally local WSL storage.</p>
 <p>For an existing install, migrate DB-referenced blob paths after copying/writing to the new root:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>systemctl<span style="color: #F8F8F2"> </span>--user<span style="color: #F8F8F2"> </span>stop<span style="color: #F8F8F2"> </span>browser-memory-media-worker.service<span style="color: #F8F8F2"> </span>browser-memory-daemon.service

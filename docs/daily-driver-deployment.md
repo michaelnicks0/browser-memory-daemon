@@ -35,7 +35,7 @@ The daemon is persistent in WSL. Chrome still requires **Load unpacked** / **Rel
 | Blob root | `${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}` |
 | Clean-text blobs | `${BMD_BLOB_ROOT}/clean-text/` |
 | Media blobs | `${BMD_BLOB_ROOT}/media/` |
-| Audit log | `~/.local/state/browser-memory-daemon/audit.jsonl` |
+| Durable audit events | SQLite `audit_events` table; no `audit.jsonl` writer exists. `BMD_AUDIT_LOG` is a reserved/unused compatibility field. |
 
 ---
 
@@ -77,7 +77,7 @@ BMD_BLOB_ROOT=/mnt/nas/browser-memory-daemon/blobs \
   BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
 ```
 
-`BMD_BLOB_ROOT` affects only clean-text/media blob files. The SQLite DB, WAL/SHM sidecars, token/env files, audit state, and systemd units remain under WSL XDG paths.
+`BMD_BLOB_ROOT` affects only clean-text/media blob files. The SQLite DB, WAL/SHM sidecars, SQLite audit events, token/env files, and systemd units remain under WSL XDG paths. `BMD_RAW_HTML_ENABLED` and `BMD_AUDIT_LOG` are currently parsed compatibility fields only: the daemon does not persist raw HTML or write an `audit.jsonl` side log.
 
 The mount only needs to be a normal WSL-visible filesystem path. Prefer NFS for simple kernel-mounted NAS storage when it works in the local WSL/network boundary; SSHFS is an acceptable fallback for blob payloads because SQLite/WAL stays local. `BMD_REQUIRE_BLOB_ROOT_MOUNT=1` makes the installer and daemon fail before writing blobs if the configured root no longer has a non-root mounted ancestor; leave it unset or `0` only when the blob root is intentionally local WSL storage.
 

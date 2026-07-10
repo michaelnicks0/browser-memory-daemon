@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Readme — browser-memory-daemon</title>
+<title>0027-Use-Canonical-Semantic-Requirement-Catalog — browser-memory-daemon</title>
 <style>
 :root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
@@ -120,212 +120,79 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <body>
 <div class="wrap">
   <div class="docbar">
-    <a class="home" href="../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
-    <span class="crumb">/ <b>docs/README.md</b></span>
+    <a class="home" href="../../../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
+    <span class="crumb">/ <b>docs/architecture/adr/0027-use-canonical-semantic-requirement-catalog.md</b></span>
   </div>
   <article class="md-body">
-<h1 id="browser-memory-daemon-docs-reading-path">Browser Memory Daemon Docs — Reading Path</h1>
-<blockquote>
-<p><strong>Audience:</strong> Operator and future agents maintaining the Windows Chrome → WSL browser-memory stack.
-<strong>Status:</strong> ✅ Publish-ready doc set with executive brief, user guide, generated HTML companions, architecture, diagrams, CLI/API, tests, deployment, and status pages.
-<strong>Data boundary:</strong> Live browser memory stays under WSL runtime paths, never in this repo.</p>
-</blockquote>
 <hr />
-<h2 id="start-here">Start here</h2>
-<table>
-<thead>
-<tr>
-<th>If you need to...</th>
-<th>Read</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Get the polished visual overview</td>
-<td><a href="../browser-memory-daemon-high-level-doc.html"><code>../browser-memory-daemon-high-level-doc.html</code></a></td>
-</tr>
-<tr>
-<td>Understand value, maturity, and risk posture quickly</td>
-<td><a href="EXECUTIVE_BRIEF.html"><code>EXECUTIVE_BRIEF.md</code></a></td>
-</tr>
-<tr>
-<td>Use the system day to day</td>
-<td><a href="USER_GUIDE.html"><code>USER_GUIDE.md</code></a></td>
-</tr>
-<tr>
-<td>Understand the architecture</td>
-<td><a href="ARCHITECTURE.html"><code>ARCHITECTURE.md</code></a>, <a href="architecture/c4-diagrams.html"><code>architecture/c4-diagrams.md</code></a></td>
-</tr>
-<tr>
-<td>Inspect canonical requirements and V-model evidence</td>
-<td><a href="../requirements/catalog.toml"><code>../requirements/catalog.toml</code></a>, <a href="test-plan.html"><code>test-plan.md</code></a>, <a href="TESTS.html"><code>TESTS.md</code></a></td>
-</tr>
-<tr>
-<td>Understand architecture/design decision history</td>
-<td><a href="architecture/adr/README.html"><code>architecture/adr/README.md</code></a></td>
-</tr>
-<tr>
-<td>See behavioral Mermaid flows/diagrams</td>
-<td><a href="DIAGRAMS.html"><code>DIAGRAMS.md</code></a></td>
-</tr>
-<tr>
-<td>Call or extend the HTTP API</td>
-<td><a href="api.html"><code>api.md</code></a></td>
-</tr>
-<tr>
-<td>Understand CLI commands and flags</td>
-<td><a href="CLI_UX_CONTRACT.html"><code>CLI_UX_CONTRACT.md</code></a></td>
-</tr>
-<tr>
-<td>Install/refresh daily Chrome</td>
-<td><a href="daily-driver-deployment.html"><code>daily-driver-deployment.md</code></a></td>
-</tr>
-<tr>
-<td>Understand policy/security tradeoffs</td>
-<td><a href="security-model.html"><code>security-model.md</code></a></td>
-</tr>
-<tr>
-<td>Check what is implemented vs pending</td>
-<td><a href="STATUS.html"><code>STATUS.md</code></a></td>
-</tr>
-<tr>
-<td>Model storage growth</td>
-<td><a href="storage-growth-model.html"><code>storage-growth-model.md</code></a></td>
-</tr>
-<tr>
-<td>Understand retention, compaction, export, and backup posture</td>
-<td><a href="retention-compaction-backup.html"><code>retention-compaction-backup.md</code></a></td>
-</tr>
-<tr>
-<td>Review the current blob-root migration helper and its safety limits</td>
-<td><a href="blob-root-migration.html"><code>blob-root-migration.md</code></a></td>
-</tr>
-<tr>
-<td>Understand durable lazy media sidecars</td>
-<td><a href="ARCHITECTURE.html#durable-media-sidecar-architecture"><code>ARCHITECTURE.md</code></a>, <a href="media-artifacts.html"><code>media-artifacts.md</code></a></td>
-</tr>
-<tr>
-<td>Run verification gates</td>
-<td><a href="TESTS.html"><code>TESTS.md</code></a>, <a href="test-plan.html"><code>test-plan.md</code></a></td>
-</tr>
-<tr>
-<td>Review Phase 0 gate evidence</td>
-<td><a href="verification/phase-0-gate-2026-07-10.html"><code>verification/phase-0-gate-2026-07-10.md</code></a></td>
-</tr>
-</tbody>
-</table>
+<p>id: ADR-0027
+status: accepted
+date: 2026-07-10
+decision_date: 2026-07-10
+decider: Operator
+scope: repo
+supersedes:
+  - ADR-0020
+superseded_by: []
+related:
+  - requirements/catalog.toml
+  - scripts/generate_test_inventory.py
+  - docs/ARCHITECTURE.md
+  - docs/test-plan.md
+  - docs/TESTS.md
+  - docs/architecture/workspace.dsl</p>
 <hr />
-<h2 id="ownership-map">Ownership map</h2>
-<table>
-<thead>
-<tr>
-<th>Area</th>
-<th>Canonical files</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Publish-ready front door</td>
-<td><code>browser-memory-daemon-high-level-doc.html</code>, <code>scripts/showcase.spec.json</code>, <code>scripts/generate_showcase.py</code></td>
-</tr>
-<tr>
-<td>Markdown-to-HTML companions</td>
-<td><code>scripts/render_docs.py</code>, <code>scripts/mermaid-theme.json</code>, generated <code>*.html</code> siblings</td>
-</tr>
-<tr>
-<td>Generated test inventory</td>
-<td><code>scripts/generate_test_inventory.py</code>, <code>docs/TESTS.md</code> generated regions</td>
-</tr>
-<tr>
-<td>Daemon runtime/config</td>
-<td><code>daemon/src/browser_memory_daemon/config.py</code>, <code>scripts/install-daily-driver.sh</code></td>
-</tr>
-<tr>
-<td>HTTP API and UI serving</td>
-<td><code>daemon/src/browser_memory_daemon/app.py</code>, <code>ui/</code></td>
-</tr>
-<tr>
-<td>Ingest/storage/search/forget</td>
-<td><code>ingest.py</code>, <code>schema.sql</code>, <code>search.py</code>, <code>forget.py</code></td>
-</tr>
-<tr>
-<td>Capture policy modes</td>
-<td><code>policy.py</code>, <code>policy_store.py</code>, <code>extension/src/extractor.js</code>, <code>service_worker.js</code></td>
-</tr>
-<tr>
-<td>Media sidecars</td>
-<td><code>daemon/src/browser_memory_daemon/media.py</code>, <code>media_worker.py</code>, <code>extension/src/media_queue.js</code>, <code>service_worker.js</code></td>
-</tr>
-<tr>
-<td>Chrome extension extraction/bridge</td>
-<td><code>extension/src/extractor.js</code>, <code>content_script.js</code>, <code>service_worker.js</code></td>
-</tr>
-<tr>
-<td>Real browser verification</td>
-<td><code>scripts/real-chrome-e2e.mjs</code>, <code>scripts/run-real-chrome-e2e.sh</code></td>
-</tr>
-<tr>
-<td>Daily-driver install</td>
-<td><code>scripts/install-daily-driver.sh</code>, Chrome Load-unpacked UI</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="current-policy-posture">Current policy posture</h2>
-<p>The daily-driver default is now:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>policy_mode = all
-</code></pre></div>
-
-<p><code>all</code> is intentionally the least restrictive mode: it disables built-in URL/incognito/private-host filtering and redaction, while still applying explicit local block rules. Other modes remain available:</p>
-<table>
-<thead>
-<tr>
-<th>Mode</th>
-<th>Intended use</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>all</code></td>
-<td>Maximum personal recall; no daemon redaction or built-in URL policy filtering; explicit local block rules still apply; DOM extraction still skips hidden/form/editable/script/style/no-script text.</td>
-</tr>
-<tr>
-<td><code>recall</code></td>
-<td>Broad capture with browser/internal scheme and incognito blocks plus redaction.</td>
-</tr>
-<tr>
-<td><code>balanced</code></td>
-<td>Broad capture with known high-risk domain/query/private-host blocks plus redaction.</td>
-</tr>
-<tr>
-<td><code>strict</code></td>
-<td>Legacy broad privacy filtering plus redaction.</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="verification-quickstart">Verification quickstart</h2>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>venv<span style="color: #F8F8F2"> </span>.venv
-.<span style="color: #F8F8F2"> </span>.venv/bin/activate
-python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pip<span style="color: #F8F8F2"> </span>install<span style="color: #F8F8F2"> </span>-r<span style="color: #F8F8F2"> </span>requirements-dev.txt
-<span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-e2e.sh
-python<span style="color: #F8F8F2"> </span>scripts/generate_test_inventory.py<span style="color: #F8F8F2"> </span>--check
-python<span style="color: #F8F8F2"> </span>scripts/generate_showcase.py<span style="color: #F8F8F2"> </span>--spec<span style="color: #F8F8F2"> </span>scripts/showcase.spec.json<span style="color: #F8F8F2"> </span>--check
-python<span style="color: #F8F8F2"> </span>scripts/render_docs.py<span style="color: #F8F8F2"> </span>--repo<span style="color: #F8F8F2"> </span>.<span style="color: #F8F8F2"> </span>--slug<span style="color: #F8F8F2"> </span>browser-memory-daemon<span style="color: #F8F8F2"> </span>--check
-python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pytest<span style="color: #F8F8F2"> </span>-q
-<span style="color: #F8F8F2">cd </span>extension<span style="color: #F8F8F2"> </span><span style="color: #FF4689">&amp;&amp;</span><span style="color: #F8F8F2"> </span>npm<span style="color: #F8F8F2"> test </span><span style="color: #FF4689">&amp;&amp;</span><span style="color: #F8F8F2"> </span>npm<span style="color: #F8F8F2"> </span>run<span style="color: #F8F8F2"> </span>build
-<span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
-./scripts/secret-scan.sh
-git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span>--check<span style="color: #F8F8F2"> </span>--<span style="color: #F8F8F2"> </span>.
-</code></pre></div>
-
-<p>For daily-driver refresh after extension code changes:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_POLICY_MODE</span><span style="color: #FF4689">=</span>all<span style="color: #F8F8F2"> </span>./scripts/install-daily-driver.sh
-<span style="color: #959077"># Then in Chrome: chrome://extensions → Browser Memory Daemon → Reload</span>
-</code></pre></div>
+<h1 id="adr-0027-use-a-canonical-semantic-requirement-catalog">ADR-0027: Use a canonical semantic requirement catalog</h1>
+<h2 id="context">Context</h2>
+<p>ADR-0020 established a useful static check, but requirement semantics remained duplicated in <code>docs/ARCHITECTURE.md</code> and <code>docs/test-plan.md</code>. The two documents assigned conflicting meanings to <code>REQ-009</code> through <code>REQ-017</code>, while the gate compared only row presence and path-like Markdown references. It could therefore pass while the same stable ID meant different things.</p>
+<p>The hardening program also introduced plan-local <code>HRD-*</code> requirements. Those identifiers need explicit mappings to stable repository requirements without silently changing existing architecture meanings. Volatile test counts and requirement tables should be generated rather than copied between documents.</p>
+<h2 id="decision">Decision</h2>
+<ol>
+<li><code>requirements/catalog.toml</code> is the sole source of normative requirement semantics.</li>
+<li>Each canonical requirement records:
+   - stable <code>REQ-NNN</code> ID and explicit revision;
+   - normative statement, rationale, owner component, and status;
+   - implementation paths;
+   - unit, integration, system, operational, and validation evidence;
+   - plan-local aliases where applicable.</li>
+<li>Pre-catalog conflicting IDs are retained in source-qualified <code>legacy_aliases</code> records with explicit alias, split, or superseded dispositions.</li>
+<li><code>scripts/generate_test_inventory.py</code> reads the catalog with Python 3.11 <code>tomllib</code> and fails on:
+   - duplicate stable IDs or aliases;
+   - malformed records;
+   - absent implementation paths;
+   - unresolved evidence paths or test node IDs;
+   - active requirements without validation evidence;
+   - requirement removal without catalog disposition;
+   - normative statement changes that do not increment the requirement revision relative to <code>HEAD</code>.</li>
+<li>The same generator owns volatile requirement tables and static test counts in <code>docs/ARCHITECTURE.md</code>, <code>docs/test-plan.md</code>, <code>docs/TESTS.md</code>, <code>docs/STATUS.md</code>, and <code>docs/EXECUTIVE_BRIEF.md</code>.</li>
+<li><code>docs/architecture/workspace.dsl</code> models current implemented components with the <code>Current</code> tag. Planned target components remain catalog requirements until modeled explicitly with the <code>Target</code> tag.</li>
+</ol>
+<h2 id="consequences">Consequences</h2>
+<h3 id="positive">Positive</h3>
+<ul>
+<li>Every stable ID has one normative meaning.</li>
+<li>Plan-local hardening requirements map explicitly into repository history.</li>
+<li>Broken implementation/evidence paths and stale test node IDs fail deterministically.</li>
+<li>Requirement and test-count drift becomes generated-artifact drift instead of editorial disagreement.</li>
+<li>Current C4 topology is no longer confused with planned target boundaries.</li>
+</ul>
+<h3 id="trade-offs">Trade-offs</h3>
+<ul>
+<li>Requirement changes now require catalog edits, revision discipline, and regeneration of multiple Markdown/HTML artifacts.</li>
+<li>The revision guard depends on Git <code>HEAD</code> when a prior catalog exists; outside a Git checkout, structural validation still runs but historical comparison is unavailable.</li>
+<li>Planned requirements may legitimately lack implementation and validation evidence until their phase closes, but they must remain visibly <code>planned</code>.</li>
+</ul>
+<h2 id="verification">Verification</h2>
+<ul>
+<li><code>python3.11 -m pytest -q daemon/tests/e2e/test_generate_test_inventory.py</code></li>
+<li><code>python3.11 scripts/generate_test_inventory.py --check</code></li>
+<li><code>python3.11 scripts/render_docs.py --repo . --slug browser-memory-daemon --check</code></li>
+<li>Structurizr validation and full C4 artifact regeneration from <code>docs/architecture/workspace.dsl</code></li>
+<li><code>git diff --check -- .</code></li>
+</ul>
   </article>
   <div class="md-footer">
-    Rendered from <code>docs/README.md</code> — the Markdown file is the canonical,
+    Rendered from <code>docs/architecture/adr/0027-use-canonical-semantic-requirement-catalog.md</code> — the Markdown file is the canonical,
     version-controlled source. This HTML is generated (regenerate with
     <code>scripts/render_docs.py</code>); do not hand-edit.
   </div>

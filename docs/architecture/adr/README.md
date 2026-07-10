@@ -27,13 +27,14 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0017](0017-add-read-model-composite-indexes.md) | accepted | Add composite SQLite indexes for measured read-model ordering paths. |
 | [ADR-0018](0018-enforce-daily-driver-headroom-and-start-budgets.md) | accepted | Enforce daily-driver headroom and service-start failure budgets in local health checks. |
 | [ADR-0019](0019-use-durable-text-retention-with-wal-aware-local-backup.md) | accepted | Use durable text retention with WAL-aware local backup and disposable media cache. |
-| [ADR-0020](0020-enforce-static-requirement-traceability-gate.md) | accepted | Enforce static requirement traceability in the generated test inventory gate. |
+| [ADR-0020](0020-enforce-static-requirement-traceability-gate.md) | superseded by ADR-0027 | Enforce static requirement traceability in the generated test inventory gate. |
 | [ADR-0021](0021-use-configurable-nas-blob-root-with-local-sqlite.md) | accepted | Use a configurable NAS-capable blob root while keeping SQLite/WAL local. |
 | [ADR-0022](0022-use-fast-doctor-and-media-queue-health-telemetry.md) | accepted | Use fast doctor and media-queue health telemetry. |
 | [ADR-0023](0023-guard-daemon-public-media-egress.md) | accepted | Guard daemon-public media egress. |
 | [ADR-0024](0024-contain-blob-and-media-artifact-paths.md) | accepted | Contain blob and media artifact paths. |
 | [ADR-0025](0025-literal-policy-aware-forget-selectors.md) | accepted | Use literal and policy-aware forget selectors. |
 | [ADR-0026](0026-harden-loopback-ui-and-required-blob-mounts.md) | accepted | Harden loopback UI and required blob mounts. |
+| [ADR-0027](0027-use-canonical-semantic-requirement-catalog.md) | accepted | Use one machine-readable semantic requirement catalog with explicit legacy aliases and generated V-model traceability. |
 
 ## Backfilled decision history
 

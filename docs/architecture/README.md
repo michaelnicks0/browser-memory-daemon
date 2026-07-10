@@ -43,6 +43,8 @@ Windows Chrome MV3 extension
 
 The system boundary is **Browser Memory Daemon**, including the owned Chrome extension, WSL daemon, WSL media worker, local UI, CLI, database, and blob stores. Windows Chrome and web/media origins are modeled as external systems.
 
+Every component in `workspace.dsl` carries the `Current` tag. Planned target-state boundaries such as versioned migrations, capture observations, BlobStore, transactional capture/lifecycle outboxes, and the thin HTTP application layer remain `planned` requirements in [`../../requirements/catalog.toml`](../../requirements/catalog.toml) and are not presented as implemented C4 elements. When a target boundary is added for design review before implementation, it must carry the `Target` tag and remain visually distinct until cutover evidence exists.
+
 ## Diagram ownership
 
 - `workspace.dsl` is the canonical C4 source for systems, containers, components, deployment, and major scenario flows.
@@ -138,7 +140,7 @@ Primary source evidence used for this model:
 ## Assumptions and TBDs
 
 - Deployment view is limited to the documented **Daily-driver local** workstation topology. No separate staging/production topology is modeled.
-- Non-runtime deployment artifacts such as the Windows unpacked extension copy, protected token/env files, and audit log are modeled in the DSL but excluded from the rendered deployment view to keep the runtime topology legible. The WSL CLI and in-browser extension storage are also excluded from the deployment render because their relationships are covered in C2/C3 views and made the deployment topology unreadable.
+- Non-runtime deployment artifacts such as the Windows unpacked extension copy and protected token/env files are modeled in the DSL but excluded from the rendered deployment view to keep the runtime topology legible. Durable audit events live in SQLite; there is no separate `audit.jsonl` deployment node. The WSL CLI and in-browser extension storage are also excluded from the deployment render because their relationships are covered in C2/C3 views and made the deployment topology unreadable.
 - Semantic/vector search, MCP/Hermes integration, native messaging transport, encrypted backup/restore, and multi-source importers are explicitly pending and are not modeled as current runtime containers.
 - Chrome extension manual Load unpacked/Reload is an operational step, not a runtime container.
 - Media blobs are modeled as a bounded disposable cache; text/FTS/media refs remain authoritative.

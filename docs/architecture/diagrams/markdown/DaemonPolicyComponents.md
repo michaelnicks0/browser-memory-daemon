@@ -27,11 +27,11 @@ graph LR
         style 14 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
         15["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server]</div><div style='font-size: 80%; margin-top:10px'>Routes loopback API requests,<br />serves UI assets, enforces<br />bearer auth for memory/admin<br />APIs, and applies CORS for<br />allowed origins.</div>"]
-        style 15 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 15 fill:#85bbf0,stroke:#1168bd,color:#000000
         16["<div style='font-weight: bold'>Policy Engine</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Evaluates<br />all/recall/balanced/strict<br />capture mode decisions and<br />redacts URL/title/body text<br />outside all mode.</div>"]
-        style 16 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 16 fill:#85bbf0,stroke:#1168bd,color:#000000
         17["<div style='font-weight: bold'>Policy Store</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + SQLite]</div><div style='font-size: 80%; margin-top:10px'>Persists and evaluates<br />explicit local block-domain<br />and URL-prefix rules for<br />every policy mode.</div>"]
-        style 17 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 17 fill:#85bbf0,stroke:#1168bd,color:#000000
       end
 
     end

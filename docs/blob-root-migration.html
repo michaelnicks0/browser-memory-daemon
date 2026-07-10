@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Readme — browser-memory-daemon</title>
+<title>Blob-Root-Migration — browser-memory-daemon</title>
 <style>
 :root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
@@ -121,211 +121,55 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <div class="wrap">
   <div class="docbar">
     <a class="home" href="../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
-    <span class="crumb">/ <b>docs/README.md</b></span>
+    <span class="crumb">/ <b>docs/blob-root-migration.md</b></span>
   </div>
   <article class="md-body">
-<h1 id="browser-memory-daemon-docs-reading-path">Browser Memory Daemon Docs — Reading Path</h1>
+<h1 id="blob-root-migration">Blob-Root Migration</h1>
 <blockquote>
-<p><strong>Audience:</strong> Operator and future agents maintaining the Windows Chrome → WSL browser-memory stack.
-<strong>Status:</strong> ✅ Publish-ready doc set with executive brief, user guide, generated HTML companions, architecture, diagrams, CLI/API, tests, deployment, and status pages.
-<strong>Data boundary:</strong> Live browser memory stays under WSL runtime paths, never in this repo.</p>
+<p><strong>Status:</strong> Current helper documented; live migration remains approval-gated.
+<strong>Authority:</strong> <code>daemon/src/browser_memory_daemon/blob_migration.py</code> and <code>blob-root migrate</code> in <code>cli.py</code>.
+<strong>Scope:</strong> Move DB-referenced clean-text and media blob files while keeping SQLite/WAL local.</p>
 </blockquote>
 <hr />
-<h2 id="start-here">Start here</h2>
-<table>
-<thead>
-<tr>
-<th>If you need to...</th>
-<th>Read</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Get the polished visual overview</td>
-<td><a href="../browser-memory-daemon-high-level-doc.html"><code>../browser-memory-daemon-high-level-doc.html</code></a></td>
-</tr>
-<tr>
-<td>Understand value, maturity, and risk posture quickly</td>
-<td><a href="EXECUTIVE_BRIEF.html"><code>EXECUTIVE_BRIEF.md</code></a></td>
-</tr>
-<tr>
-<td>Use the system day to day</td>
-<td><a href="USER_GUIDE.html"><code>USER_GUIDE.md</code></a></td>
-</tr>
-<tr>
-<td>Understand the architecture</td>
-<td><a href="ARCHITECTURE.html"><code>ARCHITECTURE.md</code></a>, <a href="architecture/c4-diagrams.html"><code>architecture/c4-diagrams.md</code></a></td>
-</tr>
-<tr>
-<td>Inspect canonical requirements and V-model evidence</td>
-<td><a href="../requirements/catalog.toml"><code>../requirements/catalog.toml</code></a>, <a href="test-plan.html"><code>test-plan.md</code></a>, <a href="TESTS.html"><code>TESTS.md</code></a></td>
-</tr>
-<tr>
-<td>Understand architecture/design decision history</td>
-<td><a href="architecture/adr/README.html"><code>architecture/adr/README.md</code></a></td>
-</tr>
-<tr>
-<td>See behavioral Mermaid flows/diagrams</td>
-<td><a href="DIAGRAMS.html"><code>DIAGRAMS.md</code></a></td>
-</tr>
-<tr>
-<td>Call or extend the HTTP API</td>
-<td><a href="api.html"><code>api.md</code></a></td>
-</tr>
-<tr>
-<td>Understand CLI commands and flags</td>
-<td><a href="CLI_UX_CONTRACT.html"><code>CLI_UX_CONTRACT.md</code></a></td>
-</tr>
-<tr>
-<td>Install/refresh daily Chrome</td>
-<td><a href="daily-driver-deployment.html"><code>daily-driver-deployment.md</code></a></td>
-</tr>
-<tr>
-<td>Understand policy/security tradeoffs</td>
-<td><a href="security-model.html"><code>security-model.md</code></a></td>
-</tr>
-<tr>
-<td>Check what is implemented vs pending</td>
-<td><a href="STATUS.html"><code>STATUS.md</code></a></td>
-</tr>
-<tr>
-<td>Model storage growth</td>
-<td><a href="storage-growth-model.html"><code>storage-growth-model.md</code></a></td>
-</tr>
-<tr>
-<td>Understand retention, compaction, export, and backup posture</td>
-<td><a href="retention-compaction-backup.html"><code>retention-compaction-backup.md</code></a></td>
-</tr>
-<tr>
-<td>Review the current blob-root migration helper and its safety limits</td>
-<td><a href="blob-root-migration.html"><code>blob-root-migration.md</code></a></td>
-</tr>
-<tr>
-<td>Understand durable lazy media sidecars</td>
-<td><a href="ARCHITECTURE.html#durable-media-sidecar-architecture"><code>ARCHITECTURE.md</code></a>, <a href="media-artifacts.html"><code>media-artifacts.md</code></a></td>
-</tr>
-<tr>
-<td>Run verification gates</td>
-<td><a href="TESTS.html"><code>TESTS.md</code></a>, <a href="test-plan.html"><code>test-plan.md</code></a></td>
-</tr>
-<tr>
-<td>Review Phase 0 gate evidence</td>
-<td><a href="verification/phase-0-gate-2026-07-10.html"><code>verification/phase-0-gate-2026-07-10.md</code></a></td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="ownership-map">Ownership map</h2>
-<table>
-<thead>
-<tr>
-<th>Area</th>
-<th>Canonical files</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Publish-ready front door</td>
-<td><code>browser-memory-daemon-high-level-doc.html</code>, <code>scripts/showcase.spec.json</code>, <code>scripts/generate_showcase.py</code></td>
-</tr>
-<tr>
-<td>Markdown-to-HTML companions</td>
-<td><code>scripts/render_docs.py</code>, <code>scripts/mermaid-theme.json</code>, generated <code>*.html</code> siblings</td>
-</tr>
-<tr>
-<td>Generated test inventory</td>
-<td><code>scripts/generate_test_inventory.py</code>, <code>docs/TESTS.md</code> generated regions</td>
-</tr>
-<tr>
-<td>Daemon runtime/config</td>
-<td><code>daemon/src/browser_memory_daemon/config.py</code>, <code>scripts/install-daily-driver.sh</code></td>
-</tr>
-<tr>
-<td>HTTP API and UI serving</td>
-<td><code>daemon/src/browser_memory_daemon/app.py</code>, <code>ui/</code></td>
-</tr>
-<tr>
-<td>Ingest/storage/search/forget</td>
-<td><code>ingest.py</code>, <code>schema.sql</code>, <code>search.py</code>, <code>forget.py</code></td>
-</tr>
-<tr>
-<td>Capture policy modes</td>
-<td><code>policy.py</code>, <code>policy_store.py</code>, <code>extension/src/extractor.js</code>, <code>service_worker.js</code></td>
-</tr>
-<tr>
-<td>Media sidecars</td>
-<td><code>daemon/src/browser_memory_daemon/media.py</code>, <code>media_worker.py</code>, <code>extension/src/media_queue.js</code>, <code>service_worker.js</code></td>
-</tr>
-<tr>
-<td>Chrome extension extraction/bridge</td>
-<td><code>extension/src/extractor.js</code>, <code>content_script.js</code>, <code>service_worker.js</code></td>
-</tr>
-<tr>
-<td>Real browser verification</td>
-<td><code>scripts/real-chrome-e2e.mjs</code>, <code>scripts/run-real-chrome-e2e.sh</code></td>
-</tr>
-<tr>
-<td>Daily-driver install</td>
-<td><code>scripts/install-daily-driver.sh</code>, Chrome Load-unpacked UI</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="current-policy-posture">Current policy posture</h2>
-<p>The daily-driver default is now:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>policy_mode = all
+<h2 id="current-contract">Current contract</h2>
+<p><code>blob-root migrate</code> plans relocation only for DB-referenced paths beneath the selected source root and under the recognized <code>clean-text/</code>, <code>raw-html/</code>, or <code>media/</code> subtrees. The configured <code>BMD_BLOB_ROOT</code> is the target. The command is a dry run unless <code>--execute</code> is supplied.</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">PYTHONPATH</span><span style="color: #FF4689">=</span>daemon/src<span style="color: #F8F8F2"> BMD_BLOB_ROOT</span><span style="color: #FF4689">=</span>/explicit/target/blobs<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span>blob-root<span style="color: #F8F8F2"> </span>migrate
 </code></pre></div>
 
-<p><code>all</code> is intentionally the least restrictive mode: it disables built-in URL/incognito/private-host filtering and redaction, while still applying explicit local block rules. Other modes remain available:</p>
-<table>
-<thead>
-<tr>
-<th>Mode</th>
-<th>Intended use</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>all</code></td>
-<td>Maximum personal recall; no daemon redaction or built-in URL policy filtering; explicit local block rules still apply; DOM extraction still skips hidden/form/editable/script/style/no-script text.</td>
-</tr>
-<tr>
-<td><code>recall</code></td>
-<td>Broad capture with browser/internal scheme and incognito blocks plus redaction.</td>
-</tr>
-<tr>
-<td><code>balanced</code></td>
-<td>Broad capture with known high-risk domain/query/private-host blocks plus redaction.</td>
-</tr>
-<tr>
-<td><code>strict</code></td>
-<td>Legacy broad privacy filtering plus redaction.</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="verification-quickstart">Verification quickstart</h2>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>venv<span style="color: #F8F8F2"> </span>.venv
-.<span style="color: #F8F8F2"> </span>.venv/bin/activate
-python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pip<span style="color: #F8F8F2"> </span>install<span style="color: #F8F8F2"> </span>-r<span style="color: #F8F8F2"> </span>requirements-dev.txt
-<span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-e2e.sh
-python<span style="color: #F8F8F2"> </span>scripts/generate_test_inventory.py<span style="color: #F8F8F2"> </span>--check
-python<span style="color: #F8F8F2"> </span>scripts/generate_showcase.py<span style="color: #F8F8F2"> </span>--spec<span style="color: #F8F8F2"> </span>scripts/showcase.spec.json<span style="color: #F8F8F2"> </span>--check
-python<span style="color: #F8F8F2"> </span>scripts/render_docs.py<span style="color: #F8F8F2"> </span>--repo<span style="color: #F8F8F2"> </span>.<span style="color: #F8F8F2"> </span>--slug<span style="color: #F8F8F2"> </span>browser-memory-daemon<span style="color: #F8F8F2"> </span>--check
-python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pytest<span style="color: #F8F8F2"> </span>-q
-<span style="color: #F8F8F2">cd </span>extension<span style="color: #F8F8F2"> </span><span style="color: #FF4689">&amp;&amp;</span><span style="color: #F8F8F2"> </span>npm<span style="color: #F8F8F2"> test </span><span style="color: #FF4689">&amp;&amp;</span><span style="color: #F8F8F2"> </span>npm<span style="color: #F8F8F2"> </span>run<span style="color: #F8F8F2"> </span>build
-<span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
-./scripts/secret-scan.sh
-git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span>--check<span style="color: #F8F8F2"> </span>--<span style="color: #F8F8F2"> </span>.
+<p>The summary reports planned, copied, already-present, missing-source, updated, source-removal, and error counts. Dry-run does not copy files, rewrite SQLite paths, or remove source bytes.</p>
+<h2 id="execute-boundary">Execute boundary</h2>
+<p>Repository verification must use temporary fixture roots only. A live DB migration, external mount mutation, or deletion of source bytes requires separate explicit operator approval.</p>
+<p>When approved for a real deployment, the minimum sequence is:</p>
+<ol>
+<li>stop capture and media-worker writes;</li>
+<li>create and verify a SQLite online backup;</li>
+<li>verify target mount availability, free space, and expected storage identity;</li>
+<li>run the command without <code>--execute</code> and review every count/path boundary;</li>
+<li>run with <code>--execute</code> but without <code>--remove-source</code>;</li>
+<li>verify DB integrity, FTS reads, snapshot detail, media reads, and service health against the target;</li>
+<li>retain the prior copy until an explicit later cleanup approval.</li>
+</ol>
+<h2 id="current-limitations">Current limitations</h2>
+<ul>
+<li>Existing target files are treated as present; this helper does not yet compare hashes or content.</li>
+<li>SQLite path updates occur after copy attempts, but the filesystem copies and DB transaction are not one crash-consistent transaction.</li>
+<li><code>--remove-source</code> unlinks after DB updates and is not tombstone/reconciliation-backed.</li>
+<li>The helper stores absolute paths; root-relative BlobStore locators arrive in the planned storage phase.</li>
+<li>It is not the versioned database migration kernel planned for Phase 1.2.</li>
+</ul>
+<p>These limitations are why the default remains dry-run and why <code>--remove-source</code> is a separate explicit flag.</p>
+<h2 id="hermetic-verification">Hermetic verification</h2>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span>/tmp/browser-memory-daemon-verify-venv/bin/python
+<span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2">$BMD_PYTHON</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pytest<span style="color: #F8F8F2"> </span>-q<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>daemon/tests/integration/test_ingest_search_forget.py<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>-k<span style="color: #F8F8F2"> </span>blob_root_migration
 </code></pre></div>
 
-<p>For daily-driver refresh after extension code changes:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_POLICY_MODE</span><span style="color: #FF4689">=</span>all<span style="color: #F8F8F2"> </span>./scripts/install-daily-driver.sh
-<span style="color: #959077"># Then in Chrome: chrome://extensions → Browser Memory Daemon → Reload</span>
-</code></pre></div>
+<p>The test uses temporary runtime/blob roots and does not touch the daily-driver database, user blob root, or NAS.</p>
   </article>
   <div class="md-footer">
-    Rendered from <code>docs/README.md</code> — the Markdown file is the canonical,
+    Rendered from <code>docs/blob-root-migration.md</code> — the Markdown file is the canonical,
     version-controlled source. This HTML is generated (regenerate with
     <code>scripts/render_docs.py</code>); do not hand-edit.
   </div>

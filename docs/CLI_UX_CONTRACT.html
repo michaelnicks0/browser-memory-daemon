@@ -138,6 +138,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">[</span>--port<span style="color: #F8F8F2"> </span>PORT<span style="color: #FF4689">]</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">[</span>--token<span style="color: #F8F8F2"> </span>TOKEN<span style="color: #FF4689">]</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">[</span>--runtime-root<span style="color: #F8F8F2"> </span>PATH<span style="color: #FF4689">]</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">[</span>--blob-root<span style="color: #F8F8F2"> </span>PATH<span style="color: #FF4689">]</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">[</span>--policy-mode<span style="color: #F8F8F2"> </span>all<span style="color: #F8F8F2">|</span>recall<span style="color: #F8F8F2">|</span>balanced<span style="color: #F8F8F2">|</span>strict<span style="color: #FF4689">]</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span>COMMAND<span style="color: #F8F8F2"> </span><span style="color: #FF4689">[</span>COMMAND_ARGS<span style="color: #FF4689">]</span>
 </code></pre></div>
@@ -171,6 +172,11 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td><code>--runtime-root</code> / <code>BMD_RUNTIME_ROOT</code></td>
 <td>XDG paths</td>
 <td>Tests/e2e use temp runtime roots.</td>
+</tr>
+<tr>
+<td><code>--blob-root</code> / <code>BMD_BLOB_ROOT</code></td>
+<td><code>&lt;runtime-root&gt;/blobs</code></td>
+<td>Overrides clean-text/media blob placement while SQLite/WAL remains local.</td>
 </tr>
 <tr>
 <td><code>--policy-mode</code> / <code>BMD_POLICY_MODE</code></td>
@@ -264,6 +270,11 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td><code>media-cache rehydrate [--domain DOMAIN] [--document-id ID] [--snapshot-id ID] [--limit N]</code></td>
 <td>Queue/refetch purged public media refs.</td>
 <td>Pretty JSON worker summary.</td>
+</tr>
+<tr>
+<td><code>blob-root migrate [--from-root PATH] [--execute] [--remove-source]</code></td>
+<td>Dry-run by default; copies DB-referenced clean-text/media blobs to the configured root and rewrites paths only with <code>--execute</code>.</td>
+<td>Pretty JSON migration summary. <code>--remove-source</code> remains an explicit post-copy action.</td>
 </tr>
 </tbody>
 </table>
@@ -361,6 +372,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <ul>
 <li>CLI output is currently JSON but not formally versioned.</li>
 <li><code>capture-fixture</code> exists for tests/smoke checks, not browser capture replacement.</li>
+<li><code>blob-root migrate</code> is the current repository migration helper; versioned schema <code>migrate --check/--execute</code> commands are planned but do not exist yet.</li>
 <li>Future CLI changes should update this contract and <code>daemon/tests/e2e/test_cli_admin.py</code> together.</li>
 </ul>
   </article>

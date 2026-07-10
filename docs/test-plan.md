@@ -1,39 +1,62 @@
 # Test Plan
 
 > **Audience:** maintainers and future agents.
-> **Scope:** requirement-to-test traceability for the current implementation.
+> **Scope:** requirement-to-test traceability for active implementation and explicitly planned hardening requirements.
 > **Default policy under test:** `all`, with explicit strict/balanced/recall coverage where needed.
 
 ---
 
 ## Current requirement coverage
 
-| Requirement | Test evidence |
-|---|---|
-| REQ-001 capture | `daemon/tests/e2e/test_http_api.py` synthetic capture; `scripts/run-real-chrome-e2e.sh` verifies Windows Chrome capture. |
-| REQ-002 WSL storage | tests use runtime roots outside repo; runtime paths ignored; doctor exposes runtime paths. |
-| REQ-003 service worker bridge | `extension/tests/unit/service_worker.test.js` covers service-worker queue/pause/token/rule resilience; real Chrome e2e verifies service-worker-owned injection/capture. |
-| REQ-004 auth + loopback | HTTP unauthorized tests; bind defaults in config; Windows PowerShell health checks. |
-| REQ-005 adjustable policy modes | `daemon/tests/unit/test_policy.py`; `extension/tests/unit/extractor.test.js`. |
-| REQ-006 all-mode no built-in URL filtering/redaction | daemon integration stores unredacted fixture secrets; extension unit tests verify built-in URL filters are off while hidden/form/editable/script/style/no-script DOM text is skipped; real Chrome e2e default expects banking/local fixtures searchable. |
-| REQ-006A explicit block rules | `daemon/tests/unit/test_policy_store.py`; `daemon/tests/e2e/test_admin_api.py::test_url_prefix_policy_rule_applies_in_all_mode_without_blocking_all_localhost`. |
-| REQ-007 non-all redaction | policy and ingest tests verify secrets absent in strict mode. |
-| REQ-008 FTS search | integration/e2e search tests. |
-| REQ-009 schema | DB initialized and table inventory checked by integration/e2e tests. |
-| REQ-010 dedupe/versioning | ingest tests verify repeat visits do not duplicate snapshots and changed content creates new snapshots. |
-| REQ-011 SPA/delayed capture | real Chrome e2e delayed `history.pushState` fixture. |
-| REQ-012 dwell/reading signals | lifecycle integration tests and real Chrome e2e tab-switch dwell/max-scroll checks. |
-| REQ-013 forget/delete | integration/e2e forget tests. |
-| REQ-014 cited results | `/search`, `/documents/{id}`, `/snapshots/{id}` expose source metadata, snapshot IDs, snippets/text. |
-| REQ-015 extension controls | popup/options support pause, health, dashboard, block/forget domain, policy mode. |
-| REQ-015A daily-driver install consistency | `daemon/tests/e2e/test_daily_driver_install.py` and `daemon/tests/unit/test_daily_driver_health.py` cover non-mutating installer dry-run, protected token/env files, service process-argument secrecy, unit expectations, and extension token matching. |
-| REQ-016 local UI | admin API tests verify `/ui` asset serving and UI-backed API surfaces; `daemon/tests/e2e/test_ui_dashboard_smoke.py` verifies token bootstrap parsing, core panels, empty/error states, and initial dashboard API calls through a low-dependency DOM harness. |
-| REQ-017 CLI | `daemon/tests/e2e/test_cli_admin.py` covers read/admin commands. |
-| REQ-018 audit logging | API paths write metadata-only audit events. |
-| REQ-019 doctor | `/doctor` and CLI doctor verify DB integrity, FTS consistency, paths, policy mode, fast DB-derived storage counts, and opt-in filesystem storage census. |
-| REQ-020 artifact boundary | `.gitignore` and `scripts/secret-scan.sh`. |
-| REQ-021 Windows browser e2e | `scripts/run-real-chrome-e2e.sh` synthetic allowed/SPA/banking/local scenarios plus public media, cookie-required media, and synthetic `blob:` video artifacts. |
-| REQ-022 durable media sidecars | `test_media_worker.py`, `media_queue.test.js`, `service_worker.test.js` media upload retry coverage, HTTP raw blob/purge tests, real Chrome media e2e. |
+[`../requirements/catalog.toml`](../requirements/catalog.toml) is the sole semantic requirement source. The pre-catalog `REQ-009` through `REQ-017` collisions are preserved there as explicit source-qualified aliases. This generated table maps every canonical requirement to unit, integration, system, operational, and validation evidence.
+
+<!-- BEGIN GENERATED:requirement-coverage -->
+| Requirement | Unit evidence | Integration evidence | System evidence | Operational evidence | Validation evidence |
+|---|---|---|---|---|---|
+| REQ-001 — The system shall capture useful rendered page text, title, observed URL, timestamps, and constrained metadata. | `extension/tests/unit/extractor.test.js` | `daemon/tests/integration/test_ingest_search_forget.py` | `scripts/run-real-chrome-e2e.sh` | `docs/api.md` | `scripts/run-real-chrome-e2e.sh` |
+| REQ-002 — The system shall keep durable database and blob data outside the repository and browser profile. | `daemon/tests/unit/test_config.py` | `daemon/tests/integration/test_ingest_search_forget.py` | `scripts/run-e2e.sh` | `docs/daily-driver-deployment.md` | `scripts/run-e2e.sh` |
+| REQ-003 — The extension shall send captures to the local daemon over the authenticated loopback transport. | `extension/tests/unit/service_worker.test.js` | `daemon/tests/e2e/test_http_api.py` | `scripts/run-real-chrome-e2e.sh` | `docs/security-model.md` | `scripts/run-real-chrome-e2e.sh` |
+| REQ-004 — The daemon shall expose an authenticated HTTP API on the loopback boundary. | `daemon/tests/unit/test_config.py` | `daemon/tests/e2e/test_http_api.py`<br>`daemon/tests/e2e/test_ui_dashboard_smoke.py` | `scripts/run-real-chrome-e2e.sh` | `docs/api.md`<br>`docs/security-model.md` | `daemon/tests/e2e/test_http_api.py` |
+| REQ-005 — The system shall preserve the all, recall, balanced, and strict policy modes with all as the daily-driver default. | `daemon/tests/unit/test_policy.py`<br>`extension/tests/unit/extractor.test.js` | `daemon/tests/integration/test_ingest_search_forget.py` | `scripts/run-real-chrome-e2e.sh` | `docs/security-model.md` | `scripts/run-real-chrome-e2e.sh` |
+| REQ-006 — The all policy mode shall disable built-in URL filtering and daemon redaction while retaining password, hidden, form, editable, script, style, noscript, and extension-UI DOM skip surfaces plus explicit local block rules. | `extension/tests/unit/extractor.test.js` | — | `scripts/run-real-chrome-e2e.sh` | `docs/security-model.md` | `extension/tests/unit/extractor.test.js` |
+| REQ-007 — The system shall apply URL, token, email, and identifier redaction before storage whenever the selected policy mode requires redaction. | `daemon/tests/unit/test_policy.py` | `daemon/tests/integration/test_ingest_search_forget.py::test_metadata_redacted_before_fts_and_forget_by_original_url` | `scripts/run-e2e.sh` | `docs/security-model.md` | `daemon/tests/integration/test_ingest_search_forget.py::test_metadata_redacted_before_fts_and_forget_by_original_url` |
+| REQ-008 — The system shall support local FTS5 search with snippets, metadata filters, and source-backed detail retrieval. | — | `daemon/tests/integration/test_ingest_search_forget.py` | `scripts/run-real-chrome-e2e.sh` | `docs/api.md` | `scripts/run-real-chrome-e2e.sh` |
+| REQ-009 — The system shall deduplicate immutable snapshots by normalized document identity and cleaned-content hash. | — | `daemon/tests/integration/test_ingest_search_forget.py::test_repeat_capture_dedupes_snapshot_but_adds_visit` | `scripts/run-e2e.sh` | `docs/ARCHITECTURE.md` | `daemon/tests/integration/test_ingest_search_forget.py::test_repeat_capture_dedupes_snapshot_but_adds_visit` |
+| REQ-010 — The extension shall recapture changed SPA and late-rendered page content using bounded observation behavior. | `extension/tests/unit/service_worker.test.js` | — | `scripts/run-real-chrome-e2e.sh` | `docs/ARCHITECTURE.md` | `scripts/run-real-chrome-e2e.sh` |
+| REQ-011 — The system shall record visit lifecycle events and apply bounded idempotent dwell updates. | `extension/tests/unit/service_worker.test.js` | `daemon/tests/integration/test_visit_lifecycle.py` | `scripts/run-e2e.sh` | `docs/api.md` | `daemon/tests/integration/test_visit_lifecycle.py` |
+| REQ-012 — The system shall provide authenticated local UI and CLI workflows for search, recent activity, detail, health, policy, and destructive operations. | — | `daemon/tests/e2e/test_admin_api.py`<br>`daemon/tests/e2e/test_ui_dashboard_smoke.py` | `scripts/run-e2e.sh` | `docs/CLI_UX_CONTRACT.md` | `daemon/tests/e2e/test_admin_api.py` |
+| REQ-013 — The system shall forget selected records with durable minimized deletion receipts and contained byte cleanup. | — | `daemon/tests/integration/test_ingest_search_forget.py` | `daemon/tests/e2e/test_http_api.py` | `docs/CLI_UX_CONTRACT.md` | `daemon/tests/integration/test_ingest_search_forget.py` |
+| REQ-014 — The repository shall provide a guarded and testable daily-driver installation path for the daemon, worker, extension build, and configuration. | `daemon/tests/unit/test_daily_driver_health.py` | `daemon/tests/e2e/test_daily_driver_install.py` | `scripts/run-e2e.sh` | `docs/daily-driver-deployment.md` | `daemon/tests/e2e/test_daily_driver_install.py` |
+| REQ-015 — Text capture shall commit before asynchronous media acquisition while preserving durable media reference provenance. | — | `daemon/tests/integration/test_media_worker.py` | `scripts/run-real-chrome-e2e.sh` | `docs/media-artifacts.md` | `daemon/tests/integration/test_media_worker.py` |
+| REQ-016 — Credentialed media fetch shall remain inside Chrome and shall upload only explicit raw bytes and constrained metadata to the daemon. | `extension/tests/unit/cdp_recorder.test.js`<br>`extension/tests/unit/media_queue.test.js` | `daemon/tests/e2e/test_http_api.py` | `scripts/run-real-chrome-e2e.sh` | `docs/media-artifacts.md` | `scripts/run-real-chrome-e2e.sh` |
+| REQ-017 — Media bytes shall be managed as a bounded disposable cache with status, provenance, purge, and rehydration behavior. | — | `daemon/tests/integration/test_ingest_search_forget.py`<br>`daemon/tests/integration/test_media_worker.py` | `scripts/run-e2e.sh` | `docs/media-artifacts.md` | `daemon/tests/integration/test_ingest_search_forget.py::test_media_global_cache_rolls_oldest_blob_when_limit_would_be_exceeded` |
+| REQ-018 — Durable mutation and security audit events shall be stored in SQLite with redaction-safe details. | — | `daemon/tests/e2e/test_http_api.py` | `scripts/run-e2e.sh` | `docs/security-model.md` | `daemon/tests/e2e/test_http_api.py` |
+| REQ-019 — The system shall provide fast health and doctor diagnostics with optional bounded storage census and redaction-safe output. | `daemon/tests/unit/test_daily_driver_health.py` | `daemon/tests/e2e/test_admin_api.py` | `scripts/run-e2e.sh` | `docs/USER_GUIDE.md` | `daemon/tests/unit/test_daily_driver_health.py` |
+| REQ-020 — Tests, benchmarks, and normal repository commands shall not leave runtime databases, blobs, logs, tokens, or browser profiles in the repository. | — | `daemon/tests/e2e/test_performance_benchmarks.py` | `scripts/secret-scan.sh` | `AGENTS.md` | `daemon/tests/e2e/test_performance_benchmarks.py::test_performance_benchmark_subprocess_does_not_write_default_home_blob_root` |
+| REQ-021 — Release verification shall exercise the unpacked extension against an isolated Chrome for Testing profile without using the operator Chrome profile. | — | — | `scripts/run-real-chrome-e2e.sh` | `docs/test-plan.md` | `scripts/run-real-chrome-e2e.sh` |
+| REQ-022 — Durable media sidecar tasks shall preserve provenance and terminal status independently from successful searchable text capture. | `extension/tests/unit/media_queue.test.js` | `daemon/tests/integration/test_media_worker.py` | `scripts/run-real-chrome-e2e.sh` | `docs/media-artifacts.md` | `daemon/tests/integration/test_media_worker.py` |
+| REQ-023 — The SQLite schema shall contain the documented authority tables, constraints, indexes, FTS structures, and audit records required by the current release. | — | `daemon/tests/integration/test_ingest_search_forget.py::test_schema_has_planned_core_tables` | `scripts/run-e2e.sh` | `docs/ARCHITECTURE.md` | `daemon/tests/integration/test_ingest_search_forget.py::test_schema_has_planned_core_tables` |
+| REQ-024 — Search and detail responses shall cite source URL, title, document identity, snapshot identity, and stored text or snippet as applicable. | — | `daemon/tests/integration/test_ingest_search_forget.py`<br>`daemon/tests/e2e/test_admin_api.py` | `scripts/run-real-chrome-e2e.sh` | `docs/api.md` | `daemon/tests/e2e/test_admin_api.py` |
+| REQ-025 — The extension shall provide pause, resume, policy selection, queue status, and bounded local operational controls without exposing captured content. | `extension/tests/unit/service_worker.test.js` | — | `scripts/run-real-chrome-e2e.sh` | `docs/USER_GUIDE.md` | `extension/tests/unit/service_worker.test.js` |
+| REQ-026 — Every test, benchmark, and fixture write shall be confined to an explicit temporary root. | — | `daemon/tests/e2e/test_performance_benchmarks.py` | `scripts/run-e2e.sh` | `docs/verification/phase-0-gate-2026-07-10.md` | `daemon/tests/e2e/test_performance_benchmarks.py::test_performance_benchmark_subprocess_does_not_write_default_home_blob_root` |
+| REQ-027 — Daemon-public network fetches shall contact only approved destinations and shall revalidate every redirect and HLS-derived request. | — | `daemon/tests/integration/test_media_worker.py` | `scripts/run-e2e.sh` | `docs/security-model.md` | `daemon/tests/integration/test_media_worker.py::test_guarded_public_fetch_revalidates_public_to_private_redirect` |
+| REQ-028 — The daemon shall not expose a durable API token through a remotely reachable unauthenticated UI. | — | `daemon/tests/e2e/test_ui_dashboard_smoke.py` | `scripts/run-e2e.sh` | `docs/security-model.md` | `daemon/tests/e2e/test_ui_dashboard_smoke.py::test_ui_dashboard_rejects_non_loopback_host_header` |
+| REQ-029 — Every blob read, write, move, and delete shall resolve under its configured root and resist traversal and symlink escape. | — | `daemon/tests/integration/test_ingest_search_forget.py`<br>`daemon/tests/integration/test_media_worker.py` | `scripts/run-e2e.sh` | `docs/security-model.md` | `daemon/tests/integration/test_ingest_search_forget.py::test_blob_path_consumers_reject_db_paths_outside_configured_roots` |
+| REQ-030 — Destructive selectors shall be literal, validated, policy-aware, previewable, and bounded to the stated scope. | — | `daemon/tests/integration/test_ingest_search_forget.py` | — | `docs/CLI_UX_CONTRACT.md` | — |
+| REQ-031 — Deletion and eviction shall be crash-recoverable and shall not report full success while required bytes remain. | — | — | — | — | — |
+| REQ-032 — Every supported database shall have an explicit version and ordered, auditable, restore-backed migrations. | — | — | — | — | — |
+| REQ-033 — Visits, capture observations, snapshots, lifecycle events, and media provenance shall have explicit temporal relationships. | — | — | — | — | — |
+| REQ-034 — The normalized observed browser URL shall control document identity while page-provided canonical and alternate URLs remain untrusted claims. | — | — | — | — | — |
+| REQ-035 — Searchable text and capture provenance shall commit locally without NAS or media dependency. | — | — | — | — | — |
+| REQ-036 — Media transitions, cache admission, leases, retries, and resource budgets shall be closed, bounded, and concurrency-safe. | — | — | — | — | — |
+| REQ-037 — Browser capture, lifecycle, and media queues shall be transactional, restart-safe, quota-aware, and never silently truncate. | — | — | — | — | — |
+| REQ-038 — Dwell shall be derived from validated interval unions rather than additive overlapping reports. | — | — | — | — | — |
+| REQ-039 — DOM extraction shall follow a documented rendered-visibility contract verified in a real browser. | — | — | — | — | — |
+| REQ-040 — HTTP behavior shall provide stable typed errors, request IDs, secure headers, and bounded streaming. | — | — | — | — | — |
+| REQ-041 — Backup, restore, and staged install rollback shall be executable and verified before retention or destructive maintenance. | — | — | — | — | — |
+| REQ-042 — Requirement statements, implementation links, and verification evidence shall have one machine-readable source of truth. | — | `daemon/tests/e2e/test_generate_test_inventory.py` | `scripts/run-e2e.sh` | `docs/TESTS.md` | `daemon/tests/e2e/test_generate_test_inventory.py::test_generate_test_inventory_reports_catalog_traceability_success` |
+| REQ-043 — Local-first policy modes, explicit block rules, and the no-cloud processing boundary shall remain intact. | `daemon/tests/unit/test_policy.py`<br>`daemon/tests/unit/test_policy_store.py` | `daemon/tests/e2e/test_admin_api.py` | `scripts/run-e2e.sh` | `AGENTS.md`<br>`docs/security-model.md` | `daemon/tests/e2e/test_admin_api.py::test_policy_rule_blocks_future_capture_and_can_be_deleted` |
+<!-- END GENERATED:requirement-coverage -->
 
 ---
 
@@ -66,7 +89,7 @@ Traceability gate:
 python3.11 scripts/generate_test_inventory.py --check
 ```
 
-This gate fails when an architecture `REQ-*` row is missing from this test plan or when this test plan references a deleted/renamed test file. It remains a static inventory/traceability gate; line/branch coverage thresholds are intentionally deferred until coverage tooling and trend data exist.
+This gate reads `requirements/catalog.toml` with Python's standard-library `tomllib`. It fails on duplicate stable IDs or aliases, malformed requirement records, missing implementation paths, unresolved evidence/test node IDs, active requirements without validation evidence, requirement removal without catalog disposition, or a normative statement change that does not increment its revision relative to `HEAD`. It also regenerates volatile requirement tables and static test counts; line/branch coverage thresholds remain deferred until Phase 1.3 measures a baseline.
 
 `run-real-chrome-e2e.sh` uses Windows Chrome for Testing because branded Chrome 137+ no longer reliably honors command-line `--load-extension` automation. It honors `BMD_PYTHON` for the WSL daemon and DB probes. By default it runs the `all strict` matrix; set `BMD_REAL_CHROME_POLICY_MODE=<mode>` for a single debugging run or `BMD_REAL_CHROME_MATRIX_MODES="all strict balanced recall"` for an extended local matrix.
 

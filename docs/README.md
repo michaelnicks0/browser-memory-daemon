@@ -14,6 +14,7 @@
 | Understand value, maturity, and risk posture quickly | [`EXECUTIVE_BRIEF.md`](EXECUTIVE_BRIEF.md) |
 | Use the system day to day | [`USER_GUIDE.md`](USER_GUIDE.md) |
 | Understand the architecture | [`ARCHITECTURE.md`](ARCHITECTURE.md), [`architecture/c4-diagrams.md`](architecture/c4-diagrams.md) |
+| Inspect canonical requirements and V-model evidence | [`../requirements/catalog.toml`](../requirements/catalog.toml), [`test-plan.md`](test-plan.md), [`TESTS.md`](TESTS.md) |
 | Understand architecture/design decision history | [`architecture/adr/README.md`](architecture/adr/README.md) |
 | See behavioral Mermaid flows/diagrams | [`DIAGRAMS.md`](DIAGRAMS.md) |
 | Call or extend the HTTP API | [`api.md`](api.md) |
@@ -23,6 +24,7 @@
 | Check what is implemented vs pending | [`STATUS.md`](STATUS.md) |
 | Model storage growth | [`storage-growth-model.md`](storage-growth-model.md) |
 | Understand retention, compaction, export, and backup posture | [`retention-compaction-backup.md`](retention-compaction-backup.md) |
+| Review the current blob-root migration helper and its safety limits | [`blob-root-migration.md`](blob-root-migration.md) |
 | Understand durable lazy media sidecars | [`ARCHITECTURE.md`](ARCHITECTURE.md#durable-media-sidecar-architecture), [`media-artifacts.md`](media-artifacts.md) |
 | Run verification gates | [`TESTS.md`](TESTS.md), [`test-plan.md`](test-plan.md) |
 | Review Phase 0 gate evidence | [`verification/phase-0-gate-2026-07-10.md`](verification/phase-0-gate-2026-07-10.md) |

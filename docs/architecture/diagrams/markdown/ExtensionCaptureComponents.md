@@ -30,15 +30,15 @@ graph LR
         style 5 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
         12["<div style='font-weight: bold'>Popup and Options UI</div><div style='font-size: 70%; margin-top: 0px'>[Component: HTML/JavaScript]</div><div style='font-size: 80%; margin-top:10px'>Lets the operator view<br />status, pause/resume capture,<br />select policy mode, and<br />trigger local controls from<br />the extension.</div>"]
-        style 12 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 12 fill:#85bbf0,stroke:#1168bd,color:#000000
         6["<div style='font-weight: bold'>Manifest and Permission Envelope</div><div style='font-size: 70%; margin-top: 0px'>[Component: manifest.json]</div><div style='font-size: 80%; margin-top:10px'>Declares MV3 permissions,<br />host permissions, service<br />worker, popup, and options<br />entrypoints.</div>"]
-        style 6 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 6 fill:#85bbf0,stroke:#1168bd,color:#000000
         7["<div style='font-weight: bold'>Extractor</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript]</div><div style='font-size: 80%; margin-top:10px'>Traverses visible DOM text<br />and discovers image/video<br />references while applying the<br />selected policy mode.</div>"]
-        style 7 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 7 fill:#85bbf0,stroke:#1168bd,color:#000000
         8["<div style='font-weight: bold'>Content Script</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript content script]</div><div style='font-size: 80%; margin-top:10px'>Schedules initial, delayed,<br />and SPA captures; tracks<br />scroll; sends capture and<br />inline blob upload messages<br />to the service worker.</div>"]
-        style 8 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 8 fill:#85bbf0,stroke:#1168bd,color:#000000
         9["<div style='font-weight: bold'>Service Worker</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript MV3 service worker]</div><div style='font-size: 80%; margin-top:10px'>Owns daemon transport, bearer<br />token use, capture and visit<br />queues, lifecycle state,<br />media queue draining, and CDP<br />recorder orchestration.</div>"]
-        style 9 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        style 9 fill:#85bbf0,stroke:#1168bd,color:#000000
       end
 
       13[("<div style='font-weight: bold'>Extension Browser Storage</div><div style='font-size: 70%; margin-top: 0px'>[Container: chrome.storage.local + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Browser-side storage for<br />capture and visit queues in<br />chrome.storage.local plus<br />durable media tasks and<br />fetched blobs in IndexedDB.</div>")]

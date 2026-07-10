@@ -18,14 +18,14 @@
 </g>
 <g id="clust2" class="cluster">
 <title>cluster_14</title>
-<polygon fill="none" stroke="#444444" points="33,-626 33,-983 1196,-983 1196,-626 33,-626"/>
-<text text-anchor="start" x="449" y="-654.8" font-family="Arial" font-size="24.00" fill="#444444">WSL Loopback HTTP Daemon</text>
-<text text-anchor="start" x="412.5" y="-634.8" font-family="Arial" font-size="19.00" fill="#444444">[Container: Python 3.11, ThreadingHTTPServer]</text>
+<polygon fill="none" stroke="#444444" points="33,-614 33,-995 1196,-995 1196,-614 33,-614"/>
+<text text-anchor="start" x="449" y="-642.8" font-family="Arial" font-size="24.00" fill="#444444">WSL Loopback HTTP Daemon</text>
+<text text-anchor="start" x="412.5" y="-622.8" font-family="Arial" font-size="19.00" fill="#444444">[Container: Python 3.11, ThreadingHTTPServer]</text>
 </g>
 <!-- 15 -->
 <g id="15" class="node">
 <title>15</title>
-<polygon fill="#85bbf0" stroke="#5d82a8" points="453,-957.5 58,-957.5 58,-726.5 453,-726.5 453,-957.5"/>
+<polygon fill="#85bbf0" stroke="#1168bd" points="453,-957.5 58,-957.5 58,-726.5 453,-726.5 453,-957.5"/>
 <text text-anchor="start" x="87" y="-909.3" font-family="Arial" font-size="34.00" fill="#000000">HTTP Request Router</text>
 <text text-anchor="start" x="119" y="-887.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python http.server]</text>
 <text text-anchor="start" x="90" y="-850.3" font-family="Arial" font-size="24.00" fill="#000000">Routes loopback API requests,</text>
@@ -37,14 +37,15 @@
 <!-- 23 -->
 <g id="23" class="node">
 <title>23</title>
-<polygon fill="#85bbf0" stroke="#5d82a8" points="1171,-957.5 789,-957.5 789,-726.5 1171,-726.5 1171,-957.5"/>
-<text text-anchor="start" x="818" y="-909.3" font-family="Arial" font-size="34.00" fill="#000000">Ops Doctor and Audit</text>
-<text text-anchor="start" x="852" y="-887.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python + sqlite3]</text>
-<text text-anchor="start" x="829.5" y="-850.3" font-family="Arial" font-size="24.00" fill="#000000">Reports health, DB integrity,</text>
-<text text-anchor="start" x="844" y="-826.3" font-family="Arial" font-size="24.00" fill="#000000">FTS consistency, runtime</text>
-<text text-anchor="start" x="824" y="-802.3" font-family="Arial" font-size="24.00" fill="#000000">paths, storage counts, media</text>
-<text text-anchor="start" x="848.5" y="-778.3" font-family="Arial" font-size="24.00" fill="#000000">queue status, and writes</text>
-<text text-anchor="start" x="831" y="-754.3" font-family="Arial" font-size="24.00" fill="#000000">metadata&#45;only audit events.</text>
+<polygon fill="#85bbf0" stroke="#1168bd" points="1171,-969.5 789,-969.5 789,-714.5 1171,-714.5 1171,-969.5"/>
+<text text-anchor="start" x="818" y="-921.3" font-family="Arial" font-size="34.00" fill="#000000">Ops Doctor and Audit</text>
+<text text-anchor="start" x="852" y="-899.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python + sqlite3]</text>
+<text text-anchor="start" x="829.5" y="-862.3" font-family="Arial" font-size="24.00" fill="#000000">Reports health, DB integrity,</text>
+<text text-anchor="start" x="844" y="-838.3" font-family="Arial" font-size="24.00" fill="#000000">FTS consistency, runtime</text>
+<text text-anchor="start" x="824" y="-814.3" font-family="Arial" font-size="24.00" fill="#000000">paths, storage counts, media</text>
+<text text-anchor="start" x="848.5" y="-790.3" font-family="Arial" font-size="24.00" fill="#000000">queue status, and writes</text>
+<text text-anchor="start" x="820.5" y="-766.3" font-family="Arial" font-size="24.00" fill="#000000">metadata&#45;only audit events to</text>
+<text text-anchor="start" x="939.5" y="-742.3" font-family="Arial" font-size="24.00" fill="#000000">SQLite.</text>
 </g>
 <!-- 15&#45;&gt;23 -->
 <g id="68" class="edge">

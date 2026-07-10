@@ -21,8 +21,8 @@ digraph {
       fontcolor="#444444"
       fillcolor="#444444"
 
-      15 [id=15,shape=rect, label=<<font point-size="34">HTTP Request Router</font><br /><font point-size="19">[Component: Python http.server]</font><br /><br /><font point-size="24">Routes loopback API requests,<br />serves UI assets, enforces<br />bearer auth for memory/admin<br />APIs, and applies CORS for<br />allowed origins.</font>>, style=filled, color="#5d82a8", fillcolor="#85bbf0", fontcolor="#000000"]
-      19 [id=19,shape=rect, label=<<font point-size="34">Lifecycle Pipeline</font><br /><font point-size="19">[Component: Python + sqlite3]</font><br /><br /><font point-size="24">Stores metadata-only tab<br />lifecycle events and updates<br />visit dwell seconds<br />idempotently.</font>>, style=filled, color="#5d82a8", fillcolor="#85bbf0", fontcolor="#000000"]
+      15 [id=15,shape=rect, label=<<font point-size="34">HTTP Request Router</font><br /><font point-size="19">[Component: Python http.server]</font><br /><br /><font point-size="24">Routes loopback API requests,<br />serves UI assets, enforces<br />bearer auth for memory/admin<br />APIs, and applies CORS for<br />allowed origins.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
+      19 [id=19,shape=rect, label=<<font point-size="34">Lifecycle Pipeline</font><br /><font point-size="19">[Component: Python + sqlite3]</font><br /><br /><font point-size="24">Stores metadata-only tab<br />lifecycle events and updates<br />visit dwell seconds<br />idempotently.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
     }
 
     27 [id=27,shape=cylinder, label=<<font point-size="34">SQLite + FTS5<br />Database</font><br /><font point-size="19">[Container: SQLite with FTS5]</font><br /><br /><font point-size="24">Durable relational and<br />full-text store for sources,<br />documents, visits, visit<br />events, snapshots, chunks,<br />chunks_fts, media artifacts,<br />media fetch tasks, policy<br />rules, audit events, and<br />deletion receipts.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]

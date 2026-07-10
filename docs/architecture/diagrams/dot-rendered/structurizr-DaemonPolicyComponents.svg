@@ -25,7 +25,7 @@
 <!-- 15 -->
 <g id="15" class="node">
 <title>15</title>
-<polygon fill="#85bbf0" stroke="#5d82a8" points="453,-597.5 58,-597.5 58,-366.5 453,-366.5 453,-597.5"/>
+<polygon fill="#85bbf0" stroke="#1168bd" points="453,-597.5 58,-597.5 58,-366.5 453,-366.5 453,-597.5"/>
 <text text-anchor="start" x="87" y="-549.3" font-family="Arial" font-size="34.00" fill="#000000">HTTP Request Router</text>
 <text text-anchor="start" x="119" y="-527.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python http.server]</text>
 <text text-anchor="start" x="90" y="-490.3" font-family="Arial" font-size="24.00" fill="#000000">Routes loopback API requests,</text>
@@ -37,7 +37,7 @@
 <!-- 16 -->
 <g id="16" class="node">
 <title>16</title>
-<polygon fill="#85bbf0" stroke="#5d82a8" points="1142,-495.5 780,-495.5 780,-264.5 1142,-264.5 1142,-495.5"/>
+<polygon fill="#85bbf0" stroke="#1168bd" points="1142,-495.5 780,-495.5 780,-264.5 1142,-264.5 1142,-495.5"/>
 <text text-anchor="start" x="858" y="-447.3" font-family="Arial" font-size="34.00" fill="#000000">Policy Engine</text>
 <text text-anchor="start" x="872" y="-425.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python]</text>
 <text text-anchor="start" x="908" y="-388.3" font-family="Arial" font-size="24.00" fill="#000000">Evaluates</text>
@@ -58,7 +58,7 @@
 <!-- 17 -->
 <g id="17" class="node">
 <title>17</title>
-<polygon fill="#85bbf0" stroke="#5d82a8" points="1893,-645.5 1511,-645.5 1511,-438.5 1893,-438.5 1893,-645.5"/>
+<polygon fill="#85bbf0" stroke="#1168bd" points="1893,-645.5 1511,-645.5 1511,-438.5 1893,-438.5 1893,-645.5"/>
 <text text-anchor="start" x="1611" y="-597.3" font-family="Arial" font-size="34.00" fill="#000000">Policy Store</text>
 <text text-anchor="start" x="1572.5" y="-575.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python + SQLite]</text>
 <text text-anchor="start" x="1580" y="-538.3" font-family="Arial" font-size="24.00" fill="#000000">Persists and evaluates</text>
