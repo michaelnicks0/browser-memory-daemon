@@ -174,7 +174,9 @@ Response:
 
 In `all` mode, daemon redaction is disabled. In non-`all` modes, URL/title/body redaction runs before DB/FTS/blob storage.
 
-The normalized observed `url` is authoritative for new document identity. `canonical_url` is stored only as a URL claim when it differs; it never causes an automatic cross-origin document merge. Repeated captures may share one `visit_id`/`navigation_id` while producing distinct observations. Reusing an `observation_id` with identical stored provenance is idempotent; changing its navigation, document, snapshot, URL, capture time/method/reason, extraction version, title, or provenance quality is rejected. Identical retries return the stable URL-claim and media-artifact identifiers so a lost HTTP response does not strand asynchronous media work. Reusing one `visit_id` for a different normalized observed navigation is also rejected.
+The normalized observed `url` is authoritative for new document identity. `canonical_url` is stored only as a URL claim when it differs; it never causes an automatic cross-origin document merge. Repeated captures may share one `visit_id`/`navigation_id` while producing distinct observations. Reusing an `observation_id` with identical stored provenance is idempotent; changing its navigation, document, snapshot, URL, capture time/method/reason, extraction version, title, or provenance quality is rejected. Exact retries return the same URL-claim and media-reference response shape without creating another observation. Reusing a `visit_id` for a different normalized observed URL/document is rejected so one visit cannot span navigations.
+
+The MV3 service worker emits opaque stable IDs: one observation ID per extraction and one navigation ID per persisted tab/URL state. It stores those IDs in the queued payload before daemon transport, preserves them across retry/restart, rotates navigation identity on URL change, and lazily decorates legacy queued captures before their next POST.
 
 ---
 

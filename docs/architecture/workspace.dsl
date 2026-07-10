@@ -15,7 +15,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
                 manifestEnvelope = component "Manifest and Permission Envelope" "Declares MV3 permissions, host permissions, service worker, popup, and options entrypoints." "manifest.json" "Current"
                 extractor = component "Extractor" "Traverses visible DOM text and discovers image/video references while applying the selected policy mode." "JavaScript" "Current"
                 contentScript = component "Content Script" "Schedules initial, delayed, and SPA captures; tracks scroll; sends capture and inline blob upload messages to the service worker." "JavaScript content script" "Current"
-                serviceWorker = component "Service Worker" "Owns daemon transport, bearer token use, capture and visit queues, lifecycle state, media queue draining, and CDP recorder orchestration." "JavaScript MV3 service worker" "Current"
+                serviceWorker = component "Service Worker" "Owns daemon transport, bearer token use, capture and visit queues, stable observation/navigation identity, lifecycle state, media queue draining, and CDP recorder orchestration." "JavaScript MV3 service worker" "Current"
                 browserMediaQueue = component "Browser Media Queue Adapter" "Persists media tasks and fetched blobs in IndexedDB so browser-side media fetch/upload can survive MV3 worker suspension." "JavaScript + IndexedDB" "Current"
                 cdpRecorder = component "CDP Recorder" "Uses chrome.debugger on configured X/Twitter tabs to capture video.twimg.com HLS manifests and media segments before they become opaque blob player URLs." "Chrome DevTools Protocol" "Current"
                 popupOptions = component "Popup and Options UI" "Lets the operator view status, pause/resume capture, select policy mode, and trigger local controls from the extension." "HTML/JavaScript" "Current"
@@ -66,7 +66,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
 
         chromeExtension -> windowsChrome "Uses tab, scripting, storage, alarms, debugger, and runtime APIs from" "Chrome extension APIs"
         chromeExtension -> webSites "Extracts DOM refs and fetches queued credentialed media from" "DOM; fetch(credentials: include)"
-        chromeExtension -> extensionBrowserStorage "Queues captures, lifecycle events, media tasks, and blobs in" "chrome.storage.local + IndexedDB"
+        chromeExtension -> extensionBrowserStorage "Queues identity-decorated captures, lifecycle events, media tasks, and blobs in" "chrome.storage.local + IndexedDB"
         chromeExtension -> wslLoopbackDaemon "Posts /capture, /visit-events, media metadata, and raw blob uploads to" "Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765"
 
         localWebUi -> wslLoopbackDaemon "Calls authenticated read, admin, media, and forget APIs on" "HTTP/JSON"

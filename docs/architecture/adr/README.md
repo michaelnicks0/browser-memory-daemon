@@ -42,6 +42,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0032](0032-link-media-artifacts-to-capture-observations.md) | accepted | Add explicit observation/artifact provenance links with conservative evidence-bounded historical backfill. |
 | [ADR-0033](0033-use-observation-first-historical-activity-reads.md) | accepted | Read recent/timeline/detail activity from contemporaneous observations with an explicit ambiguous legacy fallback. |
 | [ADR-0034](0034-bind-lifecycle-by-visit-identity-and-union-dwell.md) | accepted | Preserve claimed visit identity, reconcile delayed events, and derive dwell from interval unions. |
+| [ADR-0035](0035-emit-stable-browser-observation-and-navigation-identities.md) | accepted | Persist opaque observation IDs per extraction and navigation IDs per tab/URL state across queue retries. |
 
 ## Backfilled decision history
 

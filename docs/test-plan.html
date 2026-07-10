@@ -404,10 +404,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>REQ-033 — Visits, capture observations, snapshots, lifecycle events, and media provenance shall have explicit temporal relationships.</td>
-<td>—</td>
+<td><code>extension/tests/unit/service_worker.test.js</code></td>
 <td><code>daemon/tests/integration/test_capture_observations.py</code><br><code>daemon/tests/integration/test_observation_reads.py</code><br><code>daemon/tests/integration/test_visit_lifecycle.py::test_claimed_visit_identity_does_not_fall_back_by_url_and_reconciles_after_delayed_capture</code><br><code>daemon/tests/integration/test_migrations.py::test_version_five_backfills_only_evidence_supported_historical_relationships</code><br><code>daemon/tests/integration/test_migrations.py::test_version_six_backfills_only_unambiguous_media_observation_links</code><br><code>daemon/tests/integration/test_migrations.py::test_version_seven_preserves_claimed_visit_identity_for_historical_events</code></td>
-<td><code>daemon/tests/e2e/test_admin_api.py</code><br><code>daemon/tests/e2e/test_http_api.py</code></td>
-<td><code>docs/architecture/adr/0030-separate-capture-observations-and-url-claims.md</code><br><code>docs/architecture/adr/0031-dual-write-observed-url-capture-provenance.md</code><br><code>docs/architecture/adr/0032-link-media-artifacts-to-capture-observations.md</code><br><code>docs/architecture/adr/0033-use-observation-first-historical-activity-reads.md</code><br><code>docs/architecture/adr/0034-bind-lifecycle-by-visit-identity-and-union-dwell.md</code></td>
+<td><code>daemon/tests/e2e/test_admin_api.py</code><br><code>daemon/tests/e2e/test_http_api.py</code><br><code>scripts/real-chrome-e2e.mjs</code></td>
+<td><code>docs/architecture/adr/0030-separate-capture-observations-and-url-claims.md</code><br><code>docs/architecture/adr/0031-dual-write-observed-url-capture-provenance.md</code><br><code>docs/architecture/adr/0032-link-media-artifacts-to-capture-observations.md</code><br><code>docs/architecture/adr/0033-use-observation-first-historical-activity-reads.md</code><br><code>docs/architecture/adr/0034-bind-lifecycle-by-visit-identity-and-union-dwell.md</code><br><code>docs/architecture/adr/0035-emit-stable-browser-observation-and-navigation-identities.md</code></td>
 <td><code>daemon/tests/integration/test_observation_reads.py::test_observation_first_reads_preserve_contemporaneous_snapshots_and_unique_visit_summary</code><br><code>daemon/tests/integration/test_visit_lifecycle.py::test_claimed_visit_identity_does_not_fall_back_by_url_and_reconciles_after_delayed_capture</code></td>
 </tr>
 <tr>

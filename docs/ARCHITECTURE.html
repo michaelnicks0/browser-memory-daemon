@@ -550,7 +550,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Visits, capture observations, snapshots, lifecycle events, and media provenance shall have explicit temporal relationships.</td>
 <td>Capture Observation Model</td>
 <td><code>HRD-008</code></td>
-<td><code>daemon/src/browser_memory_daemon/models.py</code><br><code>daemon/src/browser_memory_daemon/ingest.py</code><br><code>daemon/src/browser_memory_daemon/lifecycle.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/ops.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0004_capture_observations_and_url_claims.sql</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0005_backfill_historical_observations.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0006_link_media_artifacts_to_observations.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0007_add_claimed_visit_identity.sql</code></td>
+<td><code>daemon/src/browser_memory_daemon/models.py</code><br><code>daemon/src/browser_memory_daemon/ingest.py</code><br><code>daemon/src/browser_memory_daemon/lifecycle.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/ops.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0004_capture_observations_and_url_claims.sql</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0005_backfill_historical_observations.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0006_link_media_artifacts_to_observations.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0007_add_claimed_visit_identity.sql</code><br><code>extension/src/service_worker.js</code></td>
 <td><code>daemon/tests/integration/test_observation_reads.py::test_observation_first_reads_preserve_contemporaneous_snapshots_and_unique_visit_summary</code><br><code>daemon/tests/integration/test_visit_lifecycle.py::test_claimed_visit_identity_does_not_fall_back_by_url_and_reconciles_after_delayed_capture</code></td>
 </tr>
 <tr>
@@ -776,8 +776,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Service worker</td>
-<td>Auth, queues, injection, lifecycle state, fast <code>/capture</code>, browser lazy media queue/drain, daemon POST/PUTs, CDP recorder orchestration.</td>
-<td>Text capture does not wait on media bytes.</td>
+<td>Auth, queues, injection, lifecycle state, stable observation/navigation identity, fast <code>/capture</code>, browser lazy media queue/drain, daemon POST/PUTs, CDP recorder orchestration.</td>
+<td>Text capture does not wait on media bytes; decorated queued IDs survive retry/restart and rotate with tab/URL navigation state.</td>
 </tr>
 <tr>
 <td>Extension media queue</td>
@@ -802,7 +802,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td>Capture observation / URL-claim model</td>
 <td>Additive temporal observation, untrusted claim authority, explicit media-reference provenance, and observation-first activity reads in SQLite.</td>
-<td>Version-4 tables, version-5 observation backfill, version-6 media-observation links, version-7 claimed lifecycle identity, and contemporaneous recent/timeline/detail reads are current.</td>
+<td>Version-4 tables, version-5 observation backfill, version-6 media-observation links, version-7 claimed lifecycle identity, browser-authored observation/navigation IDs, and contemporaneous recent/timeline/detail reads are current.</td>
 </tr>
 <tr>
 <td>Policy engine</td>

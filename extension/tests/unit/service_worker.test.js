@@ -205,6 +205,13 @@ test('service worker preserves queued captures while daemon is down and drains t
   assert.equal(failed.result.remaining, 1);
   assert.equal(storage.captureQueue.length, 1);
   assert.equal(storage.captureQueue[0].payload.url, 'https://example.test/offline');
+  assert.match(storage.captureQueue[0].payload.observation_id, /^observation_/);
+  assert.match(storage.captureQueue[0].payload.navigation_id, /^navigation_/);
+  const queuedObservationId = storage.captureQueue[0].payload.observation_id;
+  const queuedNavigationId = storage.captureQueue[0].payload.navigation_id;
+  const firstAttemptPayload = JSON.parse(first.calls.fetches[0].init.body);
+  assert.equal(firstAttemptPayload.observation_id, queuedObservationId);
+  assert.equal(firstAttemptPayload.navigation_id, queuedNavigationId);
 
   offline = false;
   const restarted = createServiceWorkerHarness({ storage, fetchImpl });
@@ -215,6 +222,53 @@ test('service worker preserves queued captures while daemon is down and drains t
   assert.equal(drained.captures.delivered[0].document_id, 'doc-a');
   assert.deepEqual(storage.captureQueue, []);
   assert.equal(postCount, 2);
+  const retryPayload = JSON.parse(restarted.calls.fetches[0].init.body);
+  assert.equal(retryPayload.observation_id, queuedObservationId);
+  assert.equal(retryPayload.navigation_id, queuedNavigationId);
+});
+
+test('service worker keeps navigation identity stable per URL state and emits a new observation per extraction', async () => {
+  const storage = { apiToken: 'token', daemonUrl: 'http://127.0.0.1:8765', policyMode: 'all' };
+  const postedCaptures = [];
+  const fetchImpl = async (url, init) => {
+    if (url.endsWith('/capture')) {
+      const payload = JSON.parse(init.body);
+      postedCaptures.push(payload);
+      return jsonResponse(201, {
+        stored: true,
+        document_id: `doc-${postedCaptures.length}`,
+        snapshot_id: `snap-${postedCaptures.length}`,
+        visit_id: payload.visit_id,
+        observation_id: payload.observation_id,
+        media_artifacts: []
+      });
+    }
+    if (url.endsWith('/visit-events')) return jsonResponse(201, { stored: true });
+    throw new Error(`unexpected fetch ${url}`);
+  };
+  const worker = createServiceWorkerHarness({ storage, fetchImpl });
+  const sender = { tab: { id: 7, url: 'https://example.test/stable', active: true, incognito: false } };
+
+  await worker.sendMessage({ type: 'BMD_CAPTURE', payload: capturePayload('stable') }, sender);
+  await worker.sendMessage({
+    type: 'BMD_CAPTURE',
+    payload: { ...capturePayload('stable'), text: 'A changed extraction creates another observation.' }
+  }, sender);
+
+  assert.equal(postedCaptures.length, 2);
+  assert.equal(postedCaptures[0].visit_id, postedCaptures[1].visit_id);
+  assert.equal(postedCaptures[0].navigation_id, postedCaptures[1].navigation_id);
+  assert.notEqual(postedCaptures[0].observation_id, postedCaptures[1].observation_id);
+  assert.match(postedCaptures[0].visit_id, /^visit_/);
+  assert.match(postedCaptures[0].navigation_id, /^navigation_/);
+
+  const nextSender = { tab: { id: 7, url: 'https://example.test/next', active: true, incognito: false } };
+  await worker.sendMessage({ type: 'BMD_CAPTURE', payload: capturePayload('next') }, nextSender);
+
+  assert.equal(postedCaptures.length, 3);
+  assert.notEqual(postedCaptures[2].visit_id, postedCaptures[0].visit_id);
+  assert.notEqual(postedCaptures[2].navigation_id, postedCaptures[0].navigation_id);
+  assert.notEqual(postedCaptures[2].observation_id, postedCaptures[1].observation_id);
 });
 
 test('service worker queue overflow characterization preserves old captures but drops the new capture', async () => {

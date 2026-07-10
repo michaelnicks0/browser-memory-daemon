@@ -31,6 +31,13 @@ function randomId(prefix = 'id') {
   return `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
 
+function ensureCaptureIdentity(payload) {
+  const identified = { ...(payload || {}) };
+  identified.observation_id = String(identified.observation_id || identified.observationId || '').trim() || randomId('observation');
+  identified.navigation_id = String(identified.navigation_id || identified.navigationId || '').trim() || randomId('navigation');
+  return identified;
+}
+
 function stableHash(text) {
   let hash = 2166136261;
   for (const char of String(text || '')) {
@@ -632,6 +639,12 @@ async function drainQueue() {
   while (queue.length) {
     const item = queue[0];
     try {
+      const identifiedPayload = ensureCaptureIdentity(item.payload);
+      if (identifiedPayload.observation_id !== item.payload?.observation_id || identifiedPayload.navigation_id !== item.payload?.navigation_id) {
+        item.payload = identifiedPayload;
+        queue[0] = item;
+        await saveQueue(queue);
+      }
       let captureResult = item.capture_result || item.captureResult || null;
       if (!captureResult) {
         captureResult = await postOne(item.payload, config);
@@ -696,7 +709,7 @@ async function enqueueCapture(payload) {
   if (config.capturePaused) return { skipped: true, reason: 'paused' };
   if (!config.apiToken) return { skipped: true, reason: 'missing-token' };
   const queue = Array.from(config.captureQueue || []);
-  queue.push({ payload, queued_at: nowIso() });
+  queue.push({ payload: ensureCaptureIdentity(payload), queued_at: nowIso() });
   await saveQueue(queue);
   return drainQueue();
 }
@@ -788,10 +801,13 @@ async function ensureVisitState(tabId, url) {
       tabId,
       url,
       visitId: randomId('visit'),
+      navigationId: randomId('navigation'),
       visitStartedAt: nowIso(),
       activeStartedAt: null,
       maxScrollPercent: 0
     };
+  } else if (!state.navigationId) {
+    state.navigationId = randomId('navigation');
   }
   states[key] = state;
   await saveTabVisitState(states);
@@ -823,9 +839,9 @@ async function decorateCapturePayload(payload, sender) {
   const config = await getConfig();
   const tab = sender && sender.tab ? sender.tab : null;
   const decorated = { ...payload, is_incognito: Boolean(tab && tab.incognito), policy_mode: normalizePolicyMode(config.policyMode) };
-  if (!tab || typeof tab.id !== 'number' || !decorated.url || !isTrackableUrl(decorated.url, config.policyMode)) return decorated;
+  if (!tab || typeof tab.id !== 'number' || !decorated.url || !isTrackableUrl(decorated.url, config.policyMode)) return ensureCaptureIdentity(decorated);
   const state = await updateStateFromPayload(tab.id, decorated);
-  if (!state) return decorated;
+  if (!state) return ensureCaptureIdentity(decorated);
   if (tab.active && !state.activeStartedAt) {
     state.activeStartedAt = state.visitStartedAt || nowIso();
     const states = await getTabVisitState();
@@ -833,8 +849,9 @@ async function decorateCapturePayload(payload, sender) {
     await saveTabVisitState(states);
   }
   decorated.visit_id = state.visitId;
+  decorated.navigation_id = state.navigationId;
   decorated.visit_started_at = state.visitStartedAt;
-  return decorated;
+  return ensureCaptureIdentity(decorated);
 }
 
 const injectedTabs = new Map();
