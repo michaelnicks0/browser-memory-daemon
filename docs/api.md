@@ -54,7 +54,7 @@ Missing or invalid bearer tokens return `401`; malformed JSON and invalid payloa
 | `/policy/rules/{rule_id}` | `DELETE` | Delete a policy rule. | Yes |
 | `/policy/evaluate?url=...` | `GET` | Explain static + local capture decision. | Yes |
 | `/forget` | `POST` | Forget by URL or domain and return a deletion receipt. | Yes |
-| `/doctor[?storage_census=full]` | `GET` | DB integrity, FTS consistency, runtime paths, media queue, and fast DB-derived storage counts; optional filesystem census walks blob roots. | Yes |
+| `/doctor[?storage_census=full]` | `GET` | DB integrity, FTS consistency, runtime paths, blob lifecycle/pending deletion health, media queue, and fast DB-derived storage counts; optional filesystem census walks blob roots. | Yes |
 
 ---
 
@@ -312,6 +312,8 @@ Content-Type: application/json
 {"domain": "linkedin.com", "dry_run": true, "rehydrate": false}
 ```
 
+Execute mode first records a blob tombstone and sets selected artifacts to `purging`. It returns `pending_deletions > 0` instead of claiming purge success when bytes are blocked or an unlink fails. Pending artifacts retain locators for retry but are not served or overwritten; they continue to count against media admission budgets until `storage reconcile --execute` reaches `deleted` or `missing`.
+
 Stored binaries are available via:
 
 ```http
@@ -319,7 +321,7 @@ GET /media-artifacts/<artifact_id>
 Authorization: Bearer ***
 ```
 
-The daemon validates the stored DB `file_path` against the configured media root before serving bytes. Missing, stale, invalid, or out-of-root paths return metadata/not-stored responses rather than reading arbitrary local files.
+The daemon validates the tier-owned locator against the configured media/spool root before serving bytes. Missing, stale, invalid, out-of-root, `purging`, or `purged` artifacts return metadata/not-stored responses rather than reading arbitrary local files.
 
 Media metadata is not inserted into FTS; search results only expose `media_artifact_count`.
 
@@ -402,5 +404,7 @@ Forget one absolute URL. URL matching is policy-aware: `all` mode matches the li
 ```
 
 Requests with neither selector or with both selectors return `400`. Domain selectors reject URL/path/query/wildcard/port/userinfo syntax; use `url` for a scoped URL deletion.
+
+The relational cascade, minimized receipt, and blob tombstones commit in one SQLite transaction. The response includes `database_forgotten`, `deletion`, and `counts.blob_deletions_pending`. `forgotten` is `true` only when every required byte is confirmed `deleted` or already `missing`; failed, blocked, unavailable-root, or outside-root deletion remains durable retry work and keeps `forgotten: false`. The receipt ID is also the deletion operation ID used by reconciliation.
 
 The response includes `receipt_id`, redaction-safe `scope`, and deletion counts for documents, visits, lifecycle events, snapshots, chunks, FTS, clean-text blobs, media artifacts/blobs, embeddings, redactions, and feedback events. Blob counters include out-of-root/failed unlink counts when stale or tampered DB paths are refused instead of followed. URL deletion receipts redact sensitive selector values even when `all` mode used the literal URL to find rows.

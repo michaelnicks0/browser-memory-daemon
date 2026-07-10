@@ -69,6 +69,7 @@ Exit codes:
 | `8` | `add_relative_blob_locators` | Add nullable clean-text and media locators relative to their configured containment roots. Historical rows remain `NULL`; media writes dual-write relative and absolute compatibility fields. The migration performs no filesystem inference or mutation. |
 | `9` | `add_sqlite_snapshot_text_authority` | Add complete cleaned text plus explicit source. Promote only ordered chunk reconstructions whose SHA-256 exactly matches the recorded snapshot hash; leave unresolved rows on legacy fallback for explicit reconciliation. New captures write SQLite authority and no text sidecar. |
 | `10` | `split_media_root_and_add_spool` | Add media ownership tier and spool locator fields plus distinct in-flight spool reservations. Existing media rows remain `media-root`; the migration is additive and performs no filesystem move. |
+| `11` | `add_blob_lifecycle_records` | Add durable blob lifecycle metadata and backfill currently stored media plus legacy snapshot derivatives as `committed`. The migration is additive and moves or deletes no bytes. |
 
 Each `schema_migrations` row stores version, unique name, SHA-256 checksum, and applied timestamp. `PRAGMA user_version` must match the highest contiguous ledger version. Unknown-newer versions, gaps, name drift, checksum drift, and schema-fingerprint drift fail closed.
 

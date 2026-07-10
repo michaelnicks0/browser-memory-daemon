@@ -18,61 +18,61 @@
 </g>
 <g id="clust2" class="cluster">
 <title>cluster_14</title>
-<polygon fill="none" stroke="#444444" points="33,-561 33,-990 2107,-990 2107,-561 33,-561"/>
-<text text-anchor="start" x="904.5" y="-589.8" font-family="Arial" font-size="24.00" fill="#444444">WSL Loopback HTTP Daemon</text>
-<text text-anchor="start" x="868" y="-569.8" font-family="Arial" font-size="19.00" fill="#444444">[Container: Python 3.11, ThreadingHTTPServer]</text>
+<polygon fill="none" stroke="#444444" points="33,-528 33,-957 2107,-957 2107,-528 33,-528"/>
+<text text-anchor="start" x="904.5" y="-556.8" font-family="Arial" font-size="24.00" fill="#444444">WSL Loopback HTTP Daemon</text>
+<text text-anchor="start" x="868" y="-536.8" font-family="Arial" font-size="19.00" fill="#444444">[Container: Python 3.11, ThreadingHTTPServer]</text>
 </g>
 <!-- 15 -->
 <g id="15" class="node">
 <title>15</title>
-<polygon fill="#85bbf0" stroke="#1168bd" points="453,-946.5 58,-946.5 58,-715.5 453,-715.5 453,-946.5"/>
-<text text-anchor="start" x="87" y="-898.3" font-family="Arial" font-size="34.00" fill="#000000">HTTP Request Router</text>
-<text text-anchor="start" x="119" y="-876.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python http.server]</text>
-<text text-anchor="start" x="90" y="-839.3" font-family="Arial" font-size="24.00" fill="#000000">Routes loopback API requests,</text>
-<text text-anchor="start" x="112.5" y="-815.3" font-family="Arial" font-size="24.00" fill="#000000">serves UI assets, enforces</text>
-<text text-anchor="start" x="91.5" y="-791.3" font-family="Arial" font-size="24.00" fill="#000000">bearer auth for memory/admin</text>
-<text text-anchor="start" x="106" y="-767.3" font-family="Arial" font-size="24.00" fill="#000000">APIs, and applies CORS for</text>
-<text text-anchor="start" x="172" y="-743.3" font-family="Arial" font-size="24.00" fill="#000000">allowed origins.</text>
+<polygon fill="#85bbf0" stroke="#1168bd" points="453,-913.5 58,-913.5 58,-682.5 453,-682.5 453,-913.5"/>
+<text text-anchor="start" x="87" y="-865.3" font-family="Arial" font-size="34.00" fill="#000000">HTTP Request Router</text>
+<text text-anchor="start" x="119" y="-843.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python http.server]</text>
+<text text-anchor="start" x="90" y="-806.3" font-family="Arial" font-size="24.00" fill="#000000">Routes loopback API requests,</text>
+<text text-anchor="start" x="112.5" y="-782.3" font-family="Arial" font-size="24.00" fill="#000000">serves UI assets, enforces</text>
+<text text-anchor="start" x="91.5" y="-758.3" font-family="Arial" font-size="24.00" fill="#000000">bearer auth for memory/admin</text>
+<text text-anchor="start" x="106" y="-734.3" font-family="Arial" font-size="24.00" fill="#000000">APIs, and applies CORS for</text>
+<text text-anchor="start" x="172" y="-710.3" font-family="Arial" font-size="24.00" fill="#000000">allowed origins.</text>
 </g>
-<!-- 23 -->
-<g id="23" class="node">
-<title>23</title>
-<polygon fill="#85bbf0" stroke="#1168bd" points="1299,-958.5 792,-958.5 792,-703.5 1299,-703.5 1299,-958.5"/>
-<text text-anchor="start" x="862" y="-910.3" font-family="Arial" font-size="34.00" fill="#000000">Search and Read Model</text>
-<text text-anchor="start" x="890.5" y="-888.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python + SQLite FTS5]</text>
-<text text-anchor="start" x="874.5" y="-851.3" font-family="Arial" font-size="24.00" fill="#000000">Provides exact FTS search plus</text>
-<text text-anchor="start" x="915.5" y="-827.3" font-family="Arial" font-size="24.00" fill="#000000">SQLite&#45;authoritative text</text>
-<text text-anchor="start" x="903" y="-803.3" font-family="Arial" font-size="24.00" fill="#000000">detail and observation&#45;first</text>
-<text text-anchor="start" x="821" y="-779.3" font-family="Arial" font-size="24.00" fill="#000000">recent/timeline/document/snapshot/media</text>
-<text text-anchor="start" x="912" y="-755.3" font-family="Arial" font-size="24.00" fill="#000000">views with explicit legacy</text>
-<text text-anchor="start" x="995" y="-731.3" font-family="Arial" font-size="24.00" fill="#000000">fallbacks.</text>
+<!-- 24 -->
+<g id="24" class="node">
+<title>24</title>
+<polygon fill="#85bbf0" stroke="#1168bd" points="1299,-925.5 792,-925.5 792,-670.5 1299,-670.5 1299,-925.5"/>
+<text text-anchor="start" x="862" y="-877.3" font-family="Arial" font-size="34.00" fill="#000000">Search and Read Model</text>
+<text text-anchor="start" x="890.5" y="-855.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python + SQLite FTS5]</text>
+<text text-anchor="start" x="874.5" y="-818.3" font-family="Arial" font-size="24.00" fill="#000000">Provides exact FTS search plus</text>
+<text text-anchor="start" x="915.5" y="-794.3" font-family="Arial" font-size="24.00" fill="#000000">SQLite&#45;authoritative text</text>
+<text text-anchor="start" x="903" y="-770.3" font-family="Arial" font-size="24.00" fill="#000000">detail and observation&#45;first</text>
+<text text-anchor="start" x="821" y="-746.3" font-family="Arial" font-size="24.00" fill="#000000">recent/timeline/document/snapshot/media</text>
+<text text-anchor="start" x="912" y="-722.3" font-family="Arial" font-size="24.00" fill="#000000">views with explicit legacy</text>
+<text text-anchor="start" x="995" y="-698.3" font-family="Arial" font-size="24.00" fill="#000000">fallbacks.</text>
 </g>
-<!-- 15&#45;&gt;23 -->
-<g id="73" class="edge">
-<title>15&#45;&gt;23</title>
-<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M453.06,-831C552.41,-831 674.35,-831 781.64,-831"/>
-<polygon fill="#444444" stroke="#444444" points="781.64,-834.5 791.64,-831 781.64,-827.5 781.64,-834.5"/>
-<polygon fill="white" stroke="transparent" points="489,-831 489,-865 756,-865 756,-831 489,-831"/>
-<text text-anchor="start" x="493.5" y="-841.8" font-family="Arial" font-size="24.00" fill="#444444">Routes read requests to</text>
+<!-- 15&#45;&gt;24 -->
+<g id="75" class="edge">
+<title>15&#45;&gt;24</title>
+<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M453.06,-798C552.41,-798 674.35,-798 781.64,-798"/>
+<polygon fill="#444444" stroke="#444444" points="781.64,-801.5 791.64,-798 781.64,-794.5 781.64,-801.5"/>
+<polygon fill="white" stroke="transparent" points="489,-798 489,-832 756,-832 756,-798 489,-798"/>
+<text text-anchor="start" x="493.5" y="-808.8" font-family="Arial" font-size="24.00" fill="#444444">Routes read requests to</text>
 </g>
 <!-- 22 -->
 <g id="22" class="node">
 <title>22</title>
-<polygon fill="#85bbf0" stroke="#1168bd" points="2082,-964.5 1671,-964.5 1671,-661.5 2082,-661.5 2082,-964.5"/>
-<text text-anchor="start" x="1720" y="-916.3" font-family="Arial" font-size="34.00" fill="#000000">Contained BlobStore</text>
-<text text-anchor="start" x="1700" y="-894.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python filesystem boundary]</text>
-<text text-anchor="start" x="1724" y="-857.3" font-family="Arial" font-size="24.00" fill="#000000">Prefers root&#45;relative locators</text>
-<text text-anchor="start" x="1760.5" y="-833.3" font-family="Arial" font-size="24.00" fill="#000000">with contained legacy</text>
-<text text-anchor="start" x="1745.5" y="-809.3" font-family="Arial" font-size="24.00" fill="#000000">fallback; streams unique</text>
-<text text-anchor="start" x="1761.5" y="-785.3" font-family="Arial" font-size="24.00" fill="#000000">stages with size/hash</text>
-<text text-anchor="start" x="1757.5" y="-761.3" font-family="Arial" font-size="24.00" fill="#000000">accounting; atomically</text>
-<text text-anchor="start" x="1729.5" y="-737.3" font-family="Arial" font-size="24.00" fill="#000000">commits; and contains blob</text>
-<text text-anchor="start" x="1762" y="-713.3" font-family="Arial" font-size="24.00" fill="#000000">read, stat, and delete</text>
-<text text-anchor="start" x="1816" y="-689.3" font-family="Arial" font-size="24.00" fill="#000000">operations.</text>
+<polygon fill="#85bbf0" stroke="#1168bd" points="2082,-931.5 1671,-931.5 1671,-628.5 2082,-628.5 2082,-931.5"/>
+<text text-anchor="start" x="1720" y="-883.3" font-family="Arial" font-size="34.00" fill="#000000">Contained BlobStore</text>
+<text text-anchor="start" x="1700" y="-861.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python filesystem boundary]</text>
+<text text-anchor="start" x="1724" y="-824.3" font-family="Arial" font-size="24.00" fill="#000000">Prefers root&#45;relative locators</text>
+<text text-anchor="start" x="1760.5" y="-800.3" font-family="Arial" font-size="24.00" fill="#000000">with contained legacy</text>
+<text text-anchor="start" x="1745.5" y="-776.3" font-family="Arial" font-size="24.00" fill="#000000">fallback; streams unique</text>
+<text text-anchor="start" x="1761.5" y="-752.3" font-family="Arial" font-size="24.00" fill="#000000">stages with size/hash</text>
+<text text-anchor="start" x="1757.5" y="-728.3" font-family="Arial" font-size="24.00" fill="#000000">accounting; atomically</text>
+<text text-anchor="start" x="1729.5" y="-704.3" font-family="Arial" font-size="24.00" fill="#000000">commits; and contains blob</text>
+<text text-anchor="start" x="1762" y="-680.3" font-family="Arial" font-size="24.00" fill="#000000">read, stat, and delete</text>
+<text text-anchor="start" x="1816" y="-656.3" font-family="Arial" font-size="24.00" fill="#000000">operations.</text>
 </g>
-<!-- 30 -->
-<g id="30" class="node">
-<title>30</title>
+<!-- 31 -->
+<g id="31" class="node">
+<title>31</title>
 <path fill="#2f95c8" stroke="#20688c" d="M2913.5,-495.22C2913.5,-513.51 2824.98,-528.38 2716,-528.38 2607.02,-528.38 2518.5,-513.51 2518.5,-495.22 2518.5,-495.22 2518.5,-196.78 2518.5,-196.78 2518.5,-178.49 2607.02,-163.62 2716,-163.62 2824.98,-163.62 2913.5,-178.49 2913.5,-196.78 2913.5,-196.78 2913.5,-495.22 2913.5,-495.22"/>
 <path fill="none" stroke="#20688c" d="M2913.5,-495.22C2913.5,-476.92 2824.98,-462.06 2716,-462.06 2607.02,-462.06 2518.5,-476.92 2518.5,-495.22"/>
 <text text-anchor="start" x="2594.5" y="-430.3" font-family="Arial" font-size="34.00" fill="#ffffff">Local Derivative</text>
@@ -84,20 +84,20 @@
 <text text-anchor="start" x="2592.5" y="-265.3" font-family="Arial" font-size="24.00" fill="#ffffff">captures create no text</text>
 <text text-anchor="start" x="2667.5" y="-241.3" font-family="Arial" font-size="24.00" fill="#ffffff">sidecars.</text>
 </g>
-<!-- 22&#45;&gt;30 -->
-<g id="86" class="edge">
-<title>22&#45;&gt;30</title>
-<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M2082.11,-698.91C2211.93,-626.52 2379.32,-533.18 2509.34,-460.68"/>
-<polygon fill="#444444" stroke="#444444" points="2511.21,-463.64 2518.24,-455.71 2507.8,-457.53 2511.21,-463.64"/>
-<polygon fill="white" stroke="transparent" points="2127,-675 2127,-774 2399,-774 2399,-675 2127,-675"/>
-<text text-anchor="start" x="2131" y="-751.3" font-family="Arial" font-size="24.00" fill="#444444">Reads, stats, reconciles,</text>
-<text text-anchor="start" x="2139" y="-727.3" font-family="Arial" font-size="24.00" fill="#444444">and deletes legacy text</text>
-<text text-anchor="start" x="2205" y="-703.3" font-family="Arial" font-size="24.00" fill="#444444">sidecars in</text>
-<text text-anchor="start" x="2211.5" y="-683.3" font-family="Arial" font-size="19.00" fill="#444444">[Filesystem]</text>
+<!-- 22&#45;&gt;31 -->
+<g id="91" class="edge">
+<title>22&#45;&gt;31</title>
+<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M2082.11,-673.97C2211.93,-606.7 2379.32,-519.95 2509.34,-452.57"/>
+<polygon fill="#444444" stroke="#444444" points="2510.97,-455.67 2518.24,-447.96 2507.75,-449.45 2510.97,-455.67"/>
+<polygon fill="white" stroke="transparent" points="2127,-651 2127,-750 2399,-750 2399,-651 2127,-651"/>
+<text text-anchor="start" x="2131" y="-727.3" font-family="Arial" font-size="24.00" fill="#444444">Reads, stats, reconciles,</text>
+<text text-anchor="start" x="2139" y="-703.3" font-family="Arial" font-size="24.00" fill="#444444">and deletes legacy text</text>
+<text text-anchor="start" x="2205" y="-679.3" font-family="Arial" font-size="24.00" fill="#444444">sidecars in</text>
+<text text-anchor="start" x="2211.5" y="-659.3" font-family="Arial" font-size="19.00" fill="#444444">[Filesystem]</text>
 </g>
-<!-- 31 -->
-<g id="31" class="node">
-<title>31</title>
+<!-- 32 -->
+<g id="32" class="node">
+<title>32</title>
 <path fill="#2f95c8" stroke="#20688c" d="M2988,-991.22C2988,-1012.82 2866.09,-1030.38 2716,-1030.38 2565.91,-1030.38 2444,-1012.82 2444,-991.22 2444,-991.22 2444,-638.78 2444,-638.78 2444,-617.18 2565.91,-599.62 2716,-599.62 2866.09,-599.62 2988,-617.18 2988,-638.78 2988,-638.78 2988,-991.22 2988,-991.22"/>
 <path fill="none" stroke="#20688c" d="M2988,-991.22C2988,-969.61 2866.09,-952.06 2716,-952.06 2565.91,-952.06 2444,-969.61 2444,-991.22"/>
 <text text-anchor="start" x="2560.5" y="-923.3" font-family="Arial" font-size="34.00" fill="#ffffff">Guarded Media Blob</text>
@@ -111,20 +111,20 @@
 <text text-anchor="start" x="2566.5" y="-710.3" font-family="Arial" font-size="24.00" fill="#ffffff">identity&#45;marker proof before</text>
 <text text-anchor="start" x="2675" y="-686.3" font-family="Arial" font-size="24.00" fill="#ffffff">access.</text>
 </g>
-<!-- 22&#45;&gt;31 -->
-<g id="87" class="edge">
-<title>22&#45;&gt;31</title>
-<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M2082.11,-813.49C2187.86,-813.74 2318.54,-814.05 2433.64,-814.33"/>
-<polygon fill="#444444" stroke="#444444" points="2433.66,-817.83 2443.67,-814.35 2433.68,-810.83 2433.66,-817.83"/>
-<polygon fill="white" stroke="transparent" points="2127.5,-814 2127.5,-913 2398.5,-913 2398.5,-814 2127.5,-814"/>
-<text text-anchor="start" x="2133.5" y="-890.3" font-family="Arial" font-size="24.00" fill="#444444">Stages, commits, reads,</text>
-<text text-anchor="start" x="2132" y="-866.3" font-family="Arial" font-size="24.00" fill="#444444">stats, and deletes media</text>
-<text text-anchor="start" x="2221.5" y="-842.3" font-family="Arial" font-size="24.00" fill="#444444">blobs in</text>
-<text text-anchor="start" x="2212" y="-822.3" font-family="Arial" font-size="19.00" fill="#444444">[Filesystem]</text>
+<!-- 22&#45;&gt;32 -->
+<g id="92" class="edge">
+<title>22&#45;&gt;32</title>
+<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M2082.11,-788.55C2187.86,-792.97 2318.54,-798.43 2433.64,-803.24"/>
+<polygon fill="#444444" stroke="#444444" points="2433.53,-806.74 2443.67,-803.66 2433.82,-799.75 2433.53,-806.74"/>
+<polygon fill="white" stroke="transparent" points="2127.5,-801 2127.5,-900 2398.5,-900 2398.5,-801 2127.5,-801"/>
+<text text-anchor="start" x="2133.5" y="-877.3" font-family="Arial" font-size="24.00" fill="#444444">Stages, commits, reads,</text>
+<text text-anchor="start" x="2132" y="-853.3" font-family="Arial" font-size="24.00" fill="#444444">stats, and deletes media</text>
+<text text-anchor="start" x="2221.5" y="-829.3" font-family="Arial" font-size="24.00" fill="#444444">blobs in</text>
+<text text-anchor="start" x="2212" y="-809.3" font-family="Arial" font-size="19.00" fill="#444444">[Filesystem]</text>
 </g>
-<!-- 32 -->
-<g id="32" class="node">
-<title>32</title>
+<!-- 33 -->
+<g id="33" class="node">
+<title>33</title>
 <path fill="#2f95c8" stroke="#20688c" d="M2909,-1523.72C2909,-1546.98 2822.49,-1565.88 2716,-1565.88 2609.51,-1565.88 2523,-1546.98 2523,-1523.72 2523,-1523.72 2523,-1144.28 2523,-1144.28 2523,-1121.02 2609.51,-1102.12 2716,-1102.12 2822.49,-1102.12 2909,-1121.02 2909,-1144.28 2909,-1144.28 2909,-1523.72 2909,-1523.72"/>
 <path fill="none" stroke="#20688c" d="M2909,-1523.72C2909,-1500.45 2822.49,-1481.56 2716,-1481.56 2609.51,-1481.56 2523,-1500.45 2523,-1523.72"/>
 <text text-anchor="start" x="2552" y="-1454.3" font-family="Arial" font-size="34.00" fill="#ffffff">Bounded Local Media</text>
@@ -139,55 +139,56 @@
 <text text-anchor="start" x="2568.5" y="-1217.3" font-family="Arial" font-size="24.00" fill="#ffffff">before tier transition/source</text>
 <text text-anchor="start" x="2670" y="-1193.3" font-family="Arial" font-size="24.00" fill="#ffffff">cleanup.</text>
 </g>
-<!-- 22&#45;&gt;32 -->
-<g id="88" class="edge">
-<title>22&#45;&gt;32</title>
-<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M2082.11,-940.28C2213.6,-1022.08 2383.63,-1127.86 2514.34,-1209.17"/>
-<polygon fill="#444444" stroke="#444444" points="2512.55,-1212.18 2522.89,-1214.49 2516.25,-1206.24 2512.55,-1212.18"/>
-<polygon fill="white" stroke="transparent" points="2118,-1135 2118,-1234 2408,-1234 2408,-1135 2118,-1135"/>
-<text text-anchor="start" x="2133" y="-1211.3" font-family="Arial" font-size="24.00" fill="#444444">Stages, commits, reads,</text>
-<text text-anchor="start" x="2122" y="-1187.3" font-family="Arial" font-size="24.00" fill="#444444">stats, and deletes spooled</text>
-<text text-anchor="start" x="2217" y="-1163.3" font-family="Arial" font-size="24.00" fill="#444444">media in</text>
-<text text-anchor="start" x="2211.5" y="-1143.3" font-family="Arial" font-size="19.00" fill="#444444">[Filesystem]</text>
+<!-- 22&#45;&gt;33 -->
+<g id="93" class="edge">
+<title>22&#45;&gt;33</title>
+<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M2082.11,-915.35C2213.6,-1002.33 2383.63,-1114.8 2514.34,-1201.26"/>
+<polygon fill="#444444" stroke="#444444" points="2512.62,-1204.32 2522.89,-1206.92 2516.48,-1198.48 2512.62,-1204.32"/>
+<polygon fill="white" stroke="transparent" points="2118,-1122 2118,-1221 2408,-1221 2408,-1122 2118,-1122"/>
+<text text-anchor="start" x="2133" y="-1198.3" font-family="Arial" font-size="24.00" fill="#444444">Stages, commits, reads,</text>
+<text text-anchor="start" x="2122" y="-1174.3" font-family="Arial" font-size="24.00" fill="#444444">stats, and deletes spooled</text>
+<text text-anchor="start" x="2217" y="-1150.3" font-family="Arial" font-size="24.00" fill="#444444">media in</text>
+<text text-anchor="start" x="2211.5" y="-1130.3" font-family="Arial" font-size="19.00" fill="#444444">[Filesystem]</text>
 </g>
-<!-- 23&#45;&gt;22 -->
-<g id="83" class="edge">
-<title>23&#45;&gt;22</title>
-<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1299.22,-749.34C1311.25,-746.9 1323.22,-744.76 1335,-743 1466.88,-723.33 1503,-724.18 1635,-743 1643.52,-744.22 1652.17,-745.66 1660.86,-747.29"/>
-<polygon fill="#444444" stroke="#444444" points="1660.21,-750.73 1670.7,-749.22 1661.55,-743.86 1660.21,-750.73"/>
-<polygon fill="white" stroke="transparent" points="1335,-743 1335,-829 1635,-829 1635,-743 1335,-743"/>
-<text text-anchor="start" x="1363" y="-805.8" font-family="Arial" font-size="24.00" fill="#444444">Reads only legacy text</text>
-<text text-anchor="start" x="1339" y="-779.8" font-family="Arial" font-size="24.00" fill="#444444">sidecars and checks media</text>
-<text text-anchor="start" x="1418.5" y="-753.8" font-family="Arial" font-size="24.00" fill="#444444">files through</text>
+<!-- 24&#45;&gt;22 -->
+<g id="86" class="edge">
+<title>24&#45;&gt;22</title>
+<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1299.22,-716.34C1311.25,-713.9 1323.22,-711.76 1335,-710 1466.88,-690.33 1503,-691.18 1635,-710 1643.52,-711.22 1652.17,-712.66 1660.86,-714.29"/>
+<polygon fill="#444444" stroke="#444444" points="1660.21,-717.73 1670.7,-716.22 1661.55,-710.86 1660.21,-717.73"/>
+<polygon fill="white" stroke="transparent" points="1335,-710 1335,-796 1635,-796 1635,-710 1335,-710"/>
+<text text-anchor="start" x="1363" y="-772.8" font-family="Arial" font-size="24.00" fill="#444444">Reads only legacy text</text>
+<text text-anchor="start" x="1339" y="-746.8" font-family="Arial" font-size="24.00" fill="#444444">sidecars and checks media</text>
+<text text-anchor="start" x="1418.5" y="-720.8" font-family="Arial" font-size="24.00" fill="#444444">files through</text>
 </g>
-<!-- 29 -->
-<g id="29" class="node">
-<title>29</title>
-<path fill="#2f95c8" stroke="#20688c" d="M2074.5,-1517.72C2074.5,-1544.29 1985.75,-1565.88 1876.5,-1565.88 1767.25,-1565.88 1678.5,-1544.29 1678.5,-1517.72 1678.5,-1517.72 1678.5,-1084.28 1678.5,-1084.28 1678.5,-1057.71 1767.25,-1036.12 1876.5,-1036.12 1985.75,-1036.12 2074.5,-1057.71 2074.5,-1084.28 2074.5,-1084.28 2074.5,-1517.72 2074.5,-1517.72"/>
-<path fill="none" stroke="#20688c" d="M2074.5,-1517.72C2074.5,-1491.14 1985.75,-1469.56 1876.5,-1469.56 1767.25,-1469.56 1678.5,-1491.14 1678.5,-1517.72"/>
-<text text-anchor="start" x="1763.5" y="-1445.3" font-family="Arial" font-size="34.00" fill="#ffffff">SQLite + FTS5</text>
-<text text-anchor="start" x="1803.5" y="-1411.3" font-family="Arial" font-size="34.00" fill="#ffffff">Database</text>
-<text text-anchor="start" x="1750.5" y="-1389.3" font-family="Arial" font-size="19.00" fill="#ffffff">[Container: SQLite with FTS5]</text>
-<text text-anchor="start" x="1708.5" y="-1352.3" font-family="Arial" font-size="24.00" fill="#ffffff">Durable complete cleaned&#45;text,</text>
-<text text-anchor="start" x="1757.5" y="-1328.3" font-family="Arial" font-size="24.00" fill="#ffffff">relational, and full&#45;text</text>
-<text text-anchor="start" x="1759" y="-1304.3" font-family="Arial" font-size="24.00" fill="#ffffff">authority for migration</text>
-<text text-anchor="start" x="1724.5" y="-1280.3" font-family="Arial" font-size="24.00" fill="#ffffff">ledger, sources, documents,</text>
-<text text-anchor="start" x="1727" y="-1256.3" font-family="Arial" font-size="24.00" fill="#ffffff">visits, capture observations,</text>
-<text text-anchor="start" x="1745.5" y="-1232.3" font-family="Arial" font-size="24.00" fill="#ffffff">URL claims, visit events,</text>
-<text text-anchor="start" x="1708" y="-1208.3" font-family="Arial" font-size="24.00" fill="#ffffff">snapshots, chunks, chunks_fts,</text>
-<text text-anchor="start" x="1707.5" y="-1184.3" font-family="Arial" font-size="24.00" fill="#ffffff">media provenance/tasks, policy</text>
-<text text-anchor="start" x="1751" y="-1160.3" font-family="Arial" font-size="24.00" fill="#ffffff">rules, audit events, and</text>
-<text text-anchor="start" x="1784.5" y="-1136.3" font-family="Arial" font-size="24.00" fill="#ffffff">deletion receipts.</text>
+<!-- 30 -->
+<g id="30" class="node">
+<title>30</title>
+<path fill="#2f95c8" stroke="#20688c" d="M2074,-1515.22C2074,-1543.44 1985.48,-1566.38 1876.5,-1566.38 1767.52,-1566.38 1679,-1543.44 1679,-1515.22 1679,-1515.22 1679,-1054.78 1679,-1054.78 1679,-1026.56 1767.52,-1003.62 1876.5,-1003.62 1985.48,-1003.62 2074,-1026.56 2074,-1054.78 2074,-1054.78 2074,-1515.22 2074,-1515.22"/>
+<path fill="none" stroke="#20688c" d="M2074,-1515.22C2074,-1486.99 1985.48,-1464.06 1876.5,-1464.06 1767.52,-1464.06 1679,-1486.99 1679,-1515.22"/>
+<text text-anchor="start" x="1763.5" y="-1441.3" font-family="Arial" font-size="34.00" fill="#ffffff">SQLite + FTS5</text>
+<text text-anchor="start" x="1803.5" y="-1407.3" font-family="Arial" font-size="34.00" fill="#ffffff">Database</text>
+<text text-anchor="start" x="1750.5" y="-1385.3" font-family="Arial" font-size="19.00" fill="#ffffff">[Container: SQLite with FTS5]</text>
+<text text-anchor="start" x="1708.5" y="-1348.3" font-family="Arial" font-size="24.00" fill="#ffffff">Durable complete cleaned&#45;text,</text>
+<text text-anchor="start" x="1757.5" y="-1324.3" font-family="Arial" font-size="24.00" fill="#ffffff">relational, and full&#45;text</text>
+<text text-anchor="start" x="1759" y="-1300.3" font-family="Arial" font-size="24.00" fill="#ffffff">authority for migration</text>
+<text text-anchor="start" x="1724.5" y="-1276.3" font-family="Arial" font-size="24.00" fill="#ffffff">ledger, sources, documents,</text>
+<text text-anchor="start" x="1727" y="-1252.3" font-family="Arial" font-size="24.00" fill="#ffffff">visits, capture observations,</text>
+<text text-anchor="start" x="1745.5" y="-1228.3" font-family="Arial" font-size="24.00" fill="#ffffff">URL claims, visit events,</text>
+<text text-anchor="start" x="1708" y="-1204.3" font-family="Arial" font-size="24.00" fill="#ffffff">snapshots, chunks, chunks_fts,</text>
+<text text-anchor="start" x="1715.5" y="-1180.3" font-family="Arial" font-size="24.00" fill="#ffffff">media provenance/tasks, blob</text>
+<text text-anchor="start" x="1752" y="-1156.3" font-family="Arial" font-size="24.00" fill="#ffffff">lifecycle records, policy</text>
+<text text-anchor="start" x="1751" y="-1132.3" font-family="Arial" font-size="24.00" fill="#ffffff">rules, audit events, and</text>
+<text text-anchor="start" x="1784.5" y="-1108.3" font-family="Arial" font-size="24.00" fill="#ffffff">deletion receipts.</text>
 </g>
-<!-- 23&#45;&gt;29 -->
-<g id="82" class="edge">
-<title>23&#45;&gt;29</title>
-<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1271.66,-958.65C1395.62,-1028.93 1548.35,-1115.52 1669.2,-1184.04"/>
-<polygon fill="#444444" stroke="#444444" points="1667.78,-1187.26 1678.21,-1189.15 1671.23,-1181.17 1667.78,-1187.26"/>
-<polygon fill="white" stroke="transparent" points="1342,-1162 1342,-1237 1628,-1237 1628,-1162 1342,-1162"/>
-<text text-anchor="start" x="1346" y="-1214.3" font-family="Arial" font-size="24.00" fill="#444444">Reads metadata and FTS</text>
-<text text-anchor="start" x="1460.5" y="-1190.3" font-family="Arial" font-size="24.00" fill="#444444">from</text>
-<text text-anchor="start" x="1424.5" y="-1170.3" font-family="Arial" font-size="19.00" fill="#444444">[SQLite FTS5]</text>
+<!-- 24&#45;&gt;30 -->
+<g id="85" class="edge">
+<title>24&#45;&gt;30</title>
+<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1263.77,-925.64C1389.32,-999.39 1546.36,-1091.65 1669.89,-1164.21"/>
+<polygon fill="#444444" stroke="#444444" points="1668.33,-1167.35 1678.72,-1169.4 1671.87,-1161.32 1668.33,-1167.35"/>
+<polygon fill="white" stroke="transparent" points="1342,-1141 1342,-1216 1628,-1216 1628,-1141 1342,-1141"/>
+<text text-anchor="start" x="1346" y="-1193.3" font-family="Arial" font-size="24.00" fill="#444444">Reads metadata and FTS</text>
+<text text-anchor="start" x="1460.5" y="-1169.3" font-family="Arial" font-size="24.00" fill="#444444">from</text>
+<text text-anchor="start" x="1424.5" y="-1149.3" font-family="Arial" font-size="19.00" fill="#444444">[SQLite FTS5]</text>
 </g>
 </g>
 </svg>

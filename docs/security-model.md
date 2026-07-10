@@ -15,7 +15,7 @@ The daemon is local-first and WSL-resident. It assumes captured page text may be
 | Network | Daemon binds to `127.0.0.1` by default; daemon-public media fetches reject non-global/private destinations unless explicitly allowlisted. |
 | API auth | Bearer token required for memory/admin APIs. |
 | Health/UI shell | `/health` and `/ui` are public loopback only; `/ui` rejects non-loopback `Host` headers and includes a same-origin token bootstrap for operator UX, while static assets stay token-free. |
-| Durable storage | WSL XDG paths; repo and Chrome profile are not storage roots; DB blob paths are validated against configured roots before read/serve/delete operations; explicit external media roots require mount and identity-marker proof; an optional local spool is contained under the WSL data root and hard-capped. |
+| Durable storage | WSL XDG paths; repo and Chrome profile are not storage roots; DB blob paths are validated against configured roots before read/serve/delete operations; explicit external media roots require mount and identity-marker proof; an optional local spool is contained under the WSL data root and hard-capped; durable deletion intents preserve retry work across crashes. |
 | Browser bridge | Content scripts message service worker; service worker owns daemon fetch/auth/queues. |
 | Agent safety | Captured page text is untrusted evidence, never instructions. |
 
@@ -49,7 +49,7 @@ Mitigations that remain even in `all`:
 - bearer auth for memory/admin APIs;
 - runtime data is outside the repo;
 - secret scan protects committed repo content;
-- forget-by-domain/URL can delete stored memory after the fact; URL forget uses the literal selector in `all` mode but redacts selector values in receipts.
+- forget-by-domain/URL can delete stored memory after the fact; URL forget uses the literal selector in `all` mode but redacts selector values in receipts. Receipt and byte-deletion tombstones commit with the relational cascade, and incomplete byte removal is reported as pending rather than complete.
 
 ---
 
@@ -82,6 +82,7 @@ In `recall`, `balanced`, and `strict`, redaction runs before DB/FTS/blob storage
 - Local web UI is served from loopback at `/ui`; the HTML bootstrap embeds the current daemon token so the dashboard auto-loads without manual paste. Requests with non-loopback `Host` headers are rejected, static JS/CSS assets remain token-free, and every memory/admin API call still requires the bearer token.
 - Configure final media separately with `BMD_MEDIA_ROOT`. Explicit external roots, or roots guarded with `BMD_REQUIRE_MEDIA_ROOT_MOUNT=1`, require a non-root mount and `.bmd-media-root-id` whose exact content matches `BMD_MEDIA_ROOT_IDENTITY`. The daemon checks this boundary before media access and does not create the external media root during startup. `BMD_REQUIRE_BLOB_ROOT_MOUNT` remains a compatibility guard.
 - A media-root outage never blocks local SQLite text/provenance capture. Optional fallback requires both a local `BMD_MEDIA_SPOOL_ROOT` beneath the data root and positive `BMD_MAX_MEDIA_SPOOL_BYTES`; no implicit or unbounded shadow fallback exists. Admission counts committed/orphaned spool files and distinct in-flight SQLite reservations so same-artifact concurrent writers cannot collapse capacity accounting.
+- Forget, media purge, and eviction first persist contained locators in `blob_storage_records`. Failed or blocked bytes are not served, remain in budget accounting, degrade doctor status, and are retried only through the dry-run-first `storage reconcile` operator surface. Reconciliation does not follow outside-root paths or unavailable external roots.
 - Daemon-public media fetch uses a no-cookie, no-`Referer`, HTTP(S)-only egress guard. Every direct URL, redirect target, HLS variant playlist, init map, and segment is resolved and rejected by default if it maps to loopback, private, link-local, unspecified, multicast, reserved, or otherwise non-global address space. Private destinations require explicit `BMD_MEDIA_PUBLIC_FETCH_ALLOW_PRIVATE_HOSTS` configuration.
 - Complete cleaned text and capture provenance commit atomically to local SQLite. New captures create no text sidecar. Legacy text promotion accepts only SHA-256 matches from ordered chunks or an in-root regular sidecar resolved through `BlobStore`; arbitrary database paths and hash mismatches remain unresolved.
 - Media and legacy-sidecar blob operations are root-scoped through `BlobStore`: writes use unique streaming stages, optional size/hash checks, file and parent-directory `fsync`, and atomic replace; media filenames use hashed storage stems; and read/serve/stat/purge/forget/migration flows refuse stale or tampered DB locators. Media rows identify `media-root` or `spool` ownership and keep root-relative plus contained absolute compatibility locators. Reads fail closed rather than downgrading when a preferred locator is invalid. Spool drain verifies size/hash, commits the tier transition, then removes the source.

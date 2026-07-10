@@ -206,6 +206,8 @@ def drain_media_spool(
     limit: int = 100,
     execute: bool = False,
 ) -> dict[str, Any]:
+    from .blob_lifecycle import process_blob_tombstones, register_committed_blob, tombstone_blob
+
     if limit < 1 or limit > 10_000:
         raise ValueError("limit must be between 1 and 10000")
     readiness = media_root_readiness(config)
@@ -257,6 +259,7 @@ def drain_media_spool(
                     expected_sha256=expected_sha256 or None,
                 )
             with conn:
+                target_locator = target_store.relative_locator(target)
                 updated = conn.execute(
                     """
                     UPDATE media_artifacts
@@ -264,12 +267,33 @@ def drain_media_spool(
                         spool_locator = NULL
                     WHERE id = ? AND storage_tier = 'spool'
                     """,
-                    (str(target), target_store.relative_locator(target), row["id"]),
+                    (str(target), target_locator, row["id"]),
                 )
                 if updated.rowcount != 1:
                     raise BlobStoreError("media spool row changed before durable tier transition")
-            delete_result = source_store.delete(resolution.path)
-            if not delete_result.deleted:
+                operation_id = f"drain-{uuid.uuid4().hex}"
+                register_committed_blob(
+                    conn,
+                    owner_kind="media-artifact",
+                    owner_id=str(row["id"]),
+                    storage_tier="media-root",
+                    locator=target_locator,
+                    byte_size=expected_size,
+                    content_sha256=expected_sha256 or None,
+                )
+                tombstone_blob(
+                    conn,
+                    operation_id=operation_id,
+                    owner_kind="media-artifact",
+                    owner_id=str(row["id"]),
+                    storage_tier="spool",
+                    locator=str(row["spool_locator"]),
+                    reason="spool-drained",
+                    byte_size=expected_size,
+                    content_sha256=expected_sha256 or None,
+                )
+            cleanup = process_blob_tombstones(conn, config, operation_id=operation_id)
+            if cleanup["pending"]:
                 summary["source_cleanup_failed"] += 1
             summary["moved"] += 1
             summary["moved_bytes"] += expected_size

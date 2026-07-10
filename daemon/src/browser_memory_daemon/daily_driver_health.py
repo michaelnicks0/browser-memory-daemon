@@ -51,6 +51,7 @@ _RUNTIME_TABLES = (
     "privacy_rules",
     "audit_events",
     "deletion_receipts",
+    "blob_storage_records",
 )
 _EXTENSION_TOKEN_FILES = (
     "src/service_worker.js",

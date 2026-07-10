@@ -68,6 +68,7 @@ Global defaults:
 | `snapshot-text reconcile [--limit N] [--execute]` | Dry-run by default; promotes only exact hash-verified chunk reconstructions or contained legacy sidecars into SQLite complete-text authority. | Pretty JSON with scanned/resolved/applied/source/unresolved counts. `--execute` is required to mutate rows. |
 | `media-spool status` | Report final-root readiness plus configured cap, DB-backed artifact/reservation counts, filesystem-accounted bytes, and available capacity. | Pretty JSON; read-only. |
 | `media-spool drain [--limit N] [--execute]` | Preview or execute bounded spool-to-media-root transitions. | Dry-run by default. Execute streams and verifies size/SHA-256, commits the SQLite tier switch, then removes the spool source. |
+| `storage reconcile [--limit N] [--stale-stage-seconds N] [--execute]` | Preview or execute contained blob convergence across pending tombstones, missing references, in-root orphans, and stale stages. | Dry-run by default. Exit `0` when no retryable tombstones remain; exit `2` when deletion work remains blocked/failed. |
 
 ---
 
@@ -80,6 +81,7 @@ Global defaults:
 | Compatible migration work pending | `migrate --check` prints the pending ordered steps and exits `2` without creating or mutating the database. |
 | Migration incompatibility/failure | `migrate` prints JSON with `compatible=false`, `ready=false`, and a redaction-safe error, then exits `1`. |
 | `daily-driver-health` hard error | Prints JSON with `ok=false` and exits `1`; use `--no-fail` for report-only collection. |
+| Pending blob deletion | Forget/purge JSON reports pending work; `doctor` is degraded and `storage reconcile --execute` exits `2` until blocked/failed records converge. |
 | Bad capture payload | HTTP `400` with JSON error. |
 | Blocked capture by static policy or explicit local rule | HTTP `200`, `{"stored": false, "blocked": true, "reason": "..."}`. |
 | `all` mode capture | Stores unredacted payload when payload is otherwise parseable. |
@@ -158,5 +160,6 @@ PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
 
 - CLI output is currently JSON but not formally versioned.
 - `capture-fixture` exists for tests/smoke checks, not browser capture replacement.
-- `migrate --check/--execute`, `blob-root migrate`, and `snapshot-text reconcile` are current repository migration/reconciliation helpers; dry-run remains the default for filesystem-backed reconciliation.
+- `migrate --check/--execute`, `blob-root migrate`, `snapshot-text reconcile`, and `storage reconcile` are current repository migration/reconciliation helpers; dry-run remains the default for filesystem-backed reconciliation.
+- `storage reconcile` never traverses an unavailable external media root and never deletes outside configured roots.
 - Future CLI changes should update this contract and `daemon/tests/e2e/test_cli_admin.py` together.

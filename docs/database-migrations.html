@@ -247,6 +247,11 @@ date: "2026-07-10"</p>
 <td><code>split_media_root_and_add_spool</code></td>
 <td>Add media ownership tier and spool locator fields plus distinct in-flight spool reservations. Existing media rows remain <code>media-root</code>; the migration is additive and performs no filesystem move.</td>
 </tr>
+<tr>
+<td style="text-align: right;"><code>11</code></td>
+<td><code>add_blob_lifecycle_records</code></td>
+<td>Add durable blob lifecycle metadata and backfill currently stored media plus legacy snapshot derivatives as <code>committed</code>. The migration is additive and moves or deletes no bytes.</td>
+</tr>
 </tbody>
 </table>
 <p>Each <code>schema_migrations</code> row stores version, unique name, SHA-256 checksum, and applied timestamp. <code>PRAGMA user_version</code> must match the highest contiguous ledger version. Unknown-newer versions, gaps, name drift, checksum drift, and schema-fingerprint drift fail closed.</p>

@@ -460,14 +460,14 @@ revision = 1
 statement = "Deletion and eviction shall be crash-recoverable and shall not report full success while required bytes remain."
 rationale = "Filesystem side effects require durable tombstones and retryable reconciliation."
 owner = "BlobStore / Forget / Media Store"
-status = "planned"
+status = "active"
 aliases = ["HRD-006"]
-implementation = ["daemon/src/browser_memory_daemon/forget.py", "daemon/src/browser_memory_daemon/media.py"]
-unit_evidence = []
-integration_evidence = []
-system_evidence = []
-operational_evidence = []
-validation_evidence = []
+implementation = ["daemon/src/browser_memory_daemon/blob_lifecycle.py", "daemon/src/browser_memory_daemon/storage_reconcile.py", "daemon/src/browser_memory_daemon/forget.py", "daemon/src/browser_memory_daemon/media.py", "daemon/src/browser_memory_daemon/media_storage.py", "daemon/src/browser_memory_daemon/schema.sql", "daemon/src/browser_memory_daemon/migration_steps/v0011_add_blob_lifecycle_records.py"]
+unit_evidence = ["daemon/tests/unit/test_blob_store.py"]
+integration_evidence = ["daemon/tests/integration/test_storage_reconcile.py", "daemon/tests/integration/test_ingest_search_forget.py", "daemon/tests/integration/test_migrations.py::test_version_eleven_adds_and_backfills_blob_lifecycle_records"]
+system_evidence = ["daemon/tests/e2e/test_cli_admin.py::test_cli_storage_reconcile_defaults_to_dry_run", "daemon/tests/e2e/test_http_api.py"]
+operational_evidence = ["docs/architecture/adr/0040-use-durable-deletion-intents-and-reconciliation.md", "docs/CLI_UX_CONTRACT.md", "docs/api.md"]
+validation_evidence = ["daemon/tests/integration/test_storage_reconcile.py::test_forget_persists_retryable_tombstone_before_database_cascade", "daemon/tests/integration/test_storage_reconcile.py::test_media_purge_remains_pending_until_tombstoned_bytes_are_deleted", "daemon/tests/integration/test_storage_reconcile.py::test_concurrent_tombstone_processors_delete_once_and_converge", "daemon/tests/integration/test_storage_reconcile.py::test_storage_reconcile_reports_and_repairs_missing_orphan_and_stale_stage"]
 
 [[requirements]]
 id = "REQ-032"
@@ -481,8 +481,8 @@ implementation = ["daemon/src/browser_memory_daemon/migrations.py", "daemon/src/
 unit_evidence = []
 integration_evidence = ["daemon/tests/integration/test_migrations.py"]
 system_evidence = ["scripts/run-e2e.sh"]
-operational_evidence = ["docs/database-migrations.md", "docs/architecture/adr/0028-use-versioned-restore-backed-sqlite-migrations.md", "docs/architecture/adr/0037-expand-blob-references-with-relative-locators.md", "docs/architecture/adr/0039-split-media-root-and-add-bounded-durable-spool.md"]
-validation_evidence = ["daemon/tests/integration/test_migrations.py::test_destructive_migration_creates_online_backup_that_restores_search", "daemon/tests/integration/test_migrations.py::test_version_eight_adds_nullable_relative_locators", "daemon/tests/integration/test_migrations.py::test_version_nine_backfills_hash_verified_chunks_and_new_ingest_uses_sqlite_authority", "daemon/tests/integration/test_migrations.py::test_version_ten_adds_media_storage_tiers_and_spool_reservations"]
+operational_evidence = ["docs/database-migrations.md", "docs/architecture/adr/0028-use-versioned-restore-backed-sqlite-migrations.md", "docs/architecture/adr/0037-expand-blob-references-with-relative-locators.md", "docs/architecture/adr/0039-split-media-root-and-add-bounded-durable-spool.md", "docs/architecture/adr/0040-use-durable-deletion-intents-and-reconciliation.md"]
+validation_evidence = ["daemon/tests/integration/test_migrations.py::test_destructive_migration_creates_online_backup_that_restores_search", "daemon/tests/integration/test_migrations.py::test_version_eight_adds_nullable_relative_locators", "daemon/tests/integration/test_migrations.py::test_version_nine_backfills_hash_verified_chunks_and_new_ingest_uses_sqlite_authority", "daemon/tests/integration/test_migrations.py::test_version_ten_adds_media_storage_tiers_and_spool_reservations", "daemon/tests/integration/test_migrations.py::test_version_eleven_adds_and_backfills_blob_lifecycle_records"]
 
 [[requirements]]
 id = "REQ-033"

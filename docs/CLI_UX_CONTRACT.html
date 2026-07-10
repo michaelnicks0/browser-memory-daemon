@@ -334,6 +334,11 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Preview or execute bounded spool-to-media-root transitions.</td>
 <td>Dry-run by default. Execute streams and verifies size/SHA-256, commits the SQLite tier switch, then removes the spool source.</td>
 </tr>
+<tr>
+<td><code>storage reconcile [--limit N] [--stale-stage-seconds N] [--execute]</code></td>
+<td>Preview or execute contained blob convergence across pending tombstones, missing references, in-root orphans, and stale stages.</td>
+<td>Dry-run by default. Exit <code>0</code> when no retryable tombstones remain; exit <code>2</code> when deletion work remains blocked/failed.</td>
+</tr>
 </tbody>
 </table>
 <hr />
@@ -365,6 +370,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td><code>daily-driver-health</code> hard error</td>
 <td>Prints JSON with <code>ok=false</code> and exits <code>1</code>; use <code>--no-fail</code> for report-only collection.</td>
+</tr>
+<tr>
+<td>Pending blob deletion</td>
+<td>Forget/purge JSON reports pending work; <code>doctor</code> is degraded and <code>storage reconcile --execute</code> exits <code>2</code> until blocked/failed records converge.</td>
 </tr>
 <tr>
 <td>Bad capture payload</td>
@@ -438,7 +447,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <ul>
 <li>CLI output is currently JSON but not formally versioned.</li>
 <li><code>capture-fixture</code> exists for tests/smoke checks, not browser capture replacement.</li>
-<li><code>migrate --check/--execute</code>, <code>blob-root migrate</code>, and <code>snapshot-text reconcile</code> are current repository migration/reconciliation helpers; dry-run remains the default for filesystem-backed reconciliation.</li>
+<li><code>migrate --check/--execute</code>, <code>blob-root migrate</code>, <code>snapshot-text reconcile</code>, and <code>storage reconcile</code> are current repository migration/reconciliation helpers; dry-run remains the default for filesystem-backed reconciliation.</li>
+<li><code>storage reconcile</code> never traverses an unavailable external media root and never deletes outside configured roots.</li>
 <li>Future CLI changes should update this contract and <code>daemon/tests/e2e/test_cli_admin.py</code> together.</li>
 </ul>
   </article>

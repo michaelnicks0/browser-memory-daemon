@@ -5,9 +5,9 @@ import sqlite3
 import uuid
 from urllib.parse import urlsplit
 
-from .blob_store import BlobStore, prefer_relative_locator
+from .blob_lifecycle import process_blob_tombstones, tombstone_blob
+from .blob_store import prefer_relative_locator
 from .config import RuntimeConfig
-from .media_storage import media_blob_store_and_locator
 from .normalize import domain_from_url, normalize_url
 from .policy import POLICY_MODE_ALL, redact_url
 
@@ -62,50 +62,6 @@ def _document_ids_for_url(conn: sqlite3.Connection, config: RuntimeConfig, url: 
     return [row["id"] for row in rows if row["id"]], {"url": receipt_url, "selector_policy": selector_policy}
 
 
-def _unlink_contained(paths: list[str], *, store: BlobStore) -> tuple[int, int, int]:
-    unlinked = 0
-    skipped_out_of_root = 0
-    failed = 0
-    seen: set[str] = set()
-    for path in paths:
-        key = str(path)
-        if not key or key in seen:
-            continue
-        seen.add(key)
-        result = store.delete(path)
-        if result.status in {"outside-root", "invalid", "empty", "not-file"}:
-            skipped_out_of_root += 1
-            continue
-        if result.deleted:
-            unlinked += 1
-        elif result.status == "error":
-            failed += 1
-    return unlinked, skipped_out_of_root, failed
-
-
-def _unlink_media_targets(targets: list[tuple[BlobStore | None, str | None]]) -> tuple[int, int, int]:
-    unlinked = 0
-    skipped = 0
-    failed = 0
-    seen: set[tuple[str, str]] = set()
-    for store, locator in targets:
-        if store is None or not locator:
-            skipped += 1
-            continue
-        key = (str(store.root), str(locator))
-        if key in seen:
-            continue
-        seen.add(key)
-        result = store.delete(locator)
-        if result.status in {"outside-root", "invalid", "empty", "not-file"}:
-            skipped += 1
-        elif result.deleted:
-            unlinked += 1
-        elif result.status == "error":
-            failed += 1
-    return unlinked, skipped, failed
-
-
 def forget(conn: sqlite3.Connection, config: RuntimeConfig, *, domain: str | None = None, url: str | None = None) -> dict:
     has_domain = domain is not None and str(domain).strip() != ""
     has_url = url is not None and str(url).strip() != ""
@@ -140,24 +96,44 @@ def forget(conn: sqlite3.Connection, config: RuntimeConfig, *, domain: str | Non
         "blobs_out_of_root": 0,
         "blobs_failed": 0,
     }
-    media_targets: list[tuple[BlobStore | None, str | None]] = []
-    clean_text_paths: list[str] = []
+    receipt_id = str(uuid.uuid4())
+    counts["media_blobs_tombstoned"] = 0
+    counts["blobs_tombstoned"] = 0
+    counts["blob_deletions_pending"] = 0
     with conn:
         for document_id in document_ids:
             snapshot_rows = conn.execute(
-                "SELECT id, cleaned_text_path, cleaned_text_locator FROM snapshots WHERE document_id = ?",
+                "SELECT id, cleaned_text_path, cleaned_text_locator, text_hash FROM snapshots WHERE document_id = ?",
                 (document_id,),
             ).fetchall()
             media_rows = conn.execute(
                 """
-                SELECT id, file_path, blob_locator, storage_tier, spool_locator
+                SELECT id, file_path, blob_locator, storage_tier, spool_locator,
+                       byte_size, content_sha256
                 FROM media_artifacts WHERE document_id = ?
                 """,
                 (document_id,),
             ).fetchall()
             for media in media_rows:
-                store, locator, _tier_status = media_blob_store_and_locator(config, dict(media))
-                media_targets.append((store, locator))
+                tier = str(media["storage_tier"] or "media-root")
+                locator = (
+                    prefer_relative_locator(media["spool_locator"], media["file_path"])
+                    if tier == "spool"
+                    else prefer_relative_locator(media["blob_locator"], media["file_path"])
+                )
+                if locator:
+                    tombstone_blob(
+                        conn,
+                        operation_id=receipt_id,
+                        owner_kind="media-artifact",
+                        owner_id=str(media["id"]),
+                        storage_tier=tier,
+                        locator=str(locator),
+                        reason="forget",
+                        byte_size=int(media["byte_size"]) if media["byte_size"] is not None else None,
+                        content_sha256=str(media["content_sha256"] or "") or None,
+                    )
+                    counts["media_blobs_tombstoned"] += 1
             counts["media_artifacts"] += conn.execute("DELETE FROM media_artifacts WHERE document_id = ?", (document_id,)).rowcount
             chunk_rows = conn.execute("SELECT id FROM chunks WHERE document_id = ?", (document_id,)).fetchall()
             for chunk in chunk_rows:
@@ -169,7 +145,17 @@ def forget(conn: sqlite3.Connection, config: RuntimeConfig, *, domain: str | Non
                 counts["redactions"] += conn.execute("DELETE FROM redactions WHERE snapshot_id = ?", (snap["id"],)).rowcount
                 locator = prefer_relative_locator(snap["cleaned_text_locator"], snap["cleaned_text_path"])
                 if locator:
-                    clean_text_paths.append(locator)
+                    tombstone_blob(
+                        conn,
+                        operation_id=receipt_id,
+                        owner_kind="snapshot-derivative",
+                        owner_id=str(snap["id"]),
+                        storage_tier="derivative",
+                        locator=str(locator),
+                        reason="forget",
+                        content_sha256=str(snap["text_hash"] or "") or None,
+                    )
+                    counts["blobs_tombstoned"] += 1
             counts["chunks"] += conn.execute("DELETE FROM chunks WHERE document_id = ?", (document_id,)).rowcount
             counts["snapshots"] += conn.execute("DELETE FROM snapshots WHERE document_id = ?", (document_id,)).rowcount
             counts["visit_events"] += conn.execute(
@@ -187,12 +173,50 @@ def forget(conn: sqlite3.Connection, config: RuntimeConfig, *, domain: str | Non
                     counts["visit_events"] += conn.execute("DELETE FROM visit_events WHERE id = ?", (event["id"],)).rowcount
         else:
             counts["visit_events"] += conn.execute("DELETE FROM visit_events WHERE normalized_url = ?", (scope["url"],)).rowcount
-    counts["media_blobs"], counts["media_blobs_out_of_root"], counts["media_blobs_failed"] = _unlink_media_targets(media_targets)
-    counts["blobs"], counts["blobs_out_of_root"], counts["blobs_failed"] = _unlink_contained(clean_text_paths, store=BlobStore(config.clean_text_root))
-    receipt_id = str(uuid.uuid4())
-    with conn:
         conn.execute(
             "INSERT INTO deletion_receipts(id, scope_json, counts_json) VALUES (?, ?, ?)",
             (receipt_id, json.dumps(scope, sort_keys=True), json.dumps(counts, sort_keys=True)),
         )
-    return {"forgotten": True, "receipt_id": receipt_id, "scope": scope, "counts": counts}
+    deletion = process_blob_tombstones(conn, config, operation_id=receipt_id)
+    state_rows = conn.execute(
+        """
+        SELECT owner_kind, state, COUNT(*) AS n FROM blob_storage_records
+        WHERE operation_id = ? GROUP BY owner_kind, state
+        """,
+        (receipt_id,),
+    ).fetchall()
+    for row in state_rows:
+        count = int(row["n"])
+        if row["owner_kind"] == "media-artifact":
+            if row["state"] == "deleted":
+                counts["media_blobs"] += count
+            elif row["state"] == "blocked":
+                counts["media_blobs_out_of_root"] += count
+            elif row["state"] == "failed":
+                counts["media_blobs_failed"] += count
+        if row["owner_kind"] == "snapshot-derivative":
+            if row["state"] == "deleted":
+                counts["blobs"] += count
+            elif row["state"] == "blocked":
+                counts["blobs_out_of_root"] += count
+            elif row["state"] == "failed":
+                counts["blobs_failed"] += count
+    counts["blob_deletions_deleted"] = deletion["deleted"]
+    counts["blob_deletions_missing"] = deletion["missing"]
+    counts["blob_deletions_blocked"] = deletion["blocked"]
+    counts["blob_deletions_failed"] = deletion["failed"]
+    counts["blob_deletions_pending"] = deletion["pending"]
+    with conn:
+        conn.execute(
+            "UPDATE deletion_receipts SET counts_json = ? WHERE id = ?",
+            (json.dumps(counts, sort_keys=True), receipt_id),
+        )
+    complete = deletion["pending"] == 0
+    return {
+        "forgotten": complete,
+        "database_forgotten": True,
+        "receipt_id": receipt_id,
+        "scope": scope,
+        "counts": counts,
+        "deletion": deletion,
+    }

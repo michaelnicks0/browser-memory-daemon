@@ -201,18 +201,30 @@ flowchart TD
   Scope --> URL["url"]
   Domain --> Match["Find matching documents/visits"]
   URL --> Match
-  Match --> DeleteEvents["Delete visit_events"]
-  Match --> DeleteFTS["Delete chunks_fts"]
-  Match --> DeleteChunks["Delete chunks"]
-  Match --> DeleteSnapshots["Delete snapshots + text blobs"]
-  Match --> DeleteMedia["Delete media_artifacts + media blobs"]
-  Match --> DeleteVisits["Delete visits"]
-  Match --> DeleteDocs["Delete documents"]
-  DeleteDocs --> Receipt["deletion_receipts + counts"]
-  DeleteMedia --> Receipt
+  Match --> Tx["One SQLite transaction"]
+  Tx --> Tombstones["Persist blob_storage_records<br/>state=tombstoned"]
+  Tx --> DeleteRows["Delete FTS/chunks/snapshots/media/<br/>events/visits/documents"]
+  Tx --> Receipt["Persist minimized deletion receipt"]
+  Tombstones --> Commit{"Transaction commits?"}
+  DeleteRows --> Commit
+  Receipt --> Commit
+  Commit -->|no| Rollback["No cascade or tombstone is durable"]
+  Commit -->|yes| Processor["Serialized contained tombstone processor"]
+  Processor --> Outcome{"BlobStore delete outcome"}
+  Outcome -->|deleted| Deleted["state=deleted"]
+  Outcome -->|already absent| Missing["state=missing"]
+  Outcome -->|I/O failure| Failed["state=failed<br/>retryable"]
+  Outcome -->|outside/unavailable| Blocked["state=blocked<br/>fail closed"]
+  Failed --> Reconcile["storage reconcile --execute"]
+  Blocked --> Reconcile
+  Reconcile --> Processor
+  Deleted --> Complete{"No pending records?"}
+  Missing --> Complete
+  Complete -->|yes| Success["forgotten=true"]
+  Complete -->|no| Pending["forgotten=false<br/>database_forgotten=true"]
 ```
 
-Forget returns counts so the operator can verify which stores were affected.
+Forget returns database counts plus durable deletion state. It cannot report complete success while required bytes remain failed or blocked.
 
 ---
 

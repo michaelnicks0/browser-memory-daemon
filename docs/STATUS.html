@@ -153,13 +153,13 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>SQLite/FTS/media storage</td>
-<td>✅ Documents/visits/snapshots/chunks/FTS/media/audit/deletion receipts plus version-4 through version-8 provenance/locator expansion, version-9 complete cleaned-text authority, and version-10 media storage tiers/spool reservations. New text/provenance commits locally without media-root access; recent/timeline/detail reads are observation-first with explicit legacy fallback.</td>
-<td><code>schema.sql</code>, <code>migration_steps/</code>, <code>migrations.py</code>, <code>text_authority.py</code>, <code>media_storage.py</code>, migration/text/read tests, ADR-0028, ADR-0030 through ADR-0039.</td>
+<td>✅ Documents/visits/snapshots/chunks/FTS/media/audit/deletion receipts plus version-4 through version-8 provenance/locator expansion, version-9 complete cleaned-text authority, version-10 media storage tiers/spool reservations, and version-11 blob lifecycle records. New text/provenance commits locally without media-root access; recent/timeline/detail reads are observation-first with explicit legacy fallback.</td>
+<td><code>schema.sql</code>, <code>migration_steps/</code>, <code>migrations.py</code>, <code>text_authority.py</code>, <code>media_storage.py</code>, <code>blob_lifecycle.py</code>, migration/text/read tests, ADR-0028, ADR-0030 through ADR-0040.</td>
 </tr>
 <tr>
 <td>Blob filesystem boundary</td>
-<td>✅ <code>BlobStore</code> contains DB locators; stages streaming media writes with size/hash accounting; atomically commits; and owns media plus legacy-sidecar read/stat/delete operations. Derivative and media roots are separate; explicit external media roots require mount/identity proof; an opt-in local spool is hard-capped with distinct in-flight reservations and dry-run-first verified drain.</td>
-<td><code>blob_store.py</code>, <code>media_storage.py</code>, migration/storage integration tests, ADR-0036 through ADR-0039.</td>
+<td>✅ <code>BlobStore</code> contains DB locators; stages streaming media writes with size/hash accounting; atomically commits; and owns media plus legacy-sidecar read/stat/delete operations. Derivative and media roots are separate; external media is identity-guarded; the local spool is bounded; durable tombstones and dry-run-first reconciliation cover failed deletion, missing references, orphans, and stale stages.</td>
+<td><code>blob_store.py</code>, <code>blob_lifecycle.py</code>, <code>storage_reconcile.py</code>, storage integration tests, ADR-0036 through ADR-0040.</td>
 </tr>
 <tr>
 <td>Exact search</td>
@@ -168,8 +168,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Forget/delete</td>
-<td>✅ URL/domain forget with receipts and text/media blob + FTS cleanup.</td>
-<td><code>forget.py</code>, tests.</td>
+<td>✅ URL/domain forget commits receipt plus blob tombstones with the relational cascade, suppresses pending bytes from serving, reports incomplete deletion honestly, and retries failures through reconciliation.</td>
+<td><code>forget.py</code>, <code>blob_lifecycle.py</code>, <code>test_storage_reconcile.py</code>, ADR-0040.</td>
 </tr>
 <tr>
 <td>Media artifacts</td>
@@ -183,7 +183,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>CLI</td>
-<td>✅ serve/health/migrate/doctor/daily-driver-health/search/recent/timeline/detail/policy/forget/capture-fixture/media-worker/media-cache/media-spool/blob-root migration/snapshot-text reconciliation.</td>
+<td>✅ serve/health/migrate/doctor/daily-driver-health/search/recent/timeline/detail/policy/forget/capture-fixture/media-worker/media-cache/media-spool/blob-root migration/snapshot-text reconciliation/storage reconciliation.</td>
 <td><code>cli.py</code>, CLI e2e.</td>
 </tr>
 <tr>
@@ -221,7 +221,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <hr />
 <h2 id="requirement-posture">Requirement posture</h2>
 <!-- BEGIN GENERATED:requirement-posture -->
-<p>The canonical catalog contains <strong>43 stable requirements</strong>: <strong>36 active</strong> and <strong>7 planned</strong>. Normative statements, implementation links, V-model evidence, and legacy aliases are owned by <a href="../requirements/catalog.toml"><code>requirements/catalog.toml</code></a>; generated tables in this doc set must not be hand-edited.</p>
+<p>The canonical catalog contains <strong>43 stable requirements</strong>: <strong>37 active</strong> and <strong>6 planned</strong>. Normative statements, implementation links, V-model evidence, and legacy aliases are owned by <a href="../requirements/catalog.toml"><code>requirements/catalog.toml</code></a>; generated tables in this doc set must not be hand-edited.</p>
 <!-- END GENERATED:requirement-posture -->
 
 <hr />

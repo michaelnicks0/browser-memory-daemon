@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from . import __version__
+from .blob_lifecycle import blob_lifecycle_status
 from .blob_store import BlobStore, prefer_relative_locator
 from .config import RuntimeConfig
 from .media import media_artifacts_for_document, media_artifacts_for_snapshot, media_queue_status
@@ -376,6 +377,7 @@ def doctor(config: RuntimeConfig, conn: sqlite3.Connection, *, storage_census: b
         "privacy_rules",
         "audit_events",
         "deletion_receipts",
+        "blob_storage_records",
     ]
     counts = {}
     for table in tables:
@@ -388,8 +390,9 @@ def doctor(config: RuntimeConfig, conn: sqlite3.Connection, *, storage_census: b
         "SELECT COUNT(*) AS n FROM snapshots WHERE cleaned_text IS NULL"
     ).fetchone()["n"]
     storage = _doctor_storage(config, conn, storage_census=storage_census)
+    blob_lifecycle = blob_lifecycle_status(conn)
     return {
-        "ok": integrity == "ok" and missing_fts == 0 and missing_authoritative_text == 0,
+        "ok": integrity == "ok" and missing_fts == 0 and missing_authoritative_text == 0 and blob_lifecycle["pending"] == 0,
         "version": __version__,
         "daemon": {"host": config.host, "port": config.port, "policy_mode": config.policy_mode},
         "paths": {
@@ -410,6 +413,7 @@ def doctor(config: RuntimeConfig, conn: sqlite3.Connection, *, storage_census: b
             "snapshots_missing_authoritative_text": missing_authoritative_text,
         },
         "storage": storage,
+        "blob_lifecycle": blob_lifecycle,
         "media_storage": media_spool_status(conn, config),
         "media_queue": media_queue_status(conn, config, limit=25),
     }

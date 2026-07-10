@@ -72,8 +72,8 @@ flowchart TB
 
 - **Implemented:** local capture/search/delete/UI/API/CLI/media sidecars/daily-driver install.
 <!-- BEGIN GENERATED:verification-depth -->
-- **Verification depth:** 191 static test functions across 31 files (161 daemon pytest; 30 extension node:test), plus real Chrome for Testing e2e.
-- **Requirement authority:** `requirements/catalog.toml` defines 36 active and 7 planned stable requirements with generated traceability tables.
+- **Verification depth:** 197 static test functions across 32 files (167 daemon pytest; 30 extension node:test), plus real Chrome for Testing e2e.
+- **Requirement authority:** `requirements/catalog.toml` defines 37 active and 6 planned stable requirements with generated traceability tables.
 <!-- END GENERATED:verification-depth -->
 - **Fast quality gate:** network-free targeted Ruff/strict mypy, full Python branch coverage with an 80% measured floor, all Node tests, generated-catalog/secret/diff checks, and a default-XDG write sentinel.
 - **Architecture depth:** C4/Structurizr atlas, ADR history, behavioral Mermaid diagrams, API/CLI/security docs.

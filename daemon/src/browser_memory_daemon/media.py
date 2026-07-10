@@ -16,7 +16,8 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import unquote_to_bytes, urljoin, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
-from .blob_store import BlobStore
+from .blob_lifecycle import process_blob_tombstones, register_committed_blob, tombstone_blob
+from .blob_store import prefer_relative_locator
 from .config import RuntimeConfig
 from .media_storage import (
     choose_media_blob_destination,
@@ -403,21 +404,18 @@ def _mime_allowed(config: RuntimeConfig, mime_type: str, media_type: str) -> boo
 
 def _stored_media_bytes(conn: sqlite3.Connection, where_sql: str = "", params: tuple[Any, ...] = ()) -> int:
     row = conn.execute(
-        f"SELECT COALESCE(SUM(byte_size), 0) AS n FROM media_artifacts WHERE capture_status = 'stored' AND (COALESCE(blob_locator, '') != '' OR COALESCE(spool_locator, '') != '' OR COALESCE(file_path, '') != '') {where_sql}",
+        f"SELECT COALESCE(SUM(byte_size), 0) AS n FROM media_artifacts WHERE capture_status IN ('stored', 'purging', 'missing') AND (COALESCE(blob_locator, '') != '' OR COALESCE(spool_locator, '') != '' OR COALESCE(file_path, '') != '') {where_sql}",
         params,
     ).fetchone()
     return int(row["n"] if row else 0)
 
 
 def _evict_oldest_media_rows(conn: sqlite3.Connection, config: RuntimeConfig, rows: list[sqlite3.Row], *, bytes_to_free: int, reason: str) -> dict[str, int]:
-    freed_bytes = 0
-    evicted = 0
-    missing_files = 0
+    selected_bytes = 0
     skipped_paths = 0
-    updates: list[tuple[str, str]] = []
-    locators_to_unlink: list[tuple[BlobStore, str]] = []
+    selected: list[tuple[sqlite3.Row, str]] = []
     for row in rows:
-        if bytes_to_free > 0 and freed_bytes >= bytes_to_free:
+        if bytes_to_free > 0 and selected_bytes >= bytes_to_free:
             break
         store, locator, _tier_status = media_blob_store_and_locator(config, dict(row))
         if store is None or not locator:
@@ -434,29 +432,52 @@ def _evict_oldest_media_rows(conn: sqlite3.Connection, config: RuntimeConfig, ro
                     size = int(store.stat(locator).st_size)
                 except (OSError, RuntimeError):
                     size = 0
-            locators_to_unlink.append((store, locator))
-            evicted += 1
-        else:
-            missing_files += 1
-            evicted += 1
-        freed_bytes += max(0, size)
-        updates.append((reason, row["id"]))
-    if updates:
+        selected_bytes += max(0, size)
+        selected.append((row, str(locator)))
+    operation_id = f"evict-{uuid.uuid4().hex}"
+    if selected:
         with conn:
+            for row, locator in selected:
+                tombstone_blob(
+                    conn,
+                    operation_id=operation_id,
+                    owner_kind="media-artifact",
+                    owner_id=str(row["id"]),
+                    storage_tier=str(row["storage_tier"] or "media-root"),
+                    locator=locator,
+                    reason=reason,
+                    byte_size=int(row["byte_size"]) if row["byte_size"] is not None else None,
+                )
             conn.executemany(
                 """
                 UPDATE media_artifacts
-                SET file_path = '', blob_locator = '', spool_locator = NULL,
-                    storage_tier = 'media-root', capture_status = 'purged', status_reason = ?
+                SET capture_status = 'purging', status_reason = ?
                 WHERE id = ?
                 """,
-                updates,
+                [(reason, row["id"]) for row, _locator in selected],
             )
-    for store, locator in locators_to_unlink:
-        result = store.delete(locator)
-        if result.status != "deleted":
-            missing_files += 1
-    return {"evicted": evicted, "missing_files": missing_files, "skipped_paths": skipped_paths, "bytes": freed_bytes}
+    outcome = (
+        process_blob_tombstones(conn, config, operation_id=operation_id)
+        if selected
+        else {"deleted": 0, "missing": 0, "failed": 0, "blocked": 0, "pending": 0}
+    )
+    completed = {
+        str(row["owner_id"]): int(row["byte_size"] or 0)
+        for row in conn.execute(
+            """
+            SELECT owner_id, byte_size FROM blob_storage_records
+            WHERE operation_id = ? AND state IN ('deleted', 'missing')
+            """,
+            (operation_id,),
+        ).fetchall()
+    }
+    return {
+        "evicted": len(completed),
+        "missing_files": int(outcome["missing"]) + int(outcome["failed"]) + int(outcome["blocked"]),
+        "skipped_paths": skipped_paths,
+        "bytes": sum(completed.values()),
+        "pending_deletions": int(outcome["pending"]),
+    }
 
 
 def _evict_oldest_media_to_fit(
@@ -472,7 +493,7 @@ def _evict_oldest_media_to_fit(
         return {"evicted": 0, "missing_files": 0, "skipped_paths": 0, "bytes": 0, "current": 0, "remaining": 0}
     join_sql = ""
     where = [
-        "m.capture_status = 'stored'",
+        "m.capture_status IN ('stored', 'purging', 'missing')",
         "(COALESCE(m.blob_locator, '') != '' OR COALESCE(m.spool_locator, '') != '' OR COALESCE(m.file_path, '') != '')",
     ]
     params: list[Any] = []
@@ -1617,7 +1638,7 @@ def store_media_artifact(conn: sqlite3.Connection, config: RuntimeConfig, data: 
     existing = conn.execute(
         """
         SELECT document_id, snapshot_id, source_url, byte_size, file_path, blob_locator,
-               storage_tier, spool_locator
+               storage_tier, spool_locator, capture_status
         FROM media_artifacts
         WHERE id = ?
         """,
@@ -1626,6 +1647,8 @@ def store_media_artifact(conn: sqlite3.Connection, config: RuntimeConfig, data: 
     if provided_artifact_id and not existing and artifact_id != generated_artifact_id:
         raise ValueError("artifact_id does not match media reference")
     if existing:
+        if existing["capture_status"] == "purging":
+            raise ValueError("media artifact deletion is pending")
         if existing["document_id"] != document_id or existing["snapshot_id"] != snapshot_id:
             raise ValueError("artifact_id ownership mismatch")
         if existing["source_url"] and existing["source_url"] != source_url:
@@ -1668,6 +1691,20 @@ def store_media_artifact(conn: sqlite3.Connection, config: RuntimeConfig, data: 
         file_path, blob_locator, spool_locator, storage_tier, reservation_id = _write_media_blob(
             conn, config, artifact_id, mime_type, ref.source_url, content
         )
+
+    replacement_operation: str | None = None
+    previous_locator: str | None = None
+    previous_tier = "media-root"
+    if content and existing:
+        previous_tier = str(existing["storage_tier"] or "media-root")
+        previous_locator = (
+            prefer_relative_locator(existing["spool_locator"], existing["file_path"])
+            if previous_tier == "spool"
+            else prefer_relative_locator(existing["blob_locator"], existing["file_path"])
+        )
+        current_locator = spool_locator if storage_tier == "spool" else blob_locator
+        if previous_locator and (previous_tier != storage_tier or str(previous_locator) != current_locator):
+            replacement_operation = f"replace-{uuid.uuid4().hex}"
 
     with conn:
         conn.execute(
@@ -1740,6 +1777,27 @@ def store_media_artifact(conn: sqlite3.Connection, config: RuntimeConfig, data: 
         )
         if reservation_id is not None:
             conn.execute("DELETE FROM media_spool_reservations WHERE reservation_id = ?", (reservation_id,))
+        if content:
+            current_locator = spool_locator if storage_tier == "spool" else blob_locator
+            register_committed_blob(
+                conn,
+                owner_kind="media-artifact",
+                owner_id=artifact_id,
+                storage_tier=storage_tier,
+                locator=current_locator,
+                byte_size=byte_size,
+                content_sha256=content_sha256,
+            )
+            if replacement_operation and previous_locator:
+                tombstone_blob(
+                    conn,
+                    operation_id=replacement_operation,
+                    owner_kind="media-artifact",
+                    owner_id=artifact_id,
+                    storage_tier=previous_tier,
+                    locator=str(previous_locator),
+                    reason="media-replaced",
+                )
         if status == "stored":
             mark_media_fetch_task(conn, artifact_id, worker_kind="daemon-public", status="succeeded")
             mark_media_fetch_task(conn, artifact_id, worker_kind="browser", status="succeeded")
@@ -1747,6 +1805,8 @@ def store_media_artifact(conn: sqlite3.Connection, config: RuntimeConfig, data: 
             mark_media_fetch_task(conn, artifact_id, worker_kind="daemon-public", status="skipped", error=reason)
         elif status in {"referenced", "metadata-only", "queued", "retrying"} and _media_fetch_supported(source_url):
             ensure_media_fetch_task(conn, artifact_id, worker_kind="daemon-public", priority=priority)
+    if replacement_operation:
+        process_blob_tombstones(conn, config, operation_id=replacement_operation)
     return {
         "stored": status == "stored",
         "artifact_id": artifact_id,
@@ -1908,7 +1968,8 @@ def purge_media_cache(conn: sqlite3.Connection, config: RuntimeConfig, scope: di
         selected_bytes += size
     purged = 0
     missing = 0
-    paths_to_unlink: list[tuple[BlobStore, str]] = []
+    pending_deletions = 0
+    operation_id = f"purge-{uuid.uuid4().hex}"
     if not dry_run:
         with conn:
             for row, selected_store, raw_path, _size in selected:
@@ -1916,27 +1977,46 @@ def purge_media_cache(conn: sqlite3.Connection, config: RuntimeConfig, scope: di
                     if _media_fetch_supported(row["source_url"] or ""):
                         ensure_media_fetch_task(conn, row["id"], worker_kind="daemon-public", status="pending", force_reset=True)
                     continue
-                if selected_store is not None and selected_store.exists(raw_path):
-                    paths_to_unlink.append((selected_store, raw_path))
-                else:
-                    missing += 1
+                if selected_store is None:
+                    continue
+                tombstone_blob(
+                    conn,
+                    operation_id=operation_id,
+                    owner_kind="media-artifact",
+                    owner_id=str(row["id"]),
+                    storage_tier=str(row["storage_tier"] or "media-root"),
+                    locator=str(raw_path),
+                    reason=f"cache-purged:{label}",
+                    byte_size=int(row["byte_size"]) if row["byte_size"] is not None else None,
+                )
                 conn.execute(
                     """
                     UPDATE media_artifacts
-                    SET file_path = '', blob_locator = '', spool_locator = NULL,
-                        storage_tier = 'media-root', capture_status = 'purged', status_reason = ?
+                    SET capture_status = 'purging', status_reason = ?
                     WHERE id = ?
                     """,
                     (f"cache-purged:{label}", row["id"]),
                 )
-                if rehydrate and _media_fetch_supported(row["source_url"] or ""):
-                    ensure_media_fetch_task(conn, row["id"], worker_kind="daemon-public", status="pending", force_reset=True)
-        for selected_store, raw_path in paths_to_unlink:
-            result = selected_store.delete(raw_path)
-            if result.deleted:
-                purged += 1
-            else:
-                missing += 1
+        if not rehydrate_only and selected:
+            outcome = process_blob_tombstones(conn, config, operation_id=operation_id)
+            purged = int(outcome["deleted"])
+            missing = int(outcome["missing"]) + int(outcome["failed"]) + int(outcome["blocked"])
+            pending_deletions = int(outcome["pending"])
+            if rehydrate:
+                with conn:
+                    for row, _store, _path, _size in selected:
+                        current = conn.execute(
+                            "SELECT capture_status FROM media_artifacts WHERE id = ?",
+                            (row["id"],),
+                        ).fetchone()
+                        if current and current["capture_status"] == "purged" and _media_fetch_supported(row["source_url"] or ""):
+                            ensure_media_fetch_task(
+                                conn,
+                                row["id"],
+                                worker_kind="daemon-public",
+                                status="pending",
+                                force_reset=True,
+                            )
     return {
         "dry_run": dry_run,
         "rehydrate": rehydrate,
@@ -1945,6 +2025,7 @@ def purge_media_cache(conn: sqlite3.Connection, config: RuntimeConfig, scope: di
         "selected": len(selected),
         "purged": purged,
         "missing_files": missing,
+        "pending_deletions": pending_deletions,
         "skipped_out_of_root": skipped_out_of_root,
         "bytes": selected_bytes,
         "sample_artifact_ids": [row["id"] for row, _store, _path, _size in selected[:20]],
@@ -1957,6 +2038,8 @@ def _media_file_resolution(
 ) -> tuple[Path | None, str, str]:
     if not config:
         return None, "config-required", "unresolved"
+    if str(row.get("capture_status") or "") in {"purging", "purged", "missing"}:
+        return None, str(row.get("capture_status")), "unavailable"
     store, locator, tier_status = media_blob_store_and_locator(config, row)
     if store is None:
         return None, tier_status, "unresolved"

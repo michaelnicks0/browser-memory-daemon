@@ -229,6 +229,16 @@ PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   media-spool drain --limit 100
 ```
 
+Preview durable deletion/reconciliation work without mutation:
+
+```bash
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
+  --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
+  storage reconcile --limit 1000
+```
+
+Review `tombstones`, `missing`, `corrupt`, `recovered`, `wrong_root`, `unavailable`, `orphans`, and `stale_stages`. Add `--execute` only to retry contained tombstones, mark confirmed missing media, and remove reported in-root orphan/stage files. Outside-root locators and unavailable external roots remain pending rather than being followed. A non-zero pending count means a prior forget/purge/eviction has not completed byte deletion even if its database rows are already gone.
+
 Dry-run a domain purge:
 
 ```bash

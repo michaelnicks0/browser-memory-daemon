@@ -13,7 +13,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0003](0003-use-all-policy-mode-as-daily-driver-default.md) | superseded | Use `all` policy mode as the daily-driver default. Superseded by ADR-0009. |
 | [ADR-0004](0004-use-text-first-sqlite-fts5-and-blob-storage.md) | superseded | Use text-first SQLite/FTS5 and WSL-local blob storage. Superseded by ADR-0021 for blob placement. |
 | [ADR-0005](0005-use-durable-lazy-media-sidecars-with-bounded-cache.md) | accepted | Use durable lazy media sidecars with a bounded disposable cache. |
-| [ADR-0006](0006-use-forget-cascade-with-deletion-receipts.md) | accepted | Use forget/delete cascades with deletion receipts. |
+| [ADR-0006](0006-use-forget-cascade-with-deletion-receipts.md) | superseded by ADR-0040 | Use forget/delete cascades with deletion receipts. |
 | [ADR-0007](0007-use-real-chrome-e2e-as-verification-authority.md) | accepted | Use real Chrome / Chrome for Testing e2e as the verification authority. |
 | [ADR-0008](0008-use-c4-structurizr-as-canonical-architecture-model.md) | accepted | Use C4/Structurizr under `docs/architecture/` as the canonical architecture model. |
 | [ADR-0009](0009-apply-explicit-block-rules-in-all-mode.md) | accepted | Apply explicit local block rules in `all` mode while preserving the daily-driver default. |
@@ -47,6 +47,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0037](0037-expand-blob-references-with-relative-locators.md) | accepted | Dual-write root-relative blob locators, prefer them on reads, and retain a contained legacy absolute fallback during expansion. |
 | [ADR-0038](0038-make-sqlite-authoritative-for-cleaned-snapshot-text.md) | accepted | Commit complete cleaned text to SQLite, stop creating new text sidecars, and hash-verify legacy promotion. |
 | [ADR-0039](0039-split-media-root-and-add-bounded-durable-spool.md) | accepted | Split derivative and media roots, guard external identity, and bound local outage buffering. |
+| [ADR-0040](0040-use-durable-deletion-intents-and-reconciliation.md) | accepted | Persist blob deletion intent before cascades and reconcile failures through contained retryable operations. |
 
 ## Backfilled decision history
 

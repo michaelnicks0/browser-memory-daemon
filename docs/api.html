@@ -293,7 +293,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td><code>/doctor[?storage_census=full]</code></td>
 <td style="text-align: right;"><code>GET</code></td>
-<td>DB integrity, FTS consistency, runtime paths, media queue, and fast DB-derived storage counts; optional filesystem census walks blob roots.</td>
+<td>DB integrity, FTS consistency, runtime paths, blob lifecycle/pending deletion health, media queue, and fast DB-derived storage counts; optional filesystem census walks blob roots.</td>
 <td>Yes</td>
 </tr>
 </tbody>
@@ -503,12 +503,13 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">{</span><span style="color: #FF4689">&quot;domain&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;linkedin.com&quot;</span><span style="color: #F8F8F2">, </span><span style="color: #FF4689">&quot;dry_run&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #66D9EF">true</span><span style="color: #F8F8F2">, </span><span style="color: #FF4689">&quot;rehydrate&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #66D9EF">false</span><span style="color: #F8F8F2">}</span>
 </code></pre></div>
 
+<p>Execute mode first records a blob tombstone and sets selected artifacts to <code>purging</code>. It returns <code>pending_deletions &gt; 0</code> instead of claiming purge success when bytes are blocked or an unlink fails. Pending artifacts retain locators for retry but are not served or overwritten; they continue to count against media admission budgets until <code>storage reconcile --execute</code> reaches <code>deleted</code> or <code>missing</code>.</p>
 <p>Stored binaries are available via:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #ED007E; background-color: #1E0010">GET /media-artifacts/&lt;artifact_id&gt;</span>
 <span style="color: #ED007E; background-color: #1E0010">Authorization: Bearer ***</span>
 </code></pre></div>
 
-<p>The daemon validates the stored DB <code>file_path</code> against the configured media root before serving bytes. Missing, stale, invalid, or out-of-root paths return metadata/not-stored responses rather than reading arbitrary local files.</p>
+<p>The daemon validates the tier-owned locator against the configured media/spool root before serving bytes. Missing, stale, invalid, out-of-root, <code>purging</code>, or <code>purged</code> artifacts return metadata/not-stored responses rather than reading arbitrary local files.</p>
 <p>Media metadata is not inserted into FTS; search results only expose <code>media_artifact_count</code>.</p>
 <hr />
 <h2 id="policy-rules">Policy rules</h2>
@@ -568,6 +569,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </code></pre></div>
 
 <p>Requests with neither selector or with both selectors return <code>400</code>. Domain selectors reject URL/path/query/wildcard/port/userinfo syntax; use <code>url</code> for a scoped URL deletion.</p>
+<p>The relational cascade, minimized receipt, and blob tombstones commit in one SQLite transaction. The response includes <code>database_forgotten</code>, <code>deletion</code>, and <code>counts.blob_deletions_pending</code>. <code>forgotten</code> is <code>true</code> only when every required byte is confirmed <code>deleted</code> or already <code>missing</code>; failed, blocked, unavailable-root, or outside-root deletion remains durable retry work and keeps <code>forgotten: false</code>. The receipt ID is also the deletion operation ID used by reconciliation.</p>
 <p>The response includes <code>receipt_id</code>, redaction-safe <code>scope</code>, and deletion counts for documents, visits, lifecycle events, snapshots, chunks, FTS, clean-text blobs, media artifacts/blobs, embeddings, redactions, and feedback events. Blob counters include out-of-root/failed unlink counts when stale or tampered DB paths are refused instead of followed. URL deletion receipts redact sensitive selector values even when <code>all</code> mode used the literal URL to find rows.</p>
   </article>
   <div class="md-footer">

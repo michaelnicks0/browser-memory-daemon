@@ -25,27 +25,28 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
                 tags "Data Store"
             }
 
-            wslLoopbackDaemon = container "WSL Loopback HTTP Daemon" "Authenticated loopback HTTP API that handles capture, visit events, media artifact upload/fetch/purge, exact search, recent/timeline/detail, policy rules, doctor, forget, and static UI serving." "Python 3.11, ThreadingHTTPServer" {
+            wslLoopbackDaemon = container "WSL Loopback HTTP Daemon" "Authenticated loopback HTTP API that handles capture, visit events, media artifact upload/fetch/purge, exact search, recent/timeline/detail, policy rules, doctor, durable forget, and static UI serving." "Python 3.11, ThreadingHTTPServer" {
                 httpRouter = component "HTTP Request Router" "Routes loopback API requests, serves UI assets, enforces bearer auth for memory/admin APIs, and applies CORS for allowed origins." "Python http.server" "Current"
-                migrationKernel = component "Database Migration Kernel" "Serializes migrators; validates exact schema fingerprints, ordered names/checksums, and PRAGMA user_version; applies transactional steps, backup-gates destructive changes, and expands capture provenance, relative locators, SQLite text authority, and media storage tiers through version 10." "Python + sqlite3" "Current"
+                migrationKernel = component "Database Migration Kernel" "Serializes migrators; validates exact schema fingerprints, ordered names/checksums, and PRAGMA user_version; applies transactional steps, backup-gates destructive changes, and expands capture provenance, relative locators, SQLite text authority, media tiers, and blob lifecycle records through version 11." "Python + sqlite3" "Current"
                 policyEngine = component "Policy Engine" "Evaluates all/recall/balanced/strict capture mode decisions and redacts URL/title/body text outside all mode." "Python" "Current"
                 policyStore = component "Policy Store" "Persists and evaluates explicit local block-domain and URL-prefix rules for every policy mode." "Python + SQLite" "Current"
                 ingestPipeline = component "Ingest Pipeline" "Normalizes observed URLs, computes document/snapshot IDs, atomically stores complete cleaned text plus visits/observations/snapshots/chunks/FTS rows, records non-authoritative URL claims, and links media references without touching blob storage." "Python + sqlite3" "Current"
                 lifecyclePipeline = component "Lifecycle Pipeline" "Stores claimed/resolved tab lifecycle identity, reconciles delayed captures, validates active intervals, and derives visit dwell from interval unions." "Python + sqlite3" "Current"
-                mediaManager = component "Media Artifact Manager" "Records media references, validates blob uploads, enforces MIME/size/cache gates, guards external media-root identity, reserves bounded local spool capacity, writes blobs atomically, drains verified spool bytes, queues public fetch tasks, and purges or rehydrates cache entries." "Python + sqlite3 + filesystem" "Current"
+                mediaManager = component "Media Artifact Manager" "Records media references, validates blob uploads, enforces MIME/size/cache gates, guards external media-root identity, reserves bounded local spool capacity, writes blobs atomically, drains verified spool bytes, queues public fetch tasks, and tombstones purge/eviction before deletion." "Python + sqlite3 + filesystem" "Current"
                 blobStore = component "Contained BlobStore" "Prefers root-relative locators with contained legacy fallback; streams unique stages with size/hash accounting; atomically commits; and contains blob read, stat, and delete operations." "Python filesystem boundary" "Current"
+                storageReconciler = component "Blob Lifecycle and Storage Reconciler" "Persists committed/tombstoned/missing/deleted/blocked/failed blob state; serializes deletion processors; retries tombstones; and dry-run detects missing refs, in-root orphans, and stale stages." "Python + sqlite3 + filesystem" "Current"
                 searchReadModel = component "Search and Read Model" "Provides exact FTS search plus SQLite-authoritative text detail and observation-first recent/timeline/document/snapshot/media views with explicit legacy fallbacks." "Python + SQLite FTS5" "Current"
-                forgetPipeline = component "Forget Pipeline" "Deletes URL/domain-scoped memory rows, FTS entries, clean-text blobs, media blobs, lifecycle rows, and records deletion receipts." "Python + sqlite3" "Current"
-                opsDoctor = component "Ops Doctor and Audit" "Reports health, DB integrity, FTS consistency, runtime paths, storage counts, media queue status, and writes metadata-only audit events to SQLite." "Python + sqlite3" "Current"
+                forgetPipeline = component "Forget Pipeline" "Commits URL/domain-scoped relational deletion, minimized receipt, and blob tombstones in one transaction; reports complete only after required bytes converge." "Python + sqlite3" "Current"
+                opsDoctor = component "Ops Doctor and Audit" "Reports health, DB integrity, FTS consistency, blob lifecycle/pending deletion state, runtime paths, storage counts, media queue status, and writes metadata-only audit events to SQLite." "Python + sqlite3" "Current"
             }
 
             mediaWorker = container "WSL Media Worker" "Long-running systemd user worker that leases daemon-public media fetch tasks, fetches public media/HLS without Chrome cookies, classifies terminal states, and updates artifact rows." "Python 3.11 CLI loop"
 
             localWebUi = container "Local Web UI" "Static browser UI for exact search, recent/timeline views, document/snapshot detail, media artifact opening, policy rules, doctor, and forget-domain operations." "HTML/CSS/JavaScript served by daemon"
 
-            cli = container "CLI" "Command-line interface for serving the daemon, migration, snapshot-text reconciliation, media-spool status/drain, health/doctor/search/recent/timeline/detail, policy/forget, capture fixtures, media worker, and media cache operations." "Python argparse"
+            cli = container "CLI" "Command-line interface for serving the daemon, migration, snapshot-text and storage reconciliation, media-spool status/drain, health/doctor/search/recent/timeline/detail, policy/forget, capture fixtures, media worker, and media cache operations." "Python argparse"
 
-            sqliteDatabase = container "SQLite + FTS5 Database" "Durable complete cleaned-text, relational, and full-text authority for migration ledger, sources, documents, visits, capture observations, URL claims, visit events, snapshots, chunks, chunks_fts, media provenance/tasks, policy rules, audit events, and deletion receipts." "SQLite with FTS5" {
+            sqliteDatabase = container "SQLite + FTS5 Database" "Durable complete cleaned-text, relational, and full-text authority for migration ledger, sources, documents, visits, capture observations, URL claims, visit events, snapshots, chunks, chunks_fts, media provenance/tasks, blob lifecycle records, policy rules, audit events, and deletion receipts." "SQLite with FTS5" {
                 tags "Database", "Data Store"
             }
 
@@ -76,7 +77,8 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
 
         localWebUi -> wslLoopbackDaemon "Calls authenticated read, admin, media, and forget APIs on" "HTTP/JSON"
         cli -> wslLoopbackDaemon "Calls health, read, admin, capture-fixture, and forget APIs on" "HTTP/JSON"
-        cli -> sqliteDatabase "Runs migration, media-worker, media-cache, and media-spool commands against" "sqlite3"
+        cli -> sqliteDatabase "Runs migration, media-worker, media-cache, media-spool, and storage-reconcile commands against" "sqlite3"
+        cli -> storageReconciler "Previews or executes contained storage convergence through"
         cli -> mediaBlobCache "Purges and rehydrates media blobs through" "Filesystem"
         cli -> mediaSpool "Reports and drains bounded outage bytes through" "Filesystem"
 
@@ -117,14 +119,18 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
         lifecyclePipeline -> sqliteDatabase "Writes lifecycle identity and interval-union dwell to" "sqlite3"
         mediaManager -> sqliteDatabase "Updates media rows and tasks in" "sqlite3"
         mediaManager -> blobStore "Stages, commits, reads, evicts, and purges media through"
+        mediaManager -> storageReconciler "Registers committed bytes and tombstones replacement, drain, purge, and eviction through"
         searchReadModel -> sqliteDatabase "Reads metadata and FTS from" "SQLite FTS5"
         searchReadModel -> blobStore "Reads only legacy text sidecars and checks media files through"
-        forgetPipeline -> sqliteDatabase "Deletes rows and records receipts in" "sqlite3"
-        forgetPipeline -> blobStore "Deletes contained text and media blobs through"
+        forgetPipeline -> sqliteDatabase "Atomically deletes rows and records receipts/tombstones in" "sqlite3"
+        forgetPipeline -> storageReconciler "Processes post-commit contained blob deletion through"
+        storageReconciler -> sqliteDatabase "Reads and advances durable blob lifecycle records in" "sqlite3"
+        storageReconciler -> blobStore "Resolves, deletes, and inventories contained bytes through"
         blobStore -> cleanTextBlobStore "Reads, stats, reconciles, and deletes legacy text sidecars in" "Filesystem"
         blobStore -> mediaBlobCache "Stages, commits, reads, stats, and deletes media blobs in" "Filesystem"
         blobStore -> mediaSpool "Stages, commits, reads, stats, and deletes spooled media in" "Filesystem"
         opsDoctor -> sqliteDatabase "Checks integrity and counts in" "sqlite3"
+        opsDoctor -> storageReconciler "Reads pending deletion and lifecycle health from"
         opsDoctor -> cleanTextBlobStore "Counts text blob files in" "Filesystem"
         opsDoctor -> mediaBlobCache "Counts media blob files in" "Filesystem"
         opsDoctor -> mediaSpool "Reports filesystem bytes, reservations, and capacity for" "Filesystem"
@@ -256,6 +262,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
         component wslLoopbackDaemon "DaemonMediaComponents" {
             include httpRouter
             include mediaManager
+            include storageReconciler
             include blobStore
             include sqliteDatabase
             include mediaBlobCache
@@ -277,6 +284,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
         component wslLoopbackDaemon "DaemonForgetComponents" {
             include httpRouter
             include forgetPipeline
+            include storageReconciler
             include blobStore
             include sqliteDatabase
             include cleanTextBlobStore
@@ -288,6 +296,18 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
         component wslLoopbackDaemon "DaemonDoctorComponents" {
             include httpRouter
             include opsDoctor
+            include storageReconciler
+            include sqliteDatabase
+            include cleanTextBlobStore
+            include mediaBlobCache
+            include mediaSpool
+            autoLayout lr
+        }
+
+        component wslLoopbackDaemon "DaemonStorageReconcileComponents" {
+            include cli
+            include storageReconciler
+            include blobStore
             include sqliteDatabase
             include cleanTextBlobStore
             include mediaBlobCache

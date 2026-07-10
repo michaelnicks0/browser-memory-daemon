@@ -58,6 +58,7 @@ def _drop_snapshot_text_authority(conn: sqlite3.Connection) -> None:
 
 
 def _drop_media_storage_tiers(conn: sqlite3.Connection) -> None:
+    conn.execute("DROP TABLE IF EXISTS blob_storage_records")
     conn.execute("DROP TABLE media_spool_reservations")
     conn.execute("ALTER TABLE media_artifacts DROP COLUMN spool_locator")
     conn.execute("ALTER TABLE media_artifacts DROP COLUMN storage_tier")
@@ -271,9 +272,9 @@ def test_version_three_fixture_upgrades_once_to_capture_model_expand_schema(tmp_
 
     before = migration_status(cfg)
     assert before["current_version"] == 3
-    assert before["pending_versions"] == [4, 5, 6, 7, 8, 9, 10]
+    assert before["pending_versions"] == [4, 5, 6, 7, 8, 9, 10, 11]
     result = migrate_database(cfg, execute=True)
-    assert result["applied_versions"] == [4, 5, 6, 7, 8, 9, 10]
+    assert result["applied_versions"] == [4, 5, 6, 7, 8, 9, 10, 11]
     with connect(cfg.db_path) as conn:
         tables = {
             row["name"]
@@ -286,7 +287,7 @@ def test_version_three_fixture_upgrades_once_to_capture_model_expand_schema(tmp_
             "document_url_claims",
             "media_artifact_observations",
         } <= tables
-        assert schema_fingerprint(conn) == MIGRATIONS[9].schema_fingerprint
+        assert schema_fingerprint(conn) == MIGRATIONS[10].schema_fingerprint
 
 
 def test_version_five_backfills_only_evidence_supported_historical_relationships(tmp_path):
@@ -667,9 +668,9 @@ def test_version_ten_adds_media_storage_tiers_and_spool_reservations(tmp_path):
         conn.execute("DELETE FROM schema_migrations WHERE version >= 10")
         conn.execute("PRAGMA user_version = 9")
 
-    pending = migration_status(cfg)
+    pending = migration_status(cfg, steps=MIGRATIONS[:10])
     assert pending["pending_versions"] == [10]
-    result = migrate_database(cfg, execute=True)
+    result = migrate_database(cfg, execute=True, steps=MIGRATIONS[:10])
     assert result["applied_versions"] == [10]
     with connect(cfg.db_path) as conn:
         row = conn.execute(
@@ -690,6 +691,70 @@ def test_version_ten_adds_media_storage_tiers_and_spool_reservations(tmp_path):
             "created_at": 0,
         }
         assert schema_fingerprint(conn) == MIGRATIONS[9].schema_fingerprint
+        assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
+
+
+def test_version_eleven_adds_and_backfills_blob_lifecycle_records(tmp_path):
+    cfg = _config(tmp_path)
+    init_db(cfg)
+    with connect(cfg.db_path) as conn:
+        capture = _capture(conn, cfg)
+        conn.execute(
+            """
+            UPDATE snapshots
+            SET cleaned_text_path = '/legacy/clean.txt', cleaned_text_locator = 'clean.txt'
+            WHERE id = ?
+            """,
+            (capture["snapshot_id"],),
+        )
+        conn.execute(
+            """
+            INSERT INTO media_artifacts(
+              id, document_id, snapshot_id, media_type, role, source_url,
+              normalized_source_url, page_url, byte_size, content_sha256,
+              file_path, blob_locator, storage_tier, capture_status, metadata_json
+            ) VALUES ('media-v11-legacy', ?, ?, 'image', 'content',
+                      'https://cdn.example.com/v11.png', 'https://cdn.example.com/v11.png',
+                      'https://example.org/migration', 12, 'abc', '/legacy/media.bin',
+                      'media.bin', 'media-root', 'stored', '{}')
+            """,
+            (capture["document_id"], capture["snapshot_id"]),
+        )
+        conn.execute("DROP TABLE blob_storage_records")
+        conn.execute("DELETE FROM schema_migrations WHERE version >= 11")
+        conn.execute("PRAGMA user_version = 10")
+
+    pending = migration_status(cfg)
+    assert pending["pending_versions"] == [11]
+    result = migrate_database(cfg, execute=True)
+    assert result["applied_versions"] == [11]
+    with connect(cfg.db_path) as conn:
+        rows = [
+            dict(row)
+            for row in conn.execute(
+                """
+                SELECT owner_kind, owner_id, storage_tier, locator, state
+                FROM blob_storage_records ORDER BY owner_kind
+                """
+            ).fetchall()
+        ]
+        assert rows == [
+            {
+                "owner_kind": "media-artifact",
+                "owner_id": "media-v11-legacy",
+                "storage_tier": "media-root",
+                "locator": "media.bin",
+                "state": "committed",
+            },
+            {
+                "owner_kind": "snapshot-derivative",
+                "owner_id": capture["snapshot_id"],
+                "storage_tier": "derivative",
+                "locator": "clean.txt",
+                "state": "committed",
+            },
+        ]
+        assert schema_fingerprint(conn) == MIGRATIONS[10].schema_fingerprint
         assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
 
 

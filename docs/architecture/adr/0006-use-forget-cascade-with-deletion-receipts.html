@@ -126,14 +126,15 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
   <article class="md-body">
 <hr />
 <p>id: ADR-0006
-status: accepted
+status: superseded
 date: 2026-06-14
 decision_date: 2026-06-08
 decider: Operator
 scope: repo
 backfilled: true
 supersedes: []
-superseded_by: []
+superseded_by:
+  - ADR-0040
 related:
   - docs/ARCHITECTURE.md
   - docs/security-model.md
@@ -149,6 +150,9 @@ verification:
   - BMD_SKIP_REAL_CHROME_E2E=1 ./scripts/run-e2e.sh with temporary Python 3.11 shim</p>
 <hr />
 <h1 id="adr-0006-use-forget-cascade-with-deletion-receipts">ADR-0006: Use Forget Cascade with Deletion Receipts</h1>
+<blockquote>
+<p><strong>Superseded by ADR-0040.</strong> Physical forget and minimized receipts remain, but blob deletion now uses durable operational tombstones and retryable reconciliation before reporting complete success.</p>
+</blockquote>
 <h2 id="context">Context</h2>
 <p>This ADR backfills a decision that existed before the ADR workflow was added.</p>
 <p>A local personal-recall system that stores broad/all-mode browser memory needs a reliable operator-controlled deletion path. Deleting only search rows, only visible documents, or only blob files would leave inconsistent recall state. The system needs one deletion operation that removes matching memory from the DB, FTS index, text blobs, media blobs, lifecycle metadata, and related rows, then returns auditable counts.</p>

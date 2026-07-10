@@ -165,3 +165,23 @@ def test_cli_media_spool_status_and_drain_are_dry_run_safe(tmp_path, capsys):
     preview = _last_json(capsys)
     assert preview["dry_run"] is True
     assert preview["selected"] == 0
+
+
+def test_cli_storage_reconcile_defaults_to_dry_run(tmp_path, capsys):
+    base = [
+        "--runtime-root",
+        str(tmp_path / "runtime"),
+        "--token",
+        "test-token",
+        "--policy-mode",
+        "all",
+    ]
+    assert main(base + ["storage", "reconcile"]) == 0
+    preview = _last_json(capsys)
+    assert preview["dry_run"] is True
+    assert preview["tombstones"]["pending"] == 0
+
+    assert main(base + ["storage", "reconcile", "--execute"]) == 0
+    applied = _last_json(capsys)
+    assert applied["dry_run"] is False
+    assert applied["tombstones"]["pending"] == 0

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .blob_lifecycle import register_committed_blob
 from .blob_store import BlobStore, BlobStoreError
 from .config import RuntimeConfig
 from .media_storage import media_root_readiness
@@ -220,6 +221,15 @@ def migrate_blob_root(
                         "UPDATE snapshots SET cleaned_text_path = ?, cleaned_text_locator = ? WHERE id = ?",
                         (str(plan.target_path), locator, plan.row_id),
                     )
+                    register_committed_blob(
+                        conn,
+                        owner_kind="snapshot-derivative",
+                        owner_id=plan.row_id,
+                        storage_tier="derivative",
+                        locator=locator,
+                        byte_size=plan.expected_size,
+                        content_sha256=plan.expected_sha256,
+                    )
                 elif plan.table == "media_artifacts":
                     locator = BlobStore(config.media_root).relative_locator(plan.target_path)
                     conn.execute(
@@ -229,6 +239,15 @@ def migrate_blob_root(
                         WHERE id = ?
                         """,
                         (str(plan.target_path), locator, plan.row_id),
+                    )
+                    register_committed_blob(
+                        conn,
+                        owner_kind="media-artifact",
+                        owner_id=plan.row_id,
+                        storage_tier="media-root",
+                        locator=locator,
+                        byte_size=plan.expected_size,
+                        content_sha256=plan.expected_sha256,
                     )
                 summary["updated"] += 1
         if remove_source:

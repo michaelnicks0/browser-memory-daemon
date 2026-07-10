@@ -553,7 +553,7 @@ def test_media_global_cache_rolls_oldest_blob_when_limit_would_be_exceeded(tmp_p
         assert rows[old["artifact_id"]]["capture_status"] == "purged"
         assert rows[old["artifact_id"]]["status_reason"] == "cache-evicted:global-oldest"
         assert rows[old["artifact_id"]]["file_path"] == ""
-        assert rows[old["artifact_id"]]["blob_locator"] == ""
+        assert rows[old["artifact_id"]]["blob_locator"] is None
         assert rows[new["artifact_id"]]["capture_status"] == "stored"
 
 

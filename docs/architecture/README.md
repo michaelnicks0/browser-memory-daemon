@@ -137,7 +137,8 @@ Primary source evidence used for this model:
 | Daemon media worker leases public media tasks and writes blob/status updates. | `daemon/src/browser_memory_daemon/media_worker.py`, `daemon/src/browser_memory_daemon/media.py` |
 | SQLite schema evolution uses an exact version-1 fingerprint, contiguous ledger checksums, and backup-gated destructive steps. | `daemon/src/browser_memory_daemon/migrations.py`, `daemon/src/browser_memory_daemon/migration_steps/`, `docs/database-migrations.md` |
 | Final media uses an independently guarded root; an opt-in local spool uses per-writer SQLite reservations, tier-aware reads/deletes, and verified dry-run-first draining. | `daemon/src/browser_memory_daemon/media_storage.py`, `daemon/src/browser_memory_daemon/migration_steps/v0010_split_media_root_and_add_spool.sql`, ADR-0039 |
-| Local UI and CLI are operator surfaces; CLI read/admin commands use daemon APIs, while media-worker/cache/spool commands also run direct SQLite/filesystem paths. | `ui/app.js`, `daemon/src/browser_memory_daemon/cli.py`, `docs/daily-driver-deployment.md` |
+| Blob deletion intent is durable before filesystem side effects; failed/blocked work is unreadable, capacity-accounted, and retryable through dry-run-first reconciliation. | `daemon/src/browser_memory_daemon/blob_lifecycle.py`, `daemon/src/browser_memory_daemon/storage_reconcile.py`, `daemon/src/browser_memory_daemon/migration_steps/v0011_add_blob_lifecycle_records.sql`, ADR-0040 |
+| Local UI and CLI are operator surfaces; CLI read/admin commands use daemon APIs, while media-worker/cache/spool/storage-reconcile commands also run direct SQLite/filesystem paths. | `ui/app.js`, `daemon/src/browser_memory_daemon/cli.py`, `docs/daily-driver-deployment.md` |
 | Daily-driver deployment uses WSL systemd user services and Windows unpacked extension copy. | `scripts/install-daily-driver.sh`, `docs/daily-driver-deployment.md` |
 
 ## Assumptions and TBDs

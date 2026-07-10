@@ -15,6 +15,7 @@ from .media_storage import drain_media_spool, media_spool_status
 from .media_worker import run_loop as run_media_worker_loop
 from .media_worker import run_once as run_media_worker_once
 from .migrations import MigrationError, migrate_database, migration_status
+from .storage_reconcile import reconcile_storage
 from .text_authority import reconcile_snapshot_text_authority
 
 
@@ -116,6 +117,12 @@ def main(argv: list[str] | None = None) -> int:
     drain_spool = media_spool_sub.add_parser("drain")
     drain_spool.add_argument("--execute", action="store_true")
     drain_spool.add_argument("--limit", type=int, default=100)
+    storage = sub.add_parser("storage")
+    storage_sub = storage.add_subparsers(dest="storage_command", required=True)
+    reconcile_blobs = storage_sub.add_parser("reconcile")
+    reconcile_blobs.add_argument("--execute", action="store_true")
+    reconcile_blobs.add_argument("--limit", type=int, default=1_000)
+    reconcile_blobs.add_argument("--stale-stage-seconds", type=int, default=3_600)
     args = parser.parse_args(argv)
 
     cfg = load_config(
@@ -276,6 +283,18 @@ def main(argv: list[str] | None = None) -> int:
                 result = drain_media_spool(conn, cfg, execute=args.execute, limit=args.limit)
             print(json.dumps(result, indent=2))
         return 0
+    if args.command == "storage":
+        init_db(cfg)
+        with connect(cfg.db_path) as conn:
+            result = reconcile_storage(
+                conn,
+                cfg,
+                execute=args.execute,
+                limit=args.limit,
+                stale_stage_seconds=args.stale_stage_seconds,
+            )
+            print(json.dumps(result, indent=2))
+        return 0 if result["tombstones"]["pending"] == 0 else 2
     if args.command == "capture-fixture":
         print(json.dumps(_request("POST", f"{base}/capture", token=cfg.api_token, body={"url": args.url, "title": args.title, "text": args.text}), indent=2))
         return 0

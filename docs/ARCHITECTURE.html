@@ -167,7 +167,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Deletion model</td>
-<td>Forget by domain/URL with deletion receipts.</td>
+<td>Forget by domain/URL with same-transaction deletion receipts, durable blob tombstones, and retryable contained reconciliation.</td>
 </tr>
 <tr>
 <td>Validation target</td>
@@ -211,6 +211,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li><code>BMD_MEDIA_ROOT</code> owns final media bytes. Explicit external roots require both a non-root mount and <code>.bmd-media-root-id</code> matching <code>BMD_MEDIA_ROOT_IDENTITY</code> before reads or writes.</li>
 <li><code>BMD_MEDIA_SPOOL_ROOT</code> plus positive <code>BMD_MAX_MEDIA_SPOOL_BYTES</code> enables a local durable outage spool contained under the WSL data root. SQLite reservations count distinct in-flight writers while filesystem census counts committed and orphaned spool files.</li>
 <li>Migration version 10 records each artifact's <code>media-root</code> or <code>spool</code> tier. Dry-run-first spool draining streams and hash-verifies the destination, commits the tier transition, and only then removes the source.</li>
+<li>Migration version 11 adds durable <code>blob_storage_records</code>. Forget, purge, eviction, spool drain, replacement, and blob migration register committed/tombstoned lifecycle state before filesystem deletion; <code>failed</code>/<code>blocked</code> work remains pending and visible until <code>storage reconcile --execute</code> converges it.</li>
 </ul>
 <hr />
 <h2 id="requirements-trace">Requirements trace</h2>
@@ -533,12 +534,12 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td>REQ-031</td>
 <td style="text-align: right;">1</td>
-<td>planned</td>
+<td>active</td>
 <td>Deletion and eviction shall be crash-recoverable and shall not report full success while required bytes remain.</td>
 <td>BlobStore / Forget / Media Store</td>
 <td><code>HRD-006</code></td>
-<td><code>daemon/src/browser_memory_daemon/forget.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code></td>
-<td>—</td>
+<td><code>daemon/src/browser_memory_daemon/blob_lifecycle.py</code><br><code>daemon/src/browser_memory_daemon/storage_reconcile.py</code><br><code>daemon/src/browser_memory_daemon/forget.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/media_storage.py</code><br><code>daemon/src/browser_memory_daemon/schema.sql</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0011_add_blob_lifecycle_records.py</code></td>
+<td><code>daemon/tests/integration/test_storage_reconcile.py::test_forget_persists_retryable_tombstone_before_database_cascade</code><br><code>daemon/tests/integration/test_storage_reconcile.py::test_media_purge_remains_pending_until_tombstoned_bytes_are_deleted</code><br><code>daemon/tests/integration/test_storage_reconcile.py::test_concurrent_tombstone_processors_delete_once_and_converge</code><br><code>daemon/tests/integration/test_storage_reconcile.py::test_storage_reconcile_reports_and_repairs_missing_orphan_and_stale_stage</code></td>
 </tr>
 <tr>
 <td>REQ-032</td>
@@ -548,7 +549,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Database Migration Kernel</td>
 <td><code>HRD-007</code></td>
 <td><code>daemon/src/browser_memory_daemon/migrations.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps</code><br><code>daemon/src/browser_memory_daemon/db.py</code></td>
-<td><code>daemon/tests/integration/test_migrations.py::test_destructive_migration_creates_online_backup_that_restores_search</code><br><code>daemon/tests/integration/test_migrations.py::test_version_eight_adds_nullable_relative_locators</code><br><code>daemon/tests/integration/test_migrations.py::test_version_nine_backfills_hash_verified_chunks_and_new_ingest_uses_sqlite_authority</code><br><code>daemon/tests/integration/test_migrations.py::test_version_ten_adds_media_storage_tiers_and_spool_reservations</code></td>
+<td><code>daemon/tests/integration/test_migrations.py::test_destructive_migration_creates_online_backup_that_restores_search</code><br><code>daemon/tests/integration/test_migrations.py::test_version_eight_adds_nullable_relative_locators</code><br><code>daemon/tests/integration/test_migrations.py::test_version_nine_backfills_hash_verified_chunks_and_new_ingest_uses_sqlite_authority</code><br><code>daemon/tests/integration/test_migrations.py::test_version_ten_adds_media_storage_tiers_and_spool_reservations</code><br><code>daemon/tests/integration/test_migrations.py::test_version_eleven_adds_and_backfills_blob_lifecycle_records</code></td>
 </tr>
 <tr>
 <td>REQ-033</td>
@@ -833,13 +834,13 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Media cache manager</td>
-<td>Applies size gates, manual purge/rehydrate, oldest-first domain/global rolling eviction, guarded final-root selection, and bounded local spool admission/drain.</td>
-<td>Blob bytes are disposable; text, refs, hashes, and provenance remain durable. Spool reservations are concurrency-safe, while stale-reservation/orphan reconciliation remains the next Phase 3 slice.</td>
+<td>Applies size gates, manual purge/rehydrate, oldest-first domain/global rolling eviction, guarded final-root selection, bounded local spool admission/drain, and retryable byte deletion.</td>
+<td>Blob bytes are disposable; text, refs, hashes, and provenance remain durable. Failed purge/eviction stays unreadable, retryable, and included in admission accounting.</td>
 </tr>
 <tr>
-<td>BlobStore</td>
-<td>Contains blob path resolution plus streaming stage, size/hash verification, atomic commit, read/stat, and delete operations.</td>
-<td>Media rows record final/spool tier and use root-relative locators with contained absolute compatibility fallback. Legacy text sidecars remain contained compatibility evidence; new captures create none. Durable tombstone/reconciliation states remain a later Phase 3 slice.</td>
+<td>BlobStore and storage reconciler</td>
+<td>Contains blob path resolution plus streaming stage, size/hash verification, atomic commit, lifecycle registration, tombstoned delete, and dry-run-first reconciliation.</td>
+<td>SQLite records <code>committed</code>, <code>tombstoned</code>, <code>missing</code>, <code>deleted</code>, <code>blocked</code>, and <code>failed</code> outcomes. Reconciliation retries tombstones and detects missing references, in-root orphans, and stale stages without traversing unavailable or outside-root storage.</td>
 </tr>
 <tr>
 <td>Ops/read model</td>
@@ -848,8 +849,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Deletion pipeline</td>
-<td>Domain/URL forget and receipt creation.</td>
-<td>Removes DB rows, FTS rows, text/media blobs, lifecycle rows.</td>
+<td>Domain/URL forget, same-transaction receipt/tombstone creation, and post-commit contained deletion.</td>
+<td>Database memory is removed atomically; byte deletion reports complete only when every tombstone is <code>deleted</code> or <code>missing</code>, otherwise reconciliation owns the durable retry.</td>
 </tr>
 </tbody>
 </table>
