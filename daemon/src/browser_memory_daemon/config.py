@@ -33,6 +33,11 @@ class RuntimeConfig:
     max_media_fetches_per_capture: int = 12
     max_media_fetches_per_call: int = 100
     media_fetch_timeout_seconds: float = 12.0
+    media_public_fetch_allow_private_hosts: tuple[str, ...] = ()
+    media_public_fetch_max_redirects: int = 5
+    media_hls_max_requests: int = 64
+    media_hls_max_depth: int = 3
+    media_hls_playlist_max_bytes: int = 1_000_000
     media_fetch_on_capture: bool = False
     raw_html_enabled: bool = False
 
@@ -142,6 +147,11 @@ def load_config(
         max_media_fetches_per_capture=_env_int("BMD_MAX_MEDIA_FETCHES_PER_CAPTURE", RuntimeConfig.max_media_fetches_per_capture),
         max_media_fetches_per_call=_env_int("BMD_MAX_MEDIA_FETCHES_PER_CALL", RuntimeConfig.max_media_fetches_per_call),
         media_fetch_timeout_seconds=_env_float("BMD_MEDIA_FETCH_TIMEOUT_SECONDS", RuntimeConfig.media_fetch_timeout_seconds),
+        media_public_fetch_allow_private_hosts=_env_tuple("BMD_MEDIA_PUBLIC_FETCH_ALLOW_PRIVATE_HOSTS", RuntimeConfig.media_public_fetch_allow_private_hosts),
+        media_public_fetch_max_redirects=_env_int("BMD_MEDIA_PUBLIC_FETCH_MAX_REDIRECTS", RuntimeConfig.media_public_fetch_max_redirects),
+        media_hls_max_requests=_env_int("BMD_MEDIA_HLS_MAX_REQUESTS", RuntimeConfig.media_hls_max_requests),
+        media_hls_max_depth=_env_int("BMD_MEDIA_HLS_MAX_DEPTH", RuntimeConfig.media_hls_max_depth),
+        media_hls_playlist_max_bytes=_env_int("BMD_MEDIA_HLS_PLAYLIST_MAX_BYTES", RuntimeConfig.media_hls_playlist_max_bytes),
         media_fetch_on_capture=_env_bool("BMD_MEDIA_FETCH_ON_CAPTURE", RuntimeConfig.media_fetch_on_capture),
     )
     cfg.ensure_dirs()

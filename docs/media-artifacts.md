@@ -123,7 +123,8 @@ Important properties:
 - `/capture` stores text/FTS and media reference rows without waiting on media bytes.
 - Credentialed media fetch happens inside Chrome; cookies are **not** exported to WSL.
 - WSL daemon media worker backfills public `http:`, `https:`, and `data:` refs through `media_fetch_tasks` leases; manual `/fetch-pending` and `media_fetch_on_capture=True` background fetches use the same lease path rather than bypassing worker ownership.
-- HLS `.m3u8` playlist URLs are daemon-owned, not browser-queue-owned: the worker follows master playlists to a variant playlist, downloads init/segment bytes within the artifact cap, and stores the assembled bytes as local video. Audio-only HLS renditions are also stored as audio MIME sidecars (`audio/mp4`, etc.) while retaining `media_type='video'` provenance.
+- Daemon-public HTTP(S) fetches are no-cookie and no-`Referer`. The daemon resolves and validates every direct URL, redirect hop, HLS variant playlist, init map, and segment before opening it; loopback/private/link-local/unspecified/multicast/reserved/non-global addresses are denied by default unless the operator explicitly allowlists the private host.
+- HLS `.m3u8` playlist URLs are daemon-owned, not browser-queue-owned: the worker follows master playlists to a variant playlist, downloads init/segment bytes within artifact/request/depth/deadline caps, and stores the assembled bytes as local video. Audio-only HLS renditions are also stored as audio MIME sidecars (`audio/mp4`, etc.) while retaining `media_type='video'` provenance.
 - CDP recorder lane: when enabled and an active tab matches the configured recorder domains (`x.com`, `twitter.com` by default), the extension attaches `chrome.debugger`, enables CDP `Network`, records `video.twimg.com` manifest/segment responses, creates `media_artifacts` rows with `cdp_recorder=true`, and either uploads the response body directly or lets the daemon HLS backfill worker assemble the manifest. This captures media before X exposes only transient `blob:` URLs; same-snapshot or same-page/time-window `blob:` video rows are labeled `covered-by-cdp-recorder` when stored CDP bytes exist.
 - Content scripts opportunistically fetch `blob:`/inline media while the renderer page is alive and send bytes through the service worker; this is the only reliable path for simple transient browser blob URLs. Remaining uncovered `blob:` videos are kept as `referenced:opaque-browser-blob`, not failures.
 - If media cannot be fetched, the reference row remains with an explicit classified status/reason. `failed` is reserved for unexpected/unclassified bugs; terminal remote conditions are normalized to `skipped`, `expired`, or `retrying`.
@@ -263,9 +264,11 @@ Returns the stored binary with its MIME type if available. If the artifact has n
 | Max binary artifact | 250 MB by default |
 | Max media JSON upload | 40 MB |
 | Browser lazy sidecar | Extension IndexedDB queue, `chrome.alarms`, fetch with `credentials: include`, raw `PUT` upload |
-| Daemon lazy sidecar | `browser-memory-media-worker.service`, public fetch only, no Chrome cookies |
+| Daemon lazy sidecar | `browser-memory-media-worker.service`, guarded public fetch only, no Chrome cookies, no daemon `Referer` |
 | Manual fetch-pending call limit | 100 artifacts |
 | Daemon-supported fetch schemes | `http:`, `https:`, `data:` |
+| Daemon-public HTTP(S) destinations | Public/global addresses only by default; explicit private-host allowlist via `BMD_MEDIA_PUBLIC_FETCH_ALLOW_PRIVATE_HOSTS` |
+| HLS public fetch budgets | Redirect hops: 5; child requests: 64; depth: 3; playlist bytes: 1 MB; plus artifact bytes and deadline |
 | Browser inline/blob upload schemes | `blob:` and `data:` when the content script can read bytes before page teardown |
 | Unsupported/hard schemes | browser-internal URLs, opaque streaming, DRM, media-source streams with no readable file/blob |
 

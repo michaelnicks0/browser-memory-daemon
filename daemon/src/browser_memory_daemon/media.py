@@ -4,16 +4,18 @@ import base64
 from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass
 import hashlib
+import ipaddress
 import json
 from pathlib import Path
 import re
+import socket
 import sqlite3
 import time
 import uuid
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import unquote_to_bytes, urljoin, urlsplit
-from urllib.request import Request, urlopen
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from .config import RuntimeConfig
 from .normalize import normalize_url
@@ -50,6 +52,13 @@ PERMANENT_SKIP_REASONS = {
     "domain-media-budget",
     "media-cache-budget",
     "priority-below-threshold",
+    "fetch-blocked-private-address",
+    "fetch-blocked-private-host",
+    "fetch-blocked-reserved-address",
+    "fetch-blocked-url-scheme",
+    "fetch-redirect-loop",
+    "fetch-redirect-missing-location",
+    "fetch-too-many-redirects",
 }
 
 
@@ -85,6 +94,34 @@ HLS_MIME_TYPES = {
     "audio/mpegurl",
     "audio/x-mpegurl",
 }
+
+
+class _NoRedirectHandler(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # type: ignore[no-untyped-def]
+        return None
+
+
+_NO_REDIRECT_OPENER = build_opener(_NoRedirectHandler)
+
+
+def _open_public_no_redirect(request: Request, *, timeout: float):
+    return _NO_REDIRECT_OPENER.open(request, timeout=timeout)
+
+
+_PUBLIC_FETCH_OPENER = _open_public_no_redirect
+_PUBLIC_FETCH_RESOLVER = socket.getaddrinfo
+
+
+@dataclass
+class _HlsFetchBudget:
+    requests_remaining: int
+    deadline: float | None
+
+    def claim_request(self) -> bool:
+        if self.requests_remaining <= 0:
+            return False
+        self.requests_remaining -= 1
+        return True
 
 
 def _bounded_text(value: Any, *, max_chars: int = 2048) -> str:
@@ -820,15 +857,157 @@ def _data_url_to_media(data_url: str, *, media_type: str, max_bytes: int) -> tup
 
 
 def _request_for_url(source_url: str, page_url: str, *, accept: str) -> Request:
-    parts = urlsplit(source_url)
     return Request(
         source_url,
         headers={
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149 Safari/537.36 BrowserMemoryDaemon/0.1",
-            "Referer": page_url or f"{parts.scheme}://{parts.netloc}/",
             "Accept": accept,
         },
     )
+
+
+def _normalized_host(value: str) -> str:
+    return str(value or "").strip().strip("[]").rstrip(".").lower()
+
+
+def _private_host_allowed(config: RuntimeConfig, host: str) -> bool:
+    normalized = _normalized_host(host)
+    return normalized in {_normalized_host(item) for item in config.media_public_fetch_allow_private_hosts}
+
+
+def _is_public_address(address: str) -> bool:
+    try:
+        parsed = ipaddress.ip_address(address.split("%", 1)[0])
+    except ValueError:
+        return False
+    return parsed.is_global
+
+
+def _resolved_addresses(host: str, port: int) -> tuple[list[str], str]:
+    try:
+        infos = _PUBLIC_FETCH_RESOLVER(host, port, type=socket.SOCK_STREAM)
+    except socket.gaierror as exc:
+        return [], f"fetch-error-dns-{str(exc)[:120]}"
+    except Exception as exc:
+        return [], f"fetch-error-dns-{str(exc)[:120]}"
+    addresses: list[str] = []
+    for info in infos:
+        try:
+            sockaddr = info[4]
+            address = str(sockaddr[0])
+        except Exception:
+            continue
+        if address not in addresses:
+            addresses.append(address)
+    if not addresses:
+        return [], "fetch-error-dns-empty"
+    return addresses, ""
+
+
+def _validate_public_fetch_url(config: RuntimeConfig, source_url: str) -> str:
+    parts = urlsplit(source_url)
+    if parts.scheme not in {"http", "https"}:
+        return "fetch-blocked-url-scheme"
+    host = parts.hostname or ""
+    if not host:
+        return "fetch-blocked-private-host"
+    if _private_host_allowed(config, host):
+        return ""
+    try:
+        literal = ipaddress.ip_address(host.split("%", 1)[0])
+    except ValueError:
+        literal = None
+    if literal is not None and not literal.is_global:
+        return "fetch-blocked-private-address"
+    addresses, reason = _resolved_addresses(host, parts.port or (443 if parts.scheme == "https" else 80))
+    if reason:
+        return reason
+    if any(not _is_public_address(address) for address in addresses):
+        return "fetch-blocked-private-address"
+    return ""
+
+
+def _response_status(response: Any) -> int:
+    status = getattr(response, "status", None) or getattr(response, "code", None)
+    if status is None and hasattr(response, "getcode"):
+        status = response.getcode()
+    try:
+        return int(status or 200)
+    except (TypeError, ValueError):
+        return 200
+
+
+def _response_header(headers: Any, name: str) -> str:
+    if not headers:
+        return ""
+    return str(headers.get(name) or headers.get(name.lower()) or headers.get(name.title()) or "")
+
+
+def _redirect_target(current_url: str, location: str) -> str:
+    return urljoin(current_url, location.strip())
+
+
+def _guarded_public_fetch(
+    config: RuntimeConfig,
+    source_url: str,
+    page_url: str,
+    *,
+    accept: str,
+    max_bytes: int,
+    timeout_seconds: float,
+    deadline: float | None = None,
+    budget: _HlsFetchBudget | None = None,
+) -> tuple[bytes, str, str, str]:
+    del page_url  # public daemon fetch intentionally sends no Referer.
+    current_url = source_url
+    visited: set[str] = set()
+    redirects = 0
+    while True:
+        if _hls_deadline_expired(deadline):
+            return b"", "", current_url, "hls-time-budget-exceeded"
+        if current_url in visited:
+            return b"", "", current_url, "fetch-redirect-loop"
+        visited.add(current_url)
+        reason = _validate_public_fetch_url(config, current_url)
+        if reason:
+            return b"", "", current_url, reason
+        if budget is not None and not budget.claim_request():
+            return b"", "", current_url, "hls-request-budget-exceeded"
+        request = _request_for_url(current_url, "", accept=accept)
+        try:
+            with _PUBLIC_FETCH_OPENER(request, timeout=_remaining_hls_timeout(timeout_seconds, deadline)) as response:
+                status = _response_status(response)
+                if 300 <= status < 400:
+                    location = _response_header(response.headers, "location")
+                    if not location:
+                        return b"", "", current_url, "fetch-redirect-missing-location"
+                    redirects += 1
+                    if redirects > config.media_public_fetch_max_redirects:
+                        return b"", "", current_url, "fetch-too-many-redirects"
+                    current_url = _redirect_target(current_url, location)
+                    continue
+                if status >= 400:
+                    return b"", "", current_url, f"fetch-status-{status}"
+                content, read_reason = _read_http_response_limited(response, max_bytes=max_bytes)
+                return content, str(response.headers.get("content-type", "")), current_url, read_reason
+        except HTTPError as exc:
+            if 300 <= int(exc.code) < 400:
+                location = _response_header(exc.headers, "location")
+                if not location:
+                    return b"", "", current_url, "fetch-redirect-missing-location"
+                redirects += 1
+                if redirects > config.media_public_fetch_max_redirects:
+                    return b"", "", current_url, "fetch-too-many-redirects"
+                current_url = _redirect_target(current_url, location)
+                continue
+            return b"", "", current_url, f"fetch-status-{exc.code}"
+        except TimeoutError:
+            return b"", "", current_url, "fetch-timeout"
+        except URLError as exc:
+            reason = getattr(exc, "reason", exc)
+            return b"", "", current_url, f"fetch-error-{str(reason)[:160]}"
+        except Exception as exc:
+            return b"", "", current_url, f"fetch-error-{str(exc)[:160]}"
 
 
 def _content_type_mime(value: str) -> str:
@@ -910,43 +1089,49 @@ def _hls_map_uri(line: str) -> str:
     return attrs.get("URI", "")
 
 
-def _fetch_hls_asset(source_url: str, page_url: str, *, max_bytes: int, timeout_seconds: float) -> tuple[bytes, str]:
-    try:
-        with urlopen(
-            _request_for_url(source_url, page_url, accept="video/*,application/octet-stream,*/*;q=0.8"),
-            timeout=timeout_seconds,
-        ) as response:
-            return _read_http_response_limited(response, max_bytes=max_bytes)
-    except HTTPError as exc:
-        return b"", f"fetch-status-{exc.code}"
-    except TimeoutError:
-        return b"", "fetch-timeout"
-    except URLError as exc:
-        reason = getattr(exc, "reason", exc)
-        return b"", f"fetch-error-{str(reason)[:160]}"
-    except Exception as exc:
-        return b"", f"fetch-error-{str(exc)[:160]}"
+def _fetch_hls_asset(
+    source_url: str,
+    page_url: str,
+    *,
+    max_bytes: int,
+    timeout_seconds: float,
+    config: RuntimeConfig,
+    budget: _HlsFetchBudget,
+) -> tuple[bytes, str]:
+    content, _content_type, _final_url, reason = _guarded_public_fetch(
+        config,
+        source_url,
+        page_url,
+        accept="video/*,application/octet-stream,*/*;q=0.8",
+        max_bytes=max_bytes,
+        timeout_seconds=timeout_seconds,
+        deadline=budget.deadline,
+        budget=budget,
+    )
+    return content, reason
 
 
-def _fetch_hls_playlist(source_url: str, page_url: str, *, timeout_seconds: float) -> tuple[str, str]:
-    try:
-        with urlopen(
-            _request_for_url(source_url, page_url, accept="application/vnd.apple.mpegurl,application/x-mpegURL,*/*;q=0.8"),
-            timeout=timeout_seconds,
-        ) as response:
-            content, reason = _read_http_response_limited(response, max_bytes=1_000_000)
-            if reason:
-                return "", reason
-            return content.decode("utf-8", "replace"), ""
-    except HTTPError as exc:
-        return "", f"fetch-status-{exc.code}"
-    except TimeoutError:
-        return "", "fetch-timeout"
-    except URLError as exc:
-        reason = getattr(exc, "reason", exc)
-        return "", f"fetch-error-{str(reason)[:160]}"
-    except Exception as exc:
-        return "", f"fetch-error-{str(exc)[:160]}"
+def _fetch_hls_playlist(
+    source_url: str,
+    page_url: str,
+    *,
+    timeout_seconds: float,
+    config: RuntimeConfig,
+    budget: _HlsFetchBudget,
+) -> tuple[str, str]:
+    content, _content_type, _final_url, reason = _guarded_public_fetch(
+        config,
+        source_url,
+        page_url,
+        accept="application/vnd.apple.mpegurl,application/x-mpegURL,*/*;q=0.8",
+        max_bytes=config.media_hls_playlist_max_bytes,
+        timeout_seconds=timeout_seconds,
+        deadline=budget.deadline,
+        budget=budget,
+    )
+    if reason:
+        return "", reason
+    return content.decode("utf-8", "replace"), ""
 
 
 def _hls_playlist_to_media(
@@ -956,12 +1141,14 @@ def _hls_playlist_to_media(
     *,
     max_bytes: int,
     timeout_seconds: float,
+    config: RuntimeConfig,
+    budget: _HlsFetchBudget,
     deadline: float | None = None,
     depth: int = 0,
 ) -> tuple[bytes, str, str]:
-    if _hls_deadline_expired(deadline):
+    if _hls_deadline_expired(budget.deadline if budget.deadline is not None else deadline):
         return b"", "", "hls-time-budget-exceeded"
-    if depth > 3:
+    if depth > config.media_hls_max_depth:
         return b"", "", "hls-depth-exceeded"
     if not playlist_text.lstrip().startswith("#EXTM3U"):
         return b"", "", "hls-invalid-playlist"
@@ -969,9 +1156,15 @@ def _hls_playlist_to_media(
     if variants:
         last_reason = "hls-no-video-variant"
         for _, variant_url in variants:
-            if _hls_deadline_expired(deadline):
+            if _hls_deadline_expired(budget.deadline):
                 return b"", "", "hls-time-budget-exceeded"
-            variant_text, reason = _fetch_hls_playlist(variant_url, page_url, timeout_seconds=_remaining_hls_timeout(timeout_seconds, deadline))
+            variant_text, reason = _fetch_hls_playlist(
+                variant_url,
+                page_url,
+                timeout_seconds=_remaining_hls_timeout(timeout_seconds, budget.deadline),
+                config=config,
+                budget=budget,
+            )
             if reason:
                 last_reason = reason
                 continue
@@ -980,8 +1173,10 @@ def _hls_playlist_to_media(
                 page_url,
                 variant_text,
                 max_bytes=max_bytes,
-                timeout_seconds=_remaining_hls_timeout(timeout_seconds, deadline),
-                deadline=deadline,
+                timeout_seconds=_remaining_hls_timeout(timeout_seconds, budget.deadline),
+                config=config,
+                budget=budget,
+                deadline=budget.deadline,
                 depth=depth + 1,
             )
             if not reason:
@@ -1012,18 +1207,32 @@ def _hls_playlist_to_media(
     content_parts: list[bytes] = []
     total = 0
     if init_url:
-        if _hls_deadline_expired(deadline):
+        if _hls_deadline_expired(budget.deadline):
             return b"", "", "hls-time-budget-exceeded"
-        init_content, reason = _fetch_hls_asset(init_url, page_url, max_bytes=max_bytes, timeout_seconds=_remaining_hls_timeout(timeout_seconds, deadline))
+        init_content, reason = _fetch_hls_asset(
+            init_url,
+            page_url,
+            max_bytes=max_bytes,
+            timeout_seconds=_remaining_hls_timeout(timeout_seconds, budget.deadline),
+            config=config,
+            budget=budget,
+        )
         if reason:
             return b"", "", reason
         content_parts.append(init_content)
         total += len(init_content)
 
     for segment_url in segment_urls:
-        if _hls_deadline_expired(deadline):
+        if _hls_deadline_expired(budget.deadline):
             return b"", "", "hls-time-budget-exceeded"
-        segment, reason = _fetch_hls_asset(segment_url, page_url, max_bytes=max_bytes - total, timeout_seconds=_remaining_hls_timeout(timeout_seconds, deadline))
+        segment, reason = _fetch_hls_asset(
+            segment_url,
+            page_url,
+            max_bytes=max_bytes - total,
+            timeout_seconds=_remaining_hls_timeout(timeout_seconds, budget.deadline),
+            config=config,
+            budget=budget,
+        )
         if reason:
             return b"", "", reason
         total += len(segment)
@@ -1054,52 +1263,65 @@ def _remaining_hls_timeout(timeout_seconds: float, deadline: float | None) -> fl
     return max(0.001, min(timeout_seconds, deadline - time.monotonic()))
 
 
-def _fetch_hls_media_bytes(source_url: str, page_url: str, playlist_content: bytes, *, max_bytes: int, timeout_seconds: float, deadline: float | None = None) -> tuple[bytes, str, str]:
+def _fetch_hls_media_bytes(
+    source_url: str,
+    page_url: str,
+    playlist_content: bytes,
+    *,
+    max_bytes: int,
+    timeout_seconds: float,
+    config: RuntimeConfig,
+    budget: _HlsFetchBudget,
+    deadline: float | None = None,
+) -> tuple[bytes, str, str]:
     playlist_text = playlist_content.decode("utf-8", "replace")
-    return _hls_playlist_to_media(source_url, page_url, playlist_text, max_bytes=max_bytes, timeout_seconds=timeout_seconds, deadline=deadline)
+    return _hls_playlist_to_media(
+        source_url,
+        page_url,
+        playlist_text,
+        max_bytes=max_bytes,
+        timeout_seconds=timeout_seconds,
+        config=config,
+        budget=budget,
+        deadline=deadline,
+    )
 
 
-def _fetch_media_bytes(source_url: str, page_url: str, *, media_type: str, max_bytes: int, timeout_seconds: float) -> tuple[bytes, str, str]:
+def _fetch_media_bytes(source_url: str, page_url: str, *, media_type: str, max_bytes: int, timeout_seconds: float, config: RuntimeConfig) -> tuple[bytes, str, str]:
     parts = urlsplit(source_url)
     if parts.scheme == "data":
         return _data_url_to_media(source_url, media_type=media_type, max_bytes=max_bytes)
     if parts.scheme not in {"http", "https"}:
         return b"", "", "unsupported-media-url-scheme"
-    request = _request_for_url(
+    deadline = time.monotonic() + max(0.001, timeout_seconds)
+    content, raw_content_type, final_url, reason = _guarded_public_fetch(
+        config,
         source_url,
         page_url,
         accept="image/avif,image/webp,image/apng,image/svg+xml,image/*,video/*,application/vnd.apple.mpegurl,application/x-mpegURL,*/*;q=0.8",
+        max_bytes=max_bytes,
+        timeout_seconds=timeout_seconds,
+        deadline=deadline,
     )
-    deadline = time.monotonic() + max(0.001, timeout_seconds)
-    try:
-        with urlopen(request, timeout=timeout_seconds) as response:
-            raw_content_type = response.headers.get("content-type", "")
-            response_mime = _safe_response_mime(raw_content_type, media_type=media_type)
-            hls_candidate = media_type == "video" and _is_hls_candidate(source_url, raw_content_type)
-            if raw_content_type and not response_mime and not hls_candidate:
-                return b"", "", "non-media-content-type"
-            content, reason = _read_http_response_limited(response, max_bytes=max_bytes)
-            if reason:
-                return b"", response_mime, reason
-            if media_type == "video" and (hls_candidate or _looks_like_hls_playlist(content)):
-                return _fetch_hls_media_bytes(
-                    source_url,
-                    page_url,
-                    content,
-                    max_bytes=max_bytes,
-                    timeout_seconds=_remaining_hls_timeout(timeout_seconds, deadline),
-                    deadline=deadline,
-                )
-            return content, response_mime, ""
-    except HTTPError as exc:
-        return b"", "", f"fetch-status-{exc.code}"
-    except TimeoutError:
-        return b"", "", "fetch-timeout"
-    except URLError as exc:
-        reason = getattr(exc, "reason", exc)
-        return b"", "", f"fetch-error-{str(reason)[:160]}"
-    except Exception as exc:
-        return b"", "", f"fetch-error-{str(exc)[:160]}"
+    response_mime = _safe_response_mime(raw_content_type, media_type=media_type)
+    hls_candidate = media_type == "video" and _is_hls_candidate(final_url or source_url, raw_content_type)
+    if reason:
+        return b"", response_mime, reason
+    if raw_content_type and not response_mime and not hls_candidate:
+        return b"", "", "non-media-content-type"
+    if media_type == "video" and (hls_candidate or _looks_like_hls_playlist(content)):
+        budget = _HlsFetchBudget(requests_remaining=max(0, config.media_hls_max_requests - 1), deadline=deadline)
+        return _fetch_hls_media_bytes(
+            final_url or source_url,
+            page_url,
+            content,
+            max_bytes=max_bytes,
+            timeout_seconds=_remaining_hls_timeout(timeout_seconds, deadline),
+            config=config,
+            budget=budget,
+            deadline=deadline,
+        )
+    return content, response_mime, ""
 
 
 def _payload_from_media_row(row: sqlite3.Row | dict[str, Any], *, capture_status: str, status_reason: str = "", content: bytes = b"", mime_type: str = "") -> dict[str, Any]:
@@ -1158,6 +1380,7 @@ def fetch_and_store_media_artifact(conn: sqlite3.Connection, config: RuntimeConf
         media_type=value.get("media_type") or "",
         max_bytes=config.max_media_artifact_bytes,
         timeout_seconds=config.media_fetch_timeout_seconds,
+        config=config,
     )
     if reason:
         return store_media_artifact(

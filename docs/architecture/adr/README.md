@@ -30,6 +30,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0020](0020-enforce-static-requirement-traceability-gate.md) | accepted | Enforce static requirement traceability in the generated test inventory gate. |
 | [ADR-0021](0021-use-configurable-nas-blob-root-with-local-sqlite.md) | accepted | Use a configurable NAS-capable blob root while keeping SQLite/WAL local. |
 | [ADR-0022](0022-use-fast-doctor-and-media-queue-health-telemetry.md) | accepted | Use fast doctor and media-queue health telemetry. |
+| [ADR-0023](0023-guard-daemon-public-media-egress.md) | accepted | Guard daemon-public media egress. |
 
 ## Backfilled decision history
 

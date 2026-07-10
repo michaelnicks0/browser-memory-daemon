@@ -51,6 +51,209 @@ def http_status_fixture_server(status_code: int, *, content_type: str = "image/p
         server.server_close()
 
 
+def allow_loopback_public_fetch(cfg):
+    return replace(cfg, media_public_fetch_allow_private_hosts=("127.0.0.1", "localhost", "::1"))
+
+
+class FakeFetchResponse:
+    def __init__(self, *, status: int = 200, headers: dict[str, str] | None = None, body: bytes = b""):
+        self.status = status
+        self.headers = {"content-length": str(len(body)), **(headers or {})}
+        self._body = io.BytesIO(body)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+    def read(self, size: int = -1) -> bytes:
+        return self._body.read(size)
+
+
+def fake_resolver_for(mapping: dict[str, str]):
+    def resolver(host: str, port: int, *args, **kwargs):
+        address = mapping[host]
+        family = media_module.socket.AF_INET6 if ":" in address else media_module.socket.AF_INET
+        sockaddr = (address, port, 0, 0) if family == media_module.socket.AF_INET6 else (address, port)
+        return [(family, media_module.socket.SOCK_STREAM, 6, "", sockaddr)]
+
+    return resolver
+
+
+def test_guarded_public_fetch_rejects_dns_to_private_without_opening(monkeypatch, tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    opened: list[str] = []
+
+    monkeypatch.setattr(media_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"cdn.example": "10.0.0.5"}))
+    monkeypatch.setattr(media_module, "_PUBLIC_FETCH_OPENER", lambda request, *, timeout: opened.append(request.full_url))
+
+    content, mime_type, reason = media_module._fetch_media_bytes(
+        "https://cdn.example/private.png",
+        "https://page.example/full/path?secret=1",
+        media_type="image",
+        max_bytes=100,
+        timeout_seconds=1,
+        config=cfg,
+    )
+
+    assert content == b""
+    assert mime_type == ""
+    assert reason == "fetch-blocked-private-address"
+    assert opened == []
+
+
+def test_guarded_public_fetch_rejects_ipv6_loopback_literal_without_resolving(monkeypatch, tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    opened: list[str] = []
+
+    monkeypatch.setattr(media_module, "_PUBLIC_FETCH_RESOLVER", lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("resolver should not run")))
+    monkeypatch.setattr(media_module, "_PUBLIC_FETCH_OPENER", lambda request, *, timeout: opened.append(request.full_url))
+
+    _content, _mime_type, reason = media_module._fetch_media_bytes(
+        "http://[::1]/loopback.png",
+        "https://page.example/full/path?secret=1",
+        media_type="image",
+        max_bytes=100,
+        timeout_seconds=1,
+        config=cfg,
+    )
+
+    assert reason == "fetch-blocked-private-address"
+    assert opened == []
+
+
+def test_guarded_public_fetch_allowlisted_private_host_omits_referer(monkeypatch, tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    cfg = replace(cfg, media_public_fetch_allow_private_hosts=("private.example",))
+    requests = []
+
+    def opener(request, *, timeout):
+        requests.append(request)
+        return FakeFetchResponse(headers={"content-type": "image/png"}, body=b"image-bytes")
+
+    monkeypatch.setattr(media_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"private.example": "10.0.0.8"}))
+    monkeypatch.setattr(media_module, "_PUBLIC_FETCH_OPENER", opener)
+
+    content, mime_type, reason = media_module._fetch_media_bytes(
+        "https://private.example/image.png",
+        "https://page.example/full/path?secret=1",
+        media_type="image",
+        max_bytes=100,
+        timeout_seconds=1,
+        config=cfg,
+    )
+
+    assert content == b"image-bytes"
+    assert mime_type == "image/png"
+    assert reason == ""
+    headers = {key.lower(): value for key, value in requests[0].header_items()}
+    assert "referer" not in headers
+
+
+def test_guarded_public_fetch_revalidates_public_to_private_redirect(monkeypatch, tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    opened: list[str] = []
+
+    def opener(request, *, timeout):
+        opened.append(request.full_url)
+        return FakeFetchResponse(status=302, headers={"location": "http://private.internal/image.png"})
+
+    monkeypatch.setattr(media_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"public.example": "8.8.8.8", "private.internal": "10.0.0.9"}))
+    monkeypatch.setattr(media_module, "_PUBLIC_FETCH_OPENER", opener)
+
+    _content, _mime_type, reason = media_module._fetch_media_bytes(
+        "https://public.example/redirect.png",
+        "https://page.example/full/path?secret=1",
+        media_type="image",
+        max_bytes=100,
+        timeout_seconds=1,
+        config=cfg,
+    )
+
+    assert reason == "fetch-blocked-private-address"
+    assert opened == ["https://public.example/redirect.png"]
+
+
+def test_guarded_public_fetch_detects_redirect_loop(monkeypatch, tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    opened: list[str] = []
+
+    def opener(request, *, timeout):
+        opened.append(request.full_url)
+        return FakeFetchResponse(status=302, headers={"location": request.full_url})
+
+    monkeypatch.setattr(media_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"loop.example": "8.8.8.8"}))
+    monkeypatch.setattr(media_module, "_PUBLIC_FETCH_OPENER", opener)
+
+    _content, _mime_type, reason = media_module._fetch_media_bytes(
+        "https://loop.example/media.png",
+        "https://page.example/full/path?secret=1",
+        media_type="image",
+        max_bytes=100,
+        timeout_seconds=1,
+        config=cfg,
+    )
+
+    assert reason == "fetch-redirect-loop"
+    assert opened == ["https://loop.example/media.png"]
+
+
+def test_guarded_hls_revalidates_private_child_url(monkeypatch, tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    opened: list[str] = []
+
+    def opener(request, *, timeout):
+        opened.append(request.full_url)
+        return FakeFetchResponse(
+            headers={"content-type": "application/x-mpegURL"},
+            body=b"#EXTM3U\n#EXTINF:1.0,\nhttp://192.168.1.10/segment.ts\n#EXT-X-ENDLIST\n",
+        )
+
+    monkeypatch.setattr(media_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"media.example": "8.8.8.8"}))
+    monkeypatch.setattr(media_module, "_PUBLIC_FETCH_OPENER", opener)
+
+    _content, _mime_type, reason = media_module._fetch_media_bytes(
+        "https://media.example/master.m3u8",
+        "https://page.example/full/path?secret=1",
+        media_type="video",
+        max_bytes=1000,
+        timeout_seconds=1,
+        config=cfg,
+    )
+
+    assert reason == "fetch-blocked-private-address"
+    assert opened == ["https://media.example/master.m3u8"]
+
+
+def test_guarded_hls_enforces_total_request_budget(monkeypatch, tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    cfg = replace(cfg, media_hls_max_requests=1)
+    opened: list[str] = []
+
+    def opener(request, *, timeout):
+        opened.append(request.full_url)
+        return FakeFetchResponse(
+            headers={"content-type": "application/x-mpegURL"},
+            body=b"#EXTM3U\n#EXTINF:1.0,\nhttps://media.example/segment.ts\n#EXT-X-ENDLIST\n",
+        )
+
+    monkeypatch.setattr(media_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"media.example": "8.8.8.8"}))
+    monkeypatch.setattr(media_module, "_PUBLIC_FETCH_OPENER", opener)
+
+    _content, _mime_type, reason = media_module._fetch_media_bytes(
+        "https://media.example/master.m3u8",
+        "https://page.example/full/path?secret=1",
+        media_type="video",
+        max_bytes=1000,
+        timeout_seconds=1,
+        config=cfg,
+    )
+
+    assert reason == "hls-request-budget-exceeded"
+    assert opened == ["https://media.example/master.m3u8"]
+
+
 def test_media_worker_processes_data_url_task_and_marks_success(tmp_path):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
     init_db(cfg)
@@ -346,6 +549,7 @@ def test_media_worker_normalizes_terminal_failed_artifacts(tmp_path):
 
 def test_media_worker_retry_backoff_releases_lease_and_waits_until_due(tmp_path):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    cfg = allow_loopback_public_fetch(cfg)
     init_db(cfg)
     with http_status_fixture_server(429) as base_url:
         payload = CapturePayload.from_dict(
@@ -469,6 +673,7 @@ def hls_fixture_server():
 
 def test_media_worker_stores_hls_master_playlist_as_video_mp4(tmp_path):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    cfg = allow_loopback_public_fetch(cfg)
     init_db(cfg)
     with hls_fixture_server() as (base_url, expected_bytes):
         payload = CapturePayload.from_dict(
@@ -494,20 +699,21 @@ def test_media_worker_stores_hls_master_playlist_as_video_mp4(tmp_path):
             assert open(file_row["file_path"], "rb").read() == expected_bytes
 
 
-def test_hls_assembly_uses_single_deadline_across_segments(monkeypatch):
+def test_hls_assembly_uses_single_deadline_across_segments(monkeypatch, tmp_path):
     clock = {"now": 100.0}
     fetched: list[str] = []
 
     def monotonic() -> float:
         return clock["now"]
 
-    def fake_fetch_hls_asset(source_url: str, page_url: str, *, max_bytes: int, timeout_seconds: float) -> tuple[bytes, str]:
+    def fake_fetch_hls_asset(source_url: str, page_url: str, *, max_bytes: int, timeout_seconds: float, **_kwargs) -> tuple[bytes, str]:
         fetched.append(source_url)
         clock["now"] += 2.0
         return b"segment", ""
 
     monkeypatch.setattr(media_module.time, "monotonic", monotonic)
     monkeypatch.setattr(media_module, "_fetch_hls_asset", fake_fetch_hls_asset)
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
 
     content, mime_type, reason = media_module._hls_playlist_to_media(
         "https://media.example/playlist.m3u8",
@@ -515,6 +721,8 @@ def test_hls_assembly_uses_single_deadline_across_segments(monkeypatch):
         "#EXTM3U\n#EXTINF:1.0,\nseg1.ts\n#EXTINF:1.0,\nseg2.ts\n#EXT-X-ENDLIST\n",
         max_bytes=100,
         timeout_seconds=10,
+        config=cfg,
+        budget=media_module._HlsFetchBudget(requests_remaining=10, deadline=101.0),
         deadline=101.0,
     )
 
@@ -526,6 +734,7 @@ def test_hls_assembly_uses_single_deadline_across_segments(monkeypatch):
 
 def test_media_worker_requeues_legacy_hls_video_unsupported_skips(tmp_path):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    cfg = allow_loopback_public_fetch(cfg)
     init_db(cfg)
     with hls_fixture_server() as (base_url, _expected_bytes):
         payload = CapturePayload.from_dict(
@@ -557,6 +766,7 @@ def test_media_worker_requeues_legacy_hls_video_unsupported_skips(tmp_path):
 
 def test_media_worker_requeues_snapshot_budget_skips_after_cap_raise(tmp_path):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    cfg = allow_loopback_public_fetch(cfg)
     init_db(cfg)
     with hls_fixture_server() as (base_url, _expected_bytes):
         payload = CapturePayload.from_dict(
@@ -618,6 +828,7 @@ def test_media_worker_requeues_storage_budget_skips_after_cap_raise(tmp_path):
 
 def test_media_worker_stores_hls_audio_rendition_sidecar(tmp_path):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    cfg = allow_loopback_public_fetch(cfg)
     init_db(cfg)
     with hls_fixture_server() as (base_url, _expected_bytes):
         payload = CapturePayload.from_dict(
@@ -645,6 +856,7 @@ def test_media_worker_stores_hls_audio_rendition_sidecar(tmp_path):
 
 def test_media_worker_requeues_legacy_hls_audio_rendition_refs(tmp_path):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    cfg = allow_loopback_public_fetch(cfg)
     init_db(cfg)
     with hls_fixture_server() as (base_url, _expected_bytes):
         payload = CapturePayload.from_dict(
@@ -674,6 +886,7 @@ def test_media_worker_requeues_legacy_hls_audio_rendition_refs(tmp_path):
 
 def test_media_worker_requeues_cdp_hls_manifest_refs(tmp_path):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    cfg = allow_loopback_public_fetch(cfg)
     init_db(cfg)
     with hls_fixture_server() as (base_url, _expected_bytes):
         payload = CapturePayload.from_dict(

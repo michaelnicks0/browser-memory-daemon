@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Readme — browser-memory-daemon</title>
+<title>0023-Guard-Daemon-Public-Media-Egress — browser-memory-daemon</title>
 <style>
 :root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
@@ -121,208 +121,118 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <div class="wrap">
   <div class="docbar">
     <a class="home" href="../../../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
-    <span class="crumb">/ <b>docs/architecture/adr/README.md</b></span>
+    <span class="crumb">/ <b>docs/architecture/adr/0023-guard-daemon-public-media-egress.md</b></span>
   </div>
   <article class="md-body">
-<h1 id="architecture-decision-records">Architecture Decision Records</h1>
-<blockquote>
-<p>Purpose: preserve the reasoning behind architecture, design, interface, dependency, policy, and Hermes workflow decisions that future agents must understand before changing this repo.</p>
-</blockquote>
-<p>ADRs live in this repo because Browser Memory Daemon is architecture-heavy and agent-maintained. Chat history, memory, and commit messages are not sufficient paper trails for long-lived design choices.</p>
-<h2 id="index">Index</h2>
+<hr />
+<p>id: ADR-0023
+status: accepted
+date: 2026-07-10
+decision_date: 2026-07-10
+decider: Operator
+scope: repo
+supersedes: []
+superseded_by: []
+related:
+  - docs/security-model.md
+  - docs/media-artifacts.md
+  - daemon/src/browser_memory_daemon/media.py
+  - daemon/src/browser_memory_daemon/media_worker.py
+verification:
+  - BMD_PYTHON=/tmp/browser-memory-daemon-verify-venv/bin/python -m pytest -q daemon/tests/integration/test_media_worker.py</p>
+<hr />
+<h1 id="adr-0023-guard-daemon-public-media-egress">ADR-0023: Guard daemon-public media egress</h1>
+<h2 id="context">Context</h2>
+<p>The media sidecar architecture keeps text capture independent from media bytes, but the daemon-public worker still fetches public <code>http:</code>/<code>https:</code> media outside Chrome. That path must not become a general-purpose proxy from authenticated local callers or captured page metadata to private networks.</p>
+<p>Before this decision, the daemon fetch path relied on <code>urllib</code> defaults. That allowed implicit redirects, did not validate every HLS child request, and could send a full page URL as the <code>Referer</code> header.</p>
+<h2 id="decision">Decision</h2>
+<p>Daemon-public media fetches shall go through one guarded public-fetch path.</p>
+<p>The guard:</p>
+<ul>
+<li>permits only <code>http:</code> and <code>https:</code> URLs for daemon-public network fetches;</li>
+<li>resolves hostnames before every request and rejects loopback, private, link-local, unspecified, multicast, reserved, and otherwise non-global addresses by default;</li>
+<li>disables implicit redirects and validates every redirect target against the same policy with a finite hop budget;</li>
+<li>applies the same policy to HLS master playlists, variant playlists, init maps, and media segments;</li>
+<li>enforces bounded HLS request count, playlist bytes, recursion depth, artifact bytes, and deadline budgets;</li>
+<li>sends no <code>Referer</code> header from the daemon-public fetch path;</li>
+<li>keeps browser-credentialed fetches inside Chrome rather than exporting cookies to WSL;</li>
+<li>allows explicit operator/test private-host allowlisting through configuration when a private destination is intentional.</li>
+</ul>
+<h2 id="decision-drivers">Decision drivers</h2>
+<ul>
+<li>A page-controlled media URL must not make the daemon contact internal infrastructure by default.</li>
+<li>A public URL redirecting to private space must be blocked at the redirect target.</li>
+<li>HLS expansion must not bypass policy by hiding private URLs in child playlists or segments.</li>
+<li>Full captured page URLs can contain sensitive paths/query parameters and should not be leaked as daemon fetch referrers.</li>
+<li>The hardening must preserve the current lazy media model and keep text capture independent from media success.</li>
+</ul>
+<h2 id="options-considered">Options considered</h2>
 <table>
 <thead>
 <tr>
-<th>ADR</th>
-<th>Status</th>
-<th>Decision</th>
+<th>Option</th>
+<th>Pros</th>
+<th>Cons</th>
+<th>Verdict</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a href="0001-use-repo-local-architecture-decision-records.html">ADR-0001</a></td>
-<td>accepted</td>
-<td>Use repo-local Markdown ADRs for architecture-significant changes.</td>
+<td>Disable daemon-public media fetch entirely</td>
+<td>Strongest egress reduction</td>
+<td>Loses public media backfill and HLS coverage</td>
+<td>Rejected</td>
 </tr>
 <tr>
-<td><a href="0002-keep-browser-memory-local-across-windows-chrome-and-wsl.html">ADR-0002</a></td>
-<td>accepted</td>
-<td>Keep browser memory local across Windows Chrome and the WSL daemon.</td>
+<td>Keep <code>urllib</code> defaults</td>
+<td>Minimal code</td>
+<td>Allows implicit redirects and weak egress control</td>
+<td>Rejected</td>
 </tr>
 <tr>
-<td><a href="0003-use-all-policy-mode-as-daily-driver-default.html">ADR-0003</a></td>
-<td>superseded</td>
-<td>Use <code>all</code> policy mode as the daily-driver default. Superseded by ADR-0009.</td>
+<td>Guarded stdlib fetch path</td>
+<td>Preserves current architecture; centralizes policy; testable with fake resolver/opener</td>
+<td>More policy code in <code>media.py</code> until Phase 4 extraction</td>
+<td>Chosen</td>
 </tr>
 <tr>
-<td><a href="0004-use-text-first-sqlite-fts5-and-blob-storage.html">ADR-0004</a></td>
-<td>superseded</td>
-<td>Use text-first SQLite/FTS5 and WSL-local blob storage. Superseded by ADR-0021 for blob placement.</td>
-</tr>
-<tr>
-<td><a href="0005-use-durable-lazy-media-sidecars-with-bounded-cache.html">ADR-0005</a></td>
-<td>accepted</td>
-<td>Use durable lazy media sidecars with a bounded disposable cache.</td>
-</tr>
-<tr>
-<td><a href="0006-use-forget-cascade-with-deletion-receipts.html">ADR-0006</a></td>
-<td>accepted</td>
-<td>Use forget/delete cascades with deletion receipts.</td>
-</tr>
-<tr>
-<td><a href="0007-use-real-chrome-e2e-as-verification-authority.html">ADR-0007</a></td>
-<td>accepted</td>
-<td>Use real Chrome / Chrome for Testing e2e as the verification authority.</td>
-</tr>
-<tr>
-<td><a href="0008-use-c4-structurizr-as-canonical-architecture-model.html">ADR-0008</a></td>
-<td>accepted</td>
-<td>Use C4/Structurizr under <code>docs/architecture/</code> as the canonical architecture model.</td>
-</tr>
-<tr>
-<td><a href="0009-apply-explicit-block-rules-in-all-mode.html">ADR-0009</a></td>
-<td>accepted</td>
-<td>Apply explicit local block rules in <code>all</code> mode while preserving the daily-driver default.</td>
-</tr>
-<tr>
-<td><a href="0010-disable-cdp-recorder-by-default.html">ADR-0010</a></td>
-<td>superseded</td>
-<td>Disable the CDP recorder by default so daily Chrome avoids the native debugging banner while preserving opt-in X/Twitter video recovery. Superseded by ADR-0011.</td>
-</tr>
-<tr>
-<td><a href="0011-enable-cdp-recorder-by-default-with-disable-control.html">ADR-0011</a></td>
-<td>accepted</td>
-<td>Enable the CDP recorder by default for X/Twitter video completeness while preserving an operator disable control for banner-free browsing.</td>
-</tr>
-<tr>
-<td><a href="0012-bootstrap-local-ui-token-from-daemon.html">ADR-0012</a></td>
-<td>accepted</td>
-<td>Bootstrap the local dashboard token from the daemon-served <code>/ui</code> HTML so the UI opens populated while memory/admin APIs remain bearer-authenticated.</td>
-</tr>
-<tr>
-<td><a href="0013-generated-publish-docs.html">ADR-0013</a></td>
-<td>accepted</td>
-<td>Use generated high-level docs and HTML companions for publish-ready documentation while keeping Markdown canonical.</td>
-</tr>
-<tr>
-<td><a href="0014-use-wal-and-bounded-sqlite-contention-policy.html">ADR-0014</a></td>
-<td>accepted</td>
-<td>Use WAL, busy-timeout, startup-only DB initialization, and bounded loopback backlog as the SQLite contention policy.</td>
-</tr>
-<tr>
-<td><a href="0015-use-idempotent-local-write-paths.html">ADR-0015</a></td>
-<td>accepted</td>
-<td>Use idempotent local write paths for duplicate captures, media/cache filesystem work, and semantic policy-rule uniqueness.</td>
-</tr>
-<tr>
-<td><a href="0016-use-deterministic-synthetic-performance-benchmarks.html">ADR-0016</a></td>
-<td>accepted</td>
-<td>Use deterministic synthetic benchmarks as advisory performance evidence before read-model/index tuning.</td>
-</tr>
-<tr>
-<td><a href="0017-add-read-model-composite-indexes.html">ADR-0017</a></td>
-<td>accepted</td>
-<td>Add composite SQLite indexes for measured read-model ordering paths.</td>
-</tr>
-<tr>
-<td><a href="0018-enforce-daily-driver-headroom-and-start-budgets.html">ADR-0018</a></td>
-<td>accepted</td>
-<td>Enforce daily-driver headroom and service-start failure budgets in local health checks.</td>
-</tr>
-<tr>
-<td><a href="0019-use-durable-text-retention-with-wal-aware-local-backup.html">ADR-0019</a></td>
-<td>accepted</td>
-<td>Use durable text retention with WAL-aware local backup and disposable media cache.</td>
-</tr>
-<tr>
-<td><a href="0020-enforce-static-requirement-traceability-gate.html">ADR-0020</a></td>
-<td>accepted</td>
-<td>Enforce static requirement traceability in the generated test inventory gate.</td>
-</tr>
-<tr>
-<td><a href="0021-use-configurable-nas-blob-root-with-local-sqlite.html">ADR-0021</a></td>
-<td>accepted</td>
-<td>Use a configurable NAS-capable blob root while keeping SQLite/WAL local.</td>
-</tr>
-<tr>
-<td><a href="0022-use-fast-doctor-and-media-queue-health-telemetry.html">ADR-0022</a></td>
-<td>accepted</td>
-<td>Use fast doctor and media-queue health telemetry.</td>
-</tr>
-<tr>
-<td><a href="0023-guard-daemon-public-media-egress.html">ADR-0023</a></td>
-<td>accepted</td>
-<td>Guard daemon-public media egress.</td>
+<td>Browser-only media fetch</td>
+<td>Keeps cookies in Chrome</td>
+<td>MV3 suspension and no daemon-wide worker/retry lane</td>
+<td>Rejected as sole lane</td>
 </tr>
 </tbody>
 </table>
-<h2 id="backfilled-decision-history">Backfilled decision history</h2>
-<p>ADR-0002 through ADR-0008 are historical backfills recorded on 2026-06-14 from repo docs, code, tests, and git history. They did not introduce new runtime behavior; they document already-accepted architecture decisions so future changes can cite, comply with, or supersede them.</p>
-<p>Backfill verification run on 2026-06-14:</p>
+<h2 id="consequences">Consequences</h2>
 <ul>
-<li>ADR lint and repo Markdown fence check passed.</li>
-<li><code>git diff --check -- .</code> passed.</li>
-<li><code>./scripts/secret-scan.sh</code> passed.</li>
-<li><code>BMD_SKIP_REAL_CHROME_E2E=1 ./scripts/run-e2e.sh</code> passed using a temporary Python 3.11 shim because the host <code>python3</code> is Python 3.8 while this repo declares <code>requires-python = "&gt;=3.11"</code>.</li>
+<li>Positive: daemon-public media cannot reach private/internal addresses by default, including through redirects and HLS children.</li>
+<li>Positive: no full page URL is emitted as daemon-public <code>Referer</code>.</li>
+<li>Positive: tests can prove egress policy with fake resolver/opener and no real network.</li>
+<li>Negative: local/private media fixture fetches now require an explicit private-host allowlist in tests or operator config.</li>
+<li>Neutral: browser credentialed media behavior remains separate and unchanged.</li>
 </ul>
-<h2 id="when-to-create-or-supersede-an-adr">When to create or supersede an ADR</h2>
-<p>Create or supersede an ADR when a change affects:</p>
+<h2 id="verification-validation">Verification / validation</h2>
 <ul>
-<li>component boundaries or ownership;</li>
-<li>Chrome extension ↔ WSL daemon interfaces;</li>
-<li>API, CLI, schema, event, or storage contracts;</li>
-<li>capture policy, redaction, security, privacy, or deletion semantics;</li>
-<li>major dependency/platform/provider choices;</li>
-<li>media sidecar, worker, cache, lifecycle, or recall architecture;</li>
-<li>verification strategy or real-browser e2e boundary;</li>
-<li>recurring Hermes/agent workflow for maintaining this repo.</li>
+<li>Verification: <code>daemon/tests/integration/test_media_worker.py</code> covers DNS-to-private blocking, IPv6 loopback literals, allowlisted private hosts, missing <code>Referer</code>, public-to-private redirects, redirect loops, HLS private child URLs, HLS request budgets, and existing loopback fixtures with explicit allowlist.</li>
+<li>Verification: focused command passed: <code>BMD_PYTHON=/tmp/browser-memory-daemon-verify-venv/bin/python -m pytest -q daemon/tests/integration/test_media_worker.py</code>.</li>
+<li>Validation: supports HRD-002 / VAL-002 by proving hostile media references cannot make a disallowed daemon-public connection and cannot leak the full page URL as referrer.</li>
 </ul>
-<p>Do not create an ADR for trivial bug fixes, mechanical refactors, test-only cleanup, or completed-task logs.</p>
-<h2 id="status-values">Status values</h2>
-<table>
-<thead>
-<tr>
-<th>Status</th>
-<th>Meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>proposed</code></td>
-<td>Drafted but not yet accepted by Operator / project direction.</td>
-</tr>
-<tr>
-<td><code>accepted</code></td>
-<td>Active decision; future changes should comply.</td>
-</tr>
-<tr>
-<td><code>rejected</code></td>
-<td>Considered and intentionally not chosen.</td>
-</tr>
-<tr>
-<td><code>deprecated</code></td>
-<td>Still historical, but no longer recommended.</td>
-</tr>
-<tr>
-<td><code>superseded</code></td>
-<td>Replaced by a later ADR; keep the old record intact and link both ways.</td>
-</tr>
-</tbody>
-</table>
-<h2 id="agent-workflow">Agent workflow</h2>
-<ol>
-<li>Inspect <code>AGENTS.md</code>, <code>docs/README.md</code>, and this ADR index before architecture-impacting work.</li>
-<li>Search existing ADRs for related decisions.</li>
-<li>If changing an accepted decision, create a new ADR and mark the older one <code>superseded</code>; do not materially rewrite accepted history.</li>
-<li>Keep ADRs short and cite real repo evidence, commands, tests, issues, commits, or research docs.</li>
-<li>Record verification/validation evidence after checks run.</li>
-<li>Commit the ADR with the implementation/design slice it governs.</li>
-</ol>
-<h2 id="template">Template</h2>
-<p>Use <a href="template.html"><code>template.md</code></a> for new ADRs.</p>
+<h2 id="revisit-triggers">Revisit triggers</h2>
+<ul>
+<li>Supersede this ADR if Phase 4 extracts <code>media_fetch.py</code> and materially changes the egress guard interface.</li>
+<li>Supersede this ADR before adding proxy support, authenticated daemon fetch, non-HTTP schemes, or broad private-network crawling.</li>
+<li>Revisit allowlist UX if daily-driver media sources require intentional private media backfill.</li>
+</ul>
+<h2 id="references">References</h2>
+<ul>
+<li><code>docs/security-model.md</code></li>
+<li><code>docs/media-artifacts.md</code></li>
+<li><code>daemon/src/browser_memory_daemon/media.py</code></li>
+<li><code>daemon/tests/integration/test_media_worker.py</code></li>
+</ul>
   </article>
   <div class="md-footer">
-    Rendered from <code>docs/architecture/adr/README.md</code> — the Markdown file is the canonical,
+    Rendered from <code>docs/architecture/adr/0023-guard-daemon-public-media-egress.md</code> — the Markdown file is the canonical,
     version-controlled source. This HTML is generated (regenerate with
     <code>scripts/render_docs.py</code>); do not hand-edit.
   </div>
