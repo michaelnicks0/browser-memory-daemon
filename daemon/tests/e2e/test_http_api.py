@@ -254,6 +254,10 @@ def test_http_capture_search_forget_round_trip(tmp_path):
         except urllib.error.HTTPError as exc:
             assert exc.code == 400
 
+        status, _, bad_forget = error_request("POST", f"{base}/forget", body={"domain": "example.org", "url": "https://example.org/stirling"})
+        assert status == 400
+        assert "exactly one selector" in bad_forget["error"]
+
         status, receipt = request("POST", f"{base}/forget", body={"domain": "example.org"})
         assert status == 200
         assert receipt["counts"]["documents"] == 1

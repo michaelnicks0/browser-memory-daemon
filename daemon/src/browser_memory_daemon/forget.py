@@ -4,25 +4,62 @@ import json
 import sqlite3
 import uuid
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from .config import RuntimeConfig
 from .normalize import domain_from_url, normalize_url
-from .policy import redact_url
+from .policy import POLICY_MODE_ALL, redact_url
 from .storage_paths import resolve_db_path_under
 
 
-def _document_ids_for_url(conn: sqlite3.Connection, url: str) -> list[str]:
-    safe_url, _, _ = redact_url(url)
-    normalized = normalize_url(safe_url)
+def _normalize_forget_domain(value: str) -> str:
+    text = str(value or "").strip()
+    if not text:
+        raise ValueError("forget domain is required")
+    if "://" in text:
+        raise ValueError("forget domain must be a hostname, not a URL")
+    if any(char in text for char in "/?#@%*_\\") or any(char.isspace() for char in text):
+        raise ValueError("forget domain must be a literal hostname without path, query, wildcard, or userinfo")
+    parts = urlsplit(f"https://{text}")
+    try:
+        if parts.port is not None:
+            raise ValueError("forget domain must not include a port; use URL forget for scoped deletion")
+    except ValueError as exc:
+        raise ValueError("forget domain must be a literal hostname without a port") from exc
+    host = (parts.hostname or text).strip().strip("[]").rstrip(".").lower()
+    if not host:
+        raise ValueError("forget domain must be a literal hostname")
+    return host.lstrip(".")
+
+
+def _storage_url_selector(config: RuntimeConfig, url: str) -> tuple[str, str, str, str]:
+    raw_url = str(url or "").strip()
+    if not raw_url:
+        raise ValueError("forget url is required")
+    parts = urlsplit(raw_url)
+    if not parts.scheme:
+        raise ValueError("forget url must be absolute")
+    if config.policy_mode == POLICY_MODE_ALL:
+        storage_url = raw_url
+        selector_policy = "literal"
+    else:
+        storage_url, _, _ = redact_url(raw_url)
+        selector_policy = "redacted"
+    receipt_url, _, _ = redact_url(raw_url)
+    return storage_url, normalize_url(storage_url), normalize_url(receipt_url), selector_policy
+
+
+def _document_ids_for_url(conn: sqlite3.Connection, config: RuntimeConfig, url: str) -> tuple[list[str], dict[str, str]]:
+    storage_url, normalized, receipt_url, selector_policy = _storage_url_selector(config, url)
     rows = conn.execute(
         """
         SELECT id FROM documents WHERE normalized_url = ? OR canonical_url = ?
         UNION
         SELECT document_id AS id FROM visits WHERE normalized_url = ? OR url = ?
         """,
-        (normalized, normalized, normalized, safe_url),
+        (normalized, normalized, normalized, storage_url),
     ).fetchall()
-    return [row["id"] for row in rows if row["id"]]
+    return [row["id"] for row in rows if row["id"]], {"url": receipt_url, "selector_policy": selector_policy}
 
 
 def _unlink_contained(paths: list[Path], *, root: Path) -> tuple[int, int, int]:
@@ -51,20 +88,21 @@ def _unlink_contained(paths: list[Path], *, root: Path) -> tuple[int, int, int]:
 
 
 def forget(conn: sqlite3.Connection, config: RuntimeConfig, *, domain: str | None = None, url: str | None = None) -> dict:
-    if not domain and not url:
-        raise ValueError("forget requires domain or url")
+    has_domain = domain is not None and str(domain).strip() != ""
+    has_url = url is not None and str(url).strip() != ""
+    if has_domain == has_url:
+        raise ValueError("forget requires exactly one selector: domain or url")
     normalized_domain = None
-    if domain:
-        normalized_domain = domain.lower().strip().lstrip(".")
+    if has_domain:
+        normalized_domain = _normalize_forget_domain(str(domain))
         doc_rows = conn.execute(
             "SELECT id FROM documents WHERE domain = ? OR domain LIKE ?",
             (normalized_domain, f"%.{normalized_domain}"),
         ).fetchall()
         document_ids = [row["id"] for row in doc_rows]
-        scope = {"domain": normalized_domain}
+        scope = {"domain": normalized_domain, "selector_policy": "domain-suffix"}
     else:
-        document_ids = _document_ids_for_url(conn, url or "")
-        scope = {"url": normalize_url(redact_url(url or "")[0])}
+        document_ids, scope = _document_ids_for_url(conn, config, str(url))
     counts = {
         "documents": 0,
         "visits": 0,

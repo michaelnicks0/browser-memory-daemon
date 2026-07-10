@@ -75,6 +75,11 @@ def test_cli_admin_commands(cli_server, capsys, monkeypatch):
     assert prefix_rule["rule"]["rule_type"] == "url-prefix"
     assert prefix_rule["rule"]["pattern"] == "http://127.0.0.1:32400/"
 
+    with pytest.raises(SystemExit):
+        main(_base_args(cli_server) + ["forget"])
+    with pytest.raises(SystemExit):
+        main(_base_args(cli_server) + ["forget", "--domain", "cli.example", "--url", "https://cli.example/stirling"])
+
     def fake_daily_driver_health_snapshot(cfg, *, extension_dir, journal_since, include_windows_loopback, powershell):
         assert cfg.api_token == "test-token"
         assert extension_dir == "/tmp/bmd-extension"

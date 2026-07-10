@@ -49,7 +49,7 @@ Mitigations that remain even in `all`:
 - bearer auth for memory/admin APIs;
 - runtime data is outside the repo;
 - secret scan protects committed repo content;
-- forget-by-domain/URL can delete stored memory after the fact.
+- forget-by-domain/URL can delete stored memory after the fact; URL forget uses the literal selector in `all` mode but redacts selector values in receipts.
 
 ---
 
@@ -82,7 +82,7 @@ In `recall`, `balanced`, and `strict`, redaction runs before DB/FTS/blob storage
 - Local web UI is served from loopback at `/ui`; the HTML bootstrap embeds the current daemon token so the dashboard auto-loads without manual paste. Static JS/CSS assets remain token-free, and every memory/admin API call still requires the bearer token.
 - Daemon-public media fetch uses a no-cookie, no-`Referer`, HTTP(S)-only egress guard. Every direct URL, redirect target, HLS variant playlist, init map, and segment is resolved and rejected by default if it maps to loopback, private, link-local, unspecified, multicast, reserved, or otherwise non-global address space. Private destinations require explicit `BMD_MEDIA_PUBLIC_FETCH_ALLOW_PRIVATE_HOSTS` configuration.
 - Clean-text and media blob paths are root-scoped: writes construct contained paths under the configured blob root, media filenames use hashed storage stems, and read/serve/purge/forget flows refuse stale or tampered DB paths that resolve outside `clean-text/` or `media/`.
-- Deletion UX requires explicit browser confirmation before UI/popup forget-domain calls, and the daemon returns deletion receipts.
+- Deletion UX requires explicit browser confirmation before UI/popup forget-domain calls, and the daemon returns deletion receipts. Destructive forget accepts exactly one selector; domain selectors must be literal hostnames, and URL selectors match the active policy's storage representation while keeping receipt scopes redaction-safe.
 
 ---
 

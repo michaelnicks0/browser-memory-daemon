@@ -46,7 +46,7 @@ Global defaults:
 | `snapshot SNAPSHOT_ID` | Snapshot details and text. | Pretty JSON. |
 | `search QUERY [--limit N]` | Exact FTS query. | Pretty JSON search results. |
 | `policy-rules [--block-domain DOMAIN] [--block-url-prefix URL]` | List or add block-domain / URL-prefix rule. | Pretty JSON. Applies in every mode, including `all`. |
-| `forget [--domain DOMAIN] [--url URL]` | Delete memory by domain or URL. | Pretty JSON deletion receipt. |
+| `forget [--domain DOMAIN] [--url URL]` | Delete memory by exactly one selector: literal domain hostname or absolute URL. | Pretty JSON deletion receipt. |
 | `capture-fixture --url URL --title TITLE --text TEXT` | Synthetic capture through HTTP API. | Pretty JSON ingest result. |
 | `media-worker [--once|--loop] [--limit N] [--interval SEC]` | Run daemon public-media worker manually or as service. | Pretty JSON for `--once`; long-running loop for `--loop`. |
 | `media-cache purge [--domain DOMAIN] [--document-id ID] [--snapshot-id ID] [--older-than ISO] [--max-bytes-to-purge N] [--dry-run|--execute] [--rehydrate]` | Dry-run/execute media blob cache purge without deleting text/FTS/ref rows. | Pretty JSON purge summary. |
@@ -64,7 +64,7 @@ Global defaults:
 | Bad capture payload | HTTP `400` with JSON error. |
 | Blocked capture by static policy or explicit local rule | HTTP `200`, `{"stored": false, "blocked": true, "reason": "..."}`. |
 | `all` mode capture | Stores unredacted payload when payload is otherwise parseable. |
-| Forget by neither URL nor domain | HTTP `400` expected from daemon validation. |
+| Forget by neither URL nor domain, or both URL and domain | CLI exits with parser error; HTTP API returns `400` from daemon validation. |
 
 ---
 
@@ -109,12 +109,20 @@ PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   policy-rules --block-url-prefix http://127.0.0.1:32400/
 ```
 
-Forget a domain:
+Forget a domain. Domain selectors are literal hostnames and delete that host plus subdomains:
 
 ```bash
 PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
   forget --domain example.com
+```
+
+Forget one URL. URL selectors follow storage policy: `all` mode matches the literal stored URL; non-`all` modes match the redacted URL representation used during ingest. Receipts redact sensitive selector values:
+
+```bash
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
+  --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
+  forget --url 'https://example.com/article?token=...'
 ```
 
 Media cache dry-run:

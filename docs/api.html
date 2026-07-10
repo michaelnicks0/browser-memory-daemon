@@ -519,15 +519,16 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <p>If <code>visit_id</code> matches a stored visit, positive <code>active_seconds</code> is added to <code>visits.dwell_seconds</code>. Duplicate event IDs and overlapping active segments do not double-count dwell.</p>
 <hr />
 <h2 id="deletion-payloads">Deletion payloads</h2>
-<p>Forget a domain:</p>
+<p>Forget accepts exactly one destructive selector. A domain selector is a literal hostname; it continues to delete that host and its subdomains:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">{</span><span style="color: #FF4689">&quot;domain&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;example.com&quot;</span><span style="color: #F8F8F2">}</span>
 </code></pre></div>
 
-<p>Forget one URL:</p>
+<p>Forget one absolute URL. URL matching is policy-aware: <code>all</code> mode matches the literal stored URL, while <code>recall</code>/<code>balanced</code>/<code>strict</code> match the redacted URL representation used at ingest time:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">{</span><span style="color: #FF4689">&quot;url&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;https://example.com/article&quot;</span><span style="color: #F8F8F2">}</span>
 </code></pre></div>
 
-<p>The response includes <code>receipt_id</code>, <code>scope</code>, and deletion counts for documents, visits, lifecycle events, snapshots, chunks, FTS, clean-text blobs, media artifacts/blobs, embeddings, redactions, and feedback events. Blob counters include out-of-root/failed unlink counts when stale or tampered DB paths are refused instead of followed.</p>
+<p>Requests with neither selector or with both selectors return <code>400</code>. Domain selectors reject URL/path/query/wildcard/port/userinfo syntax; use <code>url</code> for a scoped URL deletion.</p>
+<p>The response includes <code>receipt_id</code>, redaction-safe <code>scope</code>, and deletion counts for documents, visits, lifecycle events, snapshots, chunks, FTS, clean-text blobs, media artifacts/blobs, embeddings, redactions, and feedback events. Blob counters include out-of-root/failed unlink counts when stale or tampered DB paths are refused instead of followed. URL deletion receipts redact sensitive selector values even when <code>all</code> mode used the literal URL to find rows.</p>
   </article>
   <div class="md-footer">
     Rendered from <code>docs/api.md</code> — the Markdown file is the canonical,

@@ -174,6 +174,10 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(_request("GET", f"{base}/policy/rules", token=cfg.api_token), indent=2))
         return 0
     if args.command == "forget":
+        has_domain = args.domain is not None and str(args.domain).strip() != ""
+        has_url = args.url is not None and str(args.url).strip() != ""
+        if has_domain == has_url:
+            parser.error("forget accepts exactly one of --domain or --url")
         print(json.dumps(_request("POST", f"{base}/forget", token=cfg.api_token, body={"domain": args.domain, "url": args.url}), indent=2))
         return 0
     if args.command == "media-worker":

@@ -334,16 +334,18 @@ If `visit_id` matches a stored visit, positive `active_seconds` is added to `vis
 
 ## Deletion payloads
 
-Forget a domain:
+Forget accepts exactly one destructive selector. A domain selector is a literal hostname; it continues to delete that host and its subdomains:
 
 ```json
 {"domain": "example.com"}
 ```
 
-Forget one URL:
+Forget one absolute URL. URL matching is policy-aware: `all` mode matches the literal stored URL, while `recall`/`balanced`/`strict` match the redacted URL representation used at ingest time:
 
 ```json
 {"url": "https://example.com/article"}
 ```
 
-The response includes `receipt_id`, `scope`, and deletion counts for documents, visits, lifecycle events, snapshots, chunks, FTS, clean-text blobs, media artifacts/blobs, embeddings, redactions, and feedback events. Blob counters include out-of-root/failed unlink counts when stale or tampered DB paths are refused instead of followed.
+Requests with neither selector or with both selectors return `400`. Domain selectors reject URL/path/query/wildcard/port/userinfo syntax; use `url` for a scoped URL deletion.
+
+The response includes `receipt_id`, redaction-safe `scope`, and deletion counts for documents, visits, lifecycle events, snapshots, chunks, FTS, clean-text blobs, media artifacts/blobs, embeddings, redactions, and feedback events. Blob counters include out-of-root/failed unlink counts when stale or tampered DB paths are refused instead of followed. URL deletion receipts redact sensitive selector values even when `all` mode used the literal URL to find rows.

@@ -242,7 +242,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td><code>forget [--domain DOMAIN] [--url URL]</code></td>
-<td>Delete memory by domain or URL.</td>
+<td>Delete memory by exactly one selector: literal domain hostname or absolute URL.</td>
 <td>Pretty JSON deletion receipt.</td>
 </tr>
 <tr>
@@ -302,8 +302,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Stores unredacted payload when payload is otherwise parseable.</td>
 </tr>
 <tr>
-<td>Forget by neither URL nor domain</td>
-<td>HTTP <code>400</code> expected from daemon validation.</td>
+<td>Forget by neither URL nor domain, or both URL and domain</td>
+<td>CLI exits with parser error; HTTP API returns <code>400</code> from daemon validation.</td>
 </tr>
 </tbody>
 </table>
@@ -338,10 +338,16 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <span style="color: #F8F8F2">  </span>policy-rules<span style="color: #F8F8F2"> </span>--block-url-prefix<span style="color: #F8F8F2"> </span>http://127.0.0.1:32400/
 </code></pre></div>
 
-<p>Forget a domain:</p>
+<p>Forget a domain. Domain selectors are literal hostnames and delete that host plus subdomains:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">PYTHONPATH</span><span style="color: #FF4689">=</span>daemon/src<span style="color: #F8F8F2"> </span>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span>--token<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;</span><span style="color: #66D9EF">$(</span>tr<span style="color: #F8F8F2"> </span>-d<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&#39;\r\n&#39;</span><span style="color: #F8F8F2"> </span>&lt;<span style="color: #F8F8F2"> </span>~/.config/browser-memory-daemon/token<span style="color: #66D9EF">)</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span>forget<span style="color: #F8F8F2"> </span>--domain<span style="color: #F8F8F2"> </span>example.com
+</code></pre></div>
+
+<p>Forget one URL. URL selectors follow storage policy: <code>all</code> mode matches the literal stored URL; non-<code>all</code> modes match the redacted URL representation used during ingest. Receipts redact sensitive selector values:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">PYTHONPATH</span><span style="color: #FF4689">=</span>daemon/src<span style="color: #F8F8F2"> </span>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>--token<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;</span><span style="color: #66D9EF">$(</span>tr<span style="color: #F8F8F2"> </span>-d<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&#39;\r\n&#39;</span><span style="color: #F8F8F2"> </span>&lt;<span style="color: #F8F8F2"> </span>~/.config/browser-memory-daemon/token<span style="color: #66D9EF">)</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>forget<span style="color: #F8F8F2"> </span>--url<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&#39;https://example.com/article?token=...&#39;</span>
 </code></pre></div>
 
 <p>Media cache dry-run:</p>

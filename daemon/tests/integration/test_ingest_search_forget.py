@@ -67,6 +67,8 @@ def test_metadata_redacted_before_fts_and_forget_by_original_url(tmp_path):
         assert url_secret not in rows[0]["url"]
         receipt = forget(conn, cfg, url=original_url)
         assert receipt["counts"]["documents"] == 1
+        assert receipt["scope"]["selector_policy"] == "redacted"
+        assert url_secret not in receipt["scope"]["url"]
         assert search_memory(conn, "turbines", limit=5) == []
 
 
@@ -129,6 +131,49 @@ def test_all_mode_stores_without_redaction_and_accepts_file_urls(tmp_path):
         assert any(fake_secret in row["title"] or fake_secret in row["url"] or fake_secret in row["snippet"] for row in rows)
         visit = conn.execute("SELECT url, is_incognito FROM visits").fetchone()
         assert fake_secret in visit["url"]
+
+
+def test_all_mode_forget_url_uses_literal_selector_but_redacts_receipt_scope(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    url_secret = "ALLMODEURLSECRET1234567890"
+    original_url = f"file:///tmp/local-note.html?token={url_secret}#frag"
+    payload = CapturePayload.from_dict(
+        {
+            "url": original_url,
+            "title": "All Mode Forget URL",
+            "text": f"All mode forget should delete literal URL memory {url_secret}.",
+        },
+        allow_any_url=True,
+    )
+    with connect(cfg.db_path) as conn:
+        ingest_capture(conn, cfg, payload)
+        assert search_memory(conn, url_secret, limit=5)
+
+        receipt = forget(conn, cfg, url=original_url)
+        receipt_row = conn.execute("SELECT scope_json FROM deletion_receipts WHERE id = ?", (receipt["receipt_id"],)).fetchone()
+
+        assert receipt["counts"]["documents"] == 1
+        assert receipt["scope"]["selector_policy"] == "literal"
+        assert url_secret not in receipt["scope"]["url"]
+        assert url_secret not in receipt_row["scope_json"]
+        assert search_memory(conn, url_secret, limit=5) == []
+
+
+def test_forget_requires_one_literal_selector(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    with connect(cfg.db_path) as conn:
+        with pytest.raises(ValueError, match="exactly one selector"):
+            forget(conn, cfg)
+        with pytest.raises(ValueError, match="exactly one selector"):
+            forget(conn, cfg, domain="example.com", url="https://example.com/page")
+        with pytest.raises(ValueError, match="hostname, not a URL"):
+            forget(conn, cfg, domain="https://example.com/page")
+        with pytest.raises(ValueError, match="literal hostname"):
+            forget(conn, cfg, domain="*.example.com")
+        with pytest.raises(ValueError, match="absolute"):
+            forget(conn, cfg, url="example.com/page")
 
 
 def test_media_artifacts_are_related_to_snapshot_not_fts_and_deleted_by_forget(tmp_path):
