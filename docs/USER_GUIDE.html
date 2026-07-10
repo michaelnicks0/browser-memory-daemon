@@ -133,7 +133,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <hr />
 <h2 id="what-it-does">What it does</h2>
 <p>The system captures text from pages you browse in Windows Chrome, sends it over loopback to a WSL daemon, stores it in SQLite + FTS5, and lets you search, inspect, and forget it locally.</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>Windows Chrome extension → http://127.0.0.1:8765 → WSL SQLite/FTS/blobs → CLI/UI/search
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>Windows Chrome extension → http://127.0.0.1:8765 → WSL SQLite/FTS authority + media cache → CLI/UI/search
 </code></pre></div>
 
 <p>The mental model:</p>
@@ -158,8 +158,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>WSL runtime paths</td>
-<td>SQLite, clean-text blobs, media blobs, token/env, audit log.</td>
-<td>Runtime data never belongs in Git.</td>
+<td>SQLite complete-text/FTS authority, media blobs, legacy text sidecars, token/env, audit log.</td>
+<td>Runtime data never belongs in Git. New captures create no text sidecar.</td>
 </tr>
 </tbody>
 </table>
@@ -226,6 +226,13 @@ systemctl<span style="color: #F8F8F2"> </span>--user<span style="color: #F8F8F2"
 <span style="color: #F8F8F2">  </span>doctor<span style="color: #F8F8F2"> </span>--storage-census
 </code></pre></div>
 
+<p>Doctor reports <code>database.snapshots_missing_authoritative_text</code> and includes it in overall health. To preview promotion of pre-version-9 rows from exact hash-verified chunks or contained legacy sidecars:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">PYTHONPATH</span><span style="color: #FF4689">=</span>daemon/src<span style="color: #F8F8F2"> </span>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>--token<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;</span><span style="color: #66D9EF">$(</span>tr<span style="color: #F8F8F2"> </span>-d<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&#39;\r\n&#39;</span><span style="color: #F8F8F2"> </span>&lt;<span style="color: #F8F8F2"> </span>~/.config/browser-memory-daemon/token<span style="color: #66D9EF">)</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>snapshot-text<span style="color: #F8F8F2"> </span>reconcile
+</code></pre></div>
+
+<p>Review the redaction-safe JSON, then add <code>--execute</code> to promote only the reported exact candidates. Unresolved rows remain unchanged.</p>
 <p>Windows loopback check from WSL:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span>-NoProfile<span style="color: #F8F8F2"> </span>-Command<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;Invoke-RestMethod http://127.0.0.1:8765/health | ConvertTo-Json -Compress&quot;</span>
@@ -255,7 +262,7 @@ systemctl<span style="color: #F8F8F2"> </span>--user<span style="color: #F8F8F2"
 <span style="color: #F8F8F2">  BMD_POLICY_MODE</span><span style="color: #FF4689">=</span>all<span style="color: #F8F8F2"> </span>./scripts/install-daily-driver.sh
 </code></pre></div>
 
-<p><code>BMD_REQUIRE_BLOB_ROOT_MOUNT=1</code> is intentionally strict: the installer and daemon refuse to proceed unless <code>BMD_BLOB_ROOT</code> has a non-root mounted ancestor. This prevents silent fallback writes into an empty local mountpoint after a NAS/NFS/SSHFS mount drops. Leave it unset or <code>0</code> only when the blob root is intentionally on the normal WSL filesystem.</p>
+<p><code>BMD_REQUIRE_BLOB_ROOT_MOUNT=1</code> is intentionally strict: the installer and daemon refuse to proceed unless <code>BMD_BLOB_ROOT</code> has a non-root mounted ancestor. This prevents silent fallback writes into an empty local mountpoint after a NAS/NFS/SSHFS mount drops. Leave it unset or <code>0</code> only when the blob root is intentionally on the normal WSL filesystem. With the guard disabled, daemon startup and text capture do not create or touch the blob root; media writes create their contained root lazily.</p>
 <p>Then reload the unpacked extension in Chrome:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>chrome://extensions → Browser Memory Daemon → Reload
 </code></pre></div>

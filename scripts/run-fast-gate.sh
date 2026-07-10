@@ -40,6 +40,7 @@ QUALITY_PATHS=(
   daemon/src/browser_memory_daemon/migrations.py
   daemon/src/browser_memory_daemon/migration_steps
   daemon/src/browser_memory_daemon/storage_paths.py
+  daemon/src/browser_memory_daemon/text_authority.py
 )
 
 "$PY" -m ruff check --no-cache "${QUALITY_PATHS[@]}"

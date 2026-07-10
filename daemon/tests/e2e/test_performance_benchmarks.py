@@ -92,7 +92,8 @@ def test_performance_benchmark_subprocess_does_not_write_default_home_blob_root(
     data = json.loads(completed.stdout)
     _assert_runtime_paths_under_root(data["runtime"], runtime_root)
     assert data["runtime"]["runtime_root_retained"] is True
-    assert (runtime_root / "blobs" / "clean-text").is_dir()
+    assert not (runtime_root / "blobs" / "clean-text").exists()
+    assert Path(data["runtime"]["db_path"]).is_file()
     assert not (outside_home / ".local" / "share" / "browser-memory-daemon" / "blobs").exists()
 
 

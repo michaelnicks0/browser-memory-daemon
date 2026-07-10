@@ -1,6 +1,5 @@
-import pytest
-
 import browser_memory_daemon.config as config_module
+import pytest
 from browser_memory_daemon.config import load_config
 
 
@@ -20,8 +19,8 @@ def test_blob_root_can_be_moved_independently_from_runtime_root(tmp_path):
     assert cfg.blob_root == blob_root
     assert cfg.clean_text_root == blob_root / "clean-text"
     assert cfg.media_root == blob_root / "media"
-    assert cfg.clean_text_root.exists()
-    assert cfg.media_root.exists()
+    assert not cfg.clean_text_root.exists()
+    assert not cfg.media_root.exists()
     assert not (runtime_root / "blobs").exists()
 
 
@@ -47,5 +46,5 @@ def test_required_blob_root_mount_allows_mounted_blob_root(tmp_path, monkeypatch
     cfg = load_config(runtime_root=runtime_root, blob_root=blob_root, test_mode=True, token="test-token", policy_mode="all")
 
     assert cfg.require_blob_root_mount is True
-    assert cfg.clean_text_root.exists()
-    assert cfg.media_root.exists()
+    assert not cfg.clean_text_root.exists()
+    assert not cfg.media_root.exists()

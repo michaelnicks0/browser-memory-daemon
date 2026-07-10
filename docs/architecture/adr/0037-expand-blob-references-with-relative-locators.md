@@ -8,6 +8,8 @@ informed: []
 
 # ADR-0037: Expand blob references with root-relative locators
 
+> **Supersession note:** [ADR-0038](0038-make-sqlite-authoritative-for-cleaned-snapshot-text.md) stops creating new clean-text sidecars. This ADR remains current for media blobs and compatibility handling of legacy text sidecars.
+
 ## Context and problem statement
 
 ADR-0036 established a contained, streaming `BlobStore`, but SQLite still stored only absolute filesystem paths. Absolute paths couple database rows to one workstation or mount point and complicate blob-root relocation, restore, and verification.

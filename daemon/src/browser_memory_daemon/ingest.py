@@ -4,7 +4,6 @@ import hashlib
 import sqlite3
 from urllib.parse import urlsplit
 
-from .blob_store import BlobStore
 from .config import RuntimeConfig
 from .db import audit
 from .lifecycle import recompute_visit_dwell
@@ -12,7 +11,6 @@ from .media import media_artifact_id, parse_media_refs, record_media_references
 from .models import CapturePayload
 from .normalize import domain_from_url, normalize_url
 from .policy import POLICY_MODE_ALL, redact_text, redact_url
-from .storage_paths import validate_snapshot_id
 
 
 def stable_id(prefix: str, value: str) -> str:
@@ -43,16 +41,6 @@ def chunk_text(text: str, *, max_chars: int = 1800) -> list[str]:
     if current:
         chunks.append("\n\n".join(current))
     return chunks
-
-
-def _clean_text_path(config: RuntimeConfig, snapshot_id: str):
-    snapshot_id = validate_snapshot_id(snapshot_id)
-    return BlobStore(config.clean_text_root).path(f"{snapshot_id}.txt", create_root=True)
-
-
-def _write_clean_text_atomic(config: RuntimeConfig, snapshot_id: str, text: str) -> None:
-    clean_path = _clean_text_path(config, snapshot_id)
-    BlobStore(config.clean_text_root).write_text(clean_path, text)
 
 
 def _prepare_storage_values(config: RuntimeConfig, payload: CapturePayload) -> tuple[str, str, str, str, int, list[str]]:
@@ -206,14 +194,8 @@ def ingest_capture(conn: sqlite3.Connection, config: RuntimeConfig, payload: Cap
         document_id=document_id,
         normalized_url=normalized,
     )
-    clean_path = _clean_text_path(config, snapshot_id)
-    clean_locator = BlobStore(config.clean_text_root).relative_locator(clean_path)
     chunks = chunk_text(stored_text)
     media_refs = parse_media_refs(payload.media_artifacts, max_refs=config.max_media_artifacts_per_capture)
-
-    snapshot_exists_before = conn.execute("SELECT 1 FROM snapshots WHERE id = ?", (snapshot_id,)).fetchone() is not None
-    if not snapshot_exists_before:
-        _write_clean_text_atomic(config, snapshot_id, stored_text)
 
     with conn:
         conn.execute(
@@ -280,8 +262,9 @@ def ingest_capture(conn: sqlite3.Connection, config: RuntimeConfig, payload: Cap
             """
             INSERT OR IGNORE INTO snapshots(
               id, document_id, visit_id, captured_at, content_type, extraction_method,
-              text_hash, cleaned_text_path, privacy_class, redaction_count, cleaned_text_locator
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              text_hash, cleaned_text_path, privacy_class, redaction_count, cleaned_text_locator,
+              cleaned_text, cleaned_text_source
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, NULL, ?, 'capture')
             """,
             (
                 snapshot_id,
@@ -291,13 +274,25 @@ def ingest_capture(conn: sqlite3.Connection, config: RuntimeConfig, payload: Cap
                 payload.content_type,
                 payload.extraction_method,
                 digest,
-                str(clean_path),
                 config.policy_mode,
                 redaction_count,
-                clean_locator,
+                stored_text,
             ),
         )
         snapshot_created = bool(snapshot_cursor.rowcount)
+        if not snapshot_created:
+            conn.execute(
+                """
+                UPDATE snapshots
+                SET cleaned_text_source = CASE
+                      WHEN cleaned_text IS NULL THEN 'capture'
+                      ELSE cleaned_text_source
+                    END,
+                    cleaned_text = COALESCE(cleaned_text, ?)
+                WHERE id = ?
+                """,
+                (stored_text, snapshot_id),
+            )
         if snapshot_created:
             for label in redaction_classes:
                 conn.execute(
@@ -451,6 +446,8 @@ def ingest_capture(conn: sqlite3.Connection, config: RuntimeConfig, payload: Cap
                 "redaction_classes": redaction_classes,
                 "domain": domain,
                 "policy_mode": config.policy_mode,
+                "text_authority": "sqlite",
+                "clean_text_sidecar_status": "not-created",
             },
         )
     return {
@@ -484,4 +481,6 @@ def ingest_capture(conn: sqlite3.Connection, config: RuntimeConfig, payload: Cap
         ],
         "redaction_count": redaction_count,
         "policy_mode": config.policy_mode,
+        "text_authority": "sqlite",
+        "clean_text_sidecar_status": "not-created",
     }

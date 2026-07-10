@@ -11,7 +11,7 @@
 The system captures text from pages you browse in Windows Chrome, sends it over loopback to a WSL daemon, stores it in SQLite + FTS5, and lets you search, inspect, and forget it locally.
 
 ```text
-Windows Chrome extension → http://127.0.0.1:8765 → WSL SQLite/FTS/blobs → CLI/UI/search
+Windows Chrome extension → http://127.0.0.1:8765 → WSL SQLite/FTS authority + media cache → CLI/UI/search
 ```
 
 The mental model:
@@ -20,7 +20,7 @@ The mental model:
 |---|---|---|
 | Chrome extension | Capture, pause/block/forget UI, browser-side media queue. | Reload this after extension code or token/policy changes. |
 | WSL daemon | Auth, policy, ingest, search, UI shell, delete receipts, media cache controls. | This is the durable memory service. |
-| WSL runtime paths | SQLite, clean-text blobs, media blobs, token/env, audit log. | Runtime data never belongs in Git. |
+| WSL runtime paths | SQLite complete-text/FTS authority, media blobs, legacy text sidecars, token/env, audit log. | Runtime data never belongs in Git. New captures create no text sidecar. |
 
 Use Python 3.11+ for CLI/dev commands. If the host `python3` is older, run `python3.11` explicitly or set `BMD_PYTHON=/path/to/python3.11` for helper scripts.
 
@@ -69,6 +69,16 @@ PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   doctor --storage-census
 ```
 
+Doctor reports `database.snapshots_missing_authoritative_text` and includes it in overall health. To preview promotion of pre-version-9 rows from exact hash-verified chunks or contained legacy sidecars:
+
+```bash
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
+  --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
+  snapshot-text reconcile
+```
+
+Review the redaction-safe JSON, then add `--execute` to promote only the reported exact candidates. Unresolved rows remain unchanged.
+
 Windows loopback check from WSL:
 
 ```bash
@@ -111,7 +121,7 @@ BMD_BLOB_ROOT=/mnt/nas/browser-memory-daemon/blobs \
   BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
 ```
 
-`BMD_REQUIRE_BLOB_ROOT_MOUNT=1` is intentionally strict: the installer and daemon refuse to proceed unless `BMD_BLOB_ROOT` has a non-root mounted ancestor. This prevents silent fallback writes into an empty local mountpoint after a NAS/NFS/SSHFS mount drops. Leave it unset or `0` only when the blob root is intentionally on the normal WSL filesystem.
+`BMD_REQUIRE_BLOB_ROOT_MOUNT=1` is intentionally strict: the installer and daemon refuse to proceed unless `BMD_BLOB_ROOT` has a non-root mounted ancestor. This prevents silent fallback writes into an empty local mountpoint after a NAS/NFS/SSHFS mount drops. Leave it unset or `0` only when the blob root is intentionally on the normal WSL filesystem. With the guard disabled, daemon startup and text capture do not create or touch the blob root; media writes create their contained root lazily.
 
 Then reload the unpacked extension in Chrome:
 

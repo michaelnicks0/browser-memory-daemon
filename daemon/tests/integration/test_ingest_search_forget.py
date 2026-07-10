@@ -1,17 +1,23 @@
 import base64
+import io
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
-import io
 from pathlib import Path
 
 import pytest
-
+from browser_memory_daemon.blob_migration import migrate_blob_root
+from browser_memory_daemon.blob_store import BlobStore
 from browser_memory_daemon.config import load_config
 from browser_memory_daemon.db import connect, init_db
 from browser_memory_daemon.forget import forget
 from browser_memory_daemon.ingest import ingest_capture
-from browser_memory_daemon.blob_migration import migrate_blob_root
-from browser_memory_daemon.media import fetch_pending_media_artifacts, media_artifacts_for_snapshot, media_capture_status_for_fetch_reason, store_media_artifact, store_media_blob_stream
+from browser_memory_daemon.media import (
+    fetch_pending_media_artifacts,
+    media_artifacts_for_snapshot,
+    media_capture_status_for_fetch_reason,
+    store_media_artifact,
+    store_media_blob_stream,
+)
 from browser_memory_daemon.models import CapturePayload
 from browser_memory_daemon.ops import snapshot_detail
 from browser_memory_daemon.search import search_memory
@@ -39,12 +45,14 @@ def test_ingest_search_redact_and_forget(tmp_path):
         rows = search_memory(conn, "Stirling", limit=5)
         assert len(rows) == 1
         assert rows[0]["title"] == "Stirling Test"
-        stored_text = cfg.clean_text_root.joinpath(f'{result["snapshot_id"]}.txt').read_text()
+        stored_text = conn.execute(
+            "SELECT cleaned_text FROM snapshots WHERE id = ?", (result["snapshot_id"],)
+        ).fetchone()["cleaned_text"]
         assert "SECRETSECRET" not in stored_text
         receipt = forget(conn, cfg, domain="example.com")
         assert receipt["counts"]["documents"] == 1
         assert search_memory(conn, "Stirling", limit=5) == []
-        assert not cfg.clean_text_root.joinpath(f'{result["snapshot_id"]}.txt').exists()
+        assert not cfg.clean_text_root.exists()
 
 
 def test_metadata_redacted_before_fts_and_forget_by_original_url(tmp_path):
@@ -254,9 +262,8 @@ def test_ingest_and_media_write_to_configured_blob_root(tmp_path):
     )
     with connect(cfg.db_path) as conn:
         result = ingest_capture(conn, cfg, payload)
-        clean_path = cfg.clean_text_root / f"{result['snapshot_id']}.txt"
         assert cfg.db_path == runtime_root / "browser-memory.sqlite3"
-        assert clean_path.exists()
+        assert not blob_root.exists()
         assert not (runtime_root / "blobs").exists()
 
         stored = store_media_artifact(
@@ -274,7 +281,10 @@ def test_ingest_and_media_write_to_configured_blob_root(tmp_path):
             },
         )
         row = conn.execute(
-            "SELECT cleaned_text_path, cleaned_text_locator FROM snapshots WHERE id = ?",
+            """
+            SELECT cleaned_text, cleaned_text_source, cleaned_text_path, cleaned_text_locator
+            FROM snapshots WHERE id = ?
+            """,
             (result["snapshot_id"],),
         ).fetchone()
         media_row = conn.execute(
@@ -282,8 +292,10 @@ def test_ingest_and_media_write_to_configured_blob_root(tmp_path):
             (stored["artifact_id"],),
         ).fetchone()
 
-    assert row["cleaned_text_path"] == str(clean_path)
-    assert row["cleaned_text_locator"] == clean_path.name
+    assert row["cleaned_text"] == "Readable body for relocated blob root."
+    assert row["cleaned_text_source"] == "capture"
+    assert row["cleaned_text_path"] is None
+    assert row["cleaned_text_locator"] is None
     media_path = Path(media_row["file_path"])
     assert media_row["blob_locator"] == media_path.name
     assert media_path.parent == cfg.media_root
@@ -336,7 +348,9 @@ def test_blob_path_consumers_reject_db_paths_outside_configured_roots(tmp_path):
 
         relative_detail = snapshot_detail(conn, cfg, result["snapshot_id"])
         assert "Readable in-database fallback text." in relative_detail["text"]
-        assert relative_detail["snapshot"]["clean_text_locator_kind"] == "relative"
+        assert relative_detail["snapshot"]["text_authority"] == "capture"
+        assert relative_detail["snapshot"]["clean_text_locator_kind"] == "legacy-absolute"
+        assert relative_detail["snapshot"]["clean_text_path_status"] == "outside-root"
         relative_media = media_artifacts_for_snapshot(conn, result["snapshot_id"], cfg)[0]
         assert relative_media["has_file"] is True
         assert relative_media["file_locator_kind"] == "relative"
@@ -402,6 +416,12 @@ def test_blob_root_migration_copies_files_and_rewrites_db_paths(tmp_path, monkey
 
     old_clean_path = old_cfg.clean_text_root / f"{result['snapshot_id']}.txt"
     with connect(old_cfg.db_path) as conn:
+        BlobStore(old_cfg.clean_text_root).write_text(old_clean_path, "Readable body before blob migration.")
+        conn.execute(
+            "UPDATE snapshots SET cleaned_text_path = ?, cleaned_text_locator = ? WHERE id = ?",
+            (str(old_clean_path), old_clean_path.name, result["snapshot_id"]),
+        )
+        conn.commit()
         old_media_path = stored_media_path(conn, stored["artifact_id"])
     old_media_relative = old_media_path.relative_to(old_cfg.media_root)
     new_cfg = load_config(runtime_root=runtime_root, blob_root=nas_root, test_mode=True, token="test-token", policy_mode="all")
@@ -759,8 +779,7 @@ def test_concurrent_duplicate_capture_is_idempotent_for_snapshot_chunks_and_fts(
         )
         assert counts == {"documents": 1, "visits": 8, "observations": 8, "snapshots": 1, "chunks": 1, "chunks_fts": 1}
         assert len(search_memory(conn, "IDEMPOTENT_CAPTURE_NEEDLE", limit=10)) == 1
-    clean_files = list(cfg.clean_text_root.glob(f"{results[0]['snapshot_id']}*.txt"))
-    assert clean_files == [cfg.clean_text_root / f"{results[0]['snapshot_id']}.txt"]
+    assert not cfg.clean_text_root.exists()
 
 
 def test_changed_content_creates_new_snapshot_under_same_document(tmp_path):

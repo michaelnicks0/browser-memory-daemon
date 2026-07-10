@@ -5,7 +5,6 @@ import urllib.parse
 import urllib.request
 
 import pytest
-
 from browser_memory_daemon.app import make_server
 from browser_memory_daemon.config import load_config
 
@@ -122,14 +121,17 @@ def test_admin_read_apis_and_ui_assets(server):
     assert status == 200
     assert doctor["ok"] is True
     assert doctor["database"]["counts"]["documents"] == 2
-    assert doctor["storage"]["clean_text_files"] == 2
+    assert doctor["database"]["snapshots_missing_authoritative_text"] == 0
+    assert doctor["storage"]["clean_text_files"] == 0
+    assert doctor["storage"]["sqlite_text_bytes"] > 0
     assert doctor["storage"]["census_mode"] == "db-derived"
 
     status, full_doctor = request("GET", f"{server}/doctor?storage_census=full")
     assert status == 200
     assert full_doctor["ok"] is True
     assert full_doctor["storage"]["census_mode"] == "filesystem"
-    assert full_doctor["storage"]["clean_text_files"] == 2
+    assert full_doctor["storage"]["clean_text_files"] == 0
+    assert full_doctor["storage"]["sqlite_text_bytes"] > 0
 
 
 def test_policy_rule_blocks_future_capture_and_can_be_deleted(server):

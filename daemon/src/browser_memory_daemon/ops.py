@@ -330,15 +330,18 @@ def snapshot_detail(conn: sqlite3.Connection, config: RuntimeConfig, snapshot_id
         "SELECT id, chunk_index, title, url, text FROM chunks WHERE snapshot_id = ? ORDER BY chunk_index",
         (snapshot_id,),
     ).fetchall()
-    text = ""
+    text = snapshot["cleaned_text"]
+    text_source = snapshot["cleaned_text_source"] if text is not None else "legacy-fallback"
     locator = prefer_relative_locator(snapshot["cleaned_text_locator"], snapshot["cleaned_text_path"])
-    if locator:
+    if text is None and locator:
         store = BlobStore(config.clean_text_root)
         resolution = store.resolve(locator, require_file=True)
         if resolution.path is not None:
             text = store.read_text(locator, encoding="utf-8", errors="replace")
-    if not text:
+            text_source = "legacy-sidecar"
+    if text is None:
         text = "\n\n".join(row["text"] for row in chunks)
+        text_source = "legacy-chunks"
     truncated = len(text) > max_text_chars
     return {
         "snapshot": _snapshot_summary(snapshot, config),
@@ -346,6 +349,7 @@ def snapshot_detail(conn: sqlite3.Connection, config: RuntimeConfig, snapshot_id
         "observations": _observation_details(conn, snapshot_id=snapshot_id),
         "text": text[:max_text_chars],
         "text_truncated": truncated,
+        "text_source": text_source,
         "media_artifacts": media_artifacts_for_snapshot(conn, snapshot_id, config),
         "chunks": [
             {"id": row["id"], "chunk_index": row["chunk_index"], "title": row["title"], "url": row["url"], "snippet": _snippet(row["text"])}
@@ -379,9 +383,12 @@ def doctor(config: RuntimeConfig, conn: sqlite3.Connection, *, storage_census: b
     missing_fts = conn.execute(
         "SELECT COUNT(*) AS n FROM chunks WHERE id NOT IN (SELECT chunk_id FROM chunks_fts)"
     ).fetchone()["n"]
+    missing_authoritative_text = conn.execute(
+        "SELECT COUNT(*) AS n FROM snapshots WHERE cleaned_text IS NULL"
+    ).fetchone()["n"]
     storage = _doctor_storage(config, conn, storage_census=storage_census)
     return {
-        "ok": integrity == "ok" and missing_fts == 0,
+        "ok": integrity == "ok" and missing_fts == 0 and missing_authoritative_text == 0,
         "version": __version__,
         "daemon": {"host": config.host, "port": config.port, "policy_mode": config.policy_mode},
         "paths": {
@@ -393,7 +400,13 @@ def doctor(config: RuntimeConfig, conn: sqlite3.Connection, *, storage_census: b
             "clean_text_root": str(config.clean_text_root),
             "media_root": str(config.media_root),
         },
-        "database": {"exists": config.db_path.exists(), "integrity_check": integrity, "counts": counts, "chunks_missing_fts": missing_fts},
+        "database": {
+            "exists": config.db_path.exists(),
+            "integrity_check": integrity,
+            "counts": counts,
+            "chunks_missing_fts": missing_fts,
+            "snapshots_missing_authoritative_text": missing_authoritative_text,
+        },
         "storage": storage,
         "media_queue": media_queue_status(conn, config, limit=25),
     }
@@ -403,11 +416,16 @@ def _doctor_storage(config: RuntimeConfig, conn: sqlite3.Connection, *, storage_
     if not storage_census:
         clean = conn.execute(
             """
-            SELECT COUNT(DISTINCT COALESCE(NULLIF(cleaned_text_locator, ''), cleaned_text_path)) AS files,
-                   COALESCE(SUM(LENGTH(text)), 0) AS bytes
+            SELECT COUNT(DISTINCT CASE
+                     WHEN COALESCE(cleaned_text_locator, '') != '' OR COALESCE(cleaned_text_path, '') != ''
+                     THEN COALESCE(NULLIF(cleaned_text_locator, ''), cleaned_text_path)
+                   END) AS files,
+                   COALESCE(SUM(CASE
+                     WHEN COALESCE(cleaned_text_locator, '') != '' OR COALESCE(cleaned_text_path, '') != ''
+                     THEN LENGTH(cleaned_text) ELSE 0
+                   END), 0) AS bytes,
+                   COALESCE(SUM(LENGTH(cleaned_text)), 0) AS sqlite_bytes
             FROM snapshots
-            LEFT JOIN chunks ON chunks.snapshot_id = snapshots.id
-            WHERE COALESCE(cleaned_text_locator, '') != '' OR COALESCE(cleaned_text_path, '') != ''
             """
         ).fetchone()
         media = conn.execute(
@@ -422,15 +440,20 @@ def _doctor_storage(config: RuntimeConfig, conn: sqlite3.Connection, *, storage_
             "census_mode": "db-derived",
             "clean_text_files": int(clean["files"] or 0),
             "clean_text_bytes": int(clean["bytes"] or 0),
+            "sqlite_text_bytes": int(clean["sqlite_bytes"] or 0),
             "media_files": int(media["files"] or 0),
             "media_bytes": int(media["bytes"] or 0),
         }
+    sqlite_text_bytes = int(
+        conn.execute("SELECT COALESCE(SUM(LENGTH(cleaned_text)), 0) FROM snapshots").fetchone()[0]
+    )
     clean_files, clean_bytes = _filesystem_census(config.clean_text_root)
     media_files, media_bytes = _filesystem_census(config.media_root)
     return {
         "census_mode": "filesystem",
         "clean_text_files": clean_files,
         "clean_text_bytes": clean_bytes,
+        "sqlite_text_bytes": sqlite_text_bytes,
         "media_files": media_files,
         "media_bytes": media_bytes,
     }
@@ -479,16 +502,25 @@ def _capture_row(row: sqlite3.Row) -> dict[str, Any]:
 
 def _snapshot_summary(row: sqlite3.Row, config: RuntimeConfig | None = None) -> dict[str, Any]:
     value = dict(row)
+    cleaned_text = value.pop("cleaned_text", None)
+    cleaned_text_source = value.pop("cleaned_text_source", "legacy-fallback")
     path = value.pop("cleaned_text_path", None)
     relative_locator = value.pop("cleaned_text_locator", None)
     locator = prefer_relative_locator(relative_locator, path)
     if config:
         resolution = BlobStore(config.clean_text_root).resolve(locator, require_file=True)
-        value["has_clean_text"] = resolution.path is not None
+        value["has_clean_text"] = cleaned_text is not None or resolution.path is not None
         value["clean_text_path_status"] = resolution.status
-        value["clean_text_locator_kind"] = "relative" if relative_locator not in {None, ""} else "legacy-absolute"
+        value["clean_text_locator_kind"] = (
+            "relative"
+            if relative_locator not in {None, ""}
+            else "legacy-absolute"
+            if path not in {None, ""}
+            else "none"
+        )
     else:
-        value["has_clean_text"] = False
+        value["has_clean_text"] = cleaned_text is not None
         value["clean_text_path_status"] = "config-required"
         value["clean_text_locator_kind"] = "unresolved"
+    value["text_authority"] = cleaned_text_source if cleaned_text is not None else "legacy-fallback"
     return value

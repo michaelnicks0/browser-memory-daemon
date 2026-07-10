@@ -128,11 +128,11 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <blockquote>
 <p><strong>Status:</strong> Current helper documented; live migration remains approval-gated.
 <strong>Authority:</strong> <code>daemon/src/browser_memory_daemon/blob_migration.py</code> and <code>blob-root migrate</code> in <code>cli.py</code>.
-<strong>Scope:</strong> Move DB-referenced clean-text and media blob files while keeping SQLite/WAL local.</p>
+<strong>Scope:</strong> Move DB-referenced legacy clean-text sidecars and media blob files while keeping SQLite/WAL complete-text authority local.</p>
 </blockquote>
 <hr />
 <h2 id="current-contract">Current contract</h2>
-<p><code>blob-root migrate</code> plans relocation only for DB-referenced paths beneath the selected source root and under the recognized <code>clean-text/</code>, <code>raw-html/</code>, or <code>media/</code> subtrees. The configured <code>BMD_BLOB_ROOT</code> is the target. The command is a dry run unless <code>--execute</code> is supplied.</p>
+<p><code>blob-root migrate</code> plans relocation only for DB-referenced paths beneath the selected source root and under the recognized <code>clean-text/</code>, <code>raw-html/</code>, or <code>media/</code> subtrees. Version-9 and later captures create no clean-text sidecar, so clean-text plans apply only to legacy rows. The configured <code>BMD_BLOB_ROOT</code> is the target. The command is a dry run unless <code>--execute</code> is supplied.</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">PYTHONPATH</span><span style="color: #FF4689">=</span>daemon/src<span style="color: #F8F8F2"> BMD_BLOB_ROOT</span><span style="color: #FF4689">=</span>/explicit/target/blobs<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span>blob-root<span style="color: #F8F8F2"> </span>migrate
 </code></pre></div>

@@ -56,6 +56,7 @@ Global defaults:
 | `media-cache purge [--domain DOMAIN] [--document-id ID] [--snapshot-id ID] [--older-than ISO] [--max-bytes-to-purge N] [--dry-run|--execute] [--rehydrate]` | Dry-run/execute media blob cache purge without deleting text/FTS/ref rows. | Pretty JSON purge summary. |
 | `media-cache rehydrate [--domain DOMAIN] [--document-id ID] [--snapshot-id ID] [--limit N]` | Queue/refetch purged public media refs. | Pretty JSON worker summary. |
 | `blob-root migrate [--from-root PATH] [--execute] [--remove-source]` | Dry-run by default; copies DB-referenced clean-text/media blobs to the configured root and rewrites paths only with `--execute`. | Pretty JSON migration summary. `--remove-source` remains an explicit post-copy action. |
+| `snapshot-text reconcile [--limit N] [--execute]` | Dry-run by default; promotes only exact hash-verified chunk reconstructions or contained legacy sidecars into SQLite complete-text authority. | Pretty JSON with scanned/resolved/applied/source/unresolved counts. `--execute` is required to mutate rows. |
 
 ---
 
@@ -146,5 +147,5 @@ PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
 
 - CLI output is currently JSON but not formally versioned.
 - `capture-fixture` exists for tests/smoke checks, not browser capture replacement.
-- `blob-root migrate` is the current repository migration helper; versioned schema `migrate --check/--execute` commands are planned but do not exist yet.
+- `migrate --check/--execute`, `blob-root migrate`, and `snapshot-text reconcile` are current repository migration/reconciliation helpers; dry-run remains the default for filesystem-backed reconciliation.
 - Future CLI changes should update this contract and `daemon/tests/e2e/test_cli_admin.py` together.

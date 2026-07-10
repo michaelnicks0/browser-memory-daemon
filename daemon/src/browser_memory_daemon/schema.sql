@@ -71,6 +71,8 @@ CREATE TABLE IF NOT EXISTS snapshots (
   redaction_count INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   cleaned_text_locator TEXT,
+  cleaned_text TEXT,
+  cleaned_text_source TEXT NOT NULL DEFAULT 'legacy-fallback' CHECK (cleaned_text_source IN ('legacy-fallback', 'capture', 'chunks-hash-verified', 'sidecar-hash-verified')),
   FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE,
   FOREIGN KEY(visit_id) REFERENCES visits(id) ON DELETE SET NULL
 );

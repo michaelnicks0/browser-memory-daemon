@@ -14,6 +14,7 @@ from . import (
     v0006_link_media_artifacts_to_observations,
     v0007_add_claimed_visit_identity,
     v0008_add_relative_blob_locators,
+    v0009_add_sqlite_snapshot_text_authority,
 )
 
 
@@ -107,6 +108,18 @@ MIGRATIONS = (
         ),
         sql=v0008_add_relative_blob_locators.SQL,
         schema_fingerprint=v0008_add_relative_blob_locators.SCHEMA_FINGERPRINT,
+    ),
+    MigrationStep(
+        version=9,
+        name=v0009_add_sqlite_snapshot_text_authority.NAME,
+        checksum=migration_checksum(
+            9,
+            v0009_add_sqlite_snapshot_text_authority.NAME,
+            v0009_add_sqlite_snapshot_text_authority.CHECKSUM_PAYLOAD,
+        ),
+        sql=v0009_add_sqlite_snapshot_text_authority.SQL,
+        apply=v0009_add_sqlite_snapshot_text_authority.apply,
+        schema_fingerprint=v0009_add_sqlite_snapshot_text_authority.SCHEMA_FINGERPRINT,
     ),
 )
 

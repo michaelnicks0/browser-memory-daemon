@@ -669,7 +669,7 @@ counts = {}
 for table in ['documents', 'visits', 'visit_events', 'capture_observations', 'snapshots', 'chunks', 'media_artifacts', 'media_fetch_tasks', 'audit_events']:
     counts[table] = conn.execute(f'SELECT COUNT(*) FROM {table}').fetchone()[0]
 counts['browser_identity_observations'] = conn.execute("SELECT COUNT(*) FROM capture_observations WHERE idempotency_key LIKE 'browser:%' AND navigation_id IS NOT NULL AND TRIM(navigation_id) != ''").fetchone()[0]
-counts['relative_snapshot_locators'] = conn.execute("SELECT COUNT(*) FROM snapshots WHERE cleaned_text_locator IS NOT NULL AND TRIM(cleaned_text_locator) != '' AND cleaned_text_locator NOT LIKE '/%'").fetchone()[0]
+counts['sqlite_authoritative_snapshots'] = conn.execute("SELECT COUNT(*) FROM snapshots WHERE cleaned_text IS NOT NULL AND cleaned_text_source = 'capture'").fetchone()[0]
 counts['audit_event_types'] = dict(conn.execute('SELECT event_type, COUNT(*) FROM audit_events GROUP BY event_type').fetchall())
 print(json.dumps(counts, sort_keys=True))
 `;
@@ -875,7 +875,7 @@ async function runScenario() {
   const counts = queryDbCounts();
   const expectedDocuments = allMode ? 6 : 3;
   const expectedSnapshots = allMode ? 6 : 3;
-  if (counts.documents !== expectedDocuments || counts.snapshots !== expectedSnapshots || counts.relative_snapshot_locators !== expectedSnapshots || counts.chunks < expectedSnapshots || counts.visit_events < 1 || counts.browser_identity_observations < expectedSnapshots) {
+  if (counts.documents !== expectedDocuments || counts.snapshots !== expectedSnapshots || counts.sqlite_authoritative_snapshots !== expectedSnapshots || counts.chunks < expectedSnapshots || counts.visit_events < 1 || counts.browser_identity_observations < expectedSnapshots) {
     fail(`unexpected DB counts after policy-mode scenarios: ${JSON.stringify({ policyMode, counts, expectedDocuments, expectedSnapshots })}`);
   }
   log(`DB counts ${JSON.stringify(counts)}`);

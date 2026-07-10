@@ -376,7 +376,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td><code>daemon/tests/integration/test_ingest_search_forget.py</code><br><code>daemon/tests/integration/test_media_worker.py</code></td>
 <td><code>scripts/run-e2e.sh</code></td>
 <td><code>docs/security-model.md</code><br><code>docs/architecture/adr/0036-route-blob-operations-through-contained-blobstore.md</code><br><code>docs/architecture/adr/0037-expand-blob-references-with-relative-locators.md</code></td>
-<td><code>daemon/tests/unit/test_blob_store.py::test_blob_store_stages_streams_verifies_hash_and_commits_atomically</code><br><code>daemon/tests/unit/test_blob_store.py::test_blob_store_rejects_traversal_symlink_escape_and_cross_root_stage</code><br><code>daemon/tests/integration/test_ingest_search_forget.py::test_blob_path_consumers_reject_db_paths_outside_configured_roots</code><br><code>daemon/tests/integration/test_migrations.py::test_version_eight_adds_nullable_relative_locators_and_new_ingest_dual_writes</code></td>
+<td><code>daemon/tests/unit/test_blob_store.py::test_blob_store_stages_streams_verifies_hash_and_commits_atomically</code><br><code>daemon/tests/unit/test_blob_store.py::test_blob_store_rejects_traversal_symlink_escape_and_cross_root_stage</code><br><code>daemon/tests/integration/test_ingest_search_forget.py::test_blob_path_consumers_reject_db_paths_outside_configured_roots</code><br><code>daemon/tests/integration/test_migrations.py::test_version_eight_adds_nullable_relative_locators</code></td>
 </tr>
 <tr>
 <td>REQ-030 — Destructive selectors shall be literal, validated, policy-aware, previewable, and bounded to the stated scope.</td>
@@ -400,7 +400,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td><code>daemon/tests/integration/test_migrations.py</code></td>
 <td><code>scripts/run-e2e.sh</code></td>
 <td><code>docs/database-migrations.md</code><br><code>docs/architecture/adr/0028-use-versioned-restore-backed-sqlite-migrations.md</code><br><code>docs/architecture/adr/0037-expand-blob-references-with-relative-locators.md</code></td>
-<td><code>daemon/tests/integration/test_migrations.py::test_destructive_migration_creates_online_backup_that_restores_search</code><br><code>daemon/tests/integration/test_migrations.py::test_version_eight_adds_nullable_relative_locators_and_new_ingest_dual_writes</code></td>
+<td><code>daemon/tests/integration/test_migrations.py::test_destructive_migration_creates_online_backup_that_restores_search</code><br><code>daemon/tests/integration/test_migrations.py::test_version_eight_adds_nullable_relative_locators</code><br><code>daemon/tests/integration/test_migrations.py::test_version_nine_backfills_hash_verified_chunks_and_new_ingest_uses_sqlite_authority</code></td>
 </tr>
 <tr>
 <td>REQ-033 — Visits, capture observations, snapshots, lifecycle events, and media provenance shall have explicit temporal relationships.</td>
@@ -421,10 +421,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td>REQ-035 — Searchable text and capture provenance shall commit locally without NAS or media dependency.</td>
 <td>—</td>
-<td>—</td>
-<td>—</td>
-<td>—</td>
-<td>—</td>
+<td><code>daemon/tests/integration/test_text_authority.py</code><br><code>daemon/tests/integration/test_migrations.py::test_version_nine_backfills_hash_verified_chunks_and_new_ingest_uses_sqlite_authority</code></td>
+<td><code>scripts/run-real-chrome-e2e.sh</code></td>
+<td><code>docs/architecture/adr/0038-make-sqlite-authoritative-for-cleaned-snapshot-text.md</code></td>
+<td><code>daemon/tests/integration/test_text_authority.py::test_new_capture_commits_complete_sqlite_text_without_creating_blob_root</code></td>
 </tr>
 <tr>
 <td>REQ-036 — Media transitions, cache admission, leases, retries, and resource budgets shall be closed, bounded, and concurrency-safe.</td>

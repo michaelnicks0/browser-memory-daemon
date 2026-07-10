@@ -132,6 +132,9 @@ consulted: [TARS]
 informed: []</p>
 <hr />
 <h1 id="adr-0037-expand-blob-references-with-root-relative-locators">ADR-0037: Expand blob references with root-relative locators</h1>
+<blockquote>
+<p><strong>Supersession note:</strong> <a href="0038-make-sqlite-authoritative-for-cleaned-snapshot-text.html">ADR-0038</a> stops creating new clean-text sidecars. This ADR remains current for media blobs and compatibility handling of legacy text sidecars.</p>
+</blockquote>
 <h2 id="context-and-problem-statement">Context and problem statement</h2>
 <p>ADR-0036 established a contained, streaming <code>BlobStore</code>, but SQLite still stored only absolute filesystem paths. Absolute paths couple database rows to one workstation or mount point and complicate blob-root relocation, restore, and verification.</p>
 <p>Changing every row in place would create a flag-day migration. The versioned SQLite migration kernel also must not inspect or mutate the filesystem while applying schema changes: it does not have reliable runtime root identity, mount state, or proof that a historical path belongs to the currently configured root.</p>

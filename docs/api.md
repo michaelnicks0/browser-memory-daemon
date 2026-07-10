@@ -85,11 +85,12 @@ Authorization: Bearer ***
 ```json
 {
   "ok": true,
-  "database": {"integrity_check": "ok", "chunks_missing_fts": 0},
+  "database": {"integrity_check": "ok", "chunks_missing_fts": 0, "snapshots_missing_authoritative_text": 0},
   "storage": {
     "census_mode": "db-derived",
-    "clean_text_files": 2,
-    "clean_text_bytes": 12345,
+    "clean_text_files": 0,
+    "clean_text_bytes": 0,
+    "sqlite_text_bytes": 12345,
     "media_files": 10,
     "media_bytes": 987654
   },
@@ -194,9 +195,11 @@ Document detail includes ordered `observations` and `url_claims`; snapshot detai
 
 ## Blob locator read contract
 
-SQLite migration version 8 adds root-relative blob locators while retaining legacy absolute compatibility paths. New clean-text and media writes populate both forms. Snapshot/media reads, media serving, forget, purge, and eviction prefer the relative locator and use the legacy absolute path only when the relative field is null or empty. Every selected value still resolves through the configured-root `BlobStore`; a populated invalid relative locator fails closed rather than falling back.
+SQLite migration version 8 adds root-relative blob locators while retaining legacy absolute compatibility paths. Media writes populate both forms. Legacy snapshot/media sidecar reads, media serving, forget, purge, and eviction prefer the relative locator and use the legacy absolute path only when the relative field is null or empty. Every selected value still resolves through the configured-root `BlobStore`; a populated invalid relative locator fails closed rather than falling back.
 
-Snapshot summaries expose `clean_text_locator_kind`; media metadata exposes `file_locator_kind`. Values are `relative`, `legacy-absolute`, or `unresolved` where configuration is unavailable. `clean_text_path_status` and `file_path_status` report containment/availability such as `ok`, `missing`, `outside-root`, or `config-required`. List/detail projections do not expose the underlying locator strings.
+SQLite migration version 9 makes `snapshots.cleaned_text` the complete-text authority and records `text_authority`/`text_source` as `capture`, `chunks-hash-verified`, `sidecar-hash-verified`, or `legacy-fallback`. New captures create no clean-text sidecar and return `clean_text_sidecar_status="not-created"`. Detail reads use non-null SQLite text before any legacy sidecar or chunk fallback.
+
+Snapshot summaries expose `clean_text_locator_kind`; media metadata exposes `file_locator_kind`. Locator values are `relative`, `legacy-absolute`, `none`, or `unresolved` where configuration is unavailable. `clean_text_path_status` and `file_path_status` report sidecar containment/availability such as `ok`, `missing`, `outside-root`, `empty`, or `config-required`. `has_clean_text` is true when authoritative SQLite text exists even if the sidecar status is `empty`. List/detail projections do not expose the underlying locator strings or duplicate complete text in summary rows.
 
 ---
 

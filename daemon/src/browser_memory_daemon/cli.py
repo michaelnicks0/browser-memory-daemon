@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 import urllib.parse
 import urllib.request
 
@@ -12,8 +11,10 @@ from .config import load_config
 from .daily_driver_health import daily_driver_health_snapshot
 from .db import connect, init_db
 from .media import purge_media_cache
-from .media_worker import run_loop as run_media_worker_loop, run_once as run_media_worker_once
+from .media_worker import run_loop as run_media_worker_loop
+from .media_worker import run_once as run_media_worker_once
 from .migrations import MigrationError, migrate_database, migration_status
+from .text_authority import reconcile_snapshot_text_authority
 
 
 def _request(method: str, url: str, *, token: str, body: dict | None = None) -> dict:
@@ -100,6 +101,11 @@ def main(argv: list[str] | None = None) -> int:
     migrate.add_argument("--from-root", default=None)
     migrate.add_argument("--execute", action="store_true")
     migrate.add_argument("--remove-source", action="store_true")
+    snapshot_text = sub.add_parser("snapshot-text")
+    snapshot_text_sub = snapshot_text.add_subparsers(dest="snapshot_text_command", required=True)
+    reconcile_text = snapshot_text_sub.add_parser("reconcile")
+    reconcile_text.add_argument("--execute", action="store_true")
+    reconcile_text.add_argument("--limit", type=int, default=1_000)
     args = parser.parse_args(argv)
 
     cfg = load_config(
@@ -236,6 +242,18 @@ def main(argv: list[str] | None = None) -> int:
             with connect(cfg.db_path) as conn:
                 print(json.dumps(migrate_blob_root(conn, cfg, source_root=args.from_root, execute=args.execute, remove_source=args.remove_source), indent=2))
             return 0
+    if args.command == "snapshot-text":
+        init_db(cfg)
+        if args.snapshot_text_command == "reconcile":
+            with connect(cfg.db_path) as conn:
+                result = reconcile_snapshot_text_authority(
+                    conn,
+                    cfg,
+                    execute=args.execute,
+                    limit=args.limit,
+                )
+                print(json.dumps(result, indent=2))
+            return 0 if result["remaining"] == 0 else 2
     if args.command == "capture-fixture":
         print(json.dumps(_request("POST", f"{base}/capture", token=cfg.api_token, body={"url": args.url, "title": args.title, "text": args.text}), indent=2))
         return 0

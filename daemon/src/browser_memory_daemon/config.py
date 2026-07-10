@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import os
+from dataclasses import dataclass
 from pathlib import Path
 
 from .policy import DEFAULT_POLICY_MODE, normalize_policy_mode
@@ -70,10 +70,9 @@ class RuntimeConfig:
                 "BMD_REQUIRE_BLOB_ROOT_MOUNT=1 requires BMD_BLOB_ROOT to be on a mounted filesystem; "
                 f"no non-root mount ancestor found for {self.blob_root}"
             )
-        for path in [self.blob_root, self.clean_text_root, self.media_root]:
-            path.mkdir(parents=True, exist_ok=True)
-        if self.raw_html_enabled:
-            self.raw_html_root.mkdir(parents=True, exist_ok=True)
+        # Blob roots are external/cache boundaries and are created by the
+        # operation that actually writes them, never as a prerequisite for
+        # local SQLite startup or text capture.
 
 
 def has_non_root_mount_ancestor(path: Path) -> bool:

@@ -61,7 +61,7 @@ digraph {
         fontcolor="#444444"
         fillcolor="#ffffff"
 
-        106 [id=106,shape=cylinder, label=<<font point-size="34">SQLite + FTS5<br />Database</font><br /><font point-size="19">[Container: SQLite with FTS5]</font><br /><br /><font point-size="24">Durable relational and<br />full-text store for migration<br />ledger, sources, documents,<br />visits, capture observations,<br />URL claims, visit events,<br />snapshots, chunks, chunks_fts,<br />media artifacts, media fetch<br />tasks, policy rules, audit<br />events, and deletion receipts.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+        106 [id=106,shape=cylinder, label=<<font point-size="34">SQLite + FTS5<br />Database</font><br /><font point-size="19">[Container: SQLite with FTS5]</font><br /><br /><font point-size="24">Durable complete cleaned-text,<br />relational, and full-text<br />authority for migration<br />ledger, sources, documents,<br />visits, capture observations,<br />URL claims, visit events,<br />snapshots, chunks, chunks_fts,<br />media provenance/tasks, policy<br />rules, audit events, and<br />deletion receipts.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
       }
 
       subgraph cluster_111 {
@@ -72,7 +72,7 @@ digraph {
         fontcolor="#444444"
         fillcolor="#ffffff"
 
-        112 [id=112,shape=cylinder, label=<<font point-size="34">Clean Text Blob Store</font><br /><font point-size="19">[Container: WSL or NAS-mounted filesystem]</font><br /><br /><font point-size="24">Filesystem store for snapshot<br />text blobs under the<br />configured WSL-visible blob<br />root.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+        112 [id=112,shape=cylinder, label=<<font point-size="34">Legacy Clean Text<br />Sidecars</font><br /><font point-size="19">[Container: WSL or NAS-mounted filesystem]</font><br /><br /><font point-size="24">Compatibility-only filesystem<br />evidence for pre-version-9<br />snapshots; new captures create<br />no text sidecars.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
         114 [id=114,shape=cylinder, label=<<font point-size="34">Media Blob Cache</font><br /><font point-size="19">[Container: WSL or NAS-mounted filesystem]</font><br /><br /><font point-size="24">Bounded and disposable<br />filesystem cache for stored<br />image/video/audio blobs under<br />the configured WSL-visible<br />blob root, with<br />purge/rehydrate semantics that<br />preserve media refs, hashes,<br />status reasons, and provenance<br />when bytes are absent or<br />purged.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
       }
 
@@ -92,12 +92,12 @@ digraph {
 
   }
 
-  94 -> 98 [id=100, label=<<font point-size="24">Calls authenticated read,<br />admin, media, and forget<br />APIs on</font><br /><font point-size="19">[HTTP/JSON]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  98 -> 106 [id=107, label=<<font point-size="24">Reads and writes metadata,<br />FTS, tasks, audit, and<br />receipts in</font><br /><font point-size="19">[sqlite3]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  101 -> 106 [id=108, label=<<font point-size="24">Leases and updates media<br />tasks in</font><br /><font point-size="19">[sqlite3]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  98 -> 112 [id=113, label=<<font point-size="24">Reads and writes text<br />snapshots in</font><br /><font point-size="19">[Filesystem]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  98 -> 114 [id=115, label=<<font point-size="24">Stores, serves, purges,<br />and rehydrates media blobs<br />in</font><br /><font point-size="19">[Filesystem]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  101 -> 114 [id=116, label=<<font point-size="24">Writes fetched media blobs<br />to</font><br /><font point-size="19">[Filesystem]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
-  91 -> 98 [id=99, label=<<font point-size="24">Posts /capture,<br />/visit-events, media<br />metadata, and raw blob<br />uploads to</font><br /><font point-size="19">[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+  94 -> 98 [id=100, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Calls authenticated read,<br />admin, media, and forget<br />APIs on</font><br /><font point-size="19">[HTTP/JSON]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  98 -> 106 [id=107, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Reads and writes metadata,<br />FTS, tasks, audit, and<br />receipts in</font><br /><font point-size="19">[sqlite3]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  101 -> 106 [id=108, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Leases and updates media<br />tasks in</font><br /><font point-size="19">[sqlite3]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  98 -> 112 [id=113, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Reads or deletes legacy<br />text sidecars when<br />required</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  98 -> 114 [id=115, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Stores, serves, purges,<br />and rehydrates media blobs<br />in</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  101 -> 114 [id=116, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Writes fetched media blobs<br />to</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  91 -> 98 [id=99, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Posts /capture,<br />/visit-events, media<br />metadata, and raw blob<br />uploads to</font><br /><font point-size="19">[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
 
 }

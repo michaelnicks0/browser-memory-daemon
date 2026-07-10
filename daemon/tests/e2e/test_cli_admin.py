@@ -1,13 +1,12 @@
 import json
 import threading
 
-import pytest
-
 import browser_memory_daemon.cli as cli_module
+import pytest
 from browser_memory_daemon.app import make_server
 from browser_memory_daemon.cli import main
-from browser_memory_daemon.migrations import LATEST_SCHEMA_VERSION
 from browser_memory_daemon.config import load_config
+from browser_memory_daemon.migrations import LATEST_SCHEMA_VERSION
 
 
 @pytest.fixture()
@@ -122,3 +121,27 @@ def test_cli_migrate_check_is_read_only_then_execute_applies_pending_steps(tmp_p
     current = _last_json(capsys)
     assert current["ready"] is True
     assert current["current_version"] == LATEST_SCHEMA_VERSION
+
+
+def test_cli_snapshot_text_reconcile_defaults_to_dry_run(tmp_path, capsys):
+    runtime_root = tmp_path / "runtime"
+    base = [
+        "--runtime-root",
+        str(runtime_root),
+        "--blob-root",
+        str(tmp_path / "blobs"),
+        "--token",
+        "test-token",
+    ]
+    assert main(base + ["migrate", "--execute"]) == 0
+    _last_json(capsys)
+
+    assert main(base + ["snapshot-text", "reconcile"]) == 0
+    preview = _last_json(capsys)
+    assert preview["dry_run"] is True
+    assert preview["scanned"] == 0
+
+    assert main(base + ["snapshot-text", "reconcile", "--execute"]) == 0
+    applied = _last_json(capsys)
+    assert applied["dry_run"] is False
+    assert applied["applied"] == 0

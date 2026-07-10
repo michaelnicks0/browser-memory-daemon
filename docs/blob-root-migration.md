@@ -2,13 +2,13 @@
 
 > **Status:** Current helper documented; live migration remains approval-gated.
 > **Authority:** `daemon/src/browser_memory_daemon/blob_migration.py` and `blob-root migrate` in `cli.py`.
-> **Scope:** Move DB-referenced clean-text and media blob files while keeping SQLite/WAL local.
+> **Scope:** Move DB-referenced legacy clean-text sidecars and media blob files while keeping SQLite/WAL complete-text authority local.
 
 ---
 
 ## Current contract
 
-`blob-root migrate` plans relocation only for DB-referenced paths beneath the selected source root and under the recognized `clean-text/`, `raw-html/`, or `media/` subtrees. The configured `BMD_BLOB_ROOT` is the target. The command is a dry run unless `--execute` is supplied.
+`blob-root migrate` plans relocation only for DB-referenced paths beneath the selected source root and under the recognized `clean-text/`, `raw-html/`, or `media/` subtrees. Version-9 and later captures create no clean-text sidecar, so clean-text plans apply only to legacy rows. The configured `BMD_BLOB_ROOT` is the target. The command is a dry run unless `--execute` is supplied.
 
 ```bash
 PYTHONPATH=daemon/src BMD_BLOB_ROOT=/explicit/target/blobs \

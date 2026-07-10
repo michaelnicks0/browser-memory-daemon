@@ -286,6 +286,11 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Dry-run by default; copies DB-referenced clean-text/media blobs to the configured root and rewrites paths only with <code>--execute</code>.</td>
 <td>Pretty JSON migration summary. <code>--remove-source</code> remains an explicit post-copy action.</td>
 </tr>
+<tr>
+<td><code>snapshot-text reconcile [--limit N] [--execute]</code></td>
+<td>Dry-run by default; promotes only exact hash-verified chunk reconstructions or contained legacy sidecars into SQLite complete-text authority.</td>
+<td>Pretty JSON with scanned/resolved/applied/source/unresolved counts. <code>--execute</code> is required to mutate rows.</td>
+</tr>
 </tbody>
 </table>
 <hr />
@@ -390,7 +395,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <ul>
 <li>CLI output is currently JSON but not formally versioned.</li>
 <li><code>capture-fixture</code> exists for tests/smoke checks, not browser capture replacement.</li>
-<li><code>blob-root migrate</code> is the current repository migration helper; versioned schema <code>migrate --check/--execute</code> commands are planned but do not exist yet.</li>
+<li><code>migrate --check/--execute</code>, <code>blob-root migrate</code>, and <code>snapshot-text reconcile</code> are current repository migration/reconciliation helpers; dry-run remains the default for filesystem-backed reconciliation.</li>
 <li>Future CLI changes should update this contract and <code>daemon/tests/e2e/test_cli_admin.py</code> together.</li>
 </ul>
   </article>
