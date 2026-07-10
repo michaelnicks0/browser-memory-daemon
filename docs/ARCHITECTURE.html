@@ -510,8 +510,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Every blob read, write, move, and delete shall resolve under its configured root and resist traversal and symlink escape.</td>
 <td>Storage Path Boundary</td>
 <td><code>HRD-004</code></td>
-<td><code>daemon/src/browser_memory_daemon/storage_paths.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/forget.py</code></td>
-<td><code>daemon/tests/integration/test_ingest_search_forget.py::test_blob_path_consumers_reject_db_paths_outside_configured_roots</code></td>
+<td><code>daemon/src/browser_memory_daemon/blob_store.py</code><br><code>daemon/src/browser_memory_daemon/storage_paths.py</code><br><code>daemon/src/browser_memory_daemon/ingest.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/forget.py</code><br><code>daemon/src/browser_memory_daemon/ops.py</code><br><code>daemon/src/browser_memory_daemon/app.py</code><br><code>daemon/src/browser_memory_daemon/blob_migration.py</code></td>
+<td><code>daemon/tests/unit/test_blob_store.py::test_blob_store_stages_streams_verifies_hash_and_commits_atomically</code><br><code>daemon/tests/unit/test_blob_store.py::test_blob_store_rejects_traversal_symlink_escape_and_cross_root_stage</code><br><code>daemon/tests/integration/test_ingest_search_forget.py::test_blob_path_consumers_reject_db_paths_outside_configured_roots</code></td>
 </tr>
 <tr>
 <td>REQ-030</td>
@@ -828,6 +828,11 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Media cache manager</td>
 <td>Applies size gates, manual purge/rehydrate, and oldest-first domain/global rolling eviction.</td>
 <td>Blob bytes are disposable; text, refs, hashes, and provenance remain durable.</td>
+</tr>
+<tr>
+<td>BlobStore</td>
+<td>Contains blob path resolution plus streaming stage, size/hash verification, atomic commit, read/stat, and delete operations.</td>
+<td>Current absolute DB locators remain compatible; relative locators and durable tombstone/reconciliation states are later Phase 3 slices.</td>
 </tr>
 <tr>
 <td>Ops/read model</td>

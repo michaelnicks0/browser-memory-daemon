@@ -432,12 +432,12 @@ rationale = "Caller and persisted identifiers must never grant arbitrary filesys
 owner = "Storage Path Boundary"
 status = "active"
 aliases = ["HRD-004"]
-implementation = ["daemon/src/browser_memory_daemon/storage_paths.py", "daemon/src/browser_memory_daemon/media.py", "daemon/src/browser_memory_daemon/forget.py"]
-unit_evidence = []
+implementation = ["daemon/src/browser_memory_daemon/blob_store.py", "daemon/src/browser_memory_daemon/storage_paths.py", "daemon/src/browser_memory_daemon/ingest.py", "daemon/src/browser_memory_daemon/media.py", "daemon/src/browser_memory_daemon/forget.py", "daemon/src/browser_memory_daemon/ops.py", "daemon/src/browser_memory_daemon/app.py", "daemon/src/browser_memory_daemon/blob_migration.py"]
+unit_evidence = ["daemon/tests/unit/test_blob_store.py", "daemon/tests/unit/test_storage_paths.py"]
 integration_evidence = ["daemon/tests/integration/test_ingest_search_forget.py", "daemon/tests/integration/test_media_worker.py"]
 system_evidence = ["scripts/run-e2e.sh"]
-operational_evidence = ["docs/security-model.md"]
-validation_evidence = ["daemon/tests/integration/test_ingest_search_forget.py::test_blob_path_consumers_reject_db_paths_outside_configured_roots"]
+operational_evidence = ["docs/security-model.md", "docs/architecture/adr/0036-route-blob-operations-through-contained-blobstore.md"]
+validation_evidence = ["daemon/tests/unit/test_blob_store.py::test_blob_store_stages_streams_verifies_hash_and_commits_atomically", "daemon/tests/unit/test_blob_store.py::test_blob_store_rejects_traversal_symlink_escape_and_cross_root_stage", "daemon/tests/integration/test_ingest_search_forget.py::test_blob_path_consumers_reject_db_paths_outside_configured_roots"]
 
 [[requirements]]
 id = "REQ-030"

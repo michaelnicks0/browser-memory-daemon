@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-import json
 import ipaddress
+import json
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 
 from . import __version__
+from .blob_store import BlobStore
 from .config import RuntimeConfig
 from .db import audit, connect, init_db
 from .forget import forget
@@ -26,7 +27,6 @@ from .ops import doctor, document_detail, recent_captures, snapshot_detail, time
 from .policy import POLICY_MODE_ALL, evaluate_capture
 from .policy_store import create_policy_rule, delete_policy_rule, evaluate_policy_rules, list_policy_rules
 from .search import search_memory
-
 
 UI_ROOT = Path(__file__).resolve().parents[3] / "ui"
 REQUEST_QUEUE_SIZE = 128
@@ -360,16 +360,18 @@ def make_handler(config: RuntimeConfig):
                         artifact = media_artifact(conn, config, artifact_id)
                         audit(conn, "media.detail", {"artifact_id": artifact_id})
                         conn.commit()
-                    path = Path(artifact.pop("resolved_file_path", "") or "")
-                    if not artifact.get("has_file") or not path.exists():
+                    artifact.pop("resolved_file_path", None)
+                    store = BlobStore(config.media_root)
+                    resolution = store.resolve(artifact.get("file_path"), require_file=True)
+                    if not artifact.get("has_file") or resolution.path is None:
                         _json_response(self, 404, {"error": "media artifact file not stored", "artifact": {k: v for k, v in artifact.items() if k != "file_path"}})
                         return
                     _binary_response(
                         self,
                         200,
-                        path.read_bytes(),
+                        store.read_bytes(artifact["file_path"]),
                         content_type=artifact.get("mime_type") or "application/octet-stream",
-                        filename=path.name,
+                        filename=resolution.path.name,
                     )
                     return
                 if parsed.path == "/doctor":

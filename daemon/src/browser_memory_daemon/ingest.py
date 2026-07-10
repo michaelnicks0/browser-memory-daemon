@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import hashlib
 import sqlite3
-import uuid
 from urllib.parse import urlsplit
 
+from .blob_store import BlobStore
 from .config import RuntimeConfig
 from .db import audit
 from .lifecycle import recompute_visit_dwell
@@ -12,7 +12,7 @@ from .media import media_artifact_id, parse_media_refs, record_media_references
 from .models import CapturePayload
 from .normalize import domain_from_url, normalize_url
 from .policy import POLICY_MODE_ALL, redact_text, redact_url
-from .storage_paths import contained_child_path, validate_snapshot_id
+from .storage_paths import validate_snapshot_id
 
 
 def stable_id(prefix: str, value: str) -> str:
@@ -47,18 +47,12 @@ def chunk_text(text: str, *, max_chars: int = 1800) -> list[str]:
 
 def _clean_text_path(config: RuntimeConfig, snapshot_id: str):
     snapshot_id = validate_snapshot_id(snapshot_id)
-    return contained_child_path(config.clean_text_root, f"{snapshot_id}.txt", create_root=True)
+    return BlobStore(config.clean_text_root).path(f"{snapshot_id}.txt", create_root=True)
 
 
 def _write_clean_text_atomic(config: RuntimeConfig, snapshot_id: str, text: str) -> None:
     clean_path = _clean_text_path(config, snapshot_id)
-    tmp_path = contained_child_path(config.clean_text_root, f".{snapshot_id}.{uuid.uuid4().hex}.txt.tmp", create_root=True)
-    try:
-        tmp_path.write_text(text, encoding="utf-8")
-        tmp_path.replace(clean_path)
-    finally:
-        if tmp_path.exists():
-            tmp_path.unlink()
+    BlobStore(config.clean_text_root).write_text(clean_path, text)
 
 
 def _prepare_storage_values(config: RuntimeConfig, payload: CapturePayload) -> tuple[str, str, str, str, int, list[str]]:

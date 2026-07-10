@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Blob-Root-Migration — browser-memory-daemon</title>
+<title>0036-Route-Blob-Operations-Through-Contained-Blobstore — browser-memory-daemon</title>
 <style>
 :root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
@@ -120,56 +120,84 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <body>
 <div class="wrap">
   <div class="docbar">
-    <a class="home" href="../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
-    <span class="crumb">/ <b>docs/blob-root-migration.md</b></span>
+    <a class="home" href="../../../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
+    <span class="crumb">/ <b>docs/architecture/adr/0036-route-blob-operations-through-contained-blobstore.md</b></span>
   </div>
   <article class="md-body">
-<h1 id="blob-root-migration">Blob-Root Migration</h1>
-<blockquote>
-<p><strong>Status:</strong> Current helper documented; live migration remains approval-gated.
-<strong>Authority:</strong> <code>daemon/src/browser_memory_daemon/blob_migration.py</code> and <code>blob-root migrate</code> in <code>cli.py</code>.
-<strong>Scope:</strong> Move DB-referenced clean-text and media blob files while keeping SQLite/WAL local.</p>
-</blockquote>
 <hr />
-<h2 id="current-contract">Current contract</h2>
-<p><code>blob-root migrate</code> plans relocation only for DB-referenced paths beneath the selected source root and under the recognized <code>clean-text/</code>, <code>raw-html/</code>, or <code>media/</code> subtrees. The configured <code>BMD_BLOB_ROOT</code> is the target. The command is a dry run unless <code>--execute</code> is supplied.</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">PYTHONPATH</span><span style="color: #FF4689">=</span>daemon/src<span style="color: #F8F8F2"> BMD_BLOB_ROOT</span><span style="color: #FF4689">=</span>/explicit/target/blobs<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
-<span style="color: #F8F8F2">  </span>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span>blob-root<span style="color: #F8F8F2"> </span>migrate
-</code></pre></div>
-
-<p>The summary reports planned, copied, already-present, missing-source, updated, source-removal, and error counts. Dry-run does not copy files, rewrite SQLite paths, or remove source bytes. Executed copies stream through the contained <code>BlobStore</code>, verify the source byte count before publication, and atomically commit the target.</p>
-<h2 id="execute-boundary">Execute boundary</h2>
-<p>Repository verification must use temporary fixture roots only. A live DB migration, external mount mutation, or deletion of source bytes requires separate explicit operator approval.</p>
-<p>When approved for a real deployment, the minimum sequence is:</p>
-<ol>
-<li>stop capture and media-worker writes;</li>
-<li>create and verify a SQLite online backup;</li>
-<li>verify target mount availability, free space, and expected storage identity;</li>
-<li>run the command without <code>--execute</code> and review every count/path boundary;</li>
-<li>run with <code>--execute</code> but without <code>--remove-source</code>;</li>
-<li>verify DB integrity, FTS reads, snapshot detail, media reads, and service health against the target;</li>
-<li>retain the prior copy until an explicit later cleanup approval.</li>
-</ol>
-<h2 id="current-limitations">Current limitations</h2>
+<p>status: accepted
+date: 2026-07-10
+decision-makers: [Michael]
+consulted: [TARS]
+informed: []</p>
+<hr />
+<h1 id="adr-0036-route-blob-filesystem-operations-through-one-contained-blobstore">ADR-0036: Route blob filesystem operations through one contained BlobStore</h1>
+<h2 id="context-and-problem-statement">Context and problem statement</h2>
+<p>Phase 0 centralized path validation, but application modules still performed their own write, replace, read, stat, copy, and unlink operations after resolving a path. That duplicated atomic-publication and cleanup behavior and left the safety boundary spread across ingestion, media, forget, read models, HTTP download, and blob-root migration.</p>
+<p>Phase 3 needs a deep storage module before relative locators, reservations, durable blob states, reconciliation, or SQLite-authoritative text can be added safely.</p>
+<h2 id="decision">Decision</h2>
+<p>Introduce <code>browser_memory_daemon.blob_store.BlobStore</code> as the only application boundary for current blob filesystem operations.</p>
+<p>The first slice retains existing absolute database locators and current directory layout. <code>BlobStore</code> provides:</p>
 <ul>
-<li>Existing target files are treated as present; this helper does not yet compare hashes or content.</li>
-<li>SQLite path updates occur after copy attempts, but the filesystem copies and DB transaction are not one crash-consistent transaction.</li>
-<li><code>--remove-source</code> unlinks after DB updates and is not tombstone/reconciliation-backed.</li>
-<li>The helper stores absolute paths; root-relative BlobStore locators arrive in the planned storage phase.</li>
-<li>It is an operator blob-layout migration, not a versioned SQLite schema migration.</li>
+<li>contained path generation and resolution under one configured root;</li>
+<li>unique same-root staging files;</li>
+<li>chunked/streaming writes with incremental byte and SHA-256 accounting;</li>
+<li>optional expected-size and expected-hash verification before publication;</li>
+<li>flush and file <code>fsync</code> before commit;</li>
+<li>atomic <code>os.replace</code> plus parent-directory <code>fsync</code>;</li>
+<li>contained binary open/read, text read, stat, existence, abort, and delete operations;</li>
+<li>explicit delete and resolution outcomes for missing, invalid, out-of-root, and failed paths.</li>
 </ul>
-<p>These limitations are why the default remains dry-run and why <code>--remove-source</code> is a separate explicit flag.</p>
-<h2 id="hermetic-verification">Hermetic verification</h2>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span>/tmp/browser-memory-daemon-verify-venv/bin/python
-<span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2">$BMD_PYTHON</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pytest<span style="color: #F8F8F2"> </span>-q<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
-<span style="color: #F8F8F2">  </span>daemon/tests/integration/test_ingest_search_forget.py<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
-<span style="color: #F8F8F2">  </span>-k<span style="color: #F8F8F2"> </span>blob_root_migration
-</code></pre></div>
-
-<p>The test uses temporary runtime/blob roots and does not touch the daily-driver database, user blob root, or NAS.</p>
+<p>Ingestion, media storage/eviction/purge, forget, snapshot reads, media HTTP download, and blob-root migration route through this boundary. A caller that omits <code>RuntimeConfig</code> can still inspect media metadata but receives <code>file_path_status = "config-required"</code>; it cannot perform unchecked filesystem access.</p>
+<h2 id="safety-and-compatibility-rules">Safety and compatibility rules</h2>
+<ol>
+<li>A DB locator is never opened, copied, replaced, statted, or deleted before containment validation.</li>
+<li>Staged blobs can commit only through the <code>BlobStore</code> that created them and only from that root's <code>.staging</code> directory.</li>
+<li>Size/hash mismatch removes the staged file and publishes no target.</li>
+<li>Commit failure attempts staged-file cleanup and raises a typed <code>BlobStoreError</code>.</li>
+<li>Concurrent writers use unique stages; every published target is a complete atomic file. Reservation and ownership policy arrive in a later Phase 3 slice.</li>
+<li>Existing absolute locators and endpoint paths remain compatible. Relative locator dual-write is deliberately separate.</li>
+<li>Required-mount and storage-identity validation remains a configuration/startup prerequisite; this module does not silently reinterpret an absent external mount as a local store.</li>
+</ol>
+<h2 id="consequences">Consequences</h2>
+<h3 id="positive">Positive</h3>
+<ul>
+<li>Application modules no longer directly operate on DB-supplied blob paths.</li>
+<li>Clean-text and media publication share one streaming, hash-aware, atomic path.</li>
+<li>Blob-root migration no longer uses whole-file <code>shutil.copy2</code>; it streams through verified staging.</li>
+<li>Out-of-root legacy rows remain visible as status evidence and are never touched.</li>
+<li>The boundary is ready for relative locators, durable staged/committed/tombstoned states, and reconciliation.</li>
+</ul>
+<h3 id="negative">Negative</h3>
+<ul>
+<li>HTTP media download still buffers the complete artifact after the contained read; bounded HTTP streaming remains Phase 6.</li>
+<li>Existing-target blob migration still trusts target presence in this slice; source/target hash comparison arrives with the migration/reconciliation slice.</li>
+<li>File publication and its SQLite row are not yet one recoverable state machine. Staging/tombstone reconciliation remains open.</li>
+</ul>
+<h2 id="alternatives-rejected">Alternatives rejected</h2>
+<h3 id="keep-path-helpers-and-duplicate-filesystem-operations">Keep path helpers and duplicate filesystem operations</h3>
+<p>Rejected because containment alone does not centralize publication, cleanup, verification, or future state transitions.</p>
+<h3 id="introduce-a-generic-storage-provider-framework">Introduce a generic storage-provider framework</h3>
+<p>Rejected. The system needs one boring local/NAS filesystem boundary, not cloud abstraction or dependency injection.</p>
+<h3 id="change-locators-and-blob-state-in-the-same-commit">Change locators and blob state in the same commit</h3>
+<p>Rejected. Relative-locator migration and durable state require independent expand/backfill/read-switch rollback domains.</p>
+<h2 id="verification">Verification</h2>
+<ul>
+<li><code>test_blob_store.py</code> covers streaming stage/commit, expected size/hash mismatch, traversal, symlink escape, cross-root staged commits, delete outcomes, concurrent atomic writers, and stage cleanup.</li>
+<li>Existing ingestion/media/forget/blob-migration/HTTP tests prove endpoint behavior and absolute locator compatibility.</li>
+<li>The fast and broad hermetic gates must pass with no writes outside explicit fixture roots.</li>
+</ul>
+<h2 id="follow-up">Follow-up</h2>
+<ol>
+<li>Add relative locators alongside legacy absolute paths and dual-read them.</li>
+<li>Add reservations and durable staged/committed/tombstoned/missing/deleted states.</li>
+<li>Reconcile stale stages, missing files, orphans, wrong-root locators, and DB/filesystem divergence.</li>
+<li>Store authoritative full snapshot text in SQLite and make clean-text files optional derivatives.</li>
+<li>Split local text/derivative, NAS media, and optional bounded local media-spool roots.</li>
+</ol>
   </article>
   <div class="md-footer">
-    Rendered from <code>docs/blob-root-migration.md</code> — the Markdown file is the canonical,
+    Rendered from <code>docs/architecture/adr/0036-route-blob-operations-through-contained-blobstore.md</code> — the Markdown file is the canonical,
     version-controlled source. This HTML is generated (regenerate with
     <code>scripts/render_docs.py</code>); do not hand-edit.
   </div>

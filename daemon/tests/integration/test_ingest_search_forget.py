@@ -205,6 +205,7 @@ def test_media_artifacts_are_related_to_snapshot_not_fts_and_deleted_by_forget(t
         media = media_artifacts_for_snapshot(conn, result["snapshot_id"])
         assert len(media) == 1
         assert media[0]["capture_status"] == "referenced"
+        assert media[0]["file_path_status"] == "config-required"
         task = conn.execute("SELECT artifact_id, worker_kind, status FROM media_fetch_tasks").fetchone()
         assert task["artifact_id"] == media[0]["id"]
         assert task["worker_kind"] == "daemon-public"
@@ -575,7 +576,7 @@ def test_fetch_pending_media_artifacts_stores_data_url_without_indexing_media_me
         assert fetched["attempted"] == 1
         assert fetched["stored"] == 1
         assert fetched["remaining"] == 0
-        media = media_artifacts_for_snapshot(conn, result["snapshot_id"])
+        media = media_artifacts_for_snapshot(conn, result["snapshot_id"], cfg)
         assert media[0]["capture_status"] == "stored"
         assert media[0]["byte_size"] == 8
         assert media[0]["has_file"] is True

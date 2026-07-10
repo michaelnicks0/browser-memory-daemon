@@ -6,9 +6,9 @@ from pathlib import Path
 from typing import Any
 
 from . import __version__
+from .blob_store import BlobStore
 from .config import RuntimeConfig
 from .media import media_artifacts_for_document, media_artifacts_for_snapshot, media_queue_status
-from .storage_paths import contained_existing_file
 
 
 def _clamp_limit(limit: int | str | None, *, default: int = 25, maximum: int = 100) -> int:
@@ -333,10 +333,10 @@ def snapshot_detail(conn: sqlite3.Connection, config: RuntimeConfig, snapshot_id
     text = ""
     path = snapshot["cleaned_text_path"]
     if path:
-        resolution = contained_existing_file(config.clean_text_root, path)
-        clean_path = resolution.path
-        if clean_path is not None:
-            text = clean_path.read_text(encoding="utf-8", errors="replace")
+        store = BlobStore(config.clean_text_root)
+        resolution = store.resolve(path, require_file=True)
+        if resolution.path is not None:
+            text = store.read_text(path, encoding="utf-8", errors="replace")
     if not text:
         text = "\n\n".join(row["text"] for row in chunks)
     truncated = len(text) > max_text_chars
@@ -481,7 +481,7 @@ def _snapshot_summary(row: sqlite3.Row, config: RuntimeConfig | None = None) -> 
     value = dict(row)
     path = value.pop("cleaned_text_path", None)
     if config:
-        resolution = contained_existing_file(config.clean_text_root, path)
+        resolution = BlobStore(config.clean_text_root).resolve(path, require_file=True)
         value["has_clean_text"] = resolution.path is not None
         value["clean_text_path_status"] = resolution.status
     else:

@@ -1,26 +1,26 @@
 from __future__ import annotations
 
 import base64
-from datetime import datetime, timedelta, timezone
-from dataclasses import dataclass
 import hashlib
 import ipaddress
 import json
-from pathlib import Path
 import socket
 import sqlite3
 import time
 import uuid
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import unquote_to_bytes, urljoin, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
+from .blob_store import BlobStore
 from .config import RuntimeConfig
 from .normalize import normalize_url
 from .policy import POLICY_MODE_ALL, redact_text, redact_url
-from .storage_paths import contained_child_path, contained_existing_file, resolve_db_path_under, storage_stem, validate_media_artifact_id
-
+from .storage_paths import storage_stem, validate_media_artifact_id
 
 MEDIA_TYPES = {"image", "video"}
 MEDIA_ROLES = {"content", "poster", "source"}
@@ -409,26 +409,26 @@ def _evict_oldest_media_rows(conn: sqlite3.Connection, config: RuntimeConfig, ro
     missing_files = 0
     skipped_paths = 0
     updates: list[tuple[str, str]] = []
-    paths_to_unlink: list[Path] = []
+    paths_to_unlink: list[str] = []
+    store = BlobStore(config.media_root)
     for row in rows:
         if bytes_to_free > 0 and freed_bytes >= bytes_to_free:
             break
         raw_path = row["file_path"] or ""
         if not raw_path:
             continue
-        resolution = resolve_db_path_under(config.media_root, raw_path, require_file=False)
+        resolution = store.resolve(raw_path, require_file=False)
         if resolution.status in {"outside-root", "invalid", "empty"} or resolution.path is None:
             skipped_paths += 1
             continue
-        resolved = resolution.path
         size = int(row["byte_size"] or 0)
-        if resolved.exists():
+        if store.exists(raw_path):
             if size <= 0:
                 try:
-                    size = int(resolved.stat().st_size)
-                except OSError:
+                    size = int(store.stat(raw_path).st_size)
+                except (OSError, RuntimeError):
                     size = 0
-            paths_to_unlink.append(resolved)
+            paths_to_unlink.append(raw_path)
             evicted += 1
         else:
             missing_files += 1
@@ -445,13 +445,9 @@ def _evict_oldest_media_rows(conn: sqlite3.Connection, config: RuntimeConfig, ro
                 """,
                 updates,
             )
-    for resolved in paths_to_unlink:
-        try:
-            if resolved.exists():
-                resolved.unlink()
-            else:
-                missing_files += 1
-        except OSError:
+    for raw_path in paths_to_unlink:
+        result = store.delete(raw_path)
+        if result.status != "deleted":
             missing_files += 1
     return {"evicted": evicted, "missing_files": missing_files, "skipped_paths": skipped_paths, "bytes": freed_bytes}
 
@@ -1360,7 +1356,7 @@ def _payload_from_media_row(row: sqlite3.Row | dict[str, Any], *, capture_status
 def fetch_and_store_media_artifact(conn: sqlite3.Connection, config: RuntimeConfig, row: sqlite3.Row | dict[str, Any]) -> dict[str, Any]:
     value = dict(row)
     file_path = value.get("file_path") or ""
-    if value.get("capture_status") == "stored" and file_path and Path(file_path).exists():
+    if value.get("capture_status") == "stored" and file_path and BlobStore(config.media_root).exists(file_path):
         return {
             "stored": True,
             "artifact_id": value["id"],
@@ -1541,12 +1537,9 @@ def _write_media_blob(config: RuntimeConfig, artifact_id: str, mime_type: str, s
     artifact_id = validate_media_artifact_id(artifact_id)
     extension = _file_extension(mime_type, source_url)
     stem = storage_stem("media", artifact_id)
-    target = contained_child_path(config.media_root, f"{stem}{extension}", create_root=True)
-    tmp_root = contained_child_path(config.media_root, ".tmp", create_root=True)
-    tmp_root.mkdir(parents=True, exist_ok=True)
-    tmp = contained_child_path(config.media_root, ".tmp", f"{stem}.{uuid.uuid4().hex}{extension}.tmp", create_root=True)
-    tmp.write_bytes(content)
-    tmp.replace(target)
+    store = BlobStore(config.media_root)
+    target = store.path(f"{stem}{extension}", create_root=True)
+    store.write_bytes(target, content)
     return str(target)
 
 
@@ -1817,37 +1810,38 @@ def purge_media_cache(conn: sqlite3.Connection, config: RuntimeConfig, scope: di
     selected_bytes = 0
     skipped_out_of_root = 0
     skipped_out_of_root_ids: list[str] = []
+    store = BlobStore(config.media_root)
     for row in rows:
         if rehydrate_only:
-            selected.append((row, Path(""), 0))
+            selected.append((row, "", 0))
             continue
-        resolution = resolve_db_path_under(config.media_root, row["file_path"] or "", require_file=False)
+        raw_path = row["file_path"] or ""
+        resolution = store.resolve(raw_path, require_file=False)
         if resolution.status in {"outside-root", "invalid", "empty"} or resolution.path is None:
             skipped_out_of_root += 1
             if len(skipped_out_of_root_ids) < 20:
                 skipped_out_of_root_ids.append(row["id"])
             continue
-        resolved = resolution.path
         try:
-            size = int(row["byte_size"] or (resolved.stat().st_size if resolved.exists() else 0))
-        except OSError:
+            size = int(row["byte_size"] or (store.stat(raw_path).st_size if store.exists(raw_path) else 0))
+        except (OSError, RuntimeError):
             size = int(row["byte_size"] or 0)
         if max_bytes_to_purge is not None and selected_bytes + size > max_bytes_to_purge:
             break
-        selected.append((row, resolved, size))
+        selected.append((row, raw_path, size))
         selected_bytes += size
     purged = 0
     missing = 0
-    paths_to_unlink: list[Path] = []
+    paths_to_unlink: list[str] = []
     if not dry_run:
         with conn:
-            for row, resolved, _size in selected:
+            for row, raw_path, _size in selected:
                 if rehydrate_only:
                     if _media_fetch_supported(row["source_url"] or ""):
                         ensure_media_fetch_task(conn, row["id"], worker_kind="daemon-public", status="pending", force_reset=True)
                     continue
-                if resolved.exists():
-                    paths_to_unlink.append(resolved)
+                if store.exists(raw_path):
+                    paths_to_unlink.append(raw_path)
                 else:
                     missing += 1
                 conn.execute(
@@ -1860,14 +1854,11 @@ def purge_media_cache(conn: sqlite3.Connection, config: RuntimeConfig, scope: di
                 )
                 if rehydrate and _media_fetch_supported(row["source_url"] or ""):
                     ensure_media_fetch_task(conn, row["id"], worker_kind="daemon-public", status="pending", force_reset=True)
-        for resolved in paths_to_unlink:
-            try:
-                if resolved.exists():
-                    resolved.unlink()
-                    purged += 1
-                else:
-                    missing += 1
-            except OSError:
+        for raw_path in paths_to_unlink:
+            result = store.delete(raw_path)
+            if result.deleted:
+                purged += 1
+            else:
                 missing += 1
     return {
         "dry_run": dry_run,
@@ -1886,9 +1877,8 @@ def purge_media_cache(conn: sqlite3.Connection, config: RuntimeConfig, scope: di
 
 def _media_file_resolution(config: RuntimeConfig | None, raw_path: str | None) -> tuple[Path | None, str]:
     if not config:
-        path = Path(raw_path or "")
-        return (path if raw_path and path.exists() else None), "legacy-unchecked"
-    resolution = contained_existing_file(config.media_root, raw_path)
+        return None, "config-required"
+    resolution = BlobStore(config.media_root).resolve(raw_path, require_file=True)
     return resolution.path, resolution.status
 
 

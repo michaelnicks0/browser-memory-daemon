@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
-import shutil
-import sqlite3
 from typing import Any
 
+from .blob_store import BlobStore, BlobStoreError
 from .config import RuntimeConfig
 
 
@@ -25,15 +25,19 @@ def _safe_resolve(path: Path) -> Path:
 def _relocate_path(raw_path: str, *, source_root: Path, target_root: Path) -> tuple[Path, Path] | None:
     if not raw_path:
         return None
-    source = _safe_resolve(Path(raw_path))
-    resolved_source_root = _safe_resolve(source_root)
+    source_store = BlobStore(source_root)
+    target_store = BlobStore(target_root)
+    resolution = source_store.resolve(raw_path, require_file=False)
+    source = resolution.path
+    if resolution.status in {"outside-root", "invalid", "empty"} or source is None:
+        return None
     try:
-        relative = source.relative_to(resolved_source_root)
+        relative = source.relative_to(source_store.root)
     except ValueError:
         return None
     if relative.parts and relative.parts[0] not in {"clean-text", "raw-html", "media"}:
         return None
-    return source, _safe_resolve(target_root / relative)
+    return source, target_store.path(*relative.parts)
 
 
 def plan_blob_root_migration(conn: sqlite3.Connection, config: RuntimeConfig, *, source_root: str | Path | None = None) -> list[BlobMigrationPlan]:
@@ -94,20 +98,23 @@ def migrate_blob_root(
     if not plans:
         return summary
 
+    source_store = BlobStore(Path(source_root).expanduser() if source_root else config.data_root / "blobs")
+    target_store = BlobStore(config.blob_root)
     updates: list[BlobMigrationPlan] = []
     for plan in plans:
-        source_exists = plan.source_path.exists()
-        target_exists = plan.target_path.exists()
+        source_exists = source_store.exists(plan.source_path)
+        target_exists = target_store.exists(plan.target_path)
         if not source_exists and not target_exists:
             summary["missing_source"] += 1
             continue
         if execute and source_exists and not target_exists:
             try:
-                plan.target_path.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(plan.source_path, plan.target_path)
+                expected_size = source_store.stat(plan.source_path).st_size
+                with source_store.open(plan.source_path) as source_handle:
+                    target_store.write(plan.target_path, source_handle, expected_size=expected_size)
                 summary["copied"] += 1
                 target_exists = True
-            except OSError as exc:
+            except (OSError, BlobStoreError) as exc:
                 summary["errors"].append({"id": plan.row_id, "source": str(plan.source_path), "target": str(plan.target_path), "error": str(exc)})
                 continue
         elif target_exists:
@@ -124,11 +131,11 @@ def migrate_blob_root(
                 summary["updated"] += 1
         if remove_source:
             for plan in updates:
-                if plan.source_path == plan.target_path or not plan.source_path.exists():
+                if plan.source_path == plan.target_path or not source_store.exists(plan.source_path):
                     continue
-                try:
-                    plan.source_path.unlink()
+                result = source_store.delete(plan.source_path)
+                if result.deleted:
                     summary["removed_source"] += 1
-                except OSError as exc:
-                    summary["errors"].append({"id": plan.row_id, "source": str(plan.source_path), "error": str(exc)})
+                else:
+                    summary["errors"].append({"id": plan.row_id, "source": str(plan.source_path), "error": result.status})
     return summary

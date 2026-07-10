@@ -15,7 +15,7 @@ PYTHONPATH=daemon/src BMD_BLOB_ROOT=/explicit/target/blobs \
   python3.11 -m browser_memory_daemon blob-root migrate
 ```
 
-The summary reports planned, copied, already-present, missing-source, updated, source-removal, and error counts. Dry-run does not copy files, rewrite SQLite paths, or remove source bytes.
+The summary reports planned, copied, already-present, missing-source, updated, source-removal, and error counts. Dry-run does not copy files, rewrite SQLite paths, or remove source bytes. Executed copies stream through the contained `BlobStore`, verify the source byte count before publication, and atomically commit the target.
 
 ## Execute boundary
 
@@ -37,7 +37,7 @@ When approved for a real deployment, the minimum sequence is:
 - SQLite path updates occur after copy attempts, but the filesystem copies and DB transaction are not one crash-consistent transaction.
 - `--remove-source` unlinks after DB updates and is not tombstone/reconciliation-backed.
 - The helper stores absolute paths; root-relative BlobStore locators arrive in the planned storage phase.
-- It is not the versioned database migration kernel planned for Phase 1.2.
+- It is an operator blob-layout migration, not a versioned SQLite schema migration.
 
 These limitations are why the default remains dry-run and why `--remove-source` is a separate explicit flag.
 

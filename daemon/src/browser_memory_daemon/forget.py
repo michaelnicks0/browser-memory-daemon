@@ -3,13 +3,12 @@ from __future__ import annotations
 import json
 import sqlite3
 import uuid
-from pathlib import Path
 from urllib.parse import urlsplit
 
+from .blob_store import BlobStore
 from .config import RuntimeConfig
 from .normalize import domain_from_url, normalize_url
 from .policy import POLICY_MODE_ALL, redact_url
-from .storage_paths import resolve_db_path_under
 
 
 def _normalize_forget_domain(value: str) -> str:
@@ -62,7 +61,7 @@ def _document_ids_for_url(conn: sqlite3.Connection, config: RuntimeConfig, url: 
     return [row["id"] for row in rows if row["id"]], {"url": receipt_url, "selector_policy": selector_policy}
 
 
-def _unlink_contained(paths: list[Path], *, root: Path) -> tuple[int, int, int]:
+def _unlink_contained(paths: list[str], *, store: BlobStore) -> tuple[int, int, int]:
     unlinked = 0
     skipped_out_of_root = 0
     failed = 0
@@ -72,18 +71,14 @@ def _unlink_contained(paths: list[Path], *, root: Path) -> tuple[int, int, int]:
         if not key or key in seen:
             continue
         seen.add(key)
-        resolution = resolve_db_path_under(root, path, require_file=False)
-        if resolution.status in {"outside-root", "invalid", "empty"} or resolution.path is None:
+        result = store.delete(path)
+        if result.status in {"outside-root", "invalid", "empty", "not-file"}:
             skipped_out_of_root += 1
             continue
-        resolved = resolution.path
-        try:
-            if resolved.exists():
-                resolved.unlink()
-                unlinked += 1
-        except OSError:
+        if result.deleted:
+            unlinked += 1
+        elif result.status == "error":
             failed += 1
-            continue
     return unlinked, skipped_out_of_root, failed
 
 
@@ -121,15 +116,15 @@ def forget(conn: sqlite3.Connection, config: RuntimeConfig, *, domain: str | Non
         "blobs_out_of_root": 0,
         "blobs_failed": 0,
     }
-    media_paths: list[Path] = []
-    clean_text_paths: list[Path] = []
+    media_paths: list[str] = []
+    clean_text_paths: list[str] = []
     with conn:
         for document_id in document_ids:
             snapshot_rows = conn.execute("SELECT id, cleaned_text_path FROM snapshots WHERE document_id = ?", (document_id,)).fetchall()
             media_rows = conn.execute("SELECT id, file_path FROM media_artifacts WHERE document_id = ?", (document_id,)).fetchall()
             for media in media_rows:
                 if media["file_path"]:
-                    media_paths.append(Path(media["file_path"]))
+                    media_paths.append(str(media["file_path"]))
             counts["media_artifacts"] += conn.execute("DELETE FROM media_artifacts WHERE document_id = ?", (document_id,)).rowcount
             chunk_rows = conn.execute("SELECT id FROM chunks WHERE document_id = ?", (document_id,)).fetchall()
             for chunk in chunk_rows:
@@ -140,7 +135,7 @@ def forget(conn: sqlite3.Connection, config: RuntimeConfig, *, domain: str | Non
             for snap in snapshot_rows:
                 counts["redactions"] += conn.execute("DELETE FROM redactions WHERE snapshot_id = ?", (snap["id"],)).rowcount
                 if snap["cleaned_text_path"]:
-                    clean_text_paths.append(Path(snap["cleaned_text_path"]))
+                    clean_text_paths.append(str(snap["cleaned_text_path"]))
             counts["chunks"] += conn.execute("DELETE FROM chunks WHERE document_id = ?", (document_id,)).rowcount
             counts["snapshots"] += conn.execute("DELETE FROM snapshots WHERE document_id = ?", (document_id,)).rowcount
             counts["visit_events"] += conn.execute(
@@ -158,8 +153,8 @@ def forget(conn: sqlite3.Connection, config: RuntimeConfig, *, domain: str | Non
                     counts["visit_events"] += conn.execute("DELETE FROM visit_events WHERE id = ?", (event["id"],)).rowcount
         else:
             counts["visit_events"] += conn.execute("DELETE FROM visit_events WHERE normalized_url = ?", (scope["url"],)).rowcount
-    counts["media_blobs"], counts["media_blobs_out_of_root"], counts["media_blobs_failed"] = _unlink_contained(media_paths, root=config.media_root)
-    counts["blobs"], counts["blobs_out_of_root"], counts["blobs_failed"] = _unlink_contained(clean_text_paths, root=config.clean_text_root)
+    counts["media_blobs"], counts["media_blobs_out_of_root"], counts["media_blobs_failed"] = _unlink_contained(media_paths, store=BlobStore(config.media_root))
+    counts["blobs"], counts["blobs_out_of_root"], counts["blobs_failed"] = _unlink_contained(clean_text_paths, store=BlobStore(config.clean_text_root))
     receipt_id = str(uuid.uuid4())
     with conn:
         conn.execute(

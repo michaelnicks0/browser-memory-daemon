@@ -490,12 +490,12 @@ def test_media_worker_rehydrates_purged_cache_when_source_still_fetchable(tmp_pa
         assert run_once(conn, cfg, worker_id="test-worker", limit=10)["stored"] == 1
         purged = purge_media_cache(conn, cfg, {"domain": "example.com", "dry_run": False, "rehydrate": True})
         assert purged["purged"] == 1
-        media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
+        media = media_artifacts_for_snapshot(conn, result["snapshot_id"], cfg)[0]
         assert media["capture_status"] == "purged"
         assert media["has_file"] is False
         summary = run_once(conn, cfg, worker_id="test-worker", limit=10)
         assert summary["stored"] == 1
-        media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
+        media = media_artifacts_for_snapshot(conn, result["snapshot_id"], cfg)[0]
         assert media["capture_status"] == "stored"
         assert media["has_file"] is True
 
@@ -727,7 +727,7 @@ def test_media_worker_stores_hls_master_playlist_as_video_mp4(tmp_path):
             summary = run_once(conn, cfg, worker_id="test-worker", limit=10)
             assert summary["attempted"] == 1
             assert summary["stored"] == 1
-            media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
+            media = media_artifacts_for_snapshot(conn, result["snapshot_id"], cfg)[0]
             assert media["capture_status"] == "stored"
             assert media["mime_type"] == "video/mp4"
             assert media["byte_size"] == len(expected_bytes)

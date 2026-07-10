@@ -154,7 +154,12 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td>SQLite/FTS/media storage</td>
 <td>✅ Documents/visits/snapshots/chunks/FTS/media/audit/deletion receipts plus version-4 observation/claim tables, version-5 historical observation backfill, version-6 media-observation links, version-7 claimed lifecycle identity, exact schema fingerprint, ordered checksum ledger, and restore-backed migration gate. Ingest dual-writes observations/claims/media provenance; recent/timeline/detail reads are observation-first with explicit legacy fallback.</td>
-<td><code>schema.sql</code>, <code>migrations.py</code>, <code>migration_steps/</code>, <code>ingest.py</code>, <code>ops.py</code>, migration/observation tests.</td>
+<td><code>schema.sql</code>, <code>migrations.py</code>, <code>migration_steps/</code>, <code>db.py</code>, <code>ingest.py</code>, <code>ops.py</code>, tests.</td>
+</tr>
+<tr>
+<td>Blob filesystem boundary</td>
+<td>✅ <code>BlobStore</code> contains current absolute locators; stages streaming writes with size/hash accounting; atomically commits; and owns blob read/stat/delete operations across ingest, media, forget, read models, HTTP, and blob migration.</td>
+<td><code>blob_store.py</code>, BlobStore/storage integration tests, ADR-0036.</td>
 </tr>
 <tr>
 <td>Exact search</td>

@@ -5,7 +5,7 @@
 > **Runtime:** Python **3.11+** (`pyproject.toml` requires `>=3.11`). Use `BMD_PYTHON=/path/to/python3.11` when the host `python3` is older.
 
 <!-- BEGIN GENERATED:inventory-summary -->
-> **Current inventory:** 171 static test functions across 28 files — 141 daemon pytest tests + 30 extension node:test tests.
+> **Current inventory:** 176 static test functions across 29 files — 146 daemon pytest tests + 30 extension node:test tests.
 <!-- END GENERATED:inventory-summary -->
 
 ---
@@ -79,7 +79,7 @@ Use `--runtime-root PATH` only for explicit fixture roots; do not point the stre
 ## Generated test inventory
 
 <!-- BEGIN GENERATED:audit-run -->
-Latest inventory: **171 static test functions** across **28 files** (141 daemon pytest; 30 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
+Latest inventory: **176 static test functions** across **29 files** (146 daemon pytest; 30 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
 <!-- END GENERATED:audit-run -->
 
 ## Requirements traceability gate
@@ -100,7 +100,7 @@ Traceability gate: **✅ pass**.
 | Normative changes without revision increment | none |
 | Requirements removed without catalog disposition | none |
 | Catalog load errors | none |
-| Static test inventory measured | 171 tests / 28 files |
+| Static test inventory measured | 176 tests / 29 files |
 <!-- END GENERATED:traceability-gate -->
 
 ### Per-file counts
@@ -122,6 +122,7 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/integration/test_migrations.py` | pytest | 14 |
 | `daemon/tests/integration/test_observation_reads.py` | pytest | 2 |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | 6 |
+| `daemon/tests/unit/test_blob_store.py` | pytest | 5 |
 | `daemon/tests/unit/test_config.py` | pytest | 3 |
 | `daemon/tests/unit/test_daily_driver_health.py` | pytest | 6 |
 | `daemon/tests/unit/test_db.py` | pytest | 2 |
@@ -135,7 +136,7 @@ Traceability gate: **✅ pass**.
 | `extension/tests/unit/queue.test.js` | node:test | 1 |
 | `extension/tests/unit/service_worker.test.js` | node:test | 6 |
 | `extension/tests/unit/shared.test.js` | node:test | 2 |
-| **Total** |  | **171** |
+| **Total** |  | **176** |
 <!-- END GENERATED:per-file-counts -->
 
 <details>
@@ -188,23 +189,23 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_all_mode_forget_url_uses_literal_selector_but_redacts_receipt_scope` | 136 | All mode forget url uses literal selector but redacts receipt scope. |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_forget_requires_one_literal_selector` | 163 | Forget requires one literal selector. |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_artifacts_are_related_to_snapshot_not_fts_and_deleted_by_forget` | 179 | Media artifacts are related to snapshot not fts and deleted by forget. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_ingest_and_media_write_to_configured_blob_root` | 240 | Ingest and media write to configured blob root. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_blob_path_consumers_reject_db_paths_outside_configured_roots` | 285 | Blob path consumers reject db paths outside configured roots. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_blob_root_migration_copies_files_and_rewrites_db_paths` | 340 | Blob root migration copies files and rewrites db paths. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_artifact_size_gate_skips_oversized_blob` | 395 | Media artifact size gate skips oversized blob. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_global_cache_rolls_oldest_blob_when_limit_would_be_exceeded` | 431 | Media global cache rolls oldest blob when limit would be exceeded. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_domain_cache_rolls_oldest_blob_when_domain_limit_would_be_exceeded` | 453 | Media domain cache rolls oldest blob when domain limit would be exceeded. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_raw_blob_upload_rejects_truncated_body_and_infers_mime_from_url` | 474 | Raw blob upload rejects truncated body and infers mime from url. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_posted_cdp_metadata_enqueues_daemon_fetch_task` | 512 | Posted cdp metadata enqueues daemon fetch task. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_fetch_pending_media_artifacts_stores_data_url_without_indexing_media_metadata` | 550 | Fetch pending media artifacts stores data url without indexing media metadata. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_fetch_pending_media_artifacts_keeps_large_data_url_ref_intact` | 584 | Fetch pending media artifacts keeps large data url ref intact. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_fetch_reason_classification_keeps_remote_errors_out_of_failed_bucket` | 610 | Media fetch reason classification keeps remote errors out of failed bucket. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_forget_domain_includes_subdomains` | 617 | Forget domain includes subdomains. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_repeat_capture_dedupes_snapshot_but_adds_visit` | 633 | Repeat capture dedupes snapshot but adds visit. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_concurrent_duplicate_capture_is_idempotent_for_snapshot_chunks_and_fts` | 678 | Concurrent duplicate capture is idempotent for snapshot chunks and fts. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_changed_content_creates_new_snapshot_under_same_document` | 722 | Changed content creates new snapshot under same document. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_schema_has_planned_core_tables` | 765 | Schema has planned core tables. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_capture_payload_rejects_bad_timestamp` | 787 | Capture payload rejects bad timestamp. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_ingest_and_media_write_to_configured_blob_root` | 241 | Ingest and media write to configured blob root. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_blob_path_consumers_reject_db_paths_outside_configured_roots` | 286 | Blob path consumers reject db paths outside configured roots. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_blob_root_migration_copies_files_and_rewrites_db_paths` | 341 | Blob root migration copies files and rewrites db paths. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_artifact_size_gate_skips_oversized_blob` | 396 | Media artifact size gate skips oversized blob. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_global_cache_rolls_oldest_blob_when_limit_would_be_exceeded` | 432 | Media global cache rolls oldest blob when limit would be exceeded. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_domain_cache_rolls_oldest_blob_when_domain_limit_would_be_exceeded` | 454 | Media domain cache rolls oldest blob when domain limit would be exceeded. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_raw_blob_upload_rejects_truncated_body_and_infers_mime_from_url` | 475 | Raw blob upload rejects truncated body and infers mime from url. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_posted_cdp_metadata_enqueues_daemon_fetch_task` | 513 | Posted cdp metadata enqueues daemon fetch task. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_fetch_pending_media_artifacts_stores_data_url_without_indexing_media_metadata` | 551 | Fetch pending media artifacts stores data url without indexing media metadata. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_fetch_pending_media_artifacts_keeps_large_data_url_ref_intact` | 585 | Fetch pending media artifacts keeps large data url ref intact. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_fetch_reason_classification_keeps_remote_errors_out_of_failed_bucket` | 611 | Media fetch reason classification keeps remote errors out of failed bucket. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_forget_domain_includes_subdomains` | 618 | Forget domain includes subdomains. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_repeat_capture_dedupes_snapshot_but_adds_visit` | 634 | Repeat capture dedupes snapshot but adds visit. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_concurrent_duplicate_capture_is_idempotent_for_snapshot_chunks_and_fts` | 679 | Concurrent duplicate capture is idempotent for snapshot chunks and fts. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_changed_content_creates_new_snapshot_under_same_document` | 723 | Changed content creates new snapshot under same document. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_schema_has_planned_core_tables` | 766 | Schema has planned core tables. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_capture_payload_rejects_bad_timestamp` | 788 | Capture payload rejects bad timestamp. |
 | `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_public_fetch_rejects_dns_to_private_without_opening` | 85 | Guarded public fetch rejects dns to private without opening. |
 | `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_public_fetch_rejects_ipv6_loopback_literal_without_resolving` | 107 | Guarded public fetch rejects ipv6 loopback literal without resolving. |
 | `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_public_fetch_allowlisted_private_host_omits_referer` | 127 | Guarded public fetch allowlisted private host omits referer. |
@@ -255,6 +256,11 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_without_matching_visit_stores_metadata_only` | 151 | Visit lifecycle event without matching visit stores metadata only. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_claimed_visit_identity_does_not_fall_back_by_url_and_reconciles_after_delayed_capture` | 173 | Claimed visit identity does not fall back by url and reconciles after delayed capture. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_validates_ranges` | 271 | Visit lifecycle event validates ranges. |
+| `daemon/tests/unit/test_blob_store.py` | pytest | `(module)` | `test_blob_store_stages_streams_verifies_hash_and_commits_atomically` | 8 | Blob store stages streams verifies hash and commits atomically. |
+| `daemon/tests/unit/test_blob_store.py` | pytest | `(module)` | `test_blob_store_mismatch_aborts_stage_without_publishing` | 31 | Blob store mismatch aborts stage without publishing. |
+| `daemon/tests/unit/test_blob_store.py` | pytest | `(module)` | `test_blob_store_rejects_traversal_symlink_escape_and_cross_root_stage` | 43 | Blob store rejects traversal symlink escape and cross root stage. |
+| `daemon/tests/unit/test_blob_store.py` | pytest | `(module)` | `test_blob_store_delete_reports_outcomes_without_touching_outside_paths` | 64 | Blob store delete reports outcomes without touching outside paths. |
+| `daemon/tests/unit/test_blob_store.py` | pytest | `(module)` | `test_blob_store_concurrent_writers_publish_whole_file_and_leave_no_stages` | 78 | Blob store concurrent writers publish whole file and leave no stages. |
 | `daemon/tests/unit/test_config.py` | pytest | `(module)` | `test_blob_root_can_be_moved_independently_from_runtime_root` | 7 | Blob root can be moved independently from runtime root. |
 | `daemon/tests/unit/test_config.py` | pytest | `(module)` | `test_required_blob_root_mount_refuses_unmounted_blob_root` | 28 | Required blob root mount refuses unmounted blob root. |
 | `daemon/tests/unit/test_config.py` | pytest | `(module)` | `test_required_blob_root_mount_allows_mounted_blob_root` | 41 | Required blob root mount allows mounted blob root. |

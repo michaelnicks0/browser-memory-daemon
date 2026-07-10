@@ -36,6 +36,7 @@ export PYTHONHASHSEED=0
 COVERAGE_JSON="${BMD_COVERAGE_JSON:-$TMP_ROOT/coverage.json}"
 
 QUALITY_PATHS=(
+  daemon/src/browser_memory_daemon/blob_store.py
   daemon/src/browser_memory_daemon/migrations.py
   daemon/src/browser_memory_daemon/migration_steps
   daemon/src/browser_memory_daemon/storage_paths.py
