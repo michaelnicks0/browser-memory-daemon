@@ -7,6 +7,7 @@ from urllib.parse import urlsplit
 
 from .blob_store import BlobStore, prefer_relative_locator
 from .config import RuntimeConfig
+from .media_storage import media_blob_store_and_locator
 from .normalize import domain_from_url, normalize_url
 from .policy import POLICY_MODE_ALL, redact_url
 
@@ -82,6 +83,29 @@ def _unlink_contained(paths: list[str], *, store: BlobStore) -> tuple[int, int, 
     return unlinked, skipped_out_of_root, failed
 
 
+def _unlink_media_targets(targets: list[tuple[BlobStore | None, str | None]]) -> tuple[int, int, int]:
+    unlinked = 0
+    skipped = 0
+    failed = 0
+    seen: set[tuple[str, str]] = set()
+    for store, locator in targets:
+        if store is None or not locator:
+            skipped += 1
+            continue
+        key = (str(store.root), str(locator))
+        if key in seen:
+            continue
+        seen.add(key)
+        result = store.delete(locator)
+        if result.status in {"outside-root", "invalid", "empty", "not-file"}:
+            skipped += 1
+        elif result.deleted:
+            unlinked += 1
+        elif result.status == "error":
+            failed += 1
+    return unlinked, skipped, failed
+
+
 def forget(conn: sqlite3.Connection, config: RuntimeConfig, *, domain: str | None = None, url: str | None = None) -> dict:
     has_domain = domain is not None and str(domain).strip() != ""
     has_url = url is not None and str(url).strip() != ""
@@ -116,7 +140,7 @@ def forget(conn: sqlite3.Connection, config: RuntimeConfig, *, domain: str | Non
         "blobs_out_of_root": 0,
         "blobs_failed": 0,
     }
-    media_paths: list[str] = []
+    media_targets: list[tuple[BlobStore | None, str | None]] = []
     clean_text_paths: list[str] = []
     with conn:
         for document_id in document_ids:
@@ -125,13 +149,15 @@ def forget(conn: sqlite3.Connection, config: RuntimeConfig, *, domain: str | Non
                 (document_id,),
             ).fetchall()
             media_rows = conn.execute(
-                "SELECT id, file_path, blob_locator FROM media_artifacts WHERE document_id = ?",
+                """
+                SELECT id, file_path, blob_locator, storage_tier, spool_locator
+                FROM media_artifacts WHERE document_id = ?
+                """,
                 (document_id,),
             ).fetchall()
             for media in media_rows:
-                locator = prefer_relative_locator(media["blob_locator"], media["file_path"])
-                if locator:
-                    media_paths.append(locator)
+                store, locator, _tier_status = media_blob_store_and_locator(config, dict(media))
+                media_targets.append((store, locator))
             counts["media_artifacts"] += conn.execute("DELETE FROM media_artifacts WHERE document_id = ?", (document_id,)).rowcount
             chunk_rows = conn.execute("SELECT id FROM chunks WHERE document_id = ?", (document_id,)).fetchall()
             for chunk in chunk_rows:
@@ -161,7 +187,7 @@ def forget(conn: sqlite3.Connection, config: RuntimeConfig, *, domain: str | Non
                     counts["visit_events"] += conn.execute("DELETE FROM visit_events WHERE id = ?", (event["id"],)).rowcount
         else:
             counts["visit_events"] += conn.execute("DELETE FROM visit_events WHERE normalized_url = ?", (scope["url"],)).rowcount
-    counts["media_blobs"], counts["media_blobs_out_of_root"], counts["media_blobs_failed"] = _unlink_contained(media_paths, store=BlobStore(config.media_root))
+    counts["media_blobs"], counts["media_blobs_out_of_root"], counts["media_blobs_failed"] = _unlink_media_targets(media_targets)
     counts["blobs"], counts["blobs_out_of_root"], counts["blobs_failed"] = _unlink_contained(clean_text_paths, store=BlobStore(config.clean_text_root))
     receipt_id = str(uuid.uuid4())
     with conn:

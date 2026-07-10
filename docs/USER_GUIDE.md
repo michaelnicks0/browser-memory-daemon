@@ -113,15 +113,19 @@ Check the current installed stack without rebuilding/copying/restarting:
 ./scripts/install-daily-driver.sh --check
 ```
 
-To place blobs on a WSL-mounted NAS dataset and fail fast if the mount is absent:
+To place only disposable media on a WSL-mounted NAS dataset while keeping derivatives local, pre-provision `/mnt/nas/browser-memory-daemon/media/.bmd-media-root-id` with the exact single-line identity `bmd-media-prod`, then configure:
 
 ```bash
-BMD_BLOB_ROOT=/mnt/nas/browser-memory-daemon/blobs \
-  BMD_REQUIRE_BLOB_ROOT_MOUNT=1 \
+BMD_DERIVATIVE_ROOT="$HOME/.local/share/browser-memory-daemon/derivatives" \
+  BMD_MEDIA_ROOT=/mnt/nas/browser-memory-daemon/media \
+  BMD_MEDIA_ROOT_IDENTITY=bmd-media-prod \
+  BMD_REQUIRE_MEDIA_ROOT_MOUNT=1 \
+  BMD_MEDIA_SPOOL_ROOT="$HOME/.local/share/browser-memory-daemon/media-spool" \
+  BMD_MAX_MEDIA_SPOOL_BYTES=1073741824 \
   BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
 ```
 
-`BMD_REQUIRE_BLOB_ROOT_MOUNT=1` is intentionally strict: the installer and daemon refuse to proceed unless `BMD_BLOB_ROOT` has a non-root mounted ancestor. This prevents silent fallback writes into an empty local mountpoint after a NAS/NFS/SSHFS mount drops. Leave it unset or `0` only when the blob root is intentionally on the normal WSL filesystem. With the guard disabled, daemon startup and text capture do not create or touch the blob root; media writes create their contained root lazily.
+Explicit external `BMD_MEDIA_ROOT` values are intentionally strict: media access requires a non-root mounted ancestor and an exact identity marker. The installer does not create the external media root or marker. A failed guard degrades media handling but does not block local SQLite text/provenance capture. The spool is optional, must remain under the local data root, and is enabled only when both its path and a positive byte cap are configured. `BMD_BLOB_ROOT` and `BMD_REQUIRE_BLOB_ROOT_MOUNT` remain compatibility controls for legacy layouts.
 
 Then reload the unpacked extension in Chrome:
 
@@ -207,7 +211,23 @@ The daily-driver daemon embeds the current token into the `/ui` HTML bootstrap, 
 
 ## Media cache controls
 
-Text/FTS rows are the durable recall source. Media blobs are a bounded cache under `${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}/media/`; artifact refs remain even if blobs are purged.
+Text/FTS rows are the durable recall source. Final media blobs are a bounded disposable cache under `BMD_MEDIA_ROOT` (legacy default `${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}/media/`); artifact refs remain even if blobs are purged. During a guarded-root outage, explicitly configured local spool bytes remain readable as stored artifacts.
+
+Inspect spool capacity and final-root readiness without mutation:
+
+```bash
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
+  --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
+  media-spool status
+```
+
+Preview a bounded drain, review the JSON, then add `--execute` only after the expected media mount and marker are verified:
+
+```bash
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
+  --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
+  media-spool drain --limit 100
+```
 
 Dry-run a domain purge:
 

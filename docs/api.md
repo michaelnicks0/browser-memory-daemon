@@ -66,6 +66,10 @@ Missing or invalid bearer tokens return `401`; malformed JSON and invalid payloa
   "version": "0.1.0",
   "storage_root": "/home/<user>/.local/share/browser-memory-daemon",
   "blob_root": "/mnt/nas/browser-memory-daemon/blobs",
+  "derivative_root": "/home/<user>/.local/share/browser-memory-daemon/derivatives",
+  "media_root": "/mnt/nas/browser-memory-daemon/media",
+  "media_spool_enabled": true,
+  "media_root_status": "ready",
   "capture_enabled": true,
   "policy_mode": "all"
 }
@@ -92,7 +96,19 @@ Authorization: Bearer ***
     "clean_text_bytes": 0,
     "sqlite_text_bytes": 12345,
     "media_files": 10,
-    "media_bytes": 987654
+    "media_bytes": 987654,
+    "spool_files": 2,
+    "spool_bytes": 12345
+  },
+  "media_storage": {
+    "enabled": true,
+    "limit_bytes": 1073741824,
+    "stored_artifacts": 2,
+    "filesystem_bytes": 12345,
+    "reserved_bytes": 0,
+    "accounted_bytes": 12345,
+    "available_bytes": 1073729479,
+    "media_root": {"ok": true, "status": "ready"}
   },
   "media_queue": {"artifacts": {"stored": 10}, "tasks": {"succeeded": 10}}
 }
@@ -105,7 +121,7 @@ GET /doctor?storage_census=full
 Authorization: Bearer ***
 ```
 
-Full storage census returns `storage.census_mode="filesystem"` and walks `clean_text_root` plus `media_root`; it can be slow on large NAS-backed blob roots.
+Full storage census returns `storage.census_mode="filesystem"` and walks `clean_text_root`, `media_root`, and the configured local spool; it can be slow on large NAS-backed media roots. `media_storage` separately reports final-root readiness and capacity accounting used for admission.
 
 ---
 

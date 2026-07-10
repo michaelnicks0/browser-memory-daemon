@@ -684,14 +684,14 @@ function queryDbMediaState() {
 import json, pathlib, sqlite3
 conn = sqlite3.connect(${JSON.stringify(dbPath)})
 conn.row_factory = sqlite3.Row
-rows = [dict(row) for row in conn.execute('SELECT id, media_type, role, source_url, mime_type, byte_size, file_path, blob_locator, capture_status FROM media_artifacts ORDER BY created_at ASC').fetchall()]
+rows = [dict(row) for row in conn.execute('SELECT id, media_type, role, source_url, mime_type, byte_size, file_path, blob_locator, storage_tier, spool_locator, capture_status FROM media_artifacts ORDER BY created_at ASC').fetchall()]
 tasks = dict(conn.execute('SELECT status, COUNT(*) FROM media_fetch_tasks GROUP BY status').fetchall())
 for row in rows:
     path = pathlib.Path(row['file_path']) if row.get('file_path') else None
     row['has_file'] = bool(path and path.exists())
     row['file_size'] = path.stat().st_size if path and path.exists() else 0
     locator = pathlib.PurePosixPath(row['blob_locator']) if row.get('blob_locator') else None
-    row['locator_is_relative'] = bool(locator and not locator.is_absolute() and '..' not in locator.parts)
+    row['locator_is_relative'] = bool(row.get('storage_tier') == 'media-root' and locator and not locator.is_absolute() and '..' not in locator.parts)
 print(json.dumps({'rows': rows, 'stored': sum(1 for row in rows if row.get('has_file')), 'bytes': sum(row.get('file_size', 0) for row in rows), 'tasks': tasks}, sort_keys=True))
 `;
   const result = spawnSync(pythonBin, ['-c', script], { encoding: 'utf8' });

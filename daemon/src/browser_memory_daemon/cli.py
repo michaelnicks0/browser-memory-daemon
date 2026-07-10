@@ -11,6 +11,7 @@ from .config import load_config
 from .daily_driver_health import daily_driver_health_snapshot
 from .db import connect, init_db
 from .media import purge_media_cache
+from .media_storage import drain_media_spool, media_spool_status
 from .media_worker import run_loop as run_media_worker_loop
 from .media_worker import run_once as run_media_worker_once
 from .migrations import MigrationError, migrate_database, migration_status
@@ -34,6 +35,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--token", default=None)
     parser.add_argument("--runtime-root", default=None)
     parser.add_argument("--blob-root", default=None)
+    parser.add_argument("--derivative-root", default=None)
+    parser.add_argument("--media-root", default=None)
+    parser.add_argument("--media-spool-root", default=None)
     parser.add_argument("--policy-mode", choices=["all", "recall", "balanced", "strict"], default=None)
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("serve")
@@ -106,6 +110,12 @@ def main(argv: list[str] | None = None) -> int:
     reconcile_text = snapshot_text_sub.add_parser("reconcile")
     reconcile_text.add_argument("--execute", action="store_true")
     reconcile_text.add_argument("--limit", type=int, default=1_000)
+    media_spool = sub.add_parser("media-spool")
+    media_spool_sub = media_spool.add_subparsers(dest="media_spool_command", required=True)
+    media_spool_sub.add_parser("status")
+    drain_spool = media_spool_sub.add_parser("drain")
+    drain_spool.add_argument("--execute", action="store_true")
+    drain_spool.add_argument("--limit", type=int, default=100)
     args = parser.parse_args(argv)
 
     cfg = load_config(
@@ -115,6 +125,9 @@ def main(argv: list[str] | None = None) -> int:
         policy_mode=args.policy_mode,
         runtime_root=args.runtime_root,
         blob_root=args.blob_root,
+        derivative_root=args.derivative_root,
+        media_root=args.media_root,
+        media_spool_root=args.media_spool_root,
         test_mode=False,
     )
     base = f"http://{cfg.host}:{cfg.port}"
@@ -254,6 +267,15 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 print(json.dumps(result, indent=2))
             return 0 if result["remaining"] == 0 else 2
+    if args.command == "media-spool":
+        init_db(cfg)
+        with connect(cfg.db_path) as conn:
+            if args.media_spool_command == "status":
+                result = media_spool_status(conn, cfg)
+            else:
+                result = drain_media_spool(conn, cfg, execute=args.execute, limit=args.limit)
+            print(json.dumps(result, indent=2))
+        return 0
     if args.command == "capture-fixture":
         print(json.dumps(_request("POST", f"{base}/capture", token=cfg.api_token, body={"url": args.url, "title": args.title, "text": args.text}), indent=2))
         return 0

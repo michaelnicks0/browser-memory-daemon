@@ -18,6 +18,11 @@ EXT_DIR="${BMD_WINDOWS_EXTENSION_DIR:-/mnt/c/Users/${WIN_USER}/AppData/Local/bro
 CFG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/browser-memory-daemon"
 DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/browser-memory-daemon"
 BLOB_DIR="${BMD_BLOB_ROOT:-$DATA_DIR/blobs}"
+DERIVATIVE_DIR="${BMD_DERIVATIVE_ROOT:-$BLOB_DIR}"
+MEDIA_DIR="${BMD_MEDIA_ROOT:-$BLOB_DIR/media}"
+MEDIA_SPOOL_DIR="${BMD_MEDIA_SPOOL_ROOT:-}"
+MAX_MEDIA_SPOOL_BYTES="${BMD_MAX_MEDIA_SPOOL_BYTES:-0}"
+MEDIA_ROOT_IDENTITY="${BMD_MEDIA_ROOT_IDENTITY:-}"
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/browser-memory-daemon"
 UNIT_DIR="$HOME/.config/systemd/user"
 TOKEN_FILE="$CFG_DIR/token"
@@ -28,6 +33,7 @@ HOST="${BMD_HOST:-127.0.0.1}"
 PORT="${BMD_PORT:-8765}"
 POLICY_MODE="${BMD_POLICY_MODE:-all}"
 REQUIRE_BLOB_ROOT_MOUNT="${BMD_REQUIRE_BLOB_ROOT_MOUNT:-0}"
+REQUIRE_MEDIA_ROOT_MOUNT="${BMD_REQUIRE_MEDIA_ROOT_MOUNT:-$REQUIRE_BLOB_ROOT_MOUNT}"
 PS="${BMD_POWERSHELL:-/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe}"
 MODE=install
 
@@ -46,26 +52,32 @@ EOF
 }
 
 check_blob_root_mount_guard() {
-  "$PY" - "$BLOB_DIR" "$REQUIRE_BLOB_ROOT_MOUNT" <<'PY'
+  "$PY" - "$MEDIA_DIR" "$REQUIRE_MEDIA_ROOT_MOUNT" "$MEDIA_ROOT_IDENTITY" <<'PY'
 from pathlib import Path
 import sys
 
-blob_root = Path(sys.argv[1]).expanduser().resolve(strict=False)
+media_root = Path(sys.argv[1]).expanduser().resolve(strict=False)
 enabled = str(sys.argv[2]).strip().lower() in {"1", "true", "yes", "on"}
+identity = str(sys.argv[3]).strip()
 if not enabled:
     raise SystemExit(0)
-for candidate in (blob_root, *blob_root.parents):
+if not identity:
+    raise SystemExit("BMD_MEDIA_ROOT_IDENTITY is required when the media-root mount guard is enabled")
+mounted = False
+for candidate in (media_root, *media_root.parents):
     if candidate.parent == candidate:
         continue
     try:
         if candidate.exists() and candidate.is_mount():
-            raise SystemExit(0)
+            mounted = True
+            break
     except OSError:
         pass
-raise SystemExit(
-    "BMD_REQUIRE_BLOB_ROOT_MOUNT=1 but BMD_BLOB_ROOT has no non-root mounted ancestor: "
-    f"{blob_root}. Mount the blob filesystem first or unset BMD_REQUIRE_BLOB_ROOT_MOUNT."
-)
+if not mounted:
+    raise SystemExit(f"media root has no non-root mounted ancestor: {media_root}")
+marker = media_root / ".bmd-media-root-id"
+if not marker.is_file() or marker.read_text(encoding="utf-8").strip() != identity:
+    raise SystemExit(f"media root identity marker missing or mismatched: {marker}")
 PY
 }
 
@@ -104,16 +116,22 @@ if [ "$MODE" = "check" ] && [ -f "$ENV_FILE" ]; then
   PORT="${BMD_PORT:-$PORT}"
   POLICY_MODE="${BMD_POLICY_MODE:-$POLICY_MODE}"
   BLOB_DIR="${BMD_BLOB_ROOT:-$BLOB_DIR}"
+  DERIVATIVE_DIR="${BMD_DERIVATIVE_ROOT:-$DERIVATIVE_DIR}"
+  MEDIA_DIR="${BMD_MEDIA_ROOT:-$MEDIA_DIR}"
+  MEDIA_SPOOL_DIR="${BMD_MEDIA_SPOOL_ROOT:-$MEDIA_SPOOL_DIR}"
+  MAX_MEDIA_SPOOL_BYTES="${BMD_MAX_MEDIA_SPOOL_BYTES:-$MAX_MEDIA_SPOOL_BYTES}"
+  MEDIA_ROOT_IDENTITY="${BMD_MEDIA_ROOT_IDENTITY:-$MEDIA_ROOT_IDENTITY}"
   REQUIRE_BLOB_ROOT_MOUNT="${BMD_REQUIRE_BLOB_ROOT_MOUNT:-$REQUIRE_BLOB_ROOT_MOUNT}"
+  REQUIRE_MEDIA_ROOT_MOUNT="${BMD_REQUIRE_MEDIA_ROOT_MOUNT:-$REQUIRE_BLOB_ROOT_MOUNT}"
 fi
 
 case "$POLICY_MODE" in
   all|recall|balanced|strict) ;;
   *) echo "BMD_POLICY_MODE must be one of: all, recall, balanced, strict" >&2; exit 1 ;;
 esac
-case "${REQUIRE_BLOB_ROOT_MOUNT,,}" in
+case "${REQUIRE_MEDIA_ROOT_MOUNT,,}" in
   0|1|true|false|yes|no|on|off) ;;
-  *) echo "BMD_REQUIRE_BLOB_ROOT_MOUNT must be boolean-like: 0/1/true/false/yes/no/on/off" >&2; exit 1 ;;
+  *) echo "BMD_REQUIRE_MEDIA_ROOT_MOUNT must be boolean-like: 0/1/true/false/yes/no/on/off" >&2; exit 1 ;;
 esac
 
 check_blob_root_mount_guard
@@ -125,11 +143,15 @@ Daily-driver install dry run; no files, services, or Chrome artifacts will be ch
 Resolved inputs:
   Python: $PY ($PY_VERSION)
   Policy mode: $POLICY_MODE
-  Require blob mount: $REQUIRE_BLOB_ROOT_MOUNT
+  Require media mount: $REQUIRE_MEDIA_ROOT_MOUNT
   Host/port: $HOST:$PORT
   Config dir: $CFG_DIR
   Data dir: $DATA_DIR
   Blob dir: $BLOB_DIR
+  Derivative dir: $DERIVATIVE_DIR
+  Media dir: $MEDIA_DIR
+  Media spool dir: ${MEDIA_SPOOL_DIR:-disabled}
+  Media spool cap: $MAX_MEDIA_SPOOL_BYTES
   State dir: $STATE_DIR
   Token file: $TOKEN_FILE
   Environment file: $ENV_FILE
@@ -138,10 +160,10 @@ Resolved inputs:
   Windows extension artifact dir: $EXT_DIR
 
 Install/refresh would:
-  - create protected WSL config/data/state directories plus the configured blob root;
-  - verify the configured blob root is mounted first when BMD_REQUIRE_BLOB_ROOT_MOUNT=1;
+  - create protected WSL config/data/state/derivative directories without creating an external media shadow root;
+  - verify the configured media root mount and identity marker when BMD_REQUIRE_MEDIA_ROOT_MOUNT=1;
   - create or reuse the token file, or rotate it if BMD_ROTATE_TOKEN=1;
-  - write the protected EnvironmentFile with BMD_API_TOKEN, BMD_POLICY_MODE, BMD_BLOB_ROOT, and BMD_REQUIRE_BLOB_ROOT_MOUNT;
+  - write the protected EnvironmentFile with token/policy plus derivative, guarded-media, and bounded-spool settings;
   - write systemd user units that read the EnvironmentFile instead of passing tokens in ExecStart;
   - build extension/dist, copy it to the Windows-local artifact dir, and patch token/policy defaults there;
   - daemon-reload, enable/restart both user services, then verify WSL and Windows loopback health.
@@ -162,7 +184,13 @@ if [ "$MODE" = "check" ]; then
     PORT="${BMD_PORT:-$PORT}"
     POLICY_MODE="${BMD_POLICY_MODE:-$POLICY_MODE}"
     BLOB_DIR="${BMD_BLOB_ROOT:-$BLOB_DIR}"
+    DERIVATIVE_DIR="${BMD_DERIVATIVE_ROOT:-$DERIVATIVE_DIR}"
+    MEDIA_DIR="${BMD_MEDIA_ROOT:-$MEDIA_DIR}"
+    MEDIA_SPOOL_DIR="${BMD_MEDIA_SPOOL_ROOT:-$MEDIA_SPOOL_DIR}"
+    MAX_MEDIA_SPOOL_BYTES="${BMD_MAX_MEDIA_SPOOL_BYTES:-$MAX_MEDIA_SPOOL_BYTES}"
+    MEDIA_ROOT_IDENTITY="${BMD_MEDIA_ROOT_IDENTITY:-$MEDIA_ROOT_IDENTITY}"
     REQUIRE_BLOB_ROOT_MOUNT="${BMD_REQUIRE_BLOB_ROOT_MOUNT:-$REQUIRE_BLOB_ROOT_MOUNT}"
+    REQUIRE_MEDIA_ROOT_MOUNT="${BMD_REQUIRE_MEDIA_ROOT_MOUNT:-$REQUIRE_BLOB_ROOT_MOUNT}"
   fi
   if [ ! -s "$TOKEN_FILE" ]; then
     echo "Browser Memory Daemon token file missing or empty: $TOKEN_FILE" >&2
@@ -175,7 +203,7 @@ if [ "$MODE" = "check" ]; then
       daily-driver-health --extension-dir "$EXT_DIR"
 fi
 
-mkdir -p "$CFG_DIR" "$DATA_DIR" "$BLOB_DIR" "$STATE_DIR" "$UNIT_DIR" "$EXT_DIR"
+mkdir -p "$CFG_DIR" "$DATA_DIR" "$DERIVATIVE_DIR" "$STATE_DIR" "$UNIT_DIR" "$EXT_DIR"
 chmod 700 "$CFG_DIR"
 
 if [ "${BMD_ROTATE_TOKEN:-0}" = "1" ] || [ ! -s "$TOKEN_FILE" ]; then
@@ -200,7 +228,13 @@ BMD_PORT=$PORT
 BMD_API_TOKEN=$TOKEN
 BMD_POLICY_MODE=$POLICY_MODE
 BMD_BLOB_ROOT=$BLOB_DIR
+BMD_DERIVATIVE_ROOT=$DERIVATIVE_DIR
+BMD_MEDIA_ROOT=$MEDIA_DIR
+BMD_MEDIA_SPOOL_ROOT=$MEDIA_SPOOL_DIR
+BMD_MAX_MEDIA_SPOOL_BYTES=$MAX_MEDIA_SPOOL_BYTES
+BMD_MEDIA_ROOT_IDENTITY=$MEDIA_ROOT_IDENTITY
 BMD_REQUIRE_BLOB_ROOT_MOUNT=$REQUIRE_BLOB_ROOT_MOUNT
+BMD_REQUIRE_MEDIA_ROOT_MOUNT=$REQUIRE_MEDIA_ROOT_MOUNT
 BMD_MEDIA_WORKER_INTERVAL=${BMD_MEDIA_WORKER_INTERVAL:-30}
 BMD_MEDIA_WORKER_LIMIT=${BMD_MEDIA_WORKER_LIMIT:-25}
 PYTHONPATH=$ROOT/daemon/src

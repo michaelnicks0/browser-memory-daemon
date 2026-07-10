@@ -51,7 +51,7 @@
 <text text-anchor="start" x="908.5" y="-293.3" font-family="Arial" font-size="24.00" fill="#000000">without touching blob storage.</text>
 </g>
 <!-- 15&#45;&gt;19 -->
-<g id="66" class="edge">
+<g id="70" class="edge">
 <title>15&#45;&gt;19</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M453.06,-429C558.65,-429 690.26,-429 804.65,-429"/>
 <polygon fill="#444444" stroke="#444444" points="804.96,-432.5 814.96,-429 804.96,-425.5 804.96,-432.5"/>
@@ -79,7 +79,7 @@
 <text text-anchor="start" x="1795" y="-264.3" font-family="Arial" font-size="24.00" fill="#ffffff">deletion receipts.</text>
 </g>
 <!-- 19&#45;&gt;29 -->
-<g id="73" class="edge">
+<g id="77" class="edge">
 <title>19&#45;&gt;29</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1324.06,-429C1438.09,-429 1570.99,-429 1678.91,-429"/>
 <polygon fill="#444444" stroke="#444444" points="1678.94,-432.5 1688.94,-429 1678.94,-425.5 1678.94,-432.5"/>

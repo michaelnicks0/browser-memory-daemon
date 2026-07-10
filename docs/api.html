@@ -305,6 +305,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;version&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;0.1.0&quot;</span><span style="color: #F8F8F2">,</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;storage_root&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;/home/&lt;user&gt;/.local/share/browser-memory-daemon&quot;</span><span style="color: #F8F8F2">,</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;blob_root&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;/mnt/nas/browser-memory-daemon/blobs&quot;</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;derivative_root&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;/home/&lt;user&gt;/.local/share/browser-memory-daemon/derivatives&quot;</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;media_root&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;/mnt/nas/browser-memory-daemon/media&quot;</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;media_spool_enabled&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #66D9EF">true</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;media_root_status&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;ready&quot;</span><span style="color: #F8F8F2">,</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;capture_enabled&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #66D9EF">true</span><span style="color: #F8F8F2">,</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;policy_mode&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;all&quot;</span>
 <span style="color: #F8F8F2">}</span>
@@ -326,7 +330,19 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;clean_text_bytes&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">0</span><span style="color: #F8F8F2">,</span>
 <span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;sqlite_text_bytes&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">12345</span><span style="color: #F8F8F2">,</span>
 <span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;media_files&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">10</span><span style="color: #F8F8F2">,</span>
-<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;media_bytes&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">987654</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;media_bytes&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">987654</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;spool_files&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">2</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;spool_bytes&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">12345</span>
+<span style="color: #F8F8F2">  },</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;media_storage&quot;</span><span style="color: #F8F8F2">: {</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;enabled&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #66D9EF">true</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;limit_bytes&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">1073741824</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;stored_artifacts&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">2</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;filesystem_bytes&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">12345</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;reserved_bytes&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">0</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;accounted_bytes&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">12345</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;available_bytes&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">1073729479</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;media_root&quot;</span><span style="color: #F8F8F2">: {</span><span style="color: #FF4689">&quot;ok&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #66D9EF">true</span><span style="color: #F8F8F2">, </span><span style="color: #FF4689">&quot;status&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;ready&quot;</span><span style="color: #F8F8F2">}</span>
 <span style="color: #F8F8F2">  },</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;media_queue&quot;</span><span style="color: #F8F8F2">: {</span><span style="color: #FF4689">&quot;artifacts&quot;</span><span style="color: #F8F8F2">: {</span><span style="color: #FF4689">&quot;stored&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">10</span><span style="color: #F8F8F2">}, </span><span style="color: #FF4689">&quot;tasks&quot;</span><span style="color: #F8F8F2">: {</span><span style="color: #FF4689">&quot;succeeded&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">10</span><span style="color: #F8F8F2">}}</span>
 <span style="color: #F8F8F2">}</span>
@@ -337,7 +353,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <span style="color: #ED007E; background-color: #1E0010">Authorization: Bearer ***</span>
 </code></pre></div>
 
-<p>Full storage census returns <code>storage.census_mode="filesystem"</code> and walks <code>clean_text_root</code> plus <code>media_root</code>; it can be slow on large NAS-backed blob roots.</p>
+<p>Full storage census returns <code>storage.census_mode="filesystem"</code> and walks <code>clean_text_root</code>, <code>media_root</code>, and the configured local spool; it can be slow on large NAS-backed media roots. <code>media_storage</code> separately reports final-root readiness and capacity accounting used for admission.</p>
 <hr />
 <h2 id="capture-payload">Capture payload</h2>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">{</span>

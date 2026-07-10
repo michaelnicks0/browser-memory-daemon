@@ -8,14 +8,16 @@
 
 ## Current contract
 
-`blob-root migrate` plans relocation only for DB-referenced paths beneath the selected source root and under the recognized `clean-text/`, `raw-html/`, or `media/` subtrees. Version-9 and later captures create no clean-text sidecar, so clean-text plans apply only to legacy rows. The configured `BMD_BLOB_ROOT` is the target. The command is a dry run unless `--execute` is supplied.
+`blob-root migrate` plans relocation only for DB-referenced paths beneath the selected source root and under the recognized `clean-text/` or `media/` subtrees. Version-9 and later captures create no clean-text sidecar, so clean-text plans apply only to legacy rows. Clean text targets `BMD_DERIVATIVE_ROOT/clean-text`; final-tier media targets `BMD_MEDIA_ROOT`. Spool-tier rows are excluded because `media-spool drain` owns that transition. The command is a dry run unless `--execute` is supplied.
 
 ```bash
-PYTHONPATH=daemon/src BMD_BLOB_ROOT=/explicit/target/blobs \
+PYTHONPATH=daemon/src \
+BMD_DERIVATIVE_ROOT=/explicit/local/derivatives \
+BMD_MEDIA_ROOT=/explicit/target/media \
   python3.11 -m browser_memory_daemon blob-root migrate
 ```
 
-The summary reports planned, copied, already-present, missing-source, updated, source-removal, and error counts. Dry-run does not copy files, rewrite SQLite paths, or remove source bytes. Executed copies stream through the contained `BlobStore`, verify the source byte count before publication, and atomically commit the target.
+The summary reports planned, copied, already-present, missing-source, updated, source-removal, and error counts. Dry-run does not copy files, rewrite SQLite paths, or remove source bytes. Executed copies stream through the contained `BlobStore`, verify expected byte count and SHA-256 before publication, and atomically commit the target. A pre-existing target is adopted only when the same evidence verifies it.
 
 ## Execute boundary
 
@@ -33,7 +35,6 @@ When approved for a real deployment, the minimum sequence is:
 
 ## Current limitations
 
-- Existing target files are treated as present; this helper does not yet compare hashes or content.
 - SQLite path updates occur after copy attempts, but the filesystem copies and DB transaction are not one crash-consistent transaction.
 - `--remove-source` unlinks after DB updates and is not tombstone/reconciliation-backed.
 - Successful DB rewrites populate both the target absolute compatibility path and the locator relative to the target clean-text or media root. Historical rows not selected by this operator migration retain their existing nullable relative-locator state.

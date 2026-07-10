@@ -128,7 +128,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <blockquote>
 <p><strong>Audience:</strong> operator and future agents.
 <strong>Status:</strong> accepted design posture; implementation is split into follow-up tickets.
-<strong>Scope:</strong> Browser Memory Daemon WSL-owned runtime data, SQLite/FTS5/WAL sidecars, configurable clean-text/media blob root, backup/export boundaries, and forget/deletion semantics.</p>
+<strong>Scope:</strong> Browser Memory Daemon WSL-owned runtime data, SQLite/FTS5/WAL sidecars, local derivatives, guarded media root, bounded local media spool, backup/export boundaries, and forget/deletion semantics.</p>
 </blockquote>
 <hr />
 <h2 id="bottom-line">Bottom line</h2>
@@ -233,7 +233,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <h3 id="2-media-bytes">2. Media bytes</h3>
 <ul>
 <li>Preserve media rows, hashes, statuses, and provenance as durable evidence alongside snapshots.</li>
-<li>Continue treating media blobs under <code>${BMD_BLOB_ROOT}/media/</code> as a cache bounded by artifact/snapshot/domain/global gates.</li>
+<li>Continue treating final media blobs under <code>BMD_MEDIA_ROOT</code> as a cache bounded by artifact/snapshot/domain/global gates. A configured local spool is durable outage buffering under its own strict byte cap, not backup authority.</li>
 <li>Prefer purge/rehydrate over permanent media metadata deletion.</li>
 <li>Keep OCR/media-derived indexing out of this design; it belongs to a later media-enrichment lane.</li>
 </ul>
@@ -279,14 +279,19 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Include only for raw quiesced/live filesystem snapshots; not needed for <code>VACUUM INTO</code> / online backup output.</td>
 </tr>
 <tr>
-<td><code>${BMD_BLOB_ROOT}/clean-text/</code></td>
-<td style="text-align: right;">✅</td>
-<td>Needed if snapshot detail should keep external cleaned-text files. If this root is NAS-mounted, the backup/export command should record that source path explicitly.</td>
+<td><code>${BMD_DERIVATIVE_ROOT}/clean-text/</code></td>
+<td style="text-align: right;">Optional</td>
+<td>Reconstructible legacy sidecars; complete cleaned text is authoritative in SQLite.</td>
 </tr>
 <tr>
-<td><code>${BMD_BLOB_ROOT}/media/</code></td>
-<td style="text-align: right;">Optional</td>
-<td>Large cache; include only when operator wants binary media completeness. Refs remain in DB either way.</td>
+<td><code>BMD_MEDIA_ROOT</code></td>
+<td style="text-align: right;">❌</td>
+<td>Large disposable cache; exclude by default. Refs, hashes, status, and provenance remain in SQLite.</td>
+</tr>
+<tr>
+<td><code>BMD_MEDIA_SPOOL_ROOT</code></td>
+<td style="text-align: right;">❌</td>
+<td>Transient durable outage buffer; drain or reconcile separately rather than treating it as backup authority.</td>
 </tr>
 <tr>
 <td>Manifest JSON</td>

@@ -8,7 +8,6 @@ from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 
 from . import __version__
-from .blob_store import BlobStore, prefer_relative_locator
 from .config import RuntimeConfig
 from .db import audit, connect, init_db
 from .forget import forget
@@ -22,6 +21,7 @@ from .media import (
     store_media_artifact,
     store_media_blob_stream,
 )
+from .media_storage import media_blob_store_and_locator, media_root_readiness
 from .models import CapturePayload
 from .ops import doctor, document_detail, recent_captures, snapshot_detail, timeline
 from .policy import POLICY_MODE_ALL, evaluate_capture
@@ -91,6 +91,8 @@ def _ui_bootstrap_script(config: RuntimeConfig) -> str:
         "policy_mode": config.policy_mode,
         "storage_root": str(config.data_root),
         "blob_root": str(config.blob_root),
+        "derivative_root": str(config.clean_text_root.parent),
+        "media_root": str(config.media_root),
     }
     # JSON script bodies are still parsed as HTML script text; escape closing
     # tags so a future non-url-safe token value cannot terminate the script.
@@ -274,6 +276,10 @@ def make_handler(config: RuntimeConfig):
                         "version": __version__,
                         "storage_root": str(config.data_root),
                         "blob_root": str(config.blob_root),
+                        "derivative_root": str(config.clean_text_root.parent),
+                        "media_root": str(config.media_root),
+                        "media_spool_enabled": config.media_spool_enabled,
+                        "media_root_status": media_root_readiness(config).status,
                         "capture_enabled": True,
                         "policy_mode": config.policy_mode,
                     },
@@ -361,19 +367,24 @@ def make_handler(config: RuntimeConfig):
                         audit(conn, "media.detail", {"artifact_id": artifact_id})
                         conn.commit()
                     artifact.pop("resolved_file_path", None)
-                    store = BlobStore(config.media_root)
-                    locator = prefer_relative_locator(artifact.get("blob_locator"), artifact.get("file_path"))
-                    resolution = store.resolve(locator, require_file=True)
-                    if not artifact.get("has_file") or resolution.path is None:
+                    store, locator, tier_status = media_blob_store_and_locator(config, artifact)
+                    resolution = store.resolve(locator, require_file=True) if store is not None else None
+                    if not artifact.get("has_file") or resolution is None or resolution.path is None:
                         _json_response(
                             self,
                             404,
                             {
                                 "error": "media artifact file not stored",
-                                "artifact": {k: v for k, v in artifact.items() if k not in {"file_path", "blob_locator"}},
+                                "storage_status": tier_status,
+                                "artifact": {
+                                    k: v
+                                    for k, v in artifact.items()
+                                    if k not in {"file_path", "blob_locator", "spool_locator"}
+                                },
                             },
                         )
                         return
+                    assert store is not None
                     _binary_response(
                         self,
                         200,

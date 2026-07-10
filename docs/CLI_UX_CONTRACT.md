@@ -17,6 +17,9 @@ PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   [--token TOKEN] \
   [--runtime-root PATH] \
   [--blob-root PATH] \
+  [--derivative-root PATH] \
+  [--media-root PATH] \
+  [--media-spool-root PATH] \
   [--policy-mode all|recall|balanced|strict] \
   COMMAND [COMMAND_ARGS]
 ```
@@ -29,7 +32,13 @@ Global defaults:
 | `--port` / `BMD_PORT` | `8765` | Daily-driver default. |
 | `--token` / `BMD_API_TOKEN` | required | Test mode can synthesize, production cannot. |
 | `--runtime-root` / `BMD_RUNTIME_ROOT` | XDG paths | Tests/e2e use temp runtime roots. |
-| `--blob-root` / `BMD_BLOB_ROOT` | `<runtime-root>/blobs` | Overrides clean-text/media blob placement while SQLite/WAL remains local. |
+| `--blob-root` / `BMD_BLOB_ROOT` | `<runtime-root>/blobs` | Compatibility parent for legacy layouts; SQLite/WAL remains local. |
+| `--derivative-root` / `BMD_DERIVATIVE_ROOT` | `<blob-root>` compatibility default | Reconstructible derivative placement, including legacy clean-text sidecars. Set explicitly only with a reviewed legacy-sidecar migration. |
+| `--media-root` / `BMD_MEDIA_ROOT` | `<blob-root>/media` | Final disposable media bytes. Explicit external roots require mount and identity-marker verification. |
+| `--media-spool-root` / `BMD_MEDIA_SPOOL_ROOT` | disabled | Local durable outage spool; must be under the runtime data root and paired with positive `BMD_MAX_MEDIA_SPOOL_BYTES`. |
+| `BMD_MAX_MEDIA_SPOOL_BYTES` | `0` | Hard spool cap. A positive value and spool root must be configured together. |
+| `BMD_MEDIA_ROOT_IDENTITY` | unset | Expected exact content of `.bmd-media-root-id`; required for guarded external roots. |
+| `BMD_REQUIRE_MEDIA_ROOT_MOUNT` | `0` | Forces mount/identity guarding even for a compatibility-root layout. Explicit external media roots are guarded regardless. |
 | `--policy-mode` / `BMD_POLICY_MODE` | `all` | Daily-driver default is maximum recall. |
 
 ---
@@ -57,6 +66,8 @@ Global defaults:
 | `media-cache rehydrate [--domain DOMAIN] [--document-id ID] [--snapshot-id ID] [--limit N]` | Queue/refetch purged public media refs. | Pretty JSON worker summary. |
 | `blob-root migrate [--from-root PATH] [--execute] [--remove-source]` | Dry-run by default; copies DB-referenced clean-text/media blobs to the configured root and rewrites paths only with `--execute`. | Pretty JSON migration summary. `--remove-source` remains an explicit post-copy action. |
 | `snapshot-text reconcile [--limit N] [--execute]` | Dry-run by default; promotes only exact hash-verified chunk reconstructions or contained legacy sidecars into SQLite complete-text authority. | Pretty JSON with scanned/resolved/applied/source/unresolved counts. `--execute` is required to mutate rows. |
+| `media-spool status` | Report final-root readiness plus configured cap, DB-backed artifact/reservation counts, filesystem-accounted bytes, and available capacity. | Pretty JSON; read-only. |
+| `media-spool drain [--limit N] [--execute]` | Preview or execute bounded spool-to-media-root transitions. | Dry-run by default. Execute streams and verifies size/SHA-256, commits the SQLite tier switch, then removes the spool source. |
 
 ---
 

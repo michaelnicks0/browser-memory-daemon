@@ -15,6 +15,7 @@ from . import (
     v0007_add_claimed_visit_identity,
     v0008_add_relative_blob_locators,
     v0009_add_sqlite_snapshot_text_authority,
+    v0010_split_media_root_and_add_spool,
 )
 
 
@@ -120,6 +121,18 @@ MIGRATIONS = (
         sql=v0009_add_sqlite_snapshot_text_authority.SQL,
         apply=v0009_add_sqlite_snapshot_text_authority.apply,
         schema_fingerprint=v0009_add_sqlite_snapshot_text_authority.SCHEMA_FINGERPRINT,
+    ),
+    MigrationStep(
+        version=10,
+        name=v0010_split_media_root_and_add_spool.NAME,
+        checksum=migration_checksum(
+            10,
+            v0010_split_media_root_and_add_spool.NAME,
+            v0010_split_media_root_and_add_spool.SQL,
+        ),
+        sql=v0010_split_media_root_and_add_spool.SQL,
+        destructive=v0010_split_media_root_and_add_spool.DESTRUCTIVE,
+        schema_fingerprint=v0010_split_media_root_and_add_spool.SCHEMA_FINGERPRINT,
     ),
 )
 

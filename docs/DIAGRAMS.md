@@ -72,7 +72,7 @@ flowchart TD
   Decision -->|"recall / balanced / strict"| Redact["Redact URL/title/body<br/>before persistence"]
   All --> Store["Ingest pipeline<br/>normalize URL + text hash<br/>write visits/observations/documents/snapshots/chunks/FTS"]
   Redact --> Store
-  Store --> TextBlobs["Write clean-text snapshot blob"]
+  Store --> SQLiteText["Commit complete cleaned text<br/>inside local SQLite transaction"]
   Store --> MediaRefs["Store media refs + observation links<br/>enqueue daemon-public tasks"]
   Store --> Response["Return observation/document/snapshot/chunk IDs<br/>+ media artifact IDs"]
   Response --> Queue["Queue browser media work<br/>in IndexedDB"]
@@ -93,8 +93,14 @@ flowchart TB
   BrowserQueue --> BrowserFetch["Browser lazy sidecar<br/>fetch(credentials: include)"]
   BrowserFetch --> BrowserBlob[("IndexedDB fetched blob")]
   BrowserBlob --> RawPut["PUT /media-artifacts/{id}/blob"]
-  RawPut --> MediaBlobs[("blobs/media")]
-  RawPut --> Stored["media_artifacts.status = stored<br/>hash + byte_size recorded"]
+  RawPut --> RootReady{"guarded media root<br/>ready?"}
+  RootReady -->|"yes"| MediaBlobs[("BMD_MEDIA_ROOT<br/>final disposable bytes")]
+  RootReady -->|"no"| SpoolReady{"explicit local spool<br/>reservation available?"}
+  SpoolReady -->|"yes"| MediaSpool[("bounded local media spool")]
+  SpoolReady -->|"no"| MediaUnavailable["media write rejected visibly<br/>text/provenance remain committed"]
+  MediaBlobs --> Stored["media_artifacts.status = stored<br/>tier = media-root<br/>hash + byte_size recorded"]
+  MediaSpool --> Spooled["media_artifacts.status = stored<br/>tier = spool<br/>hash + byte_size recorded"]
+  Spooled --> BrowserDone
   Stored --> BrowserDone["delete completed IndexedDB task"]
 
   CDP --> CdpRows["cdp_recorder=true rows<br/>manifests/segments or response bodies"]
@@ -104,14 +110,17 @@ flowchart TB
 
   DaemonTasks --> Lease["daemon media worker lease"]
   Lease --> PublicFetch["public fetch / HLS assembly<br/>no Chrome cookies"]
-  PublicFetch --> MediaBlobs
+  PublicFetch --> RootReady
   PublicFetch --> Classified["referenced / metadata-only / retrying<br/>stored / skipped / expired / failed"]
 
   MediaBlobs --> Rolling["domain/global rolling cache<br/>oldest blob eviction"]
+  MediaSpool --> Drain["dry-run-first drain<br/>stream + verify size/SHA-256"]
+  Drain --> MediaBlobs
+  Drain --> TierSwitch["compare-and-switch SQLite tier<br/>then remove spool source"]
   Rolling --> Purged["status = purged<br/>refs/hash/provenance remain"]
 ```
 
-The media cache is bounded and disposable. Text, FTS rows, media refs, hashes, status reasons, and provenance remain authoritative when bytes are absent or purged.
+The final media cache is bounded and disposable. The optional local spool has a separate hard byte cap covering committed/orphaned files plus distinct in-flight reservations. Text, FTS rows, media refs, hashes, status reasons, and provenance remain authoritative when bytes are absent, spooled, or purged.
 
 ---
 

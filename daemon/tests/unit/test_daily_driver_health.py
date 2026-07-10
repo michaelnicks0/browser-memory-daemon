@@ -1,9 +1,9 @@
 import json
 from dataclasses import replace
 from datetime import datetime, timezone
-from pathlib import Path
 
 import browser_memory_daemon.daily_driver_health as health
+import browser_memory_daemon.media_storage as media_storage_module
 from browser_memory_daemon.config import load_config
 from browser_memory_daemon.daily_driver_health import CommandResult, daily_driver_health_snapshot
 from browser_memory_daemon.db import connect, init_db
@@ -40,7 +40,13 @@ def write_install_artifacts(cfg, tmp_path, *, token="test-token"):
                 f"BMD_API_TOKEN={token}",
                 "BMD_POLICY_MODE=all",
                 f"BMD_BLOB_ROOT={cfg.blob_root}",
+                f"BMD_DERIVATIVE_ROOT={cfg.derivative_root}",
+                f"BMD_MEDIA_ROOT={cfg.media_root}",
+                "BMD_MEDIA_SPOOL_ROOT=",
+                "BMD_MAX_MEDIA_SPOOL_BYTES=0",
+                "BMD_MEDIA_ROOT_IDENTITY=",
                 "BMD_REQUIRE_BLOB_ROOT_MOUNT=0",
+                "BMD_REQUIRE_MEDIA_ROOT_MOUNT=0",
                 "PYTHONPATH=/repo/daemon/src",
                 "",
             ]
@@ -275,7 +281,7 @@ def test_daily_driver_health_reports_required_blob_mount_failure(tmp_path, monke
     (extension_dir / "manifest.json").write_text(json.dumps({"manifest_version": 3, "name": "Browser Memory Daemon", "version": "0.1.0"}))
     for rel in ("src/service_worker.js", "src/options.js", "src/popup.js"):
         (extension_dir / rel).write_text("const defaults = { apiToken: 'test-token', policyMode: 'all' };\n")
-    monkeypatch.setattr(health, "has_non_root_mount_ancestor", lambda _path: False)
+    monkeypatch.setattr(media_storage_module, "has_non_root_mount_ancestor", lambda _path: False)
 
     def quiet_runner(args, timeout):
         if args[:3] == ["systemctl", "--user", "show"]:
@@ -298,8 +304,11 @@ def test_daily_driver_health_reports_required_blob_mount_failure(tmp_path, monke
     )
 
     assert snapshot["ok"] is False
-    assert snapshot["storage"]["blob_root"]["mount_guard"] == {"required": True, "ok": False}
-    assert "storage path blob_root is not on a mounted filesystem but BMD_REQUIRE_BLOB_ROOT_MOUNT=1" in snapshot["summary"]["errors"]
+    mount_guard = snapshot["storage"]["media_root"]["mount_guard"]
+    assert mount_guard["required"] is True
+    assert mount_guard["ok"] is False
+    assert mount_guard["status"] == "mount-missing"
+    assert "storage path media_root media-root guard failed: mount-missing" in snapshot["summary"]["errors"]
 
 
 def test_daily_driver_health_detects_insecure_token_permissions_and_process_args(tmp_path):

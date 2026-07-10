@@ -61,56 +61,57 @@
 <!-- 29 -->
 <g id="29" class="node">
 <title>29</title>
-<path fill="#2f95c8" stroke="#20688c" d="M485,-645.4C485,-671.98 396.25,-693.56 287,-693.56 177.75,-693.56 89,-671.98 89,-645.4 89,-645.4 89,-211.97 89,-211.97 89,-185.4 177.75,-163.81 287,-163.81 396.25,-163.81 485,-185.4 485,-211.97 485,-211.97 485,-645.4 485,-645.4"/>
-<path fill="none" stroke="#20688c" d="M485,-645.4C485,-618.83 396.25,-597.24 287,-597.24 177.75,-597.24 89,-618.83 89,-645.4"/>
-<text text-anchor="start" x="174" y="-572.99" font-family="Arial" font-size="34.00" fill="#ffffff">SQLite + FTS5</text>
-<text text-anchor="start" x="214" y="-538.99" font-family="Arial" font-size="34.00" fill="#ffffff">Database</text>
-<text text-anchor="start" x="161" y="-516.99" font-family="Arial" font-size="19.00" fill="#ffffff">[Container: SQLite with FTS5]</text>
-<text text-anchor="start" x="119" y="-479.99" font-family="Arial" font-size="24.00" fill="#ffffff">Durable complete cleaned&#45;text,</text>
-<text text-anchor="start" x="168" y="-455.99" font-family="Arial" font-size="24.00" fill="#ffffff">relational, and full&#45;text</text>
-<text text-anchor="start" x="169.5" y="-431.99" font-family="Arial" font-size="24.00" fill="#ffffff">authority for migration</text>
-<text text-anchor="start" x="135" y="-407.99" font-family="Arial" font-size="24.00" fill="#ffffff">ledger, sources, documents,</text>
-<text text-anchor="start" x="137.5" y="-383.99" font-family="Arial" font-size="24.00" fill="#ffffff">visits, capture observations,</text>
-<text text-anchor="start" x="156" y="-359.99" font-family="Arial" font-size="24.00" fill="#ffffff">URL claims, visit events,</text>
-<text text-anchor="start" x="118.5" y="-335.99" font-family="Arial" font-size="24.00" fill="#ffffff">snapshots, chunks, chunks_fts,</text>
-<text text-anchor="start" x="118" y="-311.99" font-family="Arial" font-size="24.00" fill="#ffffff">media provenance/tasks, policy</text>
-<text text-anchor="start" x="161.5" y="-287.99" font-family="Arial" font-size="24.00" fill="#ffffff">rules, audit events, and</text>
-<text text-anchor="start" x="195" y="-263.99" font-family="Arial" font-size="24.00" fill="#ffffff">deletion receipts.</text>
+<path fill="#2f95c8" stroke="#20688c" d="M517,-645.4C517,-671.98 428.25,-693.56 319,-693.56 209.75,-693.56 121,-671.98 121,-645.4 121,-645.4 121,-211.97 121,-211.97 121,-185.4 209.75,-163.81 319,-163.81 428.25,-163.81 517,-185.4 517,-211.97 517,-211.97 517,-645.4 517,-645.4"/>
+<path fill="none" stroke="#20688c" d="M517,-645.4C517,-618.83 428.25,-597.24 319,-597.24 209.75,-597.24 121,-618.83 121,-645.4"/>
+<text text-anchor="start" x="206" y="-572.99" font-family="Arial" font-size="34.00" fill="#ffffff">SQLite + FTS5</text>
+<text text-anchor="start" x="246" y="-538.99" font-family="Arial" font-size="34.00" fill="#ffffff">Database</text>
+<text text-anchor="start" x="193" y="-516.99" font-family="Arial" font-size="19.00" fill="#ffffff">[Container: SQLite with FTS5]</text>
+<text text-anchor="start" x="151" y="-479.99" font-family="Arial" font-size="24.00" fill="#ffffff">Durable complete cleaned&#45;text,</text>
+<text text-anchor="start" x="200" y="-455.99" font-family="Arial" font-size="24.00" fill="#ffffff">relational, and full&#45;text</text>
+<text text-anchor="start" x="201.5" y="-431.99" font-family="Arial" font-size="24.00" fill="#ffffff">authority for migration</text>
+<text text-anchor="start" x="167" y="-407.99" font-family="Arial" font-size="24.00" fill="#ffffff">ledger, sources, documents,</text>
+<text text-anchor="start" x="169.5" y="-383.99" font-family="Arial" font-size="24.00" fill="#ffffff">visits, capture observations,</text>
+<text text-anchor="start" x="188" y="-359.99" font-family="Arial" font-size="24.00" fill="#ffffff">URL claims, visit events,</text>
+<text text-anchor="start" x="150.5" y="-335.99" font-family="Arial" font-size="24.00" fill="#ffffff">snapshots, chunks, chunks_fts,</text>
+<text text-anchor="start" x="150" y="-311.99" font-family="Arial" font-size="24.00" fill="#ffffff">media provenance/tasks, policy</text>
+<text text-anchor="start" x="193.5" y="-287.99" font-family="Arial" font-size="24.00" fill="#ffffff">rules, audit events, and</text>
+<text text-anchor="start" x="227" y="-263.99" font-family="Arial" font-size="24.00" fill="#ffffff">deletion receipts.</text>
 </g>
 <!-- 14&#45;&gt;29 -->
-<g id="45" class="edge">
+<g id="47" class="edge">
 <title>14&#45;&gt;29</title>
-<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M557.83,-887.29C545.44,-879.43 533.11,-871.75 521,-864.38 492.46,-847 477.41,-853.16 455,-828.38 421.94,-791.81 394.79,-747.8 372.69,-702.55"/>
-<polygon fill="#444444" stroke="#444444" points="375.83,-700.99 368.34,-693.49 369.52,-704.02 375.83,-700.99"/>
-<polygon fill="white" stroke="transparent" points="455,-729.38 455,-828.38 765,-828.38 765,-729.38 455,-729.38"/>
-<text text-anchor="start" x="459" y="-805.67" font-family="Arial" font-size="24.00" fill="#444444">Reads and writes metadata,</text>
-<text text-anchor="start" x="492" y="-781.67" font-family="Arial" font-size="24.00" fill="#444444">FTS, tasks, audit, and</text>
-<text text-anchor="start" x="554.5" y="-757.67" font-family="Arial" font-size="24.00" fill="#444444">receipts in</text>
-<text text-anchor="start" x="576.5" y="-737.67" font-family="Arial" font-size="19.00" fill="#444444">[sqlite3]</text>
+<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M557.89,-888.02C545.46,-879.96 533.1,-872.03 521,-864.38 494.39,-847.55 480.01,-852.68 460,-828.38 429.66,-791.52 405.63,-747.67 386.67,-702.75"/>
+<polygon fill="#444444" stroke="#444444" points="389.89,-701.36 382.83,-693.45 383.42,-704.03 389.89,-701.36"/>
+<polygon fill="white" stroke="transparent" points="460,-729.38 460,-828.38 770,-828.38 770,-729.38 460,-729.38"/>
+<text text-anchor="start" x="464" y="-805.67" font-family="Arial" font-size="24.00" fill="#444444">Reads and writes metadata,</text>
+<text text-anchor="start" x="497" y="-781.67" font-family="Arial" font-size="24.00" fill="#444444">FTS, tasks, audit, and</text>
+<text text-anchor="start" x="559.5" y="-757.67" font-family="Arial" font-size="24.00" fill="#444444">receipts in</text>
+<text text-anchor="start" x="581.5" y="-737.67" font-family="Arial" font-size="19.00" fill="#444444">[sqlite3]</text>
 </g>
 <!-- 30 -->
 <g id="30" class="node">
 <title>30</title>
-<path fill="#2f95c8" stroke="#20688c" d="M995,-564.4C995,-581.04 896.84,-594.56 776,-594.56 655.16,-594.56 557,-581.04 557,-564.4 557,-564.4 557,-292.97 557,-292.97 557,-276.33 655.16,-262.81 776,-262.81 896.84,-262.81 995,-276.33 995,-292.97 995,-292.97 995,-564.4 995,-564.4"/>
-<path fill="none" stroke="#20688c" d="M995,-564.4C995,-547.76 896.84,-534.24 776,-534.24 655.16,-534.24 557,-547.76 557,-564.4"/>
-<text text-anchor="start" x="636" y="-500.99" font-family="Arial" font-size="34.00" fill="#ffffff">Legacy Clean Text</text>
-<text text-anchor="start" x="709.5" y="-466.99" font-family="Arial" font-size="34.00" fill="#ffffff">Sidecars</text>
-<text text-anchor="start" x="586" y="-444.99" font-family="Arial" font-size="19.00" fill="#ffffff">[Container: WSL or NAS&#45;mounted filesystem]</text>
-<text text-anchor="start" x="623.5" y="-407.99" font-family="Arial" font-size="24.00" fill="#ffffff">Compatibility&#45;only filesystem</text>
-<text text-anchor="start" x="634.5" y="-383.99" font-family="Arial" font-size="24.00" fill="#ffffff">evidence for pre&#45;version&#45;9</text>
-<text text-anchor="start" x="604.5" y="-359.99" font-family="Arial" font-size="24.00" fill="#ffffff">snapshots; new captures create</text>
-<text text-anchor="start" x="687.5" y="-335.99" font-family="Arial" font-size="24.00" fill="#ffffff">no text sidecars.</text>
+<path fill="#2f95c8" stroke="#20688c" d="M984.5,-577.9C984.5,-596.2 895.98,-611.06 787,-611.06 678.02,-611.06 589.5,-596.2 589.5,-577.9 589.5,-577.9 589.5,-279.47 589.5,-279.47 589.5,-261.17 678.02,-246.31 787,-246.31 895.98,-246.31 984.5,-261.17 984.5,-279.47 984.5,-279.47 984.5,-577.9 984.5,-577.9"/>
+<path fill="none" stroke="#20688c" d="M984.5,-577.9C984.5,-559.61 895.98,-544.74 787,-544.74 678.02,-544.74 589.5,-559.61 589.5,-577.9"/>
+<text text-anchor="start" x="665.5" y="-512.99" font-family="Arial" font-size="34.00" fill="#ffffff">Local Derivative</text>
+<text text-anchor="start" x="746" y="-478.99" font-family="Arial" font-size="34.00" fill="#ffffff">Store</text>
+<text text-anchor="start" x="647" y="-456.99" font-family="Arial" font-size="19.00" fill="#ffffff">[Container: WSL local filesystem]</text>
+<text text-anchor="start" x="633.5" y="-419.99" font-family="Arial" font-size="24.00" fill="#ffffff">Reconstructible compatibility</text>
+<text text-anchor="start" x="618.5" y="-395.99" font-family="Arial" font-size="24.00" fill="#ffffff">evidence such as pre&#45;version&#45;9</text>
+<text text-anchor="start" x="657" y="-371.99" font-family="Arial" font-size="24.00" fill="#ffffff">clean&#45;text sidecars; new</text>
+<text text-anchor="start" x="663.5" y="-347.99" font-family="Arial" font-size="24.00" fill="#ffffff">captures create no text</text>
+<text text-anchor="start" x="738.5" y="-323.99" font-family="Arial" font-size="24.00" fill="#ffffff">sidecars.</text>
 </g>
 <!-- 14&#45;&gt;30 -->
-<g id="46" class="edge">
+<g id="48" class="edge">
 <title>14&#45;&gt;30</title>
-<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M785.46,-877.68C783.67,-792.97 781.5,-690.29 779.69,-604.62"/>
-<polygon fill="#444444" stroke="#444444" points="783.19,-604.45 779.48,-594.52 776.19,-604.59 783.19,-604.45"/>
-<polygon fill="white" stroke="transparent" points="785,-729.38 785,-828.38 1053,-828.38 1053,-729.38 785,-729.38"/>
-<text text-anchor="start" x="789" y="-805.67" font-family="Arial" font-size="24.00" fill="#444444">Reads or deletes legacy</text>
-<text text-anchor="start" x="818.5" y="-781.67" font-family="Arial" font-size="24.00" fill="#444444">text sidecars when</text>
-<text text-anchor="start" x="874" y="-757.67" font-family="Arial" font-size="24.00" fill="#444444">required</text>
-<text text-anchor="start" x="867.5" y="-737.67" font-family="Arial" font-size="19.00" fill="#444444">[Filesystem]</text>
+<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M788.45,-877.68C788.2,-798.35 787.89,-703.28 787.62,-621.16"/>
+<polygon fill="#444444" stroke="#444444" points="791.12,-620.94 787.59,-610.95 784.12,-620.96 791.12,-620.94"/>
+<polygon fill="white" stroke="transparent" points="789,-729.38 789,-828.38 1057,-828.38 1057,-729.38 789,-729.38"/>
+<text text-anchor="start" x="793" y="-805.67" font-family="Arial" font-size="24.00" fill="#444444">Reads or deletes legacy</text>
+<text text-anchor="start" x="822.5" y="-781.67" font-family="Arial" font-size="24.00" fill="#444444">text sidecars when</text>
+<text text-anchor="start" x="878" y="-757.67" font-family="Arial" font-size="24.00" fill="#444444">required</text>
+<text text-anchor="start" x="871.5" y="-737.67" font-family="Arial" font-size="19.00" fill="#444444">[Filesystem]</text>
 </g>
 <!-- 5 -->
 <g id="5" class="node">
@@ -127,7 +128,7 @@
 <text text-anchor="start" x="477.5" y="-1451.55" font-family="Arial" font-size="24.00" fill="#ffffff">daemon.</text>
 </g>
 <!-- 5&#45;&gt;2 -->
-<g id="37" class="edge">
+<g id="38" class="edge">
 <title>5&#45;&gt;2</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M742.14,-1528.56C909.52,-1498.39 1122.75,-1449.43 1186,-1387.75 1243.41,-1331.76 1268.02,-1244.58 1278.35,-1172.49"/>
 <polygon fill="#444444" stroke="#444444" points="1281.84,-1172.8 1279.72,-1162.42 1274.91,-1171.86 1281.84,-1172.8"/>
@@ -138,7 +139,7 @@
 <text text-anchor="start" x="1301" y="-1285.05" font-family="Arial" font-size="19.00" fill="#444444">[Chrome extension APIs]</text>
 </g>
 <!-- 5&#45;&gt;13 -->
-<g id="39" class="edge">
+<g id="40" class="edge">
 <title>5&#45;&gt;13</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M313.7,-1423.47C304.4,-1412.22 296.04,-1400.31 289,-1387.75 263.99,-1343.15 252.43,-1289.98 248.09,-1239.09"/>
 <polygon fill="#444444" stroke="#444444" points="251.57,-1238.65 247.32,-1228.95 244.59,-1239.18 251.57,-1238.65"/>
@@ -150,7 +151,7 @@
 <text text-anchor="start" x="293.5" y="-1273.05" font-family="Arial" font-size="19.00" fill="#444444">[chrome.storage.local + IndexedDB]</text>
 </g>
 <!-- 5&#45;&gt;14 -->
-<g id="40" class="edge">
+<g id="41" class="edge">
 <title>5&#45;&gt;14</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M596.09,-1423.65C627.53,-1362.37 664.86,-1289.58 698.27,-1224.44"/>
 <polygon fill="#444444" stroke="#444444" points="701.51,-1225.8 702.96,-1215.3 695.28,-1222.6 701.51,-1225.8"/>

@@ -28,8 +28,8 @@ digraph {
 
   }
 
-  15 -> 17 [id=63, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Gets capture decisions<br />from</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-  15 -> 18 [id=65, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Manages policy rules<br />through</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-  17 -> 18 [id=72, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Combines static mode with<br />rules from</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  15 -> 17 [id=67, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Gets capture decisions<br />from</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  15 -> 18 [id=69, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Manages policy rules<br />through</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  17 -> 18 [id=76, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Combines static mode with<br />rules from</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
 
 }

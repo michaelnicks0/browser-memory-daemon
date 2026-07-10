@@ -2,7 +2,7 @@
 
 > **Audience:** operator and future agents.
 > **Status:** accepted design posture; implementation is split into follow-up tickets.
-> **Scope:** Browser Memory Daemon WSL-owned runtime data, SQLite/FTS5/WAL sidecars, configurable clean-text/media blob root, backup/export boundaries, and forget/deletion semantics.
+> **Scope:** Browser Memory Daemon WSL-owned runtime data, SQLite/FTS5/WAL sidecars, local derivatives, guarded media root, bounded local media spool, backup/export boundaries, and forget/deletion semantics.
 
 ---
 
@@ -68,7 +68,7 @@ Rationale: `policy_mode=all` is an intentional maximum-recall posture. Silent te
 ### 2. Media bytes
 
 - Preserve media rows, hashes, statuses, and provenance as durable evidence alongside snapshots.
-- Continue treating media blobs under `${BMD_BLOB_ROOT}/media/` as a cache bounded by artifact/snapshot/domain/global gates.
+- Continue treating final media blobs under `BMD_MEDIA_ROOT` as a cache bounded by artifact/snapshot/domain/global gates. A configured local spool is durable outage buffering under its own strict byte cap, not backup authority.
 - Prefer purge/rehydrate over permanent media metadata deletion.
 - Keep OCR/media-derived indexing out of this design; it belongs to a later media-enrichment lane.
 
@@ -101,8 +101,9 @@ A complete local backup/export should include:
 |---|---:|---|
 | SQLite DB snapshot | ✅ | Use online backup / quiesced copy, not a naked live DB copy. |
 | SQLite WAL/SHM sidecars | Conditional | Include only for raw quiesced/live filesystem snapshots; not needed for `VACUUM INTO` / online backup output. |
-| `${BMD_BLOB_ROOT}/clean-text/` | ✅ | Needed if snapshot detail should keep external cleaned-text files. If this root is NAS-mounted, the backup/export command should record that source path explicitly. |
-| `${BMD_BLOB_ROOT}/media/` | Optional | Large cache; include only when operator wants binary media completeness. Refs remain in DB either way. |
+| `${BMD_DERIVATIVE_ROOT}/clean-text/` | Optional | Reconstructible legacy sidecars; complete cleaned text is authoritative in SQLite. |
+| `BMD_MEDIA_ROOT` | ❌ | Large disposable cache; exclude by default. Refs, hashes, status, and provenance remain in SQLite. |
+| `BMD_MEDIA_SPOOL_ROOT` | ❌ | Transient durable outage buffer; drain or reconcile separately rather than treating it as backup authority. |
 | Manifest JSON | ✅ | Counts, byte sizes, created-at, repo/version, policy mode, hashes for files copied. No secrets. |
 | Token/env/unit files | ❌ by default | Sensitive and reinstallable. Back up only through an explicit secrets-aware operator path. |
 | Windows extension copy | ❌ | Rebuild/copy from repo plus token/env; do not treat as durable memory. |

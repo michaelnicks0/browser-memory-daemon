@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
 import subprocess
 import sys
-
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -40,8 +39,8 @@ def test_install_daily_driver_dry_run_is_non_mutating(tmp_path):
     assert "Daily-driver install dry run" in result.stdout
     assert "Python:" in result.stdout
     assert f"Blob dir: {blob_root}" in result.stdout
-    assert "Require blob mount: 0" in result.stdout
-    assert "verify the configured blob root is mounted first" in result.stdout
+    assert "Require media mount: 0" in result.stdout
+    assert "verify the configured media root mount and identity marker" in result.stdout
     assert "write systemd user units that read the EnvironmentFile" in result.stdout
     assert "chrome://extensions" in result.stdout
     assert not config_home.exists()
@@ -62,6 +61,7 @@ def test_install_daily_driver_required_mount_guard_fails_before_writes(tmp_path)
         "BMD_PYTHON": sys.executable,
         "BMD_BLOB_ROOT": str(blob_root),
         "BMD_REQUIRE_BLOB_ROOT_MOUNT": "1",
+        "BMD_MEDIA_ROOT_IDENTITY": "test-media-root",
         "BMD_WINDOWS_EXTENSION_DIR": str(extension_dir),
         "XDG_CONFIG_HOME": str(config_home),
         "XDG_DATA_HOME": str(data_home),
@@ -79,8 +79,8 @@ def test_install_daily_driver_required_mount_guard_fails_before_writes(tmp_path)
     )
 
     assert result.returncode != 0
-    assert "BMD_REQUIRE_BLOB_ROOT_MOUNT=1" in result.stderr
-    assert str(blob_root) in result.stderr
+    assert "media root has no non-root mounted ancestor" in result.stderr
+    assert str(blob_root / "media") in result.stderr
     assert not config_home.exists()
     assert not data_home.exists()
     assert not state_home.exists()

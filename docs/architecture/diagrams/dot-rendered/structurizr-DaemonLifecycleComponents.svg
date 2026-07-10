@@ -48,7 +48,7 @@
 <text text-anchor="start" x="946" y="-329.3" font-family="Arial" font-size="24.00" fill="#000000">unions.</text>
 </g>
 <!-- 15&#45;&gt;20 -->
-<g id="67" class="edge">
+<g id="71" class="edge">
 <title>15&#45;&gt;20</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M453.03,-429C559.81,-429 691.18,-429 796.6,-429"/>
 <polygon fill="#444444" stroke="#444444" points="796.71,-432.5 806.71,-429 796.71,-425.5 796.71,-432.5"/>
@@ -75,7 +75,7 @@
 <text text-anchor="start" x="1605" y="-264.3" font-family="Arial" font-size="24.00" fill="#ffffff">deletion receipts.</text>
 </g>
 <!-- 20&#45;&gt;29 -->
-<g id="75" class="edge">
+<g id="79" class="edge">
 <title>20&#45;&gt;29</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1164.16,-429C1262.68,-429 1385.7,-429 1488.6,-429"/>
 <polygon fill="#444444" stroke="#444444" points="1488.81,-432.5 1498.81,-429 1488.81,-425.5 1488.81,-432.5"/>

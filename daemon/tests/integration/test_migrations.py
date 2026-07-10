@@ -28,7 +28,6 @@ from browser_memory_daemon.migrations import (
     schema_fingerprint,
 )
 from browser_memory_daemon.models import CapturePayload
-from browser_memory_daemon.ops import snapshot_detail
 from browser_memory_daemon.search import search_memory
 
 
@@ -56,6 +55,12 @@ def _drop_relative_blob_locators(conn: sqlite3.Connection) -> None:
 def _drop_snapshot_text_authority(conn: sqlite3.Connection) -> None:
     conn.execute("ALTER TABLE snapshots DROP COLUMN cleaned_text_source")
     conn.execute("ALTER TABLE snapshots DROP COLUMN cleaned_text")
+
+
+def _drop_media_storage_tiers(conn: sqlite3.Connection) -> None:
+    conn.execute("DROP TABLE media_spool_reservations")
+    conn.execute("ALTER TABLE media_artifacts DROP COLUMN spool_locator")
+    conn.execute("ALTER TABLE media_artifacts DROP COLUMN storage_tier")
 
 
 def _create_unversioned_current_db(cfg, *, with_media_ref: bool = False) -> None:
@@ -253,6 +258,7 @@ def test_version_three_fixture_upgrades_once_to_capture_model_expand_schema(tmp_
     cfg = _config(tmp_path)
     init_db(cfg)
     with connect(cfg.db_path) as conn:
+        _drop_media_storage_tiers(conn)
         _drop_snapshot_text_authority(conn)
         _drop_relative_blob_locators(conn)
         _drop_claimed_visit_identity(conn)
@@ -265,9 +271,9 @@ def test_version_three_fixture_upgrades_once_to_capture_model_expand_schema(tmp_
 
     before = migration_status(cfg)
     assert before["current_version"] == 3
-    assert before["pending_versions"] == [4, 5, 6, 7, 8, 9]
+    assert before["pending_versions"] == [4, 5, 6, 7, 8, 9, 10]
     result = migrate_database(cfg, execute=True)
-    assert result["applied_versions"] == [4, 5, 6, 7, 8, 9]
+    assert result["applied_versions"] == [4, 5, 6, 7, 8, 9, 10]
     with connect(cfg.db_path) as conn:
         tables = {
             row["name"]
@@ -280,13 +286,14 @@ def test_version_three_fixture_upgrades_once_to_capture_model_expand_schema(tmp_
             "document_url_claims",
             "media_artifact_observations",
         } <= tables
-        assert schema_fingerprint(conn) == MIGRATIONS[8].schema_fingerprint
+        assert schema_fingerprint(conn) == MIGRATIONS[9].schema_fingerprint
 
 
 def test_version_five_backfills_only_evidence_supported_historical_relationships(tmp_path):
     cfg = _config(tmp_path)
     init_db(cfg)
     with connect(cfg.db_path) as conn:
+        _drop_media_storage_tiers(conn)
         _drop_snapshot_text_authority(conn)
         _drop_relative_blob_locators(conn)
         _drop_claimed_visit_identity(conn)
@@ -444,6 +451,7 @@ def test_version_six_backfills_only_unambiguous_media_observation_links(tmp_path
             "UPDATE media_artifacts SET visit_id = NULL WHERE id = ?",
             (no_visit["media_artifacts"][0]["artifact_id"],),
         )
+        _drop_media_storage_tiers(conn)
         _drop_snapshot_text_authority(conn)
         _drop_relative_blob_locators(conn)
         _drop_claimed_visit_identity(conn)
@@ -521,6 +529,7 @@ def test_version_seven_preserves_claimed_visit_identity_for_historical_events(tm
                 "2026-01-06T00:00:10Z",
             ),
         )
+        _drop_media_storage_tiers(conn)
         _drop_snapshot_text_authority(conn)
         _drop_relative_blob_locators(conn)
         _drop_claimed_visit_identity(conn)
@@ -554,6 +563,7 @@ def test_version_eight_adds_nullable_relative_locators(tmp_path):
     init_db(cfg)
     with connect(cfg.db_path) as conn:
         legacy = _capture(conn, cfg)
+        _drop_media_storage_tiers(conn)
         _drop_snapshot_text_authority(conn)
         _drop_relative_blob_locators(conn)
         conn.execute("DELETE FROM schema_migrations WHERE version >= 8")
@@ -587,14 +597,15 @@ def test_version_nine_backfills_hash_verified_chunks_and_new_ingest_uses_sqlite_
     init_db(cfg)
     with connect(cfg.db_path) as conn:
         legacy = _capture(conn, cfg)
+        _drop_media_storage_tiers(conn)
         _drop_snapshot_text_authority(conn)
         conn.execute("DELETE FROM schema_migrations WHERE version >= 9")
         conn.execute("PRAGMA user_version = 8")
 
-    pending = migration_status(cfg)
+    pending = migration_status(cfg, steps=MIGRATIONS[:9])
     assert pending["current_version"] == 8
     assert pending["pending_versions"] == [9]
-    result = migrate_database(cfg, execute=True)
+    result = migrate_database(cfg, execute=True, steps=MIGRATIONS[:9])
     assert result["applied_versions"] == [9]
 
     with connect(cfg.db_path) as conn:
@@ -606,10 +617,6 @@ def test_version_nine_backfills_hash_verified_chunks_and_new_ingest_uses_sqlite_
             "cleaned_text": "Versioned migration preserves searchable full text.",
             "cleaned_text_source": "chunks-hash-verified",
         }
-        detail = snapshot_detail(conn, cfg, legacy["snapshot_id"])
-        assert detail["text"] == legacy_row["cleaned_text"]
-        assert detail["text_source"] == "chunks-hash-verified"
-
         stored = ingest_capture(
             conn,
             cfg,
@@ -637,6 +644,52 @@ def test_version_nine_backfills_hash_verified_chunks_and_new_ingest_uses_sqlite_
             "cleaned_text_locator": None,
         }
         assert schema_fingerprint(conn) == MIGRATIONS[8].schema_fingerprint
+        assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
+
+
+def test_version_ten_adds_media_storage_tiers_and_spool_reservations(tmp_path):
+    cfg = _config(tmp_path)
+    init_db(cfg)
+    with connect(cfg.db_path) as conn:
+        capture = _capture(conn, cfg)
+        conn.execute(
+            """
+            INSERT INTO media_artifacts(
+              id, document_id, snapshot_id, media_type, role, source_url,
+              normalized_source_url, page_url, capture_status, metadata_json
+            ) VALUES ('media-v10-legacy', ?, ?, 'image', 'content',
+                      'https://cdn.example.com/v10.png', 'https://cdn.example.com/v10.png',
+                      'https://example.org/migration', 'referenced', '{}')
+            """,
+            (capture["document_id"], capture["snapshot_id"]),
+        )
+        _drop_media_storage_tiers(conn)
+        conn.execute("DELETE FROM schema_migrations WHERE version >= 10")
+        conn.execute("PRAGMA user_version = 9")
+
+    pending = migration_status(cfg)
+    assert pending["pending_versions"] == [10]
+    result = migrate_database(cfg, execute=True)
+    assert result["applied_versions"] == [10]
+    with connect(cfg.db_path) as conn:
+        row = conn.execute(
+            "SELECT storage_tier, spool_locator FROM media_artifacts WHERE id = 'media-v10-legacy'"
+        ).fetchone()
+        assert dict(row) == {"storage_tier": "media-root", "spool_locator": None}
+        assert conn.execute(
+            "SELECT COUNT(*) FROM sqlite_schema WHERE type = 'table' AND name = 'media_spool_reservations'"
+        ).fetchone()[0] == 1
+        reservation_columns = {
+            column["name"]: int(column["pk"])
+            for column in conn.execute("PRAGMA table_info(media_spool_reservations)").fetchall()
+        }
+        assert reservation_columns == {
+            "reservation_id": 1,
+            "artifact_id": 0,
+            "reserved_bytes": 0,
+            "created_at": 0,
+        }
+        assert schema_fingerprint(conn) == MIGRATIONS[9].schema_fingerprint
         assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
 
 

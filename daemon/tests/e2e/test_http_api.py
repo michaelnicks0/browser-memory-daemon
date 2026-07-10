@@ -1,11 +1,12 @@
 import json
-from dataclasses import replace
 import threading
 import urllib.error
 import urllib.parse
 import urllib.request
+from dataclasses import replace
 
 import browser_memory_daemon.app as app_module
+import browser_memory_daemon.media_storage as media_storage_module
 from browser_memory_daemon.app import make_server
 from browser_memory_daemon.config import load_config
 
@@ -88,6 +89,77 @@ def test_http_capture_skips_request_time_db_initialization_after_startup(tmp_pat
         thread.join(timeout=5)
 
     assert init_calls == 1
+
+
+def test_http_upload_get_and_purge_use_bounded_spool_during_media_root_outage(tmp_path, monkeypatch):
+    runtime_root = tmp_path / "runtime"
+    external_media_root = tmp_path / "external-media"
+    spool_root = runtime_root / "media-spool"
+    monkeypatch.setenv("BMD_MEDIA_ROOT_IDENTITY", "http-spool-test")
+    monkeypatch.setenv("BMD_MAX_MEDIA_SPOOL_BYTES", "64")
+    monkeypatch.setattr(media_storage_module, "has_non_root_mount_ancestor", lambda _path: False)
+    cfg = load_config(
+        runtime_root=runtime_root,
+        media_root=external_media_root,
+        media_spool_root=spool_root,
+        test_mode=True,
+        token="test-token",
+        host="127.0.0.1",
+        port=0,
+        policy_mode="all",
+    )
+    server = make_server(cfg)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        status, captured = request(
+            "POST",
+            f"{base}/capture",
+            body={
+                "visit_id": "http-spool-1",
+                "url": "https://example.org/spool",
+                "title": "Spool outage",
+                "text": "Local text remains authoritative while final media is unavailable.",
+                "media_artifacts": [
+                    {
+                        "media_type": "image",
+                        "source_url": "https://cdn.example.org/spool.png",
+                        "mime_type": "image/png",
+                    }
+                ],
+            },
+        )
+        assert status == 201
+        artifact_id = captured["media_artifacts"][0]["artifact_id"]
+        status, uploaded = binary_request(
+            "PUT",
+            f"{base}/media-artifacts/{artifact_id}/blob",
+            body=b"spooled-bytes",
+            content_type="image/png",
+            headers={
+                "X-BMD-Document-ID": captured["document_id"],
+                "X-BMD-Snapshot-ID": captured["snapshot_id"],
+            },
+        )
+        assert status == 201
+        assert uploaded["storage_tier"] == "spool"
+        status, _headers, content = raw_request("GET", f"{base}/media-artifacts/{artifact_id}")
+        assert status == 200
+        assert content == b"spooled-bytes"
+        assert not external_media_root.exists()
+
+        status, purged = request(
+            "POST",
+            f"{base}/media-artifacts/purge-cache",
+            body={"domain": "example.org", "dry_run": False},
+        )
+        assert status == 200
+        assert purged["purged"] == 1
+        assert not any(path.is_file() for path in spool_root.rglob("*") if ".staging" not in path.parts)
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
 
 
 def test_http_media_fetch_raw_upload_and_purge_rehydrate_controls(tmp_path):

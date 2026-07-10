@@ -27,12 +27,12 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
 
             wslLoopbackDaemon = container "WSL Loopback HTTP Daemon" "Authenticated loopback HTTP API that handles capture, visit events, media artifact upload/fetch/purge, exact search, recent/timeline/detail, policy rules, doctor, forget, and static UI serving." "Python 3.11, ThreadingHTTPServer" {
                 httpRouter = component "HTTP Request Router" "Routes loopback API requests, serves UI assets, enforces bearer auth for memory/admin APIs, and applies CORS for allowed origins." "Python http.server" "Current"
-                migrationKernel = component "Database Migration Kernel" "Validates exact schema fingerprints, ordered migration names/checksums, and PRAGMA user_version; applies transactional steps, backup-gates destructive changes, and expands capture provenance, relative locators, and complete SQLite text authority through version 9." "Python + sqlite3" "Current"
+                migrationKernel = component "Database Migration Kernel" "Serializes migrators; validates exact schema fingerprints, ordered names/checksums, and PRAGMA user_version; applies transactional steps, backup-gates destructive changes, and expands capture provenance, relative locators, SQLite text authority, and media storage tiers through version 10." "Python + sqlite3" "Current"
                 policyEngine = component "Policy Engine" "Evaluates all/recall/balanced/strict capture mode decisions and redacts URL/title/body text outside all mode." "Python" "Current"
                 policyStore = component "Policy Store" "Persists and evaluates explicit local block-domain and URL-prefix rules for every policy mode." "Python + SQLite" "Current"
                 ingestPipeline = component "Ingest Pipeline" "Normalizes observed URLs, computes document/snapshot IDs, atomically stores complete cleaned text plus visits/observations/snapshots/chunks/FTS rows, records non-authoritative URL claims, and links media references without touching blob storage." "Python + sqlite3" "Current"
                 lifecyclePipeline = component "Lifecycle Pipeline" "Stores claimed/resolved tab lifecycle identity, reconciles delayed captures, validates active intervals, and derives visit dwell from interval unions." "Python + sqlite3" "Current"
-                mediaManager = component "Media Artifact Manager" "Records media references, validates blob uploads, enforces MIME/size/cache gates, writes blobs atomically, queues public fetch tasks, and purges or rehydrates cache entries." "Python + sqlite3 + filesystem" "Current"
+                mediaManager = component "Media Artifact Manager" "Records media references, validates blob uploads, enforces MIME/size/cache gates, guards external media-root identity, reserves bounded local spool capacity, writes blobs atomically, drains verified spool bytes, queues public fetch tasks, and purges or rehydrates cache entries." "Python + sqlite3 + filesystem" "Current"
                 blobStore = component "Contained BlobStore" "Prefers root-relative locators with contained legacy fallback; streams unique stages with size/hash accounting; atomically commits; and contains blob read, stat, and delete operations." "Python filesystem boundary" "Current"
                 searchReadModel = component "Search and Read Model" "Provides exact FTS search plus SQLite-authoritative text detail and observation-first recent/timeline/document/snapshot/media views with explicit legacy fallbacks." "Python + SQLite FTS5" "Current"
                 forgetPipeline = component "Forget Pipeline" "Deletes URL/domain-scoped memory rows, FTS entries, clean-text blobs, media blobs, lifecycle rows, and records deletion receipts." "Python + sqlite3" "Current"
@@ -43,17 +43,21 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
 
             localWebUi = container "Local Web UI" "Static browser UI for exact search, recent/timeline views, document/snapshot detail, media artifact opening, policy rules, doctor, and forget-domain operations." "HTML/CSS/JavaScript served by daemon"
 
-            cli = container "CLI" "Command-line interface for serving the daemon, migration and snapshot-text reconciliation, health/doctor/search/recent/timeline/detail, policy/forget, capture fixtures, media worker, and media cache operations." "Python argparse"
+            cli = container "CLI" "Command-line interface for serving the daemon, migration, snapshot-text reconciliation, media-spool status/drain, health/doctor/search/recent/timeline/detail, policy/forget, capture fixtures, media worker, and media cache operations." "Python argparse"
 
             sqliteDatabase = container "SQLite + FTS5 Database" "Durable complete cleaned-text, relational, and full-text authority for migration ledger, sources, documents, visits, capture observations, URL claims, visit events, snapshots, chunks, chunks_fts, media provenance/tasks, policy rules, audit events, and deletion receipts." "SQLite with FTS5" {
                 tags "Database", "Data Store"
             }
 
-            cleanTextBlobStore = container "Legacy Clean Text Sidecars" "Compatibility-only filesystem evidence for pre-version-9 snapshots; new captures create no text sidecars." "WSL or NAS-mounted filesystem" {
+            cleanTextBlobStore = container "Local Derivative Store" "Reconstructible compatibility evidence such as pre-version-9 clean-text sidecars; new captures create no text sidecars." "WSL local filesystem" {
                 tags "Data Store"
             }
 
-            mediaBlobCache = container "Media Blob Cache" "Bounded and disposable filesystem cache for stored image/video/audio blobs under the configured WSL-visible blob root, with purge/rehydrate semantics that preserve media refs, hashes, status reasons, and provenance when bytes are absent or purged." "WSL or NAS-mounted filesystem" {
+            mediaBlobCache = container "Guarded Media Blob Cache" "Bounded disposable image/video/audio bytes under the configured media root; explicit external roots require mount and identity-marker proof before access." "WSL-visible local or NAS-mounted filesystem" {
+                tags "Data Store"
+            }
+
+            mediaSpool = container "Bounded Local Media Spool" "Opt-in durable outage buffer beneath the local WSL data root; admission counts committed files and distinct in-flight SQLite reservations, and drain verifies bytes before tier transition/source cleanup." "WSL local filesystem" {
                 tags "Data Store"
             }
 
@@ -72,15 +76,18 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
 
         localWebUi -> wslLoopbackDaemon "Calls authenticated read, admin, media, and forget APIs on" "HTTP/JSON"
         cli -> wslLoopbackDaemon "Calls health, read, admin, capture-fixture, and forget APIs on" "HTTP/JSON"
-        cli -> sqliteDatabase "Runs migration, media-worker, and media-cache commands against" "sqlite3"
+        cli -> sqliteDatabase "Runs migration, media-worker, media-cache, and media-spool commands against" "sqlite3"
         cli -> mediaBlobCache "Purges and rehydrates media blobs through" "Filesystem"
+        cli -> mediaSpool "Reports and drains bounded outage bytes through" "Filesystem"
 
         wslLoopbackDaemon -> sqliteDatabase "Reads and writes metadata, FTS, tasks, audit, and receipts in" "sqlite3"
         wslLoopbackDaemon -> cleanTextBlobStore "Reads or deletes legacy text sidecars when required" "Filesystem"
         wslLoopbackDaemon -> mediaBlobCache "Stores, serves, purges, and rehydrates media blobs in" "Filesystem"
+        wslLoopbackDaemon -> mediaSpool "Stores and serves media during guarded-root outages in" "Filesystem"
         mediaWorker -> sqliteDatabase "Leases and updates media tasks in" "sqlite3"
         mediaWorker -> webSites "Fetches public media and HLS from" "HTTP(S), data URLs"
         mediaWorker -> mediaBlobCache "Writes fetched media blobs to" "Filesystem"
+        mediaWorker -> mediaSpool "Writes fetched media during guarded-root outages to" "Filesystem"
 
         contentScript -> extractor "Builds capture payloads with"
         contentScript -> serviceWorker "Sends captures and inline blobs to" "chrome.runtime.sendMessage"
@@ -116,9 +123,11 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
         forgetPipeline -> blobStore "Deletes contained text and media blobs through"
         blobStore -> cleanTextBlobStore "Reads, stats, reconciles, and deletes legacy text sidecars in" "Filesystem"
         blobStore -> mediaBlobCache "Stages, commits, reads, stats, and deletes media blobs in" "Filesystem"
+        blobStore -> mediaSpool "Stages, commits, reads, stats, and deletes spooled media in" "Filesystem"
         opsDoctor -> sqliteDatabase "Checks integrity and counts in" "sqlite3"
         opsDoctor -> cleanTextBlobStore "Counts text blob files in" "Filesystem"
         opsDoctor -> mediaBlobCache "Counts media blob files in" "Filesystem"
+        opsDoctor -> mediaSpool "Reports filesystem bytes, reservations, and capacity for" "Filesystem"
         migrationKernel -> sqliteDatabase "Validates and advances schema ledger/fingerprint in" "sqlite3 online backup + transactions"
 
         dailyDriver = deploymentEnvironment "Daily-driver local" {
@@ -141,11 +150,12 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
                     }
                     xdgData = deploymentNode "WSL XDG runtime data paths" "Durable DB/config/state under ~/.config, ~/.local/share, and ~/.local/state, outside the repo." "WSL filesystem" {
                         containerInstance sqliteDatabase
+                        containerInstance cleanTextBlobStore
+                        containerInstance mediaSpool
                         tokenFile = infrastructureNode "Protected token/env files" "~/.config/browser-memory-daemon/token and env supply the daemon token and policy mode." "Filesystem, chmod 600/700"
 
                     }
-                    nasBlobRoot = deploymentNode "WSL-mounted NAS blob root" "Configured BMD_BLOB_ROOT mount for disposable media and legacy clean-text sidecars." "NAS mount of TrueNAS ZFS dataset" {
-                        containerInstance cleanTextBlobStore
+                    nasBlobRoot = deploymentNode "WSL-mounted guarded media root" "Configured BMD_MEDIA_ROOT mount for disposable media with expected identity marker." "NAS mount of TrueNAS ZFS dataset" {
                         containerInstance mediaBlobCache
                     }
                 }
@@ -176,6 +186,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
             include wslLoopbackDaemon
             include sqliteDatabase
             include mediaBlobCache
+            include mediaSpool
             autoLayout tb
         }
 
@@ -184,6 +195,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
             include mediaWorker
             include sqliteDatabase
             include mediaBlobCache
+            include mediaSpool
             autoLayout lr
         }
 
@@ -194,6 +206,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
             include sqliteDatabase
             include cleanTextBlobStore
             include mediaBlobCache
+            include mediaSpool
             autoLayout lr
         }
 
@@ -243,26 +256,32 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
         component wslLoopbackDaemon "DaemonMediaComponents" {
             include httpRouter
             include mediaManager
+            include blobStore
             include sqliteDatabase
             include mediaBlobCache
+            include mediaSpool
             autoLayout lr
         }
 
         component wslLoopbackDaemon "DaemonReadComponents" {
             include httpRouter
             include searchReadModel
+            include blobStore
             include sqliteDatabase
             include cleanTextBlobStore
             include mediaBlobCache
+            include mediaSpool
             autoLayout lr
         }
 
         component wslLoopbackDaemon "DaemonForgetComponents" {
             include httpRouter
             include forgetPipeline
+            include blobStore
             include sqliteDatabase
             include cleanTextBlobStore
             include mediaBlobCache
+            include mediaSpool
             autoLayout lr
         }
 
@@ -272,6 +291,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
             include sqliteDatabase
             include cleanTextBlobStore
             include mediaBlobCache
+            include mediaSpool
             autoLayout lr
         }
 

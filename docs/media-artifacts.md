@@ -71,20 +71,21 @@ Key fields:
 | `width`, `height`, `duration_seconds` | DOM metadata. |
 | `capture_status` | `referenced`, `metadata-only`, `queued`, `fetching`, `fetched`, `uploading`, `stored`, `retrying`, `failed`, `skipped`, `expired`, or `purged`. |
 | `status_reason` | Terminal or diagnostic reason, e.g. `media-too-large`, `fetch-status-403`, `cache-purged:domain:x.com`, `cache-evicted:domain-oldest`, `covered-by-cdp-recorder`, `opaque-browser-blob`. |
-| `file_path` | Local blob path when binary is currently stored. Consumers validate this path stays under the configured media root before reading, serving, purging, or deleting it. |
+| `storage_tier`, `blob_locator`, `spool_locator` | Explicit owning root and contained relative locator. Exactly the active tier locator is populated. |
+| `file_path` | Absolute compatibility path when binary is currently stored. Consumers select the tier first and validate containment before reading, serving, purging, or deleting it. |
 | `content_sha256`, `byte_size` | Blob provenance retained even after cache purge. |
 
 Artifact/detail API rows include an `observations` array with the stored link quality, observation quality, observed URL, visit/navigation identity, capture reason/method/version, and observation time. An empty array is truthful for unresolved multi-candidate history; readers do not synthesize a latest-snapshot association.
 
-Binary files live under:
+Final binary files live under:
 
 ```text
-${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}/media/
+${BMD_MEDIA_ROOT:-${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}/media}
 ```
 
-Daily-driver deployments can set `BMD_BLOB_ROOT` to a WSL-mounted NAS dataset while leaving SQLite, WAL, config, state, and service units on the WSL filesystem.
+Daily-driver deployments can set `BMD_MEDIA_ROOT` to a WSL-mounted NAS dataset while leaving SQLite-authoritative text, WAL, derivatives, config, state, and service units on the local WSL filesystem. Explicit external roots require mount and identity-marker proof. When enabled, a bounded `BMD_MEDIA_SPOOL_ROOT` beneath the local data root temporarily owns outage bytes; each row records which root owns it.
 
-Blob paths are treated as root-scoped evidence, not authority. Clean-text paths are constructed from validated snapshot IDs under `clean-text/`; media filenames are constructed from a hashed artifact-ID storage stem under `media/`, with writes going through `media/.tmp` before atomic rename. If a stale or tampered DB row points outside the configured clean-text/media root, read-model, media-serving, purge, and forget paths report the file as unavailable/out-of-root and do not follow or unlink it.
+Blob paths are treated as root-scoped evidence, not authority. Media filenames use a hashed artifact-ID storage stem; `BlobStore` stages uniquely under the selected root and atomically promotes only size/hash-verified bytes. If a stale or tampered row points outside its declared final/spool root, read-model, media-serving, purge, and forget paths report the file as unavailable/out-of-root and do not follow or unlink it.
 
 ---
 
@@ -176,7 +177,7 @@ X-BMD-Document-ID: doc_...
 X-BMD-Snapshot-ID: snap_...
 ```
 
-The daemon size/MIME/cache gates the blob, writes through `${BMD_BLOB_ROOT}/media/.tmp`, then atomically renames to the final contained hashed-stem file.
+The daemon size/MIME/cache gates the blob, verifies final-root identity, then writes through a unique in-root stage and atomically promotes to the contained hashed-stem file. If the guarded final root is unavailable, only an explicitly configured spool with an available transactional byte reservation may accept the bytes.
 
 ### Compatibility JSON artifact upload
 

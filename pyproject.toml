@@ -31,6 +31,7 @@ files = [
   "daemon/src/browser_memory_daemon/migration_steps",
   "daemon/src/browser_memory_daemon/storage_paths.py",
   "daemon/src/browser_memory_daemon/text_authority.py",
+  "daemon/src/browser_memory_daemon/media_storage.py",
 ]
 
 [tool.coverage.run]

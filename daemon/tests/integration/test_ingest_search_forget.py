@@ -386,7 +386,13 @@ def test_blob_root_migration_copies_files_and_rewrites_db_paths(tmp_path, monkey
     monkeypatch.delenv("BMD_BLOB_ROOT", raising=False)
     runtime_root = tmp_path / "runtime"
     nas_root = tmp_path / "nas-blobs"
-    old_cfg = load_config(runtime_root=runtime_root, test_mode=True, token="test-token", policy_mode="all")
+    old_cfg = load_config(
+        runtime_root=runtime_root,
+        derivative_root=runtime_root / "blobs",
+        test_mode=True,
+        token="test-token",
+        policy_mode="all",
+    )
     init_db(old_cfg)
     payload = CapturePayload.from_dict(
         {
@@ -424,7 +430,14 @@ def test_blob_root_migration_copies_files_and_rewrites_db_paths(tmp_path, monkey
         conn.commit()
         old_media_path = stored_media_path(conn, stored["artifact_id"])
     old_media_relative = old_media_path.relative_to(old_cfg.media_root)
-    new_cfg = load_config(runtime_root=runtime_root, blob_root=nas_root, test_mode=True, token="test-token", policy_mode="all")
+    new_cfg = load_config(
+        runtime_root=runtime_root,
+        blob_root=nas_root,
+        derivative_root=nas_root,
+        test_mode=True,
+        token="test-token",
+        policy_mode="all",
+    )
     with connect(new_cfg.db_path) as conn:
         dry_run = migrate_blob_root(conn, new_cfg)
         assert dry_run["dry_run"] is True
@@ -449,6 +462,36 @@ def test_blob_root_migration_copies_files_and_rewrites_db_paths(tmp_path, monkey
     assert media_row["blob_locator"] == old_media_relative.as_posix()
     assert (new_cfg.clean_text_root / f"{result['snapshot_id']}.txt").read_text() == "Readable body before blob migration."
     assert (new_cfg.media_root / old_media_relative).read_bytes() == b"movebytes"
+
+    (new_cfg.media_root / old_media_relative).write_bytes(b"corrupt-existing-target")
+    with connect(new_cfg.db_path) as conn:
+        conn.execute(
+            "UPDATE media_artifacts SET file_path = ?, blob_locator = ? WHERE id = ?",
+            (str(old_media_path), old_media_relative.as_posix(), stored["artifact_id"]),
+        )
+        mismatch = migrate_blob_root(conn, new_cfg, execute=True)
+        current_path = conn.execute(
+            "SELECT file_path FROM media_artifacts WHERE id = ?", (stored["artifact_id"],)
+        ).fetchone()["file_path"]
+    assert mismatch["updated"] == 0
+    assert mismatch["errors"][0]["error"] == "target-integrity-mismatch"
+    assert current_path == str(old_media_path)
+
+    guarded_root = tmp_path / "missing-external-media"
+    monkeypatch.setenv("BMD_MEDIA_ROOT_IDENTITY", "migration-target")
+    guarded_cfg = load_config(
+        runtime_root=runtime_root,
+        derivative_root=new_cfg.clean_text_root.parent,
+        media_root=guarded_root,
+        test_mode=True,
+        token="test-token",
+        policy_mode="all",
+    )
+    with connect(guarded_cfg.db_path) as conn:
+        blocked = migrate_blob_root(conn, guarded_cfg, source_root=old_cfg.blob_root, execute=True)
+    assert blocked["planned"] == 1
+    assert blocked["errors"] == ["media root unavailable: mount-missing"]
+    assert not guarded_root.exists()
 
 
 def test_media_artifact_size_gate_skips_oversized_blob(tmp_path):

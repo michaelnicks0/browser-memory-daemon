@@ -9,6 +9,7 @@ from . import __version__
 from .blob_store import BlobStore, prefer_relative_locator
 from .config import RuntimeConfig
 from .media import media_artifacts_for_document, media_artifacts_for_snapshot, media_queue_status
+from .media_storage import media_spool_status
 
 
 def _clamp_limit(limit: int | str | None, *, default: int = 25, maximum: int = 100) -> int:
@@ -399,6 +400,7 @@ def doctor(config: RuntimeConfig, conn: sqlite3.Connection, *, storage_census: b
             "db_path": str(config.db_path),
             "clean_text_root": str(config.clean_text_root),
             "media_root": str(config.media_root),
+            "media_spool_root": str(config.media_spool_root) if config.media_spool_root is not None else None,
         },
         "database": {
             "exists": config.db_path.exists(),
@@ -408,6 +410,7 @@ def doctor(config: RuntimeConfig, conn: sqlite3.Connection, *, storage_census: b
             "snapshots_missing_authoritative_text": missing_authoritative_text,
         },
         "storage": storage,
+        "media_storage": media_spool_status(conn, config),
         "media_queue": media_queue_status(conn, config, limit=25),
     }
 
@@ -430,10 +433,12 @@ def _doctor_storage(config: RuntimeConfig, conn: sqlite3.Connection, *, storage_
         ).fetchone()
         media = conn.execute(
             """
-            SELECT COUNT(DISTINCT COALESCE(NULLIF(blob_locator, ''), file_path)) AS files,
-                   COALESCE(SUM(byte_size), 0) AS bytes
+            SELECT COUNT(DISTINCT COALESCE(NULLIF(blob_locator, ''), NULLIF(spool_locator, ''), file_path)) AS files,
+                   COALESCE(SUM(byte_size), 0) AS bytes,
+                   SUM(CASE WHEN storage_tier = 'spool' THEN 1 ELSE 0 END) AS spool_files,
+                   COALESCE(SUM(CASE WHEN storage_tier = 'spool' THEN byte_size ELSE 0 END), 0) AS spool_bytes
             FROM media_artifacts
-            WHERE COALESCE(blob_locator, '') != '' OR COALESCE(file_path, '') != ''
+            WHERE COALESCE(blob_locator, '') != '' OR COALESCE(spool_locator, '') != '' OR COALESCE(file_path, '') != ''
             """
         ).fetchone()
         return {
@@ -443,12 +448,15 @@ def _doctor_storage(config: RuntimeConfig, conn: sqlite3.Connection, *, storage_
             "sqlite_text_bytes": int(clean["sqlite_bytes"] or 0),
             "media_files": int(media["files"] or 0),
             "media_bytes": int(media["bytes"] or 0),
+            "spool_files": int(media["spool_files"] or 0),
+            "spool_bytes": int(media["spool_bytes"] or 0),
         }
     sqlite_text_bytes = int(
         conn.execute("SELECT COALESCE(SUM(LENGTH(cleaned_text)), 0) FROM snapshots").fetchone()[0]
     )
     clean_files, clean_bytes = _filesystem_census(config.clean_text_root)
     media_files, media_bytes = _filesystem_census(config.media_root)
+    spool_files, spool_bytes = _filesystem_census(config.media_spool_root) if config.media_spool_root else (0, 0)
     return {
         "census_mode": "filesystem",
         "clean_text_files": clean_files,
@@ -456,6 +464,8 @@ def _doctor_storage(config: RuntimeConfig, conn: sqlite3.Connection, *, storage_
         "sqlite_text_bytes": sqlite_text_bytes,
         "media_files": media_files,
         "media_bytes": media_bytes,
+        "spool_files": spool_files,
+        "spool_bytes": spool_bytes,
     }
 
 

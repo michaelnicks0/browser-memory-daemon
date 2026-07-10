@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import fcntl
 import hashlib
 import json
 import shutil
@@ -8,6 +9,7 @@ import time
 import uuid
 from collections.abc import Callable, Iterable, Sequence
 from datetime import UTC, datetime
+from functools import wraps
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -19,6 +21,21 @@ LEDGER_TABLE = "schema_migrations"
 V1_SCHEMA_FINGERPRINT = str(MIGRATIONS[0].schema_fingerprint)
 LATEST_SCHEMA_VERSION = MIGRATIONS[-1].version
 MIN_BACKUP_HEADROOM_BYTES = 16 * 1024 * 1024
+
+
+def _serialized_migration(function: Callable[..., dict[str, Any]]) -> Callable[..., dict[str, Any]]:
+    @wraps(function)
+    def wrapped(config: RuntimeConfig, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        config.ensure_dirs()
+        lock_path = Path(config.state_root) / "migration.lock"
+        with lock_path.open("a+b") as lock_handle:
+            fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX)
+            try:
+                return function(config, *args, **kwargs)
+            finally:
+                fcntl.flock(lock_handle.fileno(), fcntl.LOCK_UN)
+
+    return wrapped
 LEDGER_SQL = """
 CREATE TABLE IF NOT EXISTS schema_migrations (
   version INTEGER PRIMARY KEY,
@@ -390,6 +407,7 @@ def _online_backup(conn: sqlite3.Connection, config: RuntimeConfig) -> Path:
     return backup_path
 
 
+@_serialized_migration
 def migrate_database(
     config: RuntimeConfig,
     *,

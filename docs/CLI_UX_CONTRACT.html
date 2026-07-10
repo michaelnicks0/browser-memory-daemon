@@ -139,6 +139,9 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">[</span>--token<span style="color: #F8F8F2"> </span>TOKEN<span style="color: #FF4689">]</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">[</span>--runtime-root<span style="color: #F8F8F2"> </span>PATH<span style="color: #FF4689">]</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">[</span>--blob-root<span style="color: #F8F8F2"> </span>PATH<span style="color: #FF4689">]</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">[</span>--derivative-root<span style="color: #F8F8F2"> </span>PATH<span style="color: #FF4689">]</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">[</span>--media-root<span style="color: #F8F8F2"> </span>PATH<span style="color: #FF4689">]</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">[</span>--media-spool-root<span style="color: #F8F8F2"> </span>PATH<span style="color: #FF4689">]</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">[</span>--policy-mode<span style="color: #F8F8F2"> </span>all<span style="color: #F8F8F2">|</span>recall<span style="color: #F8F8F2">|</span>balanced<span style="color: #F8F8F2">|</span>strict<span style="color: #FF4689">]</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span>COMMAND<span style="color: #F8F8F2"> </span><span style="color: #FF4689">[</span>COMMAND_ARGS<span style="color: #FF4689">]</span>
 </code></pre></div>
@@ -176,7 +179,37 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td><code>--blob-root</code> / <code>BMD_BLOB_ROOT</code></td>
 <td><code>&lt;runtime-root&gt;/blobs</code></td>
-<td>Overrides clean-text/media blob placement while SQLite/WAL remains local.</td>
+<td>Compatibility parent for legacy layouts; SQLite/WAL remains local.</td>
+</tr>
+<tr>
+<td><code>--derivative-root</code> / <code>BMD_DERIVATIVE_ROOT</code></td>
+<td><code>&lt;blob-root&gt;</code> compatibility default</td>
+<td>Reconstructible derivative placement, including legacy clean-text sidecars. Set explicitly only with a reviewed legacy-sidecar migration.</td>
+</tr>
+<tr>
+<td><code>--media-root</code> / <code>BMD_MEDIA_ROOT</code></td>
+<td><code>&lt;blob-root&gt;/media</code></td>
+<td>Final disposable media bytes. Explicit external roots require mount and identity-marker verification.</td>
+</tr>
+<tr>
+<td><code>--media-spool-root</code> / <code>BMD_MEDIA_SPOOL_ROOT</code></td>
+<td>disabled</td>
+<td>Local durable outage spool; must be under the runtime data root and paired with positive <code>BMD_MAX_MEDIA_SPOOL_BYTES</code>.</td>
+</tr>
+<tr>
+<td><code>BMD_MAX_MEDIA_SPOOL_BYTES</code></td>
+<td><code>0</code></td>
+<td>Hard spool cap. A positive value and spool root must be configured together.</td>
+</tr>
+<tr>
+<td><code>BMD_MEDIA_ROOT_IDENTITY</code></td>
+<td>unset</td>
+<td>Expected exact content of <code>.bmd-media-root-id</code>; required for guarded external roots.</td>
+</tr>
+<tr>
+<td><code>BMD_REQUIRE_MEDIA_ROOT_MOUNT</code></td>
+<td><code>0</code></td>
+<td>Forces mount/identity guarding even for a compatibility-root layout. Explicit external media roots are guarded regardless.</td>
 </tr>
 <tr>
 <td><code>--policy-mode</code> / <code>BMD_POLICY_MODE</code></td>
@@ -290,6 +323,16 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td><code>snapshot-text reconcile [--limit N] [--execute]</code></td>
 <td>Dry-run by default; promotes only exact hash-verified chunk reconstructions or contained legacy sidecars into SQLite complete-text authority.</td>
 <td>Pretty JSON with scanned/resolved/applied/source/unresolved counts. <code>--execute</code> is required to mutate rows.</td>
+</tr>
+<tr>
+<td><code>media-spool status</code></td>
+<td>Report final-root readiness plus configured cap, DB-backed artifact/reservation counts, filesystem-accounted bytes, and available capacity.</td>
+<td>Pretty JSON; read-only.</td>
+</tr>
+<tr>
+<td><code>media-spool drain [--limit N] [--execute]</code></td>
+<td>Preview or execute bounded spool-to-media-root transitions.</td>
+<td>Dry-run by default. Execute streams and verifies size/SHA-256, commits the SQLite tier switch, then removes the spool source.</td>
 </tr>
 </tbody>
 </table>

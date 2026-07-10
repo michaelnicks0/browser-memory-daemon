@@ -142,6 +142,7 @@ date: "2026-07-10"</p>
 <li>A destructive step requires disk-headroom preflight and a verified SQLite online backup before its first write.</li>
 <li>There are no destructive down-migrations. Rollback means the prior application plus the pre-migration backup.</li>
 <li>Database migration does not move SQLite to NAS and does not touch media/blob roots.</li>
+<li>Migration execution is serialized per runtime with a state-root advisory lock so concurrent startup/CLI migrators cannot interleave ledger inspection and schema steps.</li>
 </ul>
 <p>Do not run these commands against the daily-driver database during repository verification. Use an explicit temporary runtime and blob root.</p>
 <h2 id="commands">Commands</h2>
@@ -240,6 +241,11 @@ date: "2026-07-10"</p>
 <td style="text-align: right;"><code>9</code></td>
 <td><code>add_sqlite_snapshot_text_authority</code></td>
 <td>Add complete cleaned text plus explicit source. Promote only ordered chunk reconstructions whose SHA-256 exactly matches the recorded snapshot hash; leave unresolved rows on legacy fallback for explicit reconciliation. New captures write SQLite authority and no text sidecar.</td>
+</tr>
+<tr>
+<td style="text-align: right;"><code>10</code></td>
+<td><code>split_media_root_and_add_spool</code></td>
+<td>Add media ownership tier and spool locator fields plus distinct in-flight spool reservations. Existing media rows remain <code>media-root</code>; the migration is additive and performs no filesystem move.</td>
 </tr>
 </tbody>
 </table>

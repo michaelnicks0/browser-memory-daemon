@@ -347,7 +347,11 @@ python3<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;<
 <td><code>daemon/src/browser_memory_daemon/migrations.py</code>, <code>daemon/src/browser_memory_daemon/migration_steps/</code>, <code>docs/database-migrations.md</code></td>
 </tr>
 <tr>
-<td>Local UI and CLI are operator surfaces; CLI read/admin commands use daemon APIs, while media-worker/cache commands also run direct SQLite/filesystem paths.</td>
+<td>Final media uses an independently guarded root; an opt-in local spool uses per-writer SQLite reservations, tier-aware reads/deletes, and verified dry-run-first draining.</td>
+<td><code>daemon/src/browser_memory_daemon/media_storage.py</code>, <code>daemon/src/browser_memory_daemon/migration_steps/v0010_split_media_root_and_add_spool.sql</code>, ADR-0039</td>
+</tr>
+<tr>
+<td>Local UI and CLI are operator surfaces; CLI read/admin commands use daemon APIs, while media-worker/cache/spool commands also run direct SQLite/filesystem paths.</td>
 <td><code>ui/app.js</code>, <code>daemon/src/browser_memory_daemon/cli.py</code>, <code>docs/daily-driver-deployment.md</code></td>
 </tr>
 <tr>
@@ -362,7 +366,7 @@ python3<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;<
 <li>Non-runtime deployment artifacts such as the Windows unpacked extension copy and protected token/env files are modeled in the DSL but excluded from the rendered deployment view to keep the runtime topology legible. Durable audit events live in SQLite; there is no separate <code>audit.jsonl</code> deployment node. The WSL CLI and in-browser extension storage are also excluded from the deployment render because their relationships are covered in C2/C3 views and made the deployment topology unreadable.</li>
 <li>Semantic/vector search, MCP/Hermes integration, native messaging transport, full encrypted backup/restore, and multi-source importers are explicitly pending and are not modeled as current runtime containers. The narrower migration-only online backup boundary is current.</li>
 <li>Chrome extension manual Load unpacked/Reload is an operational step, not a runtime container.</li>
-<li>Media blobs are modeled as a bounded disposable cache; text/FTS/media refs remain authoritative.</li>
+<li>Final media blobs are modeled as a bounded disposable cache, and the local spool as bounded durable outage buffering; text/FTS/media refs remain authoritative.</li>
 <li>Captured page text is untrusted evidence and must not be treated as agent instructions.</li>
 </ul>
   </article>

@@ -123,6 +123,8 @@ CREATE TABLE IF NOT EXISTS media_artifacts (
   metadata_json TEXT NOT NULL DEFAULT '{}',
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   blob_locator TEXT,
+  storage_tier TEXT NOT NULL DEFAULT 'media-root' CHECK (storage_tier IN ('media-root', 'spool')),
+  spool_locator TEXT,
   FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE,
   FOREIGN KEY(snapshot_id) REFERENCES snapshots(id) ON DELETE CASCADE,
   FOREIGN KEY(visit_id) REFERENCES visits(id) ON DELETE SET NULL
@@ -143,6 +145,13 @@ CREATE TABLE IF NOT EXISTS media_fetch_tasks (
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY(artifact_id) REFERENCES media_artifacts(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS media_spool_reservations (
+  reservation_id TEXT PRIMARY KEY,
+  artifact_id TEXT NOT NULL,
+  reserved_bytes INTEGER NOT NULL CHECK (reserved_bytes > 0),
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 );
 
 CREATE TABLE IF NOT EXISTS privacy_rules (

@@ -132,12 +132,14 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </blockquote>
 <hr />
 <h2 id="current-contract">Current contract</h2>
-<p><code>blob-root migrate</code> plans relocation only for DB-referenced paths beneath the selected source root and under the recognized <code>clean-text/</code>, <code>raw-html/</code>, or <code>media/</code> subtrees. Version-9 and later captures create no clean-text sidecar, so clean-text plans apply only to legacy rows. The configured <code>BMD_BLOB_ROOT</code> is the target. The command is a dry run unless <code>--execute</code> is supplied.</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">PYTHONPATH</span><span style="color: #FF4689">=</span>daemon/src<span style="color: #F8F8F2"> BMD_BLOB_ROOT</span><span style="color: #FF4689">=</span>/explicit/target/blobs<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<p><code>blob-root migrate</code> plans relocation only for DB-referenced paths beneath the selected source root and under the recognized <code>clean-text/</code> or <code>media/</code> subtrees. Version-9 and later captures create no clean-text sidecar, so clean-text plans apply only to legacy rows. Clean text targets <code>BMD_DERIVATIVE_ROOT/clean-text</code>; final-tier media targets <code>BMD_MEDIA_ROOT</code>. Spool-tier rows are excluded because <code>media-spool drain</code> owns that transition. The command is a dry run unless <code>--execute</code> is supplied.</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">PYTHONPATH</span><span style="color: #FF4689">=</span>daemon/src<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">BMD_DERIVATIVE_ROOT</span><span style="color: #FF4689">=</span>/explicit/local/derivatives<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">BMD_MEDIA_ROOT</span><span style="color: #FF4689">=</span>/explicit/target/media<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span>blob-root<span style="color: #F8F8F2"> </span>migrate
 </code></pre></div>
 
-<p>The summary reports planned, copied, already-present, missing-source, updated, source-removal, and error counts. Dry-run does not copy files, rewrite SQLite paths, or remove source bytes. Executed copies stream through the contained <code>BlobStore</code>, verify the source byte count before publication, and atomically commit the target.</p>
+<p>The summary reports planned, copied, already-present, missing-source, updated, source-removal, and error counts. Dry-run does not copy files, rewrite SQLite paths, or remove source bytes. Executed copies stream through the contained <code>BlobStore</code>, verify expected byte count and SHA-256 before publication, and atomically commit the target. A pre-existing target is adopted only when the same evidence verifies it.</p>
 <h2 id="execute-boundary">Execute boundary</h2>
 <p>Repository verification must use temporary fixture roots only. A live DB migration, external mount mutation, or deletion of source bytes requires separate explicit operator approval.</p>
 <p>When approved for a real deployment, the minimum sequence is:</p>
@@ -152,7 +154,6 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </ol>
 <h2 id="current-limitations">Current limitations</h2>
 <ul>
-<li>Existing target files are treated as present; this helper does not yet compare hashes or content.</li>
 <li>SQLite path updates occur after copy attempts, but the filesystem copies and DB transaction are not one crash-consistent transaction.</li>
 <li><code>--remove-source</code> unlinks after DB updates and is not tombstone/reconciliation-backed.</li>
 <li>Successful DB rewrites populate both the target absolute compatibility path and the locator relative to the target clean-text or media root. Historical rows not selected by this operator migration retain their existing nullable relative-locator state.</li>

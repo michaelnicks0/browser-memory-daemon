@@ -285,7 +285,7 @@ def normalize_cdp_covered_blob_video_refs(conn: sqlite3.Connection) -> int:
             FROM media_artifacts cdp
             WHERE cdp.media_type = 'video'
               AND cdp.capture_status = 'stored'
-              AND (COALESCE(cdp.blob_locator, '') != '' OR COALESCE(cdp.file_path, '') != '')
+              AND (COALESCE(cdp.blob_locator, '') != '' OR COALESCE(cdp.spool_locator, '') != '' OR COALESCE(cdp.file_path, '') != '')
               AND (
                 cdp.id LIKE 'media_cdp_%'
                 OR json_extract(cdp.metadata_json, '$.cdp_recorder') = 1
@@ -337,7 +337,7 @@ def mark_already_stored_tasks_succeeded(conn: sqlite3.Connection, *, worker_kind
             SELECT id
             FROM media_artifacts
             WHERE capture_status = 'stored'
-              AND (COALESCE(blob_locator, '') != '' OR COALESCE(file_path, '') != '')
+              AND (COALESCE(blob_locator, '') != '' OR COALESCE(spool_locator, '') != '' OR COALESCE(file_path, '') != '')
           )
         """,
         (utc_now(), worker_kind),

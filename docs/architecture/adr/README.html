@@ -241,7 +241,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td><a href="0021-use-configurable-nas-blob-root-with-local-sqlite.html">ADR-0021</a></td>
-<td>accepted</td>
+<td>superseded by ADR-0039</td>
 <td>Use a configurable NAS-capable blob root while keeping SQLite/WAL local.</td>
 </tr>
 <tr>
@@ -328,6 +328,11 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td><a href="0038-make-sqlite-authoritative-for-cleaned-snapshot-text.html">ADR-0038</a></td>
 <td>accepted</td>
 <td>Commit complete cleaned text to SQLite, stop creating new text sidecars, and hash-verify legacy promotion.</td>
+</tr>
+<tr>
+<td><a href="0039-split-media-root-and-add-bounded-durable-spool.html">ADR-0039</a></td>
+<td>accepted</td>
+<td>Split derivative and media roots, guard external identity, and bound local outage buffering.</td>
 </tr>
 </tbody>
 </table>

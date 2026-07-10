@@ -399,8 +399,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>—</td>
 <td><code>daemon/tests/integration/test_migrations.py</code></td>
 <td><code>scripts/run-e2e.sh</code></td>
-<td><code>docs/database-migrations.md</code><br><code>docs/architecture/adr/0028-use-versioned-restore-backed-sqlite-migrations.md</code><br><code>docs/architecture/adr/0037-expand-blob-references-with-relative-locators.md</code></td>
-<td><code>daemon/tests/integration/test_migrations.py::test_destructive_migration_creates_online_backup_that_restores_search</code><br><code>daemon/tests/integration/test_migrations.py::test_version_eight_adds_nullable_relative_locators</code><br><code>daemon/tests/integration/test_migrations.py::test_version_nine_backfills_hash_verified_chunks_and_new_ingest_uses_sqlite_authority</code></td>
+<td><code>docs/database-migrations.md</code><br><code>docs/architecture/adr/0028-use-versioned-restore-backed-sqlite-migrations.md</code><br><code>docs/architecture/adr/0037-expand-blob-references-with-relative-locators.md</code><br><code>docs/architecture/adr/0039-split-media-root-and-add-bounded-durable-spool.md</code></td>
+<td><code>daemon/tests/integration/test_migrations.py::test_destructive_migration_creates_online_backup_that_restores_search</code><br><code>daemon/tests/integration/test_migrations.py::test_version_eight_adds_nullable_relative_locators</code><br><code>daemon/tests/integration/test_migrations.py::test_version_nine_backfills_hash_verified_chunks_and_new_ingest_uses_sqlite_authority</code><br><code>daemon/tests/integration/test_migrations.py::test_version_ten_adds_media_storage_tiers_and_spool_reservations</code></td>
 </tr>
 <tr>
 <td>REQ-033 — Visits, capture observations, snapshots, lifecycle events, and media provenance shall have explicit temporal relationships.</td>
@@ -421,18 +421,18 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td>REQ-035 — Searchable text and capture provenance shall commit locally without NAS or media dependency.</td>
 <td>—</td>
-<td><code>daemon/tests/integration/test_text_authority.py</code><br><code>daemon/tests/integration/test_migrations.py::test_version_nine_backfills_hash_verified_chunks_and_new_ingest_uses_sqlite_authority</code></td>
-<td><code>scripts/run-real-chrome-e2e.sh</code></td>
-<td><code>docs/architecture/adr/0038-make-sqlite-authoritative-for-cleaned-snapshot-text.md</code></td>
-<td><code>daemon/tests/integration/test_text_authority.py::test_new_capture_commits_complete_sqlite_text_without_creating_blob_root</code></td>
+<td><code>daemon/tests/integration/test_text_authority.py</code><br><code>daemon/tests/integration/test_media_storage.py::test_text_and_provenance_commit_when_external_media_has_no_spool</code><br><code>daemon/tests/integration/test_migrations.py::test_version_nine_backfills_hash_verified_chunks_and_new_ingest_uses_sqlite_authority</code></td>
+<td><code>daemon/tests/e2e/test_http_api.py::test_http_upload_get_and_purge_use_bounded_spool_during_media_root_outage</code><br><code>scripts/run-real-chrome-e2e.sh</code></td>
+<td><code>docs/architecture/adr/0038-make-sqlite-authoritative-for-cleaned-snapshot-text.md</code><br><code>docs/architecture/adr/0039-split-media-root-and-add-bounded-durable-spool.md</code></td>
+<td><code>daemon/tests/integration/test_text_authority.py::test_new_capture_commits_complete_sqlite_text_without_creating_blob_root</code><br><code>daemon/tests/integration/test_media_storage.py::test_text_and_provenance_commit_when_external_media_has_no_spool</code></td>
 </tr>
 <tr>
 <td>REQ-036 — Media transitions, cache admission, leases, retries, and resource budgets shall be closed, bounded, and concurrency-safe.</td>
 <td>—</td>
-<td>—</td>
-<td>—</td>
-<td>—</td>
-<td>—</td>
+<td><code>daemon/tests/integration/test_media_storage.py::test_spool_reservations_serialize_concurrent_cap_checks</code><br><code>daemon/tests/integration/test_media_storage.py::test_concurrent_same_artifact_writers_hold_distinct_reservations</code><br><code>daemon/tests/integration/test_media_storage.py::test_spool_capacity_accounts_for_existing_files_and_exact_headroom</code><br><code>daemon/tests/integration/test_media_storage.py::test_unavailable_external_media_root_spools_then_drains_with_hash_verification</code></td>
+<td><code>daemon/tests/e2e/test_http_api.py::test_http_upload_get_and_purge_use_bounded_spool_during_media_root_outage</code></td>
+<td><code>docs/architecture/adr/0039-split-media-root-and-add-bounded-durable-spool.md</code></td>
+<td><code>daemon/tests/integration/test_media_storage.py::test_spool_reservations_serialize_concurrent_cap_checks</code><br><code>daemon/tests/e2e/test_http_api.py::test_http_upload_get_and_purge_use_bounded_spool_during_media_root_outage</code></td>
 </tr>
 <tr>
 <td>REQ-037 — Browser capture, lifecycle, and media queues shall be transactional, restart-safe, quota-aware, and never silently truncate.</td>

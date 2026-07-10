@@ -14,7 +14,9 @@ Windows Chrome unpacked extension
      - browser-memory-daemon.service
      - browser-memory-media-worker.service
   → ~/.local/share/browser-memory-daemon/browser-memory.sqlite3
-  → ${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}/{clean-text,media}/
+  → ${BMD_DERIVATIVE_ROOT:-${BMD_BLOB_ROOT}}/clean-text/
+  → ${BMD_MEDIA_ROOT:-${BMD_BLOB_ROOT}/media}/
+  → optional bounded ${BMD_MEDIA_SPOOL_ROOT}/
 ```
 
 The daemon is persistent in WSL. Chrome still requires **Load unpacked** / **Reload** through Chrome's UI because branded Chrome rejects direct profile JSON extension transplants.
@@ -32,9 +34,11 @@ The daemon is persistent in WSL. Chrome still requires **Load unpacked** / **Rel
 | systemd daemon unit | `~/.config/systemd/user/browser-memory-daemon.service` |
 | systemd media worker unit | `~/.config/systemd/user/browser-memory-media-worker.service` |
 | SQLite DB | `~/.local/share/browser-memory-daemon/browser-memory.sqlite3` |
-| Blob root | `${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}` |
-| Clean-text blobs | `${BMD_BLOB_ROOT}/clean-text/` |
-| Media blobs | `${BMD_BLOB_ROOT}/media/` |
+| Legacy blob parent | `${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}` |
+| Derivative root | `${BMD_DERIVATIVE_ROOT:-${BMD_BLOB_ROOT}}` compatibility default; new layouts may select a local derivative root after migration |
+| Legacy clean-text sidecars | `${BMD_DERIVATIVE_ROOT}/clean-text/` |
+| Final media blobs | `${BMD_MEDIA_ROOT:-${BMD_BLOB_ROOT}/media}` |
+| Optional local media spool | `BMD_MEDIA_SPOOL_ROOT` under the local data root, paired with positive `BMD_MAX_MEDIA_SPOOL_BYTES` |
 | Durable audit events | SQLite `audit_events` table; no `audit.jsonl` writer exists. `BMD_AUDIT_LOG` is a reserved/unused compatibility field. |
 
 ---
@@ -48,11 +52,11 @@ BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
 
 The installer:
 
-1. validates `BMD_POLICY_MODE`, `BMD_REQUIRE_BLOB_ROOT_MOUNT`, and the Python 3.11+ runtime;
+1. validates `BMD_POLICY_MODE`, media-root guard/spool configuration, and the Python 3.11+ runtime;
 2. builds the MV3 extension;
 3. copies it to the Windows-local extension directory;
 4. creates or reuses the daemon token;
-5. writes protected WSL env with `BMD_API_TOKEN`, `BMD_POLICY_MODE`, `BMD_BLOB_ROOT`, `BMD_REQUIRE_BLOB_ROOT_MOUNT`, and `PYTHONPATH`;
+5. writes protected WSL env with token/policy, legacy blob compatibility, derivative/media/spool roots and limits, media mount/identity guard, and `PYTHONPATH`;
 6. writes/enables/restarts `systemd --user` daemon and media-worker services whose `ExecStart` values do not carry token material;
 7. preconfigures the Windows extension copy with token and policy mode;
 8. verifies WSL and Windows loopback health.
@@ -71,27 +75,34 @@ Read-only installed-state check, with no rebuild/copy/unit writes/restarts:
 
 Database compatibility is separately inspectable with `memory migrate --check`; see [`database-migrations.md`](database-migrations.md). Service startup applies only non-destructive pending migrations. A future destructive step fails closed until the operator runs explicit `migrate --execute`, which requires disk headroom and a verified online SQLite backup. Repository verification must use temporary roots and must not run either install or migration execution against the live daily driver.
 
-To place blobs on a WSL-mounted NAS dataset while keeping SQLite/WAL local:
+To place only disposable media on a WSL-mounted NAS dataset while keeping SQLite/WAL and derivatives local, first provision the external root and `.bmd-media-root-id` marker, then configure:
 
 ```bash
-BMD_BLOB_ROOT=/mnt/nas/browser-memory-daemon/blobs \
-  BMD_REQUIRE_BLOB_ROOT_MOUNT=1 \
+BMD_MEDIA_ROOT=/mnt/nas/browser-memory-daemon/media \
+  BMD_MEDIA_ROOT_IDENTITY=bmd-media-prod \
+  BMD_REQUIRE_MEDIA_ROOT_MOUNT=1 \
+  BMD_MEDIA_SPOOL_ROOT="$HOME/.local/share/browser-memory-daemon/media-spool" \
+  BMD_MAX_MEDIA_SPOOL_BYTES=1073741824 \
   BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
 ```
 
-`BMD_BLOB_ROOT` affects only clean-text/media blob files. The SQLite DB, WAL/SHM sidecars, SQLite audit events, token/env files, and systemd units remain under WSL XDG paths. `BMD_RAW_HTML_ENABLED` and `BMD_AUDIT_LOG` are currently parsed compatibility fields only: the daemon does not persist raw HTML or write an `audit.jsonl` side log.
+`BMD_MEDIA_ROOT` affects only disposable media bytes. The SQLite DB, complete cleaned text, WAL/SHM sidecars, derivatives, SQLite audit events, token/env files, and systemd units remain under WSL XDG paths. `BMD_BLOB_ROOT` remains a legacy parent when no explicit media root is configured. `BMD_RAW_HTML_ENABLED` and `BMD_AUDIT_LOG` are currently parsed compatibility fields only: the daemon does not persist raw HTML or write an `audit.jsonl` side log.
 
-The mount only needs to be a normal WSL-visible filesystem path. Prefer NFS for simple kernel-mounted NAS storage when it works in the local WSL/network boundary; SSHFS is an acceptable fallback for blob payloads because SQLite/WAL stays local. `BMD_REQUIRE_BLOB_ROOT_MOUNT=1` makes the installer and daemon fail before writing blobs if the configured root no longer has a non-root mounted ancestor; leave it unset or `0` only when the blob root is intentionally local WSL storage.
+The mount only needs to be a normal WSL-visible filesystem path. Prefer NFS for simple kernel-mounted NAS storage when it works in the local WSL/network boundary; SSHFS is an acceptable fallback for media payloads because SQLite/WAL stays local. Explicit external media roots require both a non-root mount and an exact identity marker. The installer never creates the external root. If it later becomes unavailable, text capture continues; media uses only an explicitly configured bounded local spool or fails visibly.
 
 For an existing install, migrate DB-referenced blob paths after copying/writing to the new root:
 
 ```bash
 systemctl --user stop browser-memory-media-worker.service browser-memory-daemon.service
-BMD_BLOB_ROOT=/mnt/nas/browser-memory-daemon/blobs \
+BMD_DERIVATIVE_ROOT="$HOME/.local/share/browser-memory-daemon/derivatives" \
+  BMD_MEDIA_ROOT=/mnt/nas/browser-memory-daemon/media \
+  BMD_MEDIA_ROOT_IDENTITY=bmd-media-prod \
+  BMD_REQUIRE_MEDIA_ROOT_MOUNT=1 \
   PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
-  blob-root migrate --execute
-BMD_BLOB_ROOT=/mnt/nas/browser-memory-daemon/blobs \
-  BMD_REQUIRE_BLOB_ROOT_MOUNT=1 \
+  blob-root migrate --from-root "$HOME/.local/share/browser-memory-daemon/blobs" --execute
+BMD_MEDIA_ROOT=/mnt/nas/browser-memory-daemon/media \
+  BMD_MEDIA_ROOT_IDENTITY=bmd-media-prod \
+  BMD_REQUIRE_MEDIA_ROOT_MOUNT=1 \
   BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
 ```
 
