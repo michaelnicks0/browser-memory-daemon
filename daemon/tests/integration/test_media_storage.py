@@ -1,8 +1,12 @@
 import base64
+import sqlite3
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace
+from pathlib import Path
 from threading import Barrier
 
 import browser_memory_daemon.media_storage as media_storage_module
+import browser_memory_daemon.media_store as media_store_module
 import pytest
 from browser_memory_daemon.config import load_config
 from browser_memory_daemon.db import connect, init_db
@@ -46,6 +50,25 @@ def _store_payload(content: bytes) -> dict:
         "mime_type": "image/png",
         "content_base64": base64.b64encode(content).decode("ascii"),
     }
+
+
+def _insert_media_owner(conn):
+    conn.execute(
+        """
+        INSERT INTO documents(id, canonical_url, normalized_url, domain, first_seen_at, last_seen_at)
+        VALUES ('doc-spool', 'https://example.com/spool', 'https://example.com/spool',
+                'example.com', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO snapshots(
+          id, document_id, captured_at, content_type, extraction_method,
+          text_hash, privacy_class, redaction_count, cleaned_text, cleaned_text_source
+        ) VALUES ('snap-spool', 'doc-spool', CURRENT_TIMESTAMP, 'text/plain',
+                  'fixture', 'fixture-hash', 'normal', 0, 'fixture', 'capture')
+        """
+    )
 
 
 def test_unavailable_external_media_root_spools_then_drains_with_hash_verification(tmp_path, monkeypatch):
@@ -133,6 +156,142 @@ def test_unavailable_external_media_root_spools_then_drains_with_hash_verificati
         assert cfg.media_root.joinpath(row["blob_locator"]).read_bytes() == b"durable-spool-bytes"
         assert not cfg.media_spool_root.joinpath(spool_locator).exists()
         assert media_spool_status(conn, cfg)["stored_artifacts"] == 0
+
+
+def test_failed_first_publication_removes_new_blob_and_spool_reservation(tmp_path, monkeypatch):
+    cfg = _spool_config(tmp_path, monkeypatch)
+    init_db(cfg)
+    monkeypatch.setattr(media_storage_module, "has_non_root_mount_ancestor", lambda _path: False)
+    with connect(cfg.db_path) as conn:
+        _insert_media_owner(conn)
+        conn.commit()
+        conn.execute(
+            """
+            CREATE TRIGGER reject_media_insert
+            BEFORE INSERT ON media_artifacts
+            BEGIN
+              SELECT RAISE(ABORT, 'injected media insert failure');
+            END
+            """
+        )
+        conn.commit()
+        with pytest.raises(sqlite3.IntegrityError, match="injected media insert failure"):
+            store_media_artifact(conn, cfg, _store_payload(b"must-not-survive"))
+        assert conn.execute("SELECT COUNT(*) FROM media_artifacts").fetchone()[0] == 0
+        assert conn.execute("SELECT COUNT(*) FROM media_spool_reservations").fetchone()[0] == 0
+
+    committed_files = [
+        path for path in cfg.media_spool_root.rglob("*") if path.is_file() and ".staging" not in path.parts
+    ]
+    assert committed_files == []
+    assert not cfg.media_root.exists()
+
+
+def test_failed_write_transaction_start_aborts_stage_and_releases_spool_reservation(tmp_path, monkeypatch):
+    cfg = _spool_config(tmp_path, monkeypatch)
+    init_db(cfg)
+    monkeypatch.setattr(media_storage_module, "has_non_root_mount_ancestor", lambda _path: False)
+
+    def fail_transaction_start(_conn):
+        raise sqlite3.OperationalError("injected write lock failure")
+
+    monkeypatch.setattr(media_store_module, "_start_artifact_transaction", fail_transaction_start)
+    with connect(cfg.db_path) as conn:
+        _insert_media_owner(conn)
+        conn.commit()
+        with pytest.raises(sqlite3.OperationalError, match="injected write lock failure"):
+            store_media_artifact(conn, cfg, _store_payload(b"candidate"))
+        assert conn.execute("SELECT COUNT(*) FROM media_spool_reservations").fetchone()[0] == 0
+
+    assert [path for path in cfg.media_spool_root.rglob("*") if path.is_file()] == []
+
+
+def test_failed_replacement_preserves_previous_blob_and_removes_candidate(tmp_path):
+    cfg = load_config(runtime_root=tmp_path / "runtime", test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    with connect(cfg.db_path) as conn:
+        _insert_media_owner(conn)
+        first = store_media_artifact(conn, cfg, _store_payload(b"original-bytes"))
+        row = conn.execute(
+            "SELECT file_path FROM media_artifacts WHERE id = ?",
+            (first["artifact_id"],),
+        ).fetchone()
+        original_path = row["file_path"]
+        conn.execute(
+            """
+            CREATE TRIGGER reject_media_update
+            BEFORE UPDATE ON media_artifacts
+            BEGIN
+              SELECT RAISE(ABORT, 'injected media update failure');
+            END
+            """
+        )
+        conn.commit()
+        with pytest.raises(sqlite3.IntegrityError, match="injected media update failure"):
+            store_media_artifact(conn, cfg, _store_payload(b"replacement-bytes"))
+
+    original = cfg.media_root.joinpath(original_path)
+    assert original.read_bytes() == b"original-bytes"
+    committed_files = [
+        path for path in cfg.media_root.rglob("*") if path.is_file() and ".staging" not in path.parts
+    ]
+    assert committed_files == [original]
+
+
+def test_metadata_refresh_reports_the_preserved_stored_state(tmp_path):
+    cfg = load_config(runtime_root=tmp_path / "runtime", test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    with connect(cfg.db_path) as conn:
+        _insert_media_owner(conn)
+        first = store_media_artifact(conn, cfg, _store_payload(b"authoritative-bytes"))
+        refreshed = store_media_artifact(conn, cfg, _store_payload(b""))
+        row = conn.execute(
+            "SELECT capture_status, byte_size, file_path FROM media_artifacts WHERE id = ?",
+            (first["artifact_id"],),
+        ).fetchone()
+
+    assert refreshed["stored"] is True
+    assert refreshed["capture_status"] == row["capture_status"] == "stored"
+    assert refreshed["byte_size"] == row["byte_size"] == len(b"authoritative-bytes")
+    assert Path(row["file_path"]).read_bytes() == b"authoritative-bytes"
+
+
+def test_replacement_admission_excludes_current_artifact_and_preserves_it_on_row_failure(tmp_path):
+    cfg = load_config(runtime_root=tmp_path / "runtime", test_mode=True, token="test-token", policy_mode="all")
+    cfg = replace(cfg, max_media_cache_bytes=len(b"old-data"))
+    init_db(cfg)
+    with connect(cfg.db_path) as conn:
+        _insert_media_owner(conn)
+        first = store_media_artifact(conn, cfg, _store_payload(b"old-data"))
+        row = conn.execute(
+            "SELECT file_path FROM media_artifacts WHERE id = ?",
+            (first["artifact_id"],),
+        ).fetchone()
+        original = Path(row["file_path"])
+        conn.execute(
+            """
+            CREATE TRIGGER reject_stored_replacement
+            BEFORE UPDATE ON media_artifacts
+            WHEN NEW.capture_status = 'stored' AND NEW.file_path != OLD.file_path
+            BEGIN
+              SELECT RAISE(ABORT, 'injected replacement row failure');
+            END
+            """
+        )
+        conn.commit()
+        with pytest.raises(sqlite3.IntegrityError, match="injected replacement row failure"):
+            store_media_artifact(conn, cfg, _store_payload(b"new-data"))
+        persisted = conn.execute(
+            "SELECT capture_status, file_path FROM media_artifacts WHERE id = ?",
+            (first["artifact_id"],),
+        ).fetchone()
+
+    assert persisted["capture_status"] == "stored"
+    assert Path(persisted["file_path"]) == original
+    assert original.read_bytes() == b"old-data"
+    assert [path for path in cfg.media_root.rglob("*") if path.is_file() and ".staging" not in path.parts] == [
+        original
+    ]
 
 
 def test_spool_reservations_serialize_concurrent_cap_checks(tmp_path, monkeypatch):

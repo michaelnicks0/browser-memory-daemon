@@ -1,4 +1,4 @@
-# Architecture C4 Diagrams
+# Browser Memory Daemon Architecture C4 Diagrams
 
 > Generated Markdown index for Structurizr-derived diagrams. Canonical model: [`workspace.dsl`](../workspace.dsl).
 

@@ -53,7 +53,7 @@ document → snapshot → media_artifacts
            ↘ visit
 
 media_fetch_tasks → media_artifacts
-blobs/media/media_<hash-of-artifact-id>.<ext>
+blobs/media/media_<hash-of-artifact-id>-<unique-candidate>.<ext>
 ```
 
 Key fields:
@@ -85,7 +85,7 @@ ${BMD_MEDIA_ROOT:-${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}/m
 
 Daily-driver deployments can set `BMD_MEDIA_ROOT` to a WSL-mounted NAS dataset while leaving SQLite-authoritative text, WAL, derivatives, config, state, and service units on the local WSL filesystem. Explicit external roots require mount and identity-marker proof. When enabled, a bounded `BMD_MEDIA_SPOOL_ROOT` beneath the local data root temporarily owns outage bytes; each row records which root owns it.
 
-Blob paths are treated as root-scoped evidence, not authority. Media filenames use a hashed artifact-ID storage stem; `BlobStore` stages uniquely under the selected root and atomically promotes only size/hash-verified bytes. If a stale or tampered row points outside its declared final/spool root, read-model, media-serving, purge, and forget paths report the file as unavailable/out-of-root and do not follow or unlink it.
+Blob paths are treated as root-scoped evidence, not authority. Media filenames use a hashed artifact-ID storage stem plus a unique server-generated candidate suffix; `BlobStore` stages uniquely under the selected root and atomically promotes only size/hash-verified bytes. Replacements do not overwrite the previously committed locator in place: the artifact store publishes the candidate, advances SQLite and lifecycle state, then tombstones the old locator. A handled database failure removes the candidate and releases its spool reservation while preserving the prior row and bytes. If a stale or tampered row points outside its declared final/spool root, read-model, media-serving, purge, and forget paths report the file as unavailable/out-of-root and do not follow or unlink it.
 
 ---
 

@@ -486,6 +486,12 @@ def test_concurrent_media_blob_writes_use_distinct_temp_files(tmp_path):
         row = conn.execute("SELECT file_path, capture_status FROM media_artifacts WHERE id = ?", (media["id"],)).fetchone()
     assert row["capture_status"] == "stored"
     assert open(row["file_path"], "rb").read() in {b"first-upload", b"second-upload"}
+    committed_files = [
+        path for path in cfg.media_root.rglob("*") if path.is_file() and ".staging" not in path.parts
+    ]
+    assert committed_files == [Path(row["file_path"])]
+    staging_root = cfg.media_root / ".staging"
+    assert not staging_root.exists() or list(staging_root.iterdir()) == []
     tmp_root = cfg.media_root / ".tmp"
     if tmp_root.exists():
         assert not list(tmp_root.iterdir())

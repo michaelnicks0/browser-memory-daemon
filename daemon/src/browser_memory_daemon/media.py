@@ -15,8 +15,6 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import unquote_to_bytes, urljoin, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
-from .blob_lifecycle import process_blob_tombstones, register_committed_blob, tombstone_blob
-from .blob_store import prefer_relative_locator
 from .config import RuntimeConfig
 from .media_models import (
     MEDIA_CAPTURE_STATUSES as MEDIA_CAPTURE_STATUSES,
@@ -33,19 +31,20 @@ from .media_models import (
 from .media_models import (
     normalize_task_status as normalize_task_status,
 )
-from .media_storage import (
-    choose_media_blob_destination,
-    media_blob_store_and_locator,
-    release_media_spool_reservation,
-    reserve_media_spool,
-)
+from .media_storage import media_blob_store_and_locator
+from .media_store import MediaArtifactWrite
+from .media_store import media_artifact as media_artifact
+from .media_store import media_artifacts_for_document as media_artifacts_for_document
+from .media_store import media_artifacts_for_snapshot as media_artifacts_for_snapshot
+from .media_store import media_fetch_supported as _media_fetch_supported
 from .media_store import media_storage_allowed as media_storage_allowed
+from .media_store import persist_media_artifact as _persist_media_artifact
+from .media_store import purge_media_cache as purge_media_cache
 from .media_store import stored_media_bytes as _stored_media_bytes
 from .media_tasks import (
     _pending_media_artifact_filters,
     claim_media_fetch_tasks,
     ensure_media_fetch_task,
-    mark_media_fetch_task,
 )
 from .media_tasks import (
     media_fetch_task_id as media_fetch_task_id,
@@ -55,7 +54,7 @@ from .media_tasks import (
 )
 from .normalize import normalize_url
 from .policy import POLICY_MODE_ALL, redact_text, redact_url
-from .storage_paths import storage_stem, validate_media_artifact_id
+from .storage_paths import validate_media_artifact_id
 
 MAX_HTTP_MEDIA_SOURCE_URL_CHARS = 65_536
 MAX_DATA_MEDIA_SOURCE_URL_CHARS = 1_100_000
@@ -254,7 +253,7 @@ class MediaRef:
     metadata: dict[str, Any] | None = None
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "MediaRef":
+    def from_dict(cls, data: dict[str, Any]) -> MediaRef:
         media_type = str(data.get("media_type") or data.get("mediaType") or data.get("type") or "").lower().strip()
         if media_type not in MEDIA_TYPES:
             raise ValueError("media_type must be image or video")
@@ -307,13 +306,6 @@ def media_artifact_id(snapshot_id: str, ref: MediaRef) -> str:
 
 def media_artifact_id_from_parts(snapshot_id: str, media_type: str, role: str, source_url: str) -> str:
     return stable_id("media", f"{snapshot_id}:{media_type}|{role}|{source_url}")
-
-
-def _media_fetch_supported(source_url: str) -> bool:
-    try:
-        return urlsplit(source_url).scheme in {"http", "https", "data"}
-    except Exception:
-        return False
 
 
 def _metadata_priority(metadata: dict[str, Any] | None) -> int:
@@ -1121,39 +1113,6 @@ def _row_to_ref(data: dict[str, Any]) -> MediaRef:
     return MediaRef.from_dict(data)
 
 
-def _write_media_blob(
-    conn: sqlite3.Connection,
-    config: RuntimeConfig,
-    artifact_id: str,
-    mime_type: str,
-    source_url: str,
-    content: bytes,
-) -> tuple[str, str, str, str, str | None]:
-    artifact_id = validate_media_artifact_id(artifact_id)
-    extension = _file_extension(mime_type, source_url)
-    stem = storage_stem("media", artifact_id)
-    destination = choose_media_blob_destination(config)
-    store = destination.store
-    target = store.path(f"{stem}{extension}", create_root=True)
-    reservation_id: str | None = None
-    if destination.tier == "spool":
-        reservation = reserve_media_spool(conn, config, artifact_id=artifact_id, reserved_bytes=len(content))
-        reservation_id = str(reservation["reservation_id"])
-    try:
-        store.write_bytes(target, content)
-    except Exception:
-        if reservation_id is not None:
-            release_media_spool_reservation(conn, reservation_id)
-        raise
-    locator = store.relative_locator(target)
-    return (
-        str(target),
-        locator if destination.tier == "media-root" else "",
-        locator if destination.tier == "spool" else "",
-        destination.tier,
-        reservation_id,
-    )
-
 
 def _artifact_priority(data: dict[str, Any], ref: MediaRef) -> int:
     metadata = data.get("metadata") if isinstance(data.get("metadata"), dict) else ref.metadata
@@ -1173,11 +1132,6 @@ def store_media_artifact(conn: sqlite3.Connection, config: RuntimeConfig, data: 
     page_url = _bounded_text(data.get("page_url") or data.get("pageUrl") or data.get("url"), max_chars=8192)
     if not snapshot_id or not document_id:
         raise ValueError("snapshot_id and document_id are required")
-    snap = conn.execute("SELECT id, document_id FROM snapshots WHERE id = ?", (snapshot_id,)).fetchone()
-    if not snap:
-        raise KeyError("snapshot not found")
-    if snap["document_id"] != document_id:
-        raise ValueError("document_id does not match snapshot")
 
     ref = _row_to_ref(data)
     generated_artifact_id = media_artifact_id(snapshot_id, ref)
@@ -1191,190 +1145,47 @@ def store_media_artifact(conn: sqlite3.Connection, config: RuntimeConfig, data: 
     metadata["metadata_redaction_count"] = url_redactions + alt_redactions + title_redactions
 
     artifact_id = validate_media_artifact_id(provided_artifact_id) if provided_artifact_id else generated_artifact_id
-    existing = conn.execute(
-        """
-        SELECT document_id, snapshot_id, source_url, byte_size, file_path, blob_locator,
-               storage_tier, spool_locator, capture_status
-        FROM media_artifacts
-        WHERE id = ?
-        """,
-        (artifact_id,),
-    ).fetchone()
-    if provided_artifact_id and not existing and artifact_id != generated_artifact_id:
-        raise ValueError("artifact_id does not match media reference")
-    if existing:
-        if existing["capture_status"] == "purging":
-            raise ValueError("media artifact deletion is pending")
-        if existing["document_id"] != document_id or existing["snapshot_id"] != snapshot_id:
-            raise ValueError("artifact_id ownership mismatch")
-        if existing["source_url"] and existing["source_url"] != source_url:
-            raise ValueError("artifact_id source mismatch")
-
     content_base64 = data.get("content_base64") or data.get("contentBase64") or ""
-    status = normalize_capture_status(data.get("capture_status") or data.get("captureStatus"), default="metadata-only")
+    status = normalize_capture_status(
+        data.get("capture_status") or data.get("captureStatus"),
+        default="metadata-only",
+    )
     reason = _bounded_text(data.get("status_reason") or data.get("statusReason"), max_chars=512)
-    content = b""
-    mime_type = _sanitize_mime(data.get("mime_type") or data.get("mimeType") or ref.mime_type, media_type=ref.media_type)
-    if content_base64:
-        content = _decode_base64(str(content_base64))
-        allowed, gate_reason = media_storage_allowed(
-            conn,
-            config,
+    content = _decode_base64(str(content_base64)) if content_base64 else b""
+    mime_type = _sanitize_mime(
+        data.get("mime_type") or data.get("mimeType") or ref.mime_type,
+        media_type=ref.media_type,
+    )
+    return _persist_media_artifact(
+        conn,
+        config,
+        MediaArtifactWrite(
+            artifact_id=artifact_id,
+            generated_artifact_id=generated_artifact_id,
+            artifact_id_provided=bool(provided_artifact_id),
             document_id=document_id,
             snapshot_id=snapshot_id,
+            visit_id=visit_id,
             media_type=ref.media_type,
+            role=ref.role,
+            source_url=source_url,
+            normalized_source_url=normalized_source_url,
+            page_url=page_url,
+            alt_text=alt_text,
+            title=title,
             mime_type=mime_type,
-            candidate_bytes=len(content),
+            width=ref.width,
+            height=ref.height,
+            duration_seconds=ref.duration_seconds,
+            capture_status=status,
+            status_reason=reason,
+            metadata_json=json.dumps(metadata, sort_keys=True),
             priority=priority,
-        )
-        if not allowed:
-            content = b""
-            status = "skipped"
-            reason = gate_reason
-        else:
-            status = "stored"
-    elif status == "stored":
-        status = "metadata-only"
-
-    content_sha256 = hashlib.sha256(content).hexdigest() if content else ""
-    file_path = ""
-    blob_locator = ""
-    spool_locator = ""
-    storage_tier = "media-root"
-    reservation_id: str | None = None
-    byte_size = len(content) if content else None
-    if content:
-        file_path, blob_locator, spool_locator, storage_tier, reservation_id = _write_media_blob(
-            conn, config, artifact_id, mime_type, ref.source_url, content
-        )
-
-    replacement_operation: str | None = None
-    previous_locator: str | None = None
-    previous_tier = "media-root"
-    if content and existing:
-        previous_tier = str(existing["storage_tier"] or "media-root")
-        previous_locator = (
-            prefer_relative_locator(existing["spool_locator"], existing["file_path"])
-            if previous_tier == "spool"
-            else prefer_relative_locator(existing["blob_locator"], existing["file_path"])
-        )
-        current_locator = spool_locator if storage_tier == "spool" else blob_locator
-        if previous_locator and (previous_tier != storage_tier or str(previous_locator) != current_locator):
-            replacement_operation = f"replace-{uuid.uuid4().hex}"
-
-    with conn:
-        conn.execute(
-            """
-            INSERT INTO media_artifacts(
-              id, document_id, snapshot_id, visit_id, media_type, role, source_url,
-              normalized_source_url, page_url, alt_text, title, mime_type, width, height,
-              duration_seconds, byte_size, content_sha256, file_path, blob_locator, storage_tier,
-              spool_locator, capture_status, status_reason, metadata_json
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(id) DO UPDATE SET
-              visit_id=COALESCE(excluded.visit_id, media_artifacts.visit_id),
-              alt_text=excluded.alt_text,
-              title=excluded.title,
-              mime_type=COALESCE(NULLIF(excluded.mime_type, ''), media_artifacts.mime_type),
-              width=COALESCE(excluded.width, media_artifacts.width),
-              height=COALESCE(excluded.height, media_artifacts.height),
-              duration_seconds=COALESCE(excluded.duration_seconds, media_artifacts.duration_seconds),
-              byte_size=COALESCE(excluded.byte_size, media_artifacts.byte_size),
-              content_sha256=COALESCE(NULLIF(excluded.content_sha256, ''), media_artifacts.content_sha256),
-              file_path=CASE WHEN excluded.file_path != '' THEN excluded.file_path ELSE media_artifacts.file_path END,
-              blob_locator=CASE
-                WHEN excluded.file_path != '' THEN NULLIF(excluded.blob_locator, '')
-                ELSE media_artifacts.blob_locator
-              END,
-              storage_tier=CASE
-                WHEN excluded.file_path != '' THEN excluded.storage_tier
-                ELSE media_artifacts.storage_tier
-              END,
-              spool_locator=CASE
-                WHEN excluded.file_path != '' THEN NULLIF(excluded.spool_locator, '')
-                ELSE media_artifacts.spool_locator
-              END,
-              capture_status=CASE
-                WHEN media_artifacts.capture_status = 'stored' AND excluded.capture_status != 'stored' THEN media_artifacts.capture_status
-                ELSE excluded.capture_status
-              END,
-              status_reason=CASE
-                WHEN media_artifacts.capture_status = 'stored' AND excluded.capture_status != 'stored' THEN media_artifacts.status_reason
-                ELSE excluded.status_reason
-              END,
-              metadata_json=excluded.metadata_json
-            """,
-            (
-                artifact_id,
-                document_id,
-                snapshot_id,
-                visit_id,
-                ref.media_type,
-                ref.role,
-                source_url,
-                normalized_source_url,
-                page_url,
-                alt_text,
-                title,
-                mime_type,
-                ref.width,
-                ref.height,
-                ref.duration_seconds,
-                byte_size,
-                content_sha256,
-                file_path,
-                blob_locator or None,
-                storage_tier,
-                spool_locator or None,
-                status,
-                reason or None,
-                json.dumps(metadata, sort_keys=True),
-            ),
-        )
-        if reservation_id is not None:
-            conn.execute("DELETE FROM media_spool_reservations WHERE reservation_id = ?", (reservation_id,))
-        if content:
-            current_locator = spool_locator if storage_tier == "spool" else blob_locator
-            register_committed_blob(
-                conn,
-                owner_kind="media-artifact",
-                owner_id=artifact_id,
-                storage_tier=storage_tier,
-                locator=current_locator,
-                byte_size=byte_size,
-                content_sha256=content_sha256,
-            )
-            if replacement_operation and previous_locator:
-                tombstone_blob(
-                    conn,
-                    operation_id=replacement_operation,
-                    owner_kind="media-artifact",
-                    owner_id=artifact_id,
-                    storage_tier=previous_tier,
-                    locator=str(previous_locator),
-                    reason="media-replaced",
-                )
-        if status == "stored":
-            mark_media_fetch_task(conn, artifact_id, worker_kind="daemon-public", status="succeeded")
-            mark_media_fetch_task(conn, artifact_id, worker_kind="browser", status="succeeded")
-        elif status in {"skipped", "expired"}:
-            mark_media_fetch_task(conn, artifact_id, worker_kind="daemon-public", status="skipped", error=reason)
-        elif status in {"referenced", "metadata-only", "queued", "retrying"} and _media_fetch_supported(source_url):
-            ensure_media_fetch_task(conn, artifact_id, worker_kind="daemon-public", priority=priority)
-    if replacement_operation:
-        process_blob_tombstones(conn, config, operation_id=replacement_operation)
-    return {
-        "stored": status == "stored",
-        "artifact_id": artifact_id,
-        "snapshot_id": snapshot_id,
-        "document_id": document_id,
-        "media_type": ref.media_type,
-        "role": ref.role,
-        "capture_status": status,
-        "status_reason": reason,
-        "byte_size": byte_size or 0,
-        "storage_tier": storage_tier if content else (existing["storage_tier"] if existing else "media-root"),
-    }
+            content=content,
+            file_extension=_file_extension(mime_type, ref.source_url),
+            fetch_supported=_media_fetch_supported(source_url),
+        ),
+    )
 
 
 def _read_limited_stream(stream: Any, max_bytes: int, expected_bytes: int | None = None) -> bytes:
@@ -1427,276 +1238,4 @@ def store_media_blob_stream(
     if raw_content_type and not mime_type:
         capture_status = "referenced" if media_type == "video" else "skipped"
         return store_media_artifact(conn, config, _payload_from_media_row(artifact, capture_status=capture_status, status_reason="non-media-content-type"))
-    priority = _metadata_priority(json.loads(artifact.get("metadata_json") or "{}"))
-    allowed, reason = media_storage_allowed(
-        conn,
-        config,
-        document_id=artifact["document_id"],
-        snapshot_id=artifact["snapshot_id"],
-        media_type=artifact["media_type"],
-        mime_type=mime_type,
-        candidate_bytes=len(content),
-        priority=priority,
-    )
-    if not allowed:
-        return store_media_artifact(conn, config, _payload_from_media_row(artifact, capture_status="skipped", status_reason=reason, mime_type=mime_type))
     return store_media_artifact(conn, config, _payload_from_media_row(artifact, capture_status="stored", content=content, mime_type=mime_type))
-
-
-def _purge_scope_sql(scope: dict[str, Any]) -> tuple[list[str], list[Any], str]:
-    rehydrate_only = bool(scope.get("rehydrate_only") or scope.get("rehydrateOnly"))
-    where = (
-        ["m.capture_status = 'purged'", "COALESCE(m.blob_locator, '') = '' AND COALESCE(m.spool_locator, '') = '' AND COALESCE(m.file_path, '') = ''"]
-        if rehydrate_only
-        else ["COALESCE(m.blob_locator, '') != '' OR COALESCE(m.spool_locator, '') != '' OR COALESCE(m.file_path, '') != ''"]
-    )
-    params: list[Any] = []
-    labels: list[str] = []
-    domain = str(scope.get("domain") or "").lower().strip().lstrip(".")
-    if domain:
-        where.append("(lower(d.domain) = ? OR lower(d.domain) LIKE ?)")
-        params.extend([domain, f"%.{domain}"])
-        labels.append(f"domain:{domain}")
-    document_id = str(scope.get("document_id") or scope.get("documentId") or "").strip()
-    if document_id:
-        where.append("m.document_id = ?")
-        params.append(document_id)
-        labels.append(f"document:{document_id}")
-    snapshot_id = str(scope.get("snapshot_id") or scope.get("snapshotId") or "").strip()
-    if snapshot_id:
-        where.append("m.snapshot_id = ?")
-        params.append(snapshot_id)
-        labels.append(f"snapshot:{snapshot_id}")
-    older_than = str(scope.get("older_than") or scope.get("olderThan") or "").strip()
-    if older_than:
-        where.append("m.created_at < ?")
-        params.append(older_than)
-        labels.append(f"older-than:{older_than}")
-    if not labels:
-        labels.append("all")
-    return where, params, ";".join(labels)
-
-
-def purge_media_cache(conn: sqlite3.Connection, config: RuntimeConfig, scope: dict[str, Any]) -> dict[str, Any]:
-    dry_run = bool(scope.get("dry_run") if "dry_run" in scope else scope.get("dryRun", True))
-    rehydrate = bool(scope.get("rehydrate") or False)
-    rehydrate_only = bool(scope.get("rehydrate_only") or scope.get("rehydrateOnly"))
-    max_bytes_to_purge = _safe_int(scope.get("max_bytes_to_purge") or scope.get("maxBytesToPurge"))
-    where, params, label = _purge_scope_sql(scope)
-    rows = conn.execute(
-        f"""
-        SELECT m.id, m.file_path, m.blob_locator, m.storage_tier, m.spool_locator,
-               m.byte_size, m.source_url, m.capture_status
-        FROM media_artifacts m
-        LEFT JOIN documents d ON d.id = m.document_id
-        WHERE {' AND '.join(where)}
-        ORDER BY m.created_at ASC, m.id
-        """,
-        params,
-    ).fetchall()
-    selected = []
-    selected_bytes = 0
-    skipped_out_of_root = 0
-    skipped_out_of_root_ids: list[str] = []
-    for row in rows:
-        if rehydrate_only:
-            selected.append((row, None, "", 0))
-            continue
-        store, locator, _tier_status = media_blob_store_and_locator(config, dict(row))
-        if store is None or not locator:
-            skipped_out_of_root += 1
-            if len(skipped_out_of_root_ids) < 20:
-                skipped_out_of_root_ids.append(row["id"])
-            continue
-        resolution = store.resolve(locator, require_file=False)
-        if resolution.status in {"outside-root", "invalid", "empty"} or resolution.path is None:
-            skipped_out_of_root += 1
-            if len(skipped_out_of_root_ids) < 20:
-                skipped_out_of_root_ids.append(row["id"])
-            continue
-        try:
-            size = int(row["byte_size"] or (store.stat(locator).st_size if store.exists(locator) else 0))
-        except (OSError, RuntimeError):
-            size = int(row["byte_size"] or 0)
-        if max_bytes_to_purge is not None and selected_bytes + size > max_bytes_to_purge:
-            break
-        selected.append((row, store, locator, size))
-        selected_bytes += size
-    purged = 0
-    missing = 0
-    pending_deletions = 0
-    operation_id = f"purge-{uuid.uuid4().hex}"
-    if not dry_run:
-        with conn:
-            for row, selected_store, raw_path, _size in selected:
-                if rehydrate_only:
-                    if _media_fetch_supported(row["source_url"] or ""):
-                        ensure_media_fetch_task(conn, row["id"], worker_kind="daemon-public", status="pending", force_reset=True)
-                    continue
-                if selected_store is None:
-                    continue
-                tombstone_blob(
-                    conn,
-                    operation_id=operation_id,
-                    owner_kind="media-artifact",
-                    owner_id=str(row["id"]),
-                    storage_tier=str(row["storage_tier"] or "media-root"),
-                    locator=str(raw_path),
-                    reason=f"cache-purged:{label}",
-                    byte_size=int(row["byte_size"]) if row["byte_size"] is not None else None,
-                )
-                conn.execute(
-                    """
-                    UPDATE media_artifacts
-                    SET capture_status = 'purging', status_reason = ?
-                    WHERE id = ?
-                    """,
-                    (f"cache-purged:{label}", row["id"]),
-                )
-        if not rehydrate_only and selected:
-            outcome = process_blob_tombstones(conn, config, operation_id=operation_id)
-            purged = int(outcome["deleted"])
-            missing = int(outcome["missing"]) + int(outcome["failed"]) + int(outcome["blocked"])
-            pending_deletions = int(outcome["pending"])
-            if rehydrate:
-                with conn:
-                    for row, _store, _path, _size in selected:
-                        current = conn.execute(
-                            "SELECT capture_status FROM media_artifacts WHERE id = ?",
-                            (row["id"],),
-                        ).fetchone()
-                        if current and current["capture_status"] == "purged" and _media_fetch_supported(row["source_url"] or ""):
-                            ensure_media_fetch_task(
-                                conn,
-                                row["id"],
-                                worker_kind="daemon-public",
-                                status="pending",
-                                force_reset=True,
-                            )
-    return {
-        "dry_run": dry_run,
-        "rehydrate": rehydrate,
-        "rehydrate_only": rehydrate_only,
-        "scope": scope,
-        "selected": len(selected),
-        "purged": purged,
-        "missing_files": missing,
-        "pending_deletions": pending_deletions,
-        "skipped_out_of_root": skipped_out_of_root,
-        "bytes": selected_bytes,
-        "sample_artifact_ids": [row["id"] for row, _store, _path, _size in selected[:20]],
-        "sample_out_of_root_artifact_ids": skipped_out_of_root_ids,
-    }
-
-
-def _media_file_resolution(
-    config: RuntimeConfig | None, row: dict[str, Any]
-) -> tuple[Path | None, str, str]:
-    if not config:
-        return None, "config-required", "unresolved"
-    if str(row.get("capture_status") or "") in {"purging", "purged", "missing"}:
-        return None, str(row.get("capture_status")), "unavailable"
-    store, locator, tier_status = media_blob_store_and_locator(config, row)
-    if store is None:
-        return None, tier_status, "unresolved"
-    resolution = store.resolve(locator, require_file=True)
-    tier = str(row.get("storage_tier") or "media-root")
-    if tier == "spool":
-        kind = "spool-relative" if row.get("spool_locator") not in {None, ""} else "legacy-absolute"
-    else:
-        kind = "relative" if row.get("blob_locator") not in {None, ""} else "legacy-absolute"
-    return resolution.path, resolution.status, kind
-
-
-def _media_observation_provenance(conn: sqlite3.Connection, artifact_id: str) -> list[dict[str, Any]]:
-    rows = conn.execute(
-        """
-        SELECT mao.observation_id, mao.provenance_quality AS link_provenance_quality,
-               mao.observed_at, o.navigation_id, o.visit_id, o.observed_url,
-               o.capture_reason, o.capture_method, o.extraction_version,
-               o.provenance_quality AS observation_provenance_quality
-        FROM media_artifact_observations mao
-        JOIN capture_observations o ON o.id = mao.observation_id
-        WHERE mao.artifact_id = ?
-        ORDER BY mao.observed_at, mao.observation_id
-        """,
-        (artifact_id,),
-    ).fetchall()
-    return [dict(row) for row in rows]
-
-
-def media_artifact(conn: sqlite3.Connection, config: RuntimeConfig, artifact_id: str) -> dict[str, Any]:
-    artifact_id = validate_media_artifact_id(artifact_id)
-    row = conn.execute("SELECT * FROM media_artifacts WHERE id = ?", (artifact_id,)).fetchone()
-    if not row:
-        raise KeyError("media artifact not found")
-    value = dict(row)
-    resolved, status, kind = _media_file_resolution(config, value)
-    value["has_file"] = resolved is not None
-    value["file_path_status"] = status
-    value["file_locator_kind"] = kind
-    if resolved is not None:
-        value["resolved_file_path"] = str(resolved)
-    value["observations"] = _media_observation_provenance(conn, artifact_id)
-    return value
-
-
-def media_artifacts_for_snapshot(conn: sqlite3.Connection, snapshot_id: str, config: RuntimeConfig | None = None) -> list[dict[str, Any]]:
-    rows = conn.execute(
-        """
-        SELECT id, document_id, snapshot_id, visit_id, page_url,
-               media_type, role, source_url, normalized_source_url, alt_text, title, mime_type,
-               width, height, duration_seconds, byte_size, capture_status, status_reason,
-               file_path, blob_locator, storage_tier, spool_locator, created_at
-        FROM media_artifacts
-        WHERE snapshot_id = ?
-        ORDER BY media_type, role, created_at, id
-        """,
-        (snapshot_id,),
-    ).fetchall()
-    result = []
-    for row in rows:
-        item = dict(row)
-        resolved, status, kind = _media_file_resolution(config, item)
-        item.pop("file_path", None)
-        item.pop("blob_locator", None)
-        item.pop("spool_locator", None)
-        item["has_file"] = resolved is not None
-        item["file_path_status"] = status
-        item["file_locator_kind"] = kind
-        if item["has_file"]:
-            item["content_url"] = f"/media-artifacts/{item['id']}"
-        item["observations"] = _media_observation_provenance(conn, item["id"])
-        result.append(item)
-    return result
-
-
-def media_artifacts_for_document(conn: sqlite3.Connection, document_id: str, config: RuntimeConfig | None = None, *, limit: int = 100) -> list[dict[str, Any]]:
-    rows = conn.execute(
-        """
-        SELECT id, document_id, snapshot_id, visit_id, page_url,
-               media_type, role, source_url, normalized_source_url, alt_text, title,
-               mime_type, width, height, duration_seconds, byte_size, capture_status, status_reason,
-               file_path, blob_locator, storage_tier, spool_locator, created_at
-        FROM media_artifacts
-        WHERE document_id = ?
-        ORDER BY created_at DESC, id
-        LIMIT ?
-        """,
-        (document_id, limit),
-    ).fetchall()
-    result = []
-    for row in rows:
-        item = dict(row)
-        resolved, status, kind = _media_file_resolution(config, item)
-        item.pop("file_path", None)
-        item.pop("blob_locator", None)
-        item.pop("spool_locator", None)
-        item["has_file"] = resolved is not None
-        item["file_path_status"] = status
-        item["file_locator_kind"] = kind
-        if item["has_file"]:
-            item["content_url"] = f"/media-artifacts/{item['id']}"
-        item["observations"] = _media_observation_provenance(conn, item["id"])
-        result.append(item)
-    return result

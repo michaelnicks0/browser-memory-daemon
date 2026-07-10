@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Status — browser-memory-daemon</title>
+<title>0044-Publish-Media-Through-Artifact-Store — browser-memory-daemon</title>
 <style>
 :root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
@@ -120,250 +120,63 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <body>
 <div class="wrap">
   <div class="docbar">
-    <a class="home" href="../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
-    <span class="crumb">/ <b>docs/STATUS.md</b></span>
+    <a class="home" href="../../../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
+    <span class="crumb">/ <b>docs/architecture/adr/0044-publish-media-through-artifact-store.md</b></span>
   </div>
   <article class="md-body">
-<h1 id="browser-memory-daemon-status-implemented-pending-risks">Browser Memory Daemon Status — Implemented, Pending, Risks</h1>
-<blockquote>
-<p><strong>Audience:</strong> Operator and future maintainers.
-<strong>Current source:</strong> repository HEAD; release branch may vary.
-<strong>Policy default:</strong> <code>all</code>.</p>
-</blockquote>
-<hr />
-<h2 id="implemented">Implemented</h2>
-<table>
-<thead>
-<tr>
-<th>Area</th>
-<th>Status</th>
-<th>Evidence</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Windows Chrome extension</td>
-<td>✅ MV3 extension with service-worker-owned injection/transport and opaque observation/navigation IDs persisted in queued capture payloads across retry/restart.</td>
-<td><code>extension/src/</code>, extension unit tests, real Chrome e2e.</td>
-</tr>
-<tr>
-<td>WSL daemon</td>
-<td>✅ Loopback HTTP daemon with bearer auth.</td>
-<td><code>app.py</code>, HTTP e2e tests.</td>
-</tr>
-<tr>
-<td>SQLite/FTS/media storage</td>
-<td>✅ Documents/visits/snapshots/chunks/FTS/media/audit/deletion receipts plus version-4 through version-8 provenance/locator expansion, version-9 complete cleaned-text authority, version-10 media storage tiers/spool reservations, and version-11 blob lifecycle records. New text/provenance commits locally without media-root access; recent/timeline/detail reads are observation-first with explicit legacy fallback.</td>
-<td><code>schema.sql</code>, <code>migration_steps/</code>, <code>migrations.py</code>, <code>text_authority.py</code>, <code>media_storage.py</code>, <code>blob_lifecycle.py</code>, migration/text/read tests, ADR-0028, ADR-0030 through ADR-0040.</td>
-</tr>
-<tr>
-<td>Blob filesystem boundary</td>
-<td>✅ <code>BlobStore</code> contains DB locators; stages streaming media writes with size/hash accounting; atomically commits; and owns media plus legacy-sidecar read/stat/delete operations. Derivative and media roots are separate; external media is identity-guarded; the local spool is bounded; durable tombstones and dry-run-first reconciliation cover failed deletion, missing references, orphans, and stale stages.</td>
-<td><code>blob_store.py</code>, <code>blob_lifecycle.py</code>, <code>storage_reconcile.py</code>, storage integration tests, ADR-0036 through ADR-0040.</td>
-</tr>
-<tr>
-<td>Exact search</td>
-<td>✅ FTS5 exact search with snippets/source metadata and media artifact counts.</td>
-<td><code>search.py</code>, <code>/search</code>, tests.</td>
-</tr>
-<tr>
-<td>Forget/delete</td>
-<td>✅ URL/domain forget commits receipt plus blob tombstones with the relational cascade, suppresses pending bytes from serving, reports incomplete deletion honestly, and retries failures through reconciliation.</td>
-<td><code>forget.py</code>, <code>blob_lifecycle.py</code>, <code>test_storage_reconcile.py</code>, ADR-0040.</td>
-</tr>
-<tr>
-<td>Backup/restore</td>
-<td>✅ Dry-run-first manifest-backed SQLite online backup, optional referenced derivatives, strict hash/path verification, and atomic restore into an absent runtime root; media/spool/secrets excluded by default.</td>
-<td><code>backup_ops.py</code>, <code>test_backup_restore.py</code>, ADR-0041.</td>
-</tr>
-<tr>
-<td>Media artifacts</td>
-<td>✅ Durable image/video refs and binaries: fast text/manifest capture, browser IndexedDB lazy queue, credentialed fetch, raw blob upload, enabled-by-default X/Twitter CDP recorder with disable control, HLS/audio sidecar handling, explicit state taxonomy, atomic task leasing/retry repository, artifact publication/read/purge store with failed-write compensation, daemon public worker, rolling cache gates, purge/rehydrate controls; no OCR/media indexing.</td>
-<td><code>media_models.py</code>, <code>media_tasks.py</code>, <code>media_store.py</code>, <code>media.py</code>, worker/extension tests, ADR-0042 through ADR-0044.</td>
-</tr>
-<tr>
-<td>Local UI</td>
-<td>✅ Token-bootstrapped search/recent/timeline/detail/doctor/policy/delete panels; recent/today/doctor/policy auto-load on open.</td>
-<td><code>ui/</code>, admin API tests.</td>
-</tr>
-<tr>
-<td>CLI</td>
-<td>✅ serve/health/migrate/doctor/daily-driver-health/search/recent/timeline/detail/policy/forget/capture-fixture/media-worker/media-cache/media-spool/blob-root migration/snapshot-text reconciliation/storage reconciliation/backup create/restore.</td>
-<td><code>cli.py</code>, CLI and backup integration tests.</td>
-</tr>
-<tr>
-<td>Dedupe/versioning</td>
-<td>✅ Observed-URL document identity, text-hash snapshots, browser-authored per-extraction observation idempotency, per-tab/URL navigation identity, and non-authoritative canonical URL claims.</td>
-<td>ingest/observation/migration/extension tests.</td>
-</tr>
-<tr>
-<td>SPA/delayed capture</td>
-<td>✅ Delayed passes and History API hooks.</td>
-<td>real Chrome SPA fixture.</td>
-</tr>
-<tr>
-<td>Dwell/lifecycle</td>
-<td>✅ Metadata-only visit events with exact claimed/resolved visit identity, delayed-capture reconciliation, explicit legacy fallback labels, and validated interval-union dwell.</td>
-<td>lifecycle/migration tests + real e2e.</td>
-</tr>
-<tr>
-<td>Policy modes</td>
-<td>✅ <code>all</code>, <code>recall</code>, <code>balanced</code>, <code>strict</code>.</td>
-<td>daemon + extension unit tests.</td>
-</tr>
-<tr>
-<td>Fast quality gate</td>
-<td>✅ Network-free Ruff/mypy/branch-coverage/Python/Node/catalog/secret/diff gate with a default-XDG write sentinel and measured 80% floor.</td>
-<td><code>scripts/run-fast-gate.sh</code>, <code>docs/coverage-baseline.md</code>, ADR-0029.</td>
-</tr>
-<tr>
-<td>Daily-driver install</td>
-<td>✅ systemd user daemon + media-worker services, Windows extension copy, non-mutating dry-run/check path, token/env/unit/process-arg health checks.</td>
-<td><code>scripts/install-daily-driver.sh</code>, <code>scripts/daily-driver-health.sh</code>, daily-driver tests.</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="requirement-posture">Requirement posture</h2>
-<!-- BEGIN GENERATED:requirement-posture -->
-<p>The canonical catalog contains <strong>43 stable requirements</strong>: <strong>37 active</strong> and <strong>6 planned</strong>. Normative statements, implementation links, V-model evidence, and legacy aliases are owned by <a href="../requirements/catalog.toml"><code>requirements/catalog.toml</code></a>; generated tables in this doc set must not be hand-edited.</p>
-<!-- END GENERATED:requirement-posture -->
-
-<hr />
-<h2 id="current-default-posture">Current default posture</h2>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>BMD_POLICY_MODE=all
-</code></pre></div>
-
-<p>This means:</p>
+<h1 id="adr-0044-publish-and-read-media-through-the-artifact-store">ADR-0044: Publish and read media through the artifact store</h1>
 <ul>
-<li>no static URL/domain/path/query filtering;</li>
-<li>no daemon redaction before storage/FTS;</li>
-<li>extension DOM extraction still skips hidden/form/editable/script/style/no-script text;</li>
-<li>explicit local block rules still apply;</li>
-<li>platform limits still apply when Chrome refuses extension injection.</li>
+<li>Status: accepted</li>
+<li>Date: 2026-07-10</li>
+<li>Decision owners: Browser Memory Daemon maintainers</li>
+<li>Related: ADR-0036, ADR-0037, ADR-0039, ADR-0040, ADR-0042, ADR-0043</li>
 </ul>
-<hr />
-<h2 id="pending-roadmap-lanes">Pending roadmap lanes</h2>
-<table>
-<thead>
-<tr>
-<th>Lane</th>
-<th style="text-align: right;">Priority</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Native messaging transport</td>
-<td style="text-align: right;">Later</td>
-<td>HTTP loopback is working; native messaging can reduce network-like surface later.</td>
-</tr>
-<tr>
-<td>Semantic/vector search</td>
-<td style="text-align: right;">Later, explicit approval required</td>
-<td>Exact FTS remains current source of truth.</td>
-</tr>
-<tr>
-<td>Retention/compaction/backup pruning</td>
-<td style="text-align: right;">Medium</td>
-<td>Text-first backup/restore is implemented; automatic retention, compaction, encryption/signing, and backup pruning remain approval-gated.</td>
-</tr>
-<tr>
-<td>MCP/Hermes integration</td>
-<td style="text-align: right;">Later</td>
-<td>Should treat captured text as untrusted evidence.</td>
-</tr>
-<tr>
-<td>Rich policy rules</td>
-<td style="text-align: right;">Medium</td>
-<td>Future allow/redact/metadata-only modes; current explicit rules are block-only and apply in every mode, including <code>all</code>.</td>
-</tr>
-<tr>
-<td>Packaged extension distribution</td>
-<td style="text-align: right;">Later</td>
-<td>Daily driver currently uses manual Load unpacked due Chrome Secure Preferences.</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="known-limits-and-risks">Known limits and risks</h2>
-<table>
-<thead>
-<tr>
-<th>Risk/limit</th>
-<th>Current handling</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>all</code> stores secrets if visible/exposed in page DOM.</td>
-<td>Intentional operator choice. Use <code>recall</code>/<code>balanced</code>/<code>strict</code> later if desired.</td>
-</tr>
-<tr>
-<td>Chrome internal pages may not inject.</td>
-<td>Platform limit; e2e covers web pages.</td>
-</tr>
-<tr>
-<td>Branded Chrome automation ignores unpacked extension flags.</td>
-<td>E2E uses Chrome for Testing. Daily driver uses manual Load unpacked/reload.</td>
-</tr>
-<tr>
-<td>Extension token is copied into Windows-local unpacked extension artifact.</td>
-<td>Token is generated in WSL, never committed, and can rotate.</td>
-</tr>
-<tr>
-<td>SQLite can grow over time.</td>
-<td>Media blobs have size/cache gates plus purge/rehydrate controls; ADR-0019 keeps text durable by default and splits maintenance/backup/export implementation into follow-up tickets.</td>
-</tr>
-<tr>
-<td>Captured text may contain prompt injection.</td>
-<td>UI/CLI treat it as evidence; future agents must not follow page instructions.</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="source-inventory">Source inventory</h2>
-<table>
-<thead>
-<tr>
-<th>Path</th>
-<th>Role</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>daemon/src/browser_memory_daemon/</code></td>
-<td>Python daemon package.</td>
-</tr>
-<tr>
-<td><code>daemon/tests/</code></td>
-<td>Unit/integration/e2e tests.</td>
-</tr>
-<tr>
-<td><code>extension/src/</code></td>
-<td>MV3 extension source.</td>
-</tr>
-<tr>
-<td><code>extension/tests/</code></td>
-<td>Extension unit tests.</td>
-</tr>
-<tr>
-<td><code>ui/</code></td>
-<td>Local static dashboard.</td>
-</tr>
-<tr>
-<td><code>scripts/</code></td>
-<td>E2E, install, build, dev, secret-scan helpers.</td>
-</tr>
-<tr>
-<td><code>docs/</code></td>
-<td>Operator and architecture docs.</td>
-</tr>
-</tbody>
-</table>
+<h2 id="context">Context</h2>
+<p>ADR-0043 moved cache accounting, admission, eviction, locator containment, and deletion outcomes into <code>media_store.py</code>, but <code>media.py</code> still directly published artifacts, updated artifact rows, registered lifecycle state, resolved reads, and implemented purge/rehydration. That split left the compatibility facade responsible for the most failure-sensitive database/filesystem transition.</p>
+<p>The former replacement path reused one final locator per artifact. A database failure after publication could therefore leave a new blob without matching row metadata or overwrite the previously committed bytes before the row update succeeded. Spool reservations also needed explicit compensation when publication failed.</p>
+<h2 id="decision">Decision</h2>
+<p><code>media_store.py</code> owns the complete artifact repository and <code>BlobStore</code> publication boundary:</p>
+<ol>
+<li><code>media.py</code> remains the stable compatibility facade. It validates and normalizes caller payloads into <code>MediaArtifactWrite</code>; stream buffering and fetch/HLS transport remain there for later slices.</li>
+<li>Each byte-bearing write stages through <code>BlobStore</code> and targets a unique server-generated candidate locator. A replacement never overwrites the currently committed locator in place.</li>
+<li>Admission accounting excludes the artifact being replaced from snapshot, domain, and global byte totals and from eviction candidates. The current committed bytes therefore remain intact until the replacement row transition succeeds.</li>
+<li>The store revalidates snapshot/artifact ownership inside the final write transaction. It publishes the candidate, advances the artifact row, releases a spool reservation, registers committed lifecycle state, and tombstones the prior locator as one repository operation.</li>
+<li>If the database operation fails, the transaction is rolled back, the candidate blob is removed, and any spool reservation is released. The prior row and bytes remain authoritative.</li>
+<li>Concurrent writers serialize the final owner re-read and row transition with <code>BEGIN IMMEDIATE</code> when the caller does not already own a transaction; callers with an existing transaction receive an isolated savepoint.</li>
+<li>Artifact detail/list resolution and cache purge/rehydration move into <code>media_store.py</code>. <code>browser_memory_daemon.media</code> re-exports those public functions unchanged.</li>
+<li>Successful replacement and purge continue to use durable tombstones and the existing storage reconciler. A process failure after candidate publication but before the SQLite commit can leave only a contained unreferenced candidate, which reconciliation classifies as an orphan.</li>
+</ol>
+<p>No schema migration or API change is introduced.</p>
+<h2 id="consequences">Consequences</h2>
+<h3 id="positive">Positive</h3>
+<ul>
+<li>A failed replacement cannot corrupt the previously committed artifact.</li>
+<li>Failed first publication does not leak committed candidate bytes or spool reservations during handled failures.</li>
+<li>Artifact rows, contained locators, lifecycle registration, reads, and purge now have one repository owner.</li>
+<li>The public <code>media.py</code> import surface remains compatible while becoming thinner.</li>
+</ul>
+<h3 id="tradeoffs-and-deferred-work">Tradeoffs and deferred work</h3>
+<ul>
+<li>Unique candidate locators consume a new filename for each replacement until the old tombstone is processed.</li>
+<li>Media-root admission is still an estimate rather than a durable global in-flight-byte reservation. Global worker/request/byte budgets remain Phase 4.5 work under REQ-036.</li>
+<li><code>store_media_blob_stream</code> still buffers the bounded payload before repository publication; transport streaming remains deferred to Phase 4.5.</li>
+<li>Guarded fetch and HLS transport remain in <code>media.py</code> until the next reversible extraction.</li>
+</ul>
+<h2 id="verification">Verification</h2>
+<p>Repository evidence includes:</p>
+<ul>
+<li><code>daemon/tests/unit/test_media_store.py</code></li>
+<li><code>daemon/tests/integration/test_media_storage.py::test_failed_first_publication_removes_new_blob_and_spool_reservation</code></li>
+<li><code>daemon/tests/integration/test_media_storage.py::test_failed_write_transaction_start_aborts_stage_and_releases_spool_reservation</code></li>
+<li><code>daemon/tests/integration/test_media_storage.py::test_failed_replacement_preserves_previous_blob_and_removes_candidate</code></li>
+<li><code>daemon/tests/integration/test_media_storage.py::test_metadata_refresh_reports_the_preserved_stored_state</code></li>
+<li><code>daemon/tests/integration/test_media_storage.py::test_replacement_admission_excludes_current_artifact_and_preserves_it_on_row_failure</code></li>
+<li><code>daemon/tests/integration/test_media_worker.py::test_concurrent_media_blob_writes_use_distinct_temp_files</code></li>
+<li>focused media/storage/worker, Ruff, Mypy, architecture, generated-document, and broad repository gates recorded with the implementing commit.</li>
+</ul>
   </article>
   <div class="md-footer">
-    Rendered from <code>docs/STATUS.md</code> — the Markdown file is the canonical,
+    Rendered from <code>docs/architecture/adr/0044-publish-media-through-artifact-store.md</code> — the Markdown file is the canonical,
     version-controlled source. This HTML is generated (regenerate with
     <code>scripts/render_docs.py</code>); do not hand-edit.
   </div>
