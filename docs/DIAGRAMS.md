@@ -27,8 +27,8 @@ Topological diagrams previously in this atlas were folded into C4. The diagrams 
 
 ```mermaid
 flowchart LR
-  Page["Chrome page DOM"] --> Extractor["extractor.js"]
-  Extractor --> Content["content_script.js"]
+  Page["Chrome page light DOM"] --> Extractor["extractor.js<br/>computed/ancestor rendered visibility"]
+  Extractor --> Content["content_script.js<br/>full deterministic SHA-256 digest"]
   Content -->|"BMD_CAPTURE + inline blob messages"| ServiceWorker["service_worker.js"]
   ServiceWorker --> Outbox[("IndexedDB capture/lifecycle outbox")]
   Outbox -->|"atomic claim/checkpoint/ack/retry"| ServiceWorker
@@ -65,7 +65,7 @@ Operator posture: start at `all` for maximum recall; move upward only when filte
 
 ```mermaid
 flowchart TD
-  Page["Chrome page DOM"] --> Extract["Content script extracts<br/>URL + title + text + media refs"]
+  Page["Chrome page light DOM"] --> Extract["Content script extracts rendered<br/>URL + title + text + media refs<br/>and computes full digest"]
   Extract -->|"BMD_CAPTURE"| SW["Service worker"]
   SW --> Outbox[("Transactional IndexedDB outbox")]
   Outbox -->|"claim due row"| SW

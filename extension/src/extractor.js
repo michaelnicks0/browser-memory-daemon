@@ -46,11 +46,49 @@ function isEditableNode(node) {
   return editable === true || editable === 'true' || editable === '';
 }
 
-function isHiddenNode(node) {
+function elementHasHiddenAttributes(node) {
   if (attrValue(node, 'hidden') !== undefined) return true;
   if (String(attrValue(node, 'aria-hidden') || '').toLowerCase() === 'true') return true;
   const style = String(attrValue(node, 'style') || '').toLowerCase().replace(/\s+/g, '');
-  return style.includes('display:none') || style.includes('visibility:hidden');
+  return style.includes('display:none') || style.includes('visibility:hidden') || style.includes('visibility:collapse') || style.includes('content-visibility:hidden') || /(^|;)opacity:0(?:;|$)/.test(style);
+}
+
+function computedStyleFor(node) {
+  const view = node?.ownerDocument?.defaultView || globalThis;
+  if (typeof view?.getComputedStyle !== 'function') return null;
+  try {
+    return view.getComputedStyle(node);
+  } catch (_) {
+    return null;
+  }
+}
+
+function renderedParent(node) {
+  if (node?.parentElement) return node.parentElement;
+  try {
+    const root = node?.getRootNode?.();
+    return root?.host || null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function isRenderedElement(node) {
+  for (let current = node; current && current.nodeType === 1; current = renderedParent(current)) {
+    if (elementHasHiddenAttributes(current)) return false;
+    const computed = computedStyleFor(current);
+    if (!computed) continue;
+    const display = String(computed.display || '').toLowerCase();
+    const visibility = String(computed.visibility || '').toLowerCase();
+    const contentVisibility = String(computed.contentVisibility || computed['content-visibility'] || '').toLowerCase();
+    const opacity = String(computed.opacity ?? '1');
+    if (display === 'none' || visibility === 'hidden' || visibility === 'collapse' || contentVisibility === 'hidden' || opacity === '0') return false;
+  }
+  return true;
+}
+
+function isHiddenNode(node) {
+  return !isRenderedElement(node);
 }
 
 function shouldSkipElement(tagName, attrs = {}, options = {}) {
@@ -156,7 +194,7 @@ function metadataFromDocument(doc) {
     url: doc.location?.href || '',
     canonical_url: canonical,
     captured_at: new Date().toISOString(),
-    extraction_method: 'dom-visible-text-v1'
+    extraction_method: 'dom-rendered-text-v2'
   };
 }
 
@@ -325,7 +363,7 @@ function extractPageFromDocument(doc, options = {}) {
   }
   return {
     ...metadata,
-    extraction_method: mode === 'all' ? 'dom-all-text-v1' : metadata.extraction_method,
+    extraction_method: mode === 'all' ? 'dom-all-rendered-text-v2' : metadata.extraction_method,
     policy_mode: mode,
     text: extractTextFromDomNode(doc.body, { policyMode: mode }),
     media_artifacts: extractMediaFromDocument(doc)
@@ -338,6 +376,6 @@ globalThis.shouldBlockBrowserMemoryUrl = shouldBlockUrl;
 globalThis.normalizeBrowserMemoryPolicyMode = normalizePolicyMode;
 
 if (typeof module !== 'undefined') {
-  module.exports = { shouldSkipElement, shouldBlockUrl, isPrivateHost, extractTextFromTree, extractTextFromDomNode, collapseWhitespace, metadataFromDocument, extractMediaFromDocument, extractPageFromDocument, normalizePolicyMode };
+  module.exports = { shouldSkipElement, shouldBlockUrl, isPrivateHost, isRenderedElement, extractTextFromTree, extractTextFromDomNode, collapseWhitespace, metadataFromDocument, extractMediaFromDocument, extractPageFromDocument, normalizePolicyMode };
 }
 })();

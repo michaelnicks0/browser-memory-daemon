@@ -580,14 +580,14 @@ revision = 1
 statement = "DOM extraction shall follow a documented rendered-visibility contract verified in a real browser."
 rationale = "Class, inherited, responsive, and ancestor-hidden content require computed visibility evidence."
 owner = "Extension Extractor"
-status = "planned"
+status = "active"
 aliases = ["HRD-014"]
-implementation = ["extension/src/extractor.js"]
-unit_evidence = []
-integration_evidence = []
-system_evidence = []
-operational_evidence = []
-validation_evidence = []
+implementation = ["extension/src/extractor.js", "extension/src/capture_digest.js", "extension/src/content_script.js", "extension/src/service_worker.js"]
+unit_evidence = ["extension/tests/unit/capture_digest.test.js::portable SHA-256 fallback matches the standard vector", "extension/tests/unit/capture_digest.test.js::capture digest detects middle-text and complete media-list changes missed by the legacy fingerprint", "extension/tests/unit/extractor.test.js::computed rendered visibility excludes class, responsive, and ancestor-hidden content"]
+integration_evidence = ["extension/tests/unit/content_script.test.js::content capture retries the same full digest until admission succeeds and then suppresses duplicates", "extension/tests/unit/extractor.test.js::document traversal excludes computed-hidden subtrees and does not cross shadow roots", "extension/tests/unit/service_worker.test.js::service worker injection respects stale token, pause, and strict URL controls"]
+system_evidence = ["scripts/run-real-chrome-e2e.sh"]
+operational_evidence = ["docs/architecture/adr/0050-use-full-capture-digest-and-rendered-visibility.md"]
+validation_evidence = ["scripts/run-real-chrome-e2e.sh"]
 
 [[requirements]]
 id = "REQ-040"

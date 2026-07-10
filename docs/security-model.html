@@ -212,7 +212,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </table>
 <hr />
 <h2 id="all-mode-risk-acceptance"><code>all</code> mode risk acceptance</h2>
-<p><code>all</code> intentionally stores original URL/title/body text without daemon redaction and without built-in URL/domain/path/query filtering. It still applies explicit local block rules and skips hidden/form/editable/script/style/no-script DOM text because Operator requested those surfaces stay omitted. This is an operator-selected personal recall mode.</p>
+<p><code>all</code> intentionally stores original URL/title/body text without daemon redaction and without built-in URL/domain/path/query filtering. It still applies explicit local block rules and conservatively skips explicit/computed/ancestor-hidden, transparent, form, editable, script, style, and noscript light-DOM text. Shadow roots and pseudo-element content are outside the extraction contract. This is an operator-selected personal recall mode.</p>
 <p>Known consequences:</p>
 <ul>
 <li>visible/exposed page secrets can be stored and indexed;</li>

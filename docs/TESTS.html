@@ -132,7 +132,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </blockquote>
 <!-- BEGIN GENERATED:inventory-summary -->
 <blockquote>
-<p><strong>Current inventory:</strong> 262 static test functions across 42 files — 219 daemon pytest tests + 43 extension node:test tests.</p>
+<p><strong>Current inventory:</strong> 268 static test functions across 44 files — 219 daemon pytest tests + 49 extension node:test tests.</p>
 </blockquote>
 <!-- END GENERATED:inventory-summary -->
 
@@ -190,7 +190,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <hr />
 <h2 id="generated-test-inventory">Generated test inventory</h2>
 <!-- BEGIN GENERATED:audit-run -->
-<p>Latest inventory: <strong>262 static test functions</strong> across <strong>42 files</strong> (219 daemon pytest; 43 extension node:test). Regenerate with <code>python3.11 scripts/generate_test_inventory.py --write</code>; enforce with <code>--check</code>. Counts are source-level test functions, not pytest parametrized case expansions.</p>
+<p>Latest inventory: <strong>268 static test functions</strong> across <strong>44 files</strong> (219 daemon pytest; 49 extension node:test). Regenerate with <code>python3.11 scripts/generate_test_inventory.py --write</code>; enforce with <code>--check</code>. Counts are source-level test functions, not pytest parametrized case expansions.</p>
 <!-- END GENERATED:audit-run -->
 
 <h2 id="requirements-traceability-gate">Requirements traceability gate</h2>
@@ -206,7 +206,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <tbody>
 <tr>
 <td>Catalog requirements</td>
-<td>43 (39 active; 4 planned)</td>
+<td>43 (40 active; 3 planned)</td>
 </tr>
 <tr>
 <td>Duplicate stable IDs</td>
@@ -250,7 +250,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 </tr>
 <tr>
 <td>Static test inventory measured</td>
-<td>262 tests / 42 files</td>
+<td>268 tests / 44 files</td>
 </tr>
 </tbody>
 </table>
@@ -443,14 +443,24 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <td style="text-align: right;">5</td>
 </tr>
 <tr>
+<td><code>extension/tests/unit/capture_digest.test.js</code></td>
+<td>node:test</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr>
 <td><code>extension/tests/unit/cdp_recorder.test.js</code></td>
 <td>node:test</td>
 <td style="text-align: right;">4</td>
 </tr>
 <tr>
+<td><code>extension/tests/unit/content_script.test.js</code></td>
+<td>node:test</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
 <td><code>extension/tests/unit/extractor.test.js</code></td>
 <td>node:test</td>
-<td style="text-align: right;">11</td>
+<td style="text-align: right;">13</td>
 </tr>
 <tr>
 <td><code>extension/tests/unit/media_queue.test.js</code></td>
@@ -480,7 +490,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <tr>
 <td><strong>Total</strong></td>
 <td></td>
-<td style="text-align: right;"><strong>262</strong></td>
+<td style="text-align: right;"><strong>268</strong></td>
 </tr>
 </tbody>
 </table>
@@ -711,10 +721,14 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 | `daemon/tests/unit/test_storage_paths.py` | pytest | `(module)` | `test_contained_child_path_create_root_is_explicit` | 42 | Contained child path create root is explicit. |
 | `daemon/tests/unit/test_storage_paths.py` | pytest | `(module)` | `test_resolve_db_path_reports_empty_invalid_outside_missing_and_ok` | 49 | Resolve db path reports empty invalid outside missing and ok. |
 | `daemon/tests/unit/test_storage_paths.py` | pytest | `(module)` | `test_resolve_db_path_rejects_symlinked_file_outside_root` | 70 | Resolve db path rejects symlinked file outside root. |
+| `extension/tests/unit/capture_digest.test.js` | node:test | `(module)` | `portable SHA-256 fallback matches the standard vector` | 5 | Portable SHA-256 fallback matches the standard vector. |
+| `extension/tests/unit/capture_digest.test.js` | node:test | `(module)` | `capture digest is deterministic across volatile capture time and object key order` | 11 | Capture digest is deterministic across volatile capture time and object key order. |
+| `extension/tests/unit/capture_digest.test.js` | node:test | `(module)` | `capture digest detects middle-text and complete media-list changes missed by the legacy fingerprint` | 34 | Capture digest detects middle-text and complete media-list changes missed by the legacy fingerprint. |
 | `extension/tests/unit/cdp_recorder.test.js` | node:test | `(module)` | `CDP recorder only attaches to configured X/Twitter page domains` | 10 | CDP recorder only attaches to configured X/Twitter page domains. |
 | `extension/tests/unit/cdp_recorder.test.js` | node:test | `(module)` | `CDP recorder recognizes X video segment and HLS manifest responses` | 17 | CDP recorder recognizes X video segment and HLS manifest responses. |
 | `extension/tests/unit/cdp_recorder.test.js` | node:test | `(module)` | `CDP recorder builds stable artifact metadata without cookies or headers` | 40 | CDP recorder builds stable artifact metadata without cookies or headers. |
 | `extension/tests/unit/cdp_recorder.test.js` | node:test | `(module)` | `CDP base64 byte estimate handles padding` | 59 | CDP base64 byte estimate handles padding. |
+| `extension/tests/unit/content_script.test.js` | node:test | `(module)` | `content capture retries the same full digest until admission succeeds and then suppresses duplicates` | 23 | Content capture retries the same full digest until admission succeeds and then suppresses duplicates. |
 | `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `all mode still skips hidden/form/editable/script/style/no-script extraction surfaces` | 17 | All mode still skips hidden/form/editable/script/style/no-script extraction surfaces. |
 | `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `strict mode skips form and editable elements` | 26 | Strict mode skips form and editable elements. |
 | `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `URL policy modes are adjustable` | 33 | URL policy modes are adjustable. |
@@ -722,10 +736,12 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 | `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `strict mode extracts readable tree text without form secrets` | 69 | Strict mode extracts readable tree text without form secrets. |
 | `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `real document extraction in all mode still skips hidden/form/editable surfaces` | 86 | Real document extraction in all mode still skips hidden/form/editable surfaces. |
 | `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `real document extraction uses strict skip traversal` | 111 | Real document extraction uses strict skip traversal. |
-| `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `real document extraction records image and video artifacts without adding media text` | 136 | Real document extraction records image and video artifacts without adding media text. |
-| `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `image extraction ignores empty-src document URL fallbacks` | 179 | Image extraction ignores empty-src document URL fallbacks. |
-| `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `performance video resources are preserved even when image refs fill the cap` | 202 | Performance video resources are preserved even when image refs fill the cap. |
-| `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `collapses whitespace` | 235 | Collapses whitespace. |
+| `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `computed rendered visibility excludes class, responsive, and ancestor-hidden content` | 136 | Computed rendered visibility excludes class, responsive, and ancestor-hidden content. |
+| `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `document traversal excludes computed-hidden subtrees and does not cross shadow roots` | 155 | Document traversal excludes computed-hidden subtrees and does not cross shadow roots. |
+| `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `real document extraction records image and video artifacts without adding media text` | 192 | Real document extraction records image and video artifacts without adding media text. |
+| `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `image extraction ignores empty-src document URL fallbacks` | 235 | Image extraction ignores empty-src document URL fallbacks. |
+| `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `performance video resources are preserved even when image refs fill the cap` | 258 | Performance video resources are preserved even when image refs fill the cap. |
+| `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `collapses whitespace` | 291 | Collapses whitespace. |
 | `extension/tests/unit/media_queue.test.js` | node:test | `(module)` | `media task normalization and due ordering` | 4 | Media task normalization and due ordering. |
 | `extension/tests/unit/media_queue.test.js` | node:test | `(module)` | `media queue retains fetched blob until task delete` | 13 | Media queue retains fetched blob until task delete. |
 | `extension/tests/unit/media_queue.test.js` | node:test | `(module)` | `future retry is not due until next_attempt_at` | 25 | Future retry is not due until next attempt at. |
@@ -751,7 +767,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 | `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker transactionally imports and drains the legacy lifecycle queue before deleting it` | 391 | Service worker transactionally imports and drains the legacy lifecycle queue before deleting it. |
 | `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `capture result checkpoint survives suspension without reposting before media enqueue compensation` | 425 | Capture result checkpoint survives suspension without reposting before media enqueue compensation. |
 | `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker injection respects stale token, pause, and strict URL controls` | 478 | Service worker injection respects stale token, pause, and strict URL controls. |
-| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker media upload retries keep fetched blob until successful upload` | 507 | Service worker media upload retries keep fetched blob until successful upload. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker media upload retries keep fetched blob until successful upload` | 508 | Service worker media upload retries keep fetched blob until successful upload. |
 | `extension/tests/unit/shared.test.js` | node:test | `(module)` | `daemon URL normalization strips trailing slashes` | 4 | Daemon URL normalization strips trailing slashes. |
 | `extension/tests/unit/shared.test.js` | node:test | `(module)` | `auth headers include bearer token` | 9 | Auth headers include bearer token. |
 <!-- END GENERATED:test-case-inventory -->

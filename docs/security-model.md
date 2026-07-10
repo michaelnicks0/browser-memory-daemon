@@ -34,7 +34,7 @@ The daemon is local-first and WSL-resident. It assumes captured page text may be
 
 ## `all` mode risk acceptance
 
-`all` intentionally stores original URL/title/body text without daemon redaction and without built-in URL/domain/path/query filtering. It still applies explicit local block rules and skips hidden/form/editable/script/style/no-script DOM text because Operator requested those surfaces stay omitted. This is an operator-selected personal recall mode.
+`all` intentionally stores original URL/title/body text without daemon redaction and without built-in URL/domain/path/query filtering. It still applies explicit local block rules and conservatively skips explicit/computed/ancestor-hidden, transparent, form, editable, script, style, and noscript light-DOM text. Shadow roots and pseudo-element content are outside the extraction contract. This is an operator-selected personal recall mode.
 
 Known consequences:
 

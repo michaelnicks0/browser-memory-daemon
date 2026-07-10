@@ -495,9 +495,10 @@ test('service worker injection respects stale token, pause, and strict URL contr
   result = await worker.context.maybeInjectCapture(7, 'https://bank.example.test/login');
   assert.equal(result.ok, true);
   assert.equal(worker.calls.scripts.length, 1);
+  assert.deepEqual(Array.from(worker.calls.scripts[0].files), ['src/extractor.js', 'src/capture_digest.js', 'src/content_script.js']);
   result = await worker.context.maybeInjectCapture(7, 'https://bank.example.test/login');
-  assert.equal(result.skipped, true);
-  assert.equal(result.reason, 'already-injected');
+  assert.equal(result.ok, true);
+  assert.equal(worker.calls.scripts.length, 2);
 
   await worker.chrome.storage.local.set({ capturePaused: true });
   result = await worker.context.maybeInjectCapture(8, 'https://example.test/paused');

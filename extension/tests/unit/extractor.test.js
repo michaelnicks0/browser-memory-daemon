@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { shouldSkipElement, shouldBlockUrl, extractTextFromTree, extractMediaFromDocument, extractPageFromDocument, collapseWhitespace } = require('../../src/extractor.js');
+const { shouldSkipElement, shouldBlockUrl, isRenderedElement, extractTextFromTree, extractMediaFromDocument, extractPageFromDocument, collapseWhitespace } = require('../../src/extractor.js');
 
 function textNode(text) {
   return { nodeType: 3, textContent: text };
@@ -132,6 +132,62 @@ test('real document extraction uses strict skip traversal', () => {
   assert.doesNotMatch(payload.text, /hidden text/);
   assert.doesNotMatch(payload.text, /aria hidden text/);
   assert.doesNotMatch(payload.text, /style hidden text/);
+});
+
+test('computed rendered visibility excludes class, responsive, and ancestor-hidden content', () => {
+  const doc = {
+    defaultView: {
+      getComputedStyle(node) {
+        return { display: 'block', visibility: 'visible', contentVisibility: 'visible', opacity: '1', ...(node.computedStyle || {}) };
+      }
+    }
+  };
+  const ancestor = { nodeType: 1, ownerDocument: doc, computedStyle: { display: 'none' }, getAttribute() { return null; } };
+  const descendant = { nodeType: 1, ownerDocument: doc, parentElement: ancestor, computedStyle: { display: 'block' }, getAttribute() { return null; } };
+  const responsive = { nodeType: 1, ownerDocument: doc, computedStyle: { display: 'none' }, getAttribute() { return null; } };
+  const transparent = { nodeType: 1, ownerDocument: doc, computedStyle: { opacity: '0' }, getAttribute() { return null; } };
+  const visible = { nodeType: 1, ownerDocument: doc, computedStyle: { display: 'contents' }, getAttribute() { return null; } };
+  assert.equal(isRenderedElement(descendant), false);
+  assert.equal(isRenderedElement(responsive), false);
+  assert.equal(isRenderedElement(transparent), false);
+  assert.equal(isRenderedElement(visible), true);
+});
+
+test('document traversal excludes computed-hidden subtrees and does not cross shadow roots', () => {
+  const visible = elem('P', [textNode('Visible rendered paragraph')]);
+  const classHidden = elem('DIV', [textNode('class hidden secret')]);
+  classHidden.computedStyle = { display: 'none' };
+  const ancestorHidden = elem('SECTION', [elem('P', [textNode('ancestor hidden secret')])]);
+  ancestorHidden.computedStyle = { visibility: 'hidden' };
+  const shadowHost = elem('DIV', [textNode('Light DOM text')]);
+  shadowHost.shadowRoot = { nodeType: 11, childNodes: [elem('P', [textNode('open shadow secret')])] };
+  const body = elem('BODY', [visible, classHidden, ancestorHidden, shadowHost]);
+  const doc = {
+    title: 'Rendered contract',
+    location: { href: 'https://example.test/rendered' },
+    querySelector() { return null; },
+    querySelectorAll() { return []; },
+    defaultView: {
+      getComputedStyle(node) {
+        return { display: 'block', visibility: 'visible', contentVisibility: 'visible', opacity: '1', ...(node.computedStyle || {}) };
+      }
+    },
+    body
+  };
+  function connect(node, parent = null) {
+    if (!node || node.nodeType !== 1) return;
+    node.ownerDocument = doc;
+    node.parentElement = parent;
+    for (const child of node.childNodes || []) connect(child, node);
+  }
+  connect(body);
+  const payload = extractPageFromDocument(doc, { policyMode: 'all' });
+  assert.equal(payload.extraction_method, 'dom-all-rendered-text-v2');
+  assert.match(payload.text, /Visible rendered paragraph/);
+  assert.match(payload.text, /Light DOM text/);
+  assert.doesNotMatch(payload.text, /class hidden secret/);
+  assert.doesNotMatch(payload.text, /ancestor hidden secret/);
+  assert.doesNotMatch(payload.text, /open shadow secret/);
 });
 
 test('real document extraction records image and video artifacts without adding media text', () => {

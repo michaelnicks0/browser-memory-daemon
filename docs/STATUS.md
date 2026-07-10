@@ -10,7 +10,7 @@
 
 | Area | Status | Evidence |
 |---|---|---|
-| Windows Chrome extension | ✅ MV3 extension with service-worker-owned injection/transport, opaque observation/navigation IDs, transactional IndexedDB capture/lifecycle outboxes, and a separate version-2 media task/blob queue with atomic compensation batches, count/byte quotas, stale recovery, 24-hour terminal quarantine, and redaction-safe popup/options telemetry. | `extension/src/outbox.js`, `extension/src/media_queue.js`, `extension/src/service_worker.js`, `extension/src/popup.js`, `extension/src/options.js`, extension unit tests, ADR-0048/0049, real Chrome e2e. |
+| Windows Chrome extension | ✅ MV3 extension with service-worker-owned idempotent reinjection/transport, full deterministic SHA-256 capture digests, computed-style/ancestor rendered-visibility extraction, opaque observation/navigation IDs, transactional IndexedDB capture/lifecycle outboxes, and a separate version-2 media task/blob queue with atomic compensation batches, count/byte quotas, stale recovery, 24-hour terminal quarantine, and redaction-safe popup/options telemetry. | `extension/src/capture_digest.js`, `extension/src/extractor.js`, `extension/src/outbox.js`, `extension/src/media_queue.js`, `extension/src/service_worker.js`, `extension/src/popup.js`, `extension/src/options.js`, extension unit tests, isolated real Chrome e2e. |
 | WSL daemon | ✅ Loopback HTTP daemon with bearer auth. | `app.py`, HTTP e2e tests. |
 | SQLite/FTS/media storage | ✅ Documents/visits/snapshots/chunks/FTS/media/audit/deletion receipts plus version-4 through version-8 provenance/locator expansion, version-9 complete cleaned-text authority, version-10 media storage tiers/spool reservations, version-11 blob lifecycle records, version-12 historical media-state correction, and version-13 transactional cache reservations. New text/provenance commits locally without media-root access; recent/timeline/detail reads are observation-first with explicit legacy fallback. | `schema.sql`, `migration_steps/`, `migrations.py`, `text_authority.py`, `media_storage.py`, `blob_lifecycle.py`, migration/text/read tests, ADR-0028, ADR-0030 through ADR-0040, ADR-0046, ADR-0047. |
 | Blob filesystem boundary | ✅ `BlobStore` contains DB locators; stages streaming media writes with size/hash accounting; atomically commits; and owns media plus legacy-sidecar read/stat/delete operations. Derivative and media roots are separate; external media is identity-guarded; the local spool is bounded; durable tombstones and dry-run-first reconciliation cover failed deletion, missing references, orphans, and stale stages. | `blob_store.py`, `blob_lifecycle.py`, `storage_reconcile.py`, storage integration tests, ADR-0036 through ADR-0040. |
@@ -32,7 +32,7 @@
 ## Requirement posture
 
 <!-- BEGIN GENERATED:requirement-posture -->
-The canonical catalog contains **43 stable requirements**: **39 active** and **4 planned**. Normative statements, implementation links, V-model evidence, and legacy aliases are owned by [`requirements/catalog.toml`](../requirements/catalog.toml); generated tables in this doc set must not be hand-edited.
+The canonical catalog contains **43 stable requirements**: **40 active** and **3 planned**. Normative statements, implementation links, V-model evidence, and legacy aliases are owned by [`requirements/catalog.toml`](../requirements/catalog.toml); generated tables in this doc set must not be hand-edited.
 <!-- END GENERATED:requirement-posture -->
 
 ---

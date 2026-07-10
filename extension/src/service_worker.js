@@ -1053,20 +1053,16 @@ async function decorateCapturePayload(payload, sender) {
   return ensureCaptureIdentity(decorated);
 }
 
-const injectedTabs = new Map();
-
 async function maybeInjectCapture(tabId, tabUrl) {
   const config = await getConfig();
   if (config.capturePaused || !config.apiToken) return { skipped: true, reason: config.capturePaused ? 'paused' : 'missing-token' };
   if (!isTrackableUrl(tabUrl, config.policyMode)) return { skipped: true, reason: 'blocked-url' };
   ensureCdpRecorder(tabId, tabUrl).catch((error) => chrome.storage.local.set({ lastCdpRecorderError: { at: nowIso(), tabId, error: String(error.message || error), phase: 'ensure' } }));
-  if (injectedTabs.get(tabId) === tabUrl) return { skipped: true, reason: 'already-injected' };
   try {
     await chrome.scripting.executeScript({
       target: { tabId },
-      files: ['src/extractor.js', 'src/content_script.js']
+      files: ['src/extractor.js', 'src/capture_digest.js', 'src/content_script.js']
     });
-    injectedTabs.set(tabId, tabUrl);
     return { ok: true };
   } catch (error) {
     return { ok: false, error: String(error.message || error) };
@@ -1106,7 +1102,6 @@ chrome.windows.onFocusChanged?.addListener((windowId) => {
 });
 
 chrome.tabs.onRemoved?.addListener((tabId) => {
-  injectedTabs.delete(tabId);
   cdpCaptureContextByTab.delete(tabId);
   if (cdpRecorderByTab.has(tabId)) {
     cdpDetach(tabId).finally(() => cdpRecorderByTab.delete(tabId));

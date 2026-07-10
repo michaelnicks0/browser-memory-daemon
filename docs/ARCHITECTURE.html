@@ -618,12 +618,12 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td>REQ-039</td>
 <td style="text-align: right;">1</td>
-<td>planned</td>
+<td>active</td>
 <td>DOM extraction shall follow a documented rendered-visibility contract verified in a real browser.</td>
 <td>Extension Extractor</td>
 <td><code>HRD-014</code></td>
-<td><code>extension/src/extractor.js</code></td>
-<td>—</td>
+<td><code>extension/src/extractor.js</code><br><code>extension/src/capture_digest.js</code><br><code>extension/src/content_script.js</code><br><code>extension/src/service_worker.js</code></td>
+<td><code>scripts/run-real-chrome-e2e.sh</code></td>
 </tr>
 <tr>
 <td>REQ-040</td>
@@ -778,13 +778,13 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Extractor</td>
-<td>Traverse DOM and build capture payload.</td>
-<td>Policy-aware; all modes skip hidden/form/editable/script/style/no-script DOM text.</td>
+<td>Traverse rendered light DOM and build capture payload.</td>
+<td>Policy-aware; all modes conservatively skip explicit/computed/ancestor-hidden, transparent, form, editable, script, style, and noscript content; shadow roots are outside the contract.</td>
 </tr>
 <tr>
 <td>Content script</td>
-<td>Schedule initial/delayed/SPA captures and scroll tracking.</td>
-<td>Reads <code>policyMode</code> from extension storage.</td>
+<td>Schedule initial/delayed/reinjected/SPA captures, full SHA-256 capture digests, and scroll tracking.</td>
+<td>Reads <code>policyMode</code> from extension storage; only records a digest as delivered after durable capture admission.</td>
 </tr>
 <tr>
 <td>Service worker</td>

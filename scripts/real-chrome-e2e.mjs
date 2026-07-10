@@ -229,7 +229,16 @@ function startPageServer() {
       res.setHeader('Set-Cookie', 'bmd_media_cookie=ok; Path=/');
       res.end(`<!doctype html>
 <html>
-  <head><title>Allowed Real Chrome E2E</title></head>
+  <head>
+    <title>Allowed Real Chrome E2E</title>
+    <style>
+      .bmd-class-hidden { display: none; }
+      .bmd-ancestor-hidden { visibility: hidden; }
+      .bmd-transparent { opacity: 0; }
+      .bmd-content-hidden { content-visibility: hidden; }
+      @media (min-width: 1px) { .bmd-responsive-hidden { display: none; } }
+    </style>
+  </head>
   <body>
     <main>
       <h1>Allowed capture fixture</h1>
@@ -237,11 +246,20 @@ function startPageServer() {
       <img src="/media-image.png" width="64" height="64" alt="Synthetic public media artifact">
       <img src="/cookie-media.png" width="64" height="64" alt="Synthetic cookie media artifact">
       <p style="display:none">Hidden text must not be captured ${hiddenNeedle}</p>
+      <p class="bmd-class-hidden">Class-hidden text must not be captured ${hiddenNeedle}_CLASS</p>
+      <section class="bmd-ancestor-hidden"><p>Ancestor-hidden text must not be captured ${hiddenNeedle}_ANCESTOR</p></section>
+      <p class="bmd-responsive-hidden">Responsive-hidden text must not be captured ${hiddenNeedle}_RESPONSIVE</p>
+      <p class="bmd-transparent">Transparent text must not be captured ${hiddenNeedle}_OPACITY</p>
+      <p class="bmd-content-hidden">Content-visibility-hidden text must not be captured ${hiddenNeedle}_CONTENT</p>
       <p aria-hidden="true">ARIA hidden text must not be captured ${hiddenNeedle}_ARIA</p>
       <input value="Input field must not be captured ${hiddenNeedle}_INPUT">
       <textarea>Textarea must not be captured ${hiddenNeedle}_TEXTAREA</textarea>
       <div contenteditable="true">Editable text must not be captured ${hiddenNeedle}_EDITABLE</div>
+      <bmd-shadow-host id="shadow-host">Visible light-DOM host text.</bmd-shadow-host>
     </main>
+    <script>
+      document.getElementById('shadow-host').attachShadow({mode: 'open'}).innerHTML = '<p>Open shadow text is outside the extraction contract ${hiddenNeedle}_SHADOW</p>';
+    </script>
   </body>
 </html>`);
       return;

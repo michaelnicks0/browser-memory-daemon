@@ -149,7 +149,7 @@ Do **not** install by editing Chrome profile JSON. Chrome Secure Preferences rej
 
 | Mode | Capture behavior | Redaction | Local block rules |
 |---|---|---:|---:|
-| `all` | Captures all URL surfaces the extension/Chrome platform allows unless explicitly blocked; skips hidden/form/editable/script/style/no-script DOM text. | ❌ Off | ✅ Applied |
+| `all` | Captures all URL surfaces the extension/Chrome platform allows unless explicitly blocked; skips explicit/computed/ancestor-hidden, transparent, form, editable, script, style, and noscript light-DOM text. Shadow roots are not traversed. | ❌ Off | ✅ Applied |
 | `recall` | Captures most `http(s)` pages; blocks incognito/browser-internal/non-web schemes. | ✅ On | ✅ Applied |
 | `balanced` | `recall` plus private-host, known bank/payment/mail/auth domains, and high-risk query-key blocks. | ✅ On | ✅ Applied |
 | `strict` | Legacy broad keyword filtering for sensitive domains/paths/query keys. | ✅ On | ✅ Applied |

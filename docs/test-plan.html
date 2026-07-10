@@ -452,11 +452,11 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>REQ-039 — DOM extraction shall follow a documented rendered-visibility contract verified in a real browser.</td>
-<td>—</td>
-<td>—</td>
-<td>—</td>
-<td>—</td>
-<td>—</td>
+<td><code>extension/tests/unit/capture_digest.test.js::portable SHA-256 fallback matches the standard vector</code><br><code>extension/tests/unit/capture_digest.test.js::capture digest detects middle-text and complete media-list changes missed by the legacy fingerprint</code><br><code>extension/tests/unit/extractor.test.js::computed rendered visibility excludes class, responsive, and ancestor-hidden content</code></td>
+<td><code>extension/tests/unit/content_script.test.js::content capture retries the same full digest until admission succeeds and then suppresses duplicates</code><br><code>extension/tests/unit/extractor.test.js::document traversal excludes computed-hidden subtrees and does not cross shadow roots</code><br><code>extension/tests/unit/service_worker.test.js::service worker injection respects stale token, pause, and strict URL controls</code></td>
+<td><code>scripts/run-real-chrome-e2e.sh</code></td>
+<td><code>docs/architecture/adr/0050-use-full-capture-digest-and-rendered-visibility.md</code></td>
+<td><code>scripts/run-real-chrome-e2e.sh</code></td>
 </tr>
 <tr>
 <td>REQ-040 — HTTP behavior shall provide stable typed errors, request IDs, secure headers, and bounded streaming.</td>
