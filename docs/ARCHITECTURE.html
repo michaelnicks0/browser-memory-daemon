@@ -598,12 +598,12 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td>REQ-037</td>
 <td style="text-align: right;">1</td>
-<td>planned</td>
+<td>active</td>
 <td>Browser capture, lifecycle, and media queues shall be transactional, restart-safe, quota-aware, and never silently truncate.</td>
 <td>Extension Durable Outboxes</td>
 <td><code>HRD-012</code></td>
 <td><code>extension/src/outbox.js</code><br><code>extension/src/service_worker.js</code><br><code>extension/src/popup.js</code><br><code>extension/src/options.js</code><br><code>extension/src/media_queue.js</code></td>
-<td><code>extension/tests/unit/service_worker.test.js::service worker preserves queued captures while daemon is down and drains them after reload</code><br><code>extension/tests/unit/service_worker.test.js::service worker queue overflow preserves old captures and visibly rejects the new capture</code><br><code>extension/tests/unit/service_worker.test.js::service worker enforces byte quota and exposes redaction-safe outbox telemetry</code></td>
+<td><code>extension/tests/unit/service_worker.test.js::service worker preserves queued captures while daemon is down and drains them after reload</code><br><code>extension/tests/unit/service_worker.test.js::service worker queue overflow preserves old captures and visibly rejects the new capture</code><br><code>extension/tests/unit/service_worker.test.js::service worker enforces byte quota and exposes redaction-safe outbox telemetry</code><br><code>extension/tests/unit/service_worker.test.js::capture result checkpoint survives suspension without reposting before media enqueue compensation</code><br><code>extension/tests/unit/service_worker.test.js::service worker cleans expired terminal media while capture is paused or tokenless</code><br><code>extension/tests/unit/service_worker.test.js::service worker media upload retries keep fetched blob until successful upload</code></td>
 </tr>
 <tr>
 <td>REQ-038</td>
@@ -793,13 +793,13 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Capture/lifecycle outbox</td>
-<td>Versioned IndexedDB rows with sequence IDs, atomic claims, token-checked checkpoint/ack/retry, stale-claim recovery, bounded drains, legacy-array import, item admission limits, and serialized-byte accounting.</td>
-<td>Existing queued rows survive count-cap exhaustion; new work is visibly rejected. Legacy <code>chrome.storage.local</code> arrays are imported before deletion and remain only as a one-version failure fallback. Final byte quotas and operator telemetry remain Phase 5 work.</td>
+<td>Versioned IndexedDB rows with sequence IDs, atomic claims, token-checked checkpoint/ack/retry, stale-claim recovery, bounded drains, legacy-array import, count/byte admission limits, and redaction-safe telemetry.</td>
+<td>Existing queued rows survive quota exhaustion; new work is visibly rejected. Legacy <code>chrome.storage.local</code> arrays are imported before deletion and remain only as a one-version failure fallback.</td>
 </tr>
 <tr>
 <td>Extension media queue</td>
-<td>Durable IndexedDB queue for credentialed media fetch/upload.</td>
-<td>Stores fetched blobs until raw upload succeeds.</td>
+<td>Version-2 IndexedDB task/blob queue for credentialed media fetch/upload with atomic task batches, atomic blob/state transitions, replacement-aware byte accounting, and bounded terminal cleanup.</td>
+<td>Caps the queue at 500 tasks, each blob at 250,000,000 bytes, and aggregate fetched blobs at 512 MiB; failed terminal rows are quarantined for 24 hours before bounded deletion.</td>
 </tr>
 <tr>
 <td>CDP recorder</td>

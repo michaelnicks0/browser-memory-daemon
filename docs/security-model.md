@@ -74,6 +74,7 @@ In `recall`, `balanced`, and `strict`, redaction runs before DB/FTS/blob storage
 - `/health` exposes minimal daemon status plus `policy_mode`.
 - Daily-driver install stores the daemon API token in protected WSL config files and injects it into the Windows-local extension artifact; the token is never committed.
 - Capture and lifecycle payloads are durable browser-profile data in a versioned IndexedDB outbox. Atomic token-checked claims recover after MV3 suspension; aggregate telemetry excludes payload text and URLs. Legacy `chrome.storage.local` queue arrays are imported before deletion and remain only as a one-version failure fallback.
+- Fetched browser media remains in a separate versioned IndexedDB task/blob queue. Atomic task-batch and blob/state transitions enforce a 500-task and 512 MiB aggregate boundary; terminal failures are quarantined for 24 hours and then removed in bounded transactions. Media telemetry exposes aggregate counts and bytes only.
 - Token rotation is supported:
 
   ```bash

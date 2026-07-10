@@ -54,9 +54,10 @@ async function loadOutboxSummary() {
   const status = await requestOutboxStatus();
   const capture = status.capture || {};
   const lifecycle = status.lifecycle || {};
+  const media = status.media || {};
   document.getElementById('outbox').textContent = status.available
-    ? `outbox capture=${capture.count || 0}/${capture.max_items || 0} (${capture.serialized_bytes || 0}/${capture.max_bytes || 0} bytes) lifecycle=${lifecycle.count || 0}/${lifecycle.max_items || 0} (${lifecycle.serialized_bytes || 0}/${lifecycle.max_bytes || 0} bytes) age=${Math.max(capture.oldest_age_ms || 0, lifecycle.oldest_age_ms || 0)}ms attempts=${(capture.attempts || 0) + (lifecycle.attempts || 0)} errors=${(capture.errors || 0) + (lifecycle.errors || 0)} last=${capture.last_success_at || lifecycle.last_success_at || 'never'} overflow=${status.last_overflow?.reason || 'none'}`
-    : 'outbox unavailable; compatibility fallback active';
+    ? `outbox capture=${capture.count || 0}/${capture.max_items || 0} (${capture.serialized_bytes || 0}/${capture.max_bytes || 0} bytes, age=${Math.round((capture.oldest_age_ms || 0) / 1000)}s, attempts=${capture.attempts || 0}, errors=${capture.error_count || 0}, last=${capture.last_success_at || 'never'}); lifecycle=${lifecycle.count || 0}/${lifecycle.max_items || 0} (${lifecycle.serialized_bytes || 0}/${lifecycle.max_bytes || 0} bytes, age=${Math.round((lifecycle.oldest_age_ms || 0) / 1000)}s, attempts=${lifecycle.attempts || 0}, errors=${lifecycle.error_count || 0}, last=${lifecycle.last_success_at || 'never'}); media=${media.task_count || 0}/${media.max_tasks || 0} tasks, ${media.blob_bytes || 0}/${media.max_blob_bytes || 0} bytes; overflow=${status.last_overflow?.reason || 'none'}`
+    : 'outbox unavailable';
   return status;
 }
 

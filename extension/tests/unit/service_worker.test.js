@@ -335,8 +335,27 @@ test('service worker enforces byte quota and exposes redaction-safe outbox telem
   assert.equal(status.ok, true);
   assert.equal(status.result.capture.count, 0);
   assert.equal(status.result.capture.max_bytes, 1);
+  assert.equal(status.result.media.task_count, 0);
+  assert.equal(status.result.media.max_tasks, 500);
+  assert.equal(status.result.media.max_blob_bytes, 512 * 1024 * 1024);
   assert.equal(status.result.last_overflow.reason, 'queue-bytes-full');
   assert.equal(JSON.stringify(status).includes('byte-limit-secret'), false);
+});
+
+test('service worker cleans expired terminal media while capture is paused or tokenless', async () => {
+  const mediaQueue = new MemoryMediaQueueStore();
+  await mediaQueue.putMediaTask({ artifact_id: 'expired' });
+  await mediaQueue.putFetchedBlob('expired', new Uint8Array([1]).buffer);
+  await mediaQueue.markMediaTask('expired', { status: 'failed' }, '2020-01-01T00:00:00.000Z');
+  const worker = createServiceWorkerHarness({
+    storage: { daemonUrl: 'http://127.0.0.1:8765', policyMode: 'all', apiToken: '', capturePaused: true },
+    mediaQueue
+  });
+
+  const result = await worker.context.drainMediaQueue();
+  assert.equal(result.skipped, true);
+  assert.equal((await mediaQueue.getMediaQueueStats()).task_count, 0);
+  assert.equal((await mediaQueue.getMediaQueueStats()).blob_count, 0);
 });
 
 test('service worker skips missing token and pause without mutating capture queue, then resumes', async () => {
@@ -410,12 +429,12 @@ test('capture result checkpoint survives suspension without reposting before med
       super();
       this.fail = true;
     }
-    async putMediaTask(task) {
+    async putMediaTasks(tasks, options) {
       if (this.fail) {
         this.fail = false;
         throw new Error('indexeddb-media-write-failed');
       }
-      return super.putMediaTask(task);
+      return super.putMediaTasks(tasks, options);
     }
   }
 
@@ -454,7 +473,7 @@ test('capture result checkpoint survives suspension without reposting before med
   assert.equal(drained.remaining, 0);
   assert.equal(capturePosts, 1);
   const mediaCounts = await mediaQueue.countMediaTasksByStatus();
-  assert.equal((mediaCounts.fetching || 0) + (mediaCounts.retrying || 0), 1);
+  assert.equal((mediaCounts['pending-fetch'] || 0) + (mediaCounts.fetching || 0) + (mediaCounts.retrying || 0), 1);
 });
 
 test('service worker injection respects stale token, pause, and strict URL controls', async () => {

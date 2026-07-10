@@ -35,7 +35,7 @@ flowchart LR
   ServiceWorker -->|"POST /capture<br/>Bearer JSON"| DaemonCapture["WSL daemon /capture"]
   ServiceWorker -->|"POST /visit-events<br/>metadata only"| DaemonVisit["WSL daemon /visit-events"]
   ServiceWorker -->|"PUT /media-artifacts/{id}/blob<br/>raw bytes"| DaemonMedia["WSL media blob upload"]
-  ServiceWorker --> MediaIDB[("Separate IndexedDB media task/blob queue")]
+  ServiceWorker --> MediaIDB[("Separate IndexedDB media task/blob queue<br/>atomic batch/blob transitions<br/>500 tasks / 512 MiB / terminal TTL")]
   Popup["popup.js"] -->|"runtime messages"| ServiceWorker
   Options["options.js"] --> Storage[("chrome.storage.local")]
   Storage --> Content

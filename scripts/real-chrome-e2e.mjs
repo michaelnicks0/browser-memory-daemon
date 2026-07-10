@@ -896,7 +896,7 @@ async function runScenario() {
     fail(`extension queues not drained/empty: ${JSON.stringify({ ...queueLengths, mediaQueueCounts })} debug=${JSON.stringify(queueDebug).slice(0, 2000)}`);
   }
   const outboxTelemetry = await getOutboxTelemetry(browserCdp, storageSessionId);
-  if (!outboxTelemetry.available || outboxTelemetry.capture?.max_bytes !== 32 * 1024 * 1024 || outboxTelemetry.lifecycle?.max_bytes !== 2 * 1024 * 1024) {
+  if (!outboxTelemetry.available || outboxTelemetry.capture?.max_bytes !== 32 * 1024 * 1024 || outboxTelemetry.lifecycle?.max_bytes !== 2 * 1024 * 1024 || outboxTelemetry.media?.max_tasks !== 500 || outboxTelemetry.media?.max_blob_bytes !== 512 * 1024 * 1024 || outboxTelemetry.media?.task_count !== 0 || outboxTelemetry.media?.blob_count !== 0) {
     fail(`extension outbox telemetry/quota verification failed: ${JSON.stringify(outboxTelemetry)}`);
   }
   log('extension capture, lifecycle, and media queues are empty');

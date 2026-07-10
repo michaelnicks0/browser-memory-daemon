@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>0048-Use-Transactional-Indexeddb-Capture-Lifecycle-Outbox — browser-memory-daemon</title>
+<title>0049-Bound-Browser-Media-Queue-Lifecycle — browser-memory-daemon</title>
 <style>
 :root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
@@ -121,67 +121,60 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <div class="wrap">
   <div class="docbar">
     <a class="home" href="../../../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
-    <span class="crumb">/ <b>docs/architecture/adr/0048-use-transactional-indexeddb-capture-lifecycle-outbox.md</b></span>
+    <span class="crumb">/ <b>docs/architecture/adr/0049-bound-browser-media-queue-lifecycle.md</b></span>
   </div>
   <article class="md-body">
-<h1 id="adr-0048-use-a-transactional-indexeddb-outbox-for-capture-and-lifecycle-delivery">ADR-0048: Use a transactional IndexedDB outbox for capture and lifecycle delivery</h1>
+<h1 id="adr-0049-bound-the-browser-media-task-and-blob-lifecycle">ADR-0049: Bound the browser media task and blob lifecycle</h1>
 <ul>
 <li>Status: accepted</li>
 <li>Date: 2026-07-10</li>
 <li>Decision owners: Browser Memory Daemon maintainers</li>
-<li>Related: ADR-0015, ADR-0029, ADR-0035, REQ-003, REQ-037</li>
+<li>Related: ADR-0005, ADR-0015, ADR-0048, REQ-037</li>
 </ul>
 <h2 id="context">Context</h2>
-<p>The MV3 service worker persisted capture and lifecycle work as whole arrays in <code>chrome.storage.local</code>. Concurrent read-modify-write operations could overwrite one another, count caps were enforced by slicing, and worker suspension could interrupt delivery without an atomic claim/ack transition. The overflow characterization proved that 100 accepted captures were preserved only by silently dropping the next capture.</p>
-<p>Capture delivery also spans two durable systems: the daemon capture request and the browser media-task queue. If suspension occurs after the daemon accepts a capture but before its media tasks are queued, an uncheckpointed retry can repost the capture and still fail to compensate the browser-side media work.</p>
+<p>The extension already used a dedicated IndexedDB database for media tasks and fetched blobs, but task batches were inserted through separate transactions, fetched blobs and task states changed separately, task count and aggregate blob bytes were unbounded, and terminal upload failures could retain blobs indefinitely. MV3 suspension could therefore leave compensatable intermediate states, but quota exhaustion and terminal cleanup were not explicit or observable.</p>
+<p>Media bytes are intentionally separate from the capture/lifecycle outbox. Combining them would couple ordinary text-delivery durability to much larger disposable browser blobs and would weaken the strongest text-first invariant.</p>
 <h2 id="decision">Decision</h2>
 <ol>
-<li>Add <code>outbox.js</code> as a versioned IndexedDB boundary for ordinary capture and lifecycle messages. Keep media tasks and blobs in the specialized <code>media_queue.js</code> database; do not force binary media and ordinary messages into one generic queue.</li>
-<li>Store each outbox message as an independent row with an auto-incrementing sequence ID, kind, payload, state, claim token/time, attempt count, due time, last error, enqueue/update timestamps, and UTF-8 serialized payload bytes.</li>
-<li>Enqueue, claim, checkpoint, acknowledge, retry, and stale-claim recovery run in IndexedDB read/write transactions. Claims are token-checked; a different worker instance cannot acknowledge or retry work it does not own. Successful acknowledgement records last-success metadata in the same transaction that deletes the row.</li>
-<li>Drain at most 25 messages of each kind per invocation. Startup, install, and the one-minute <code>bmd-outbox-drain</code> alarm resume due work after MV3 suspension. Failed work receives bounded exponential backoff.</li>
-<li>Persist a daemon capture result in the claimed outbox row before creating browser media tasks. A retry after media-queue failure reuses the checkpoint and does not repost the accepted capture. The daemon's stable observation identity remains the final idempotency boundary if suspension occurs between the HTTP response and the IndexedDB checkpoint.</li>
-<li>Import the legacy <code>captureQueue</code> and <code>visitEventQueue</code> arrays and an import marker in one IndexedDB transaction. Delete the legacy Chrome-storage keys only after that transaction commits. Stable observation/event IDs, with a SHA-256 payload fallback for older rows, deduplicate repeated startup after interruption while still importing new legacy-array rows authored during a one-version rollback.</li>
-<li>Keep the legacy Chrome-storage path as a one-version failure fallback when IndexedDB is unavailable. The fallback no longer slices arrays: over-capacity writes fail visibly and preserve already queued entries.</li>
-<li>Enforce the existing 100-capture and 200-lifecycle item limits plus 32 MiB capture and 2 MiB lifecycle serialized-payload limits. Reject new over-capacity work visibly and expose redaction-safe count, byte, age, claim, overflow, quota, and last-success telemetry through the popup and options page.</li>
-<li>Outbox telemetry contains aggregate kind/count/bytes/attempt/error state only. It does not copy captured text or URLs into ordinary telemetry records.</li>
+<li>Upgrade the dedicated <code>browser-memory-media-v1</code> IndexedDB schema ledger to version 2 while retaining the existing task and blob stores and stable artifact IDs. Add a <code>byte_size</code> blob index; the first accounting transaction cursor-backfills pre-version-2 rows one at a time.</li>
+<li>Admit all media tasks produced by one accepted capture in one read/write transaction. Enforce a 500-task limit against newly introduced artifact IDs. If the batch cannot fit, write none of it and leave the checkpointed capture outbox row retryable.</li>
+<li>Admit a fetched blob and move its existing task to <code>pending-upload</code> in one transaction spanning both stores. Require the task to exist before blob admission.</li>
+<li>Enforce a 250,000,000-byte per-blob limit and a 512 MiB aggregate fetched-blob limit. Sum indexed size keys without materializing all blob bodies, and subtract the prior blob before checking a replacement's projected total. A rejected blob leaves both the existing blob and task state unchanged.</li>
+<li>Delete a media task and its fetched blob in one transaction after daemon acceptance or a daemon-terminal disposition.</li>
+<li>Keep terminal local failures in a 24-hour quarantine so operators can inspect aggregate status. Each media drain removes at most 50 expired terminal task/blob pairs in one transaction. Fresh terminal rows are never selected.</li>
+<li>Recover interrupted <code>fetching</code> and <code>uploading</code> rows through the existing two-minute stale-processing rule. Media drain remains bounded and runs on the existing alarm/startup/event paths.</li>
+<li>Expose only redaction-safe media task counts, status counts, blob count/bytes, quotas, and terminal TTL through the existing popup/options telemetry contract. Do not expose source or page URLs.</li>
 </ol>
-<p>No live extension install, Chrome-profile mutation, daemon restart, or daily-driver migration is performed by this repository change.</p>
+<p>No live extension install, Chrome-profile mutation, daemon restart, or daily-driver migration is part of this repository change.</p>
 <h2 id="consequences">Consequences</h2>
 <h3 id="positive">Positive</h3>
 <ul>
-<li>Accepted capture and lifecycle rows no longer share a racy whole-array write.</li>
-<li>Existing rows survive capacity exhaustion; a new over-capacity message is explicitly rejected instead of silently truncated.</li>
-<li>Claims recover after service-worker suspension and cannot be acknowledged by a stale token.</li>
-<li>Capture-result checkpointing closes the daemon-accepted/media-enqueue compensation gap.</li>
-<li>Legacy queues migrate without a delete-before-import loss window.</li>
+<li>A capture's media-task compensation cannot be partially admitted at the task-count boundary.</li>
+<li>Blob bytes and task state cannot disagree across the fetch-to-upload transition.</li>
+<li>Concurrent admissions serialize through IndexedDB and cannot oversubscribe configured count or byte limits.</li>
+<li>Terminal upload failures no longer retain browser blobs indefinitely.</li>
+<li>Capture text remains accepted independently by the daemon; media quota pressure remains asynchronous and retryable.</li>
 </ul>
-<h3 id="tradeoffs-and-deferred-work">Tradeoffs and deferred work</h3>
+<h3 id="tradeoffs">Tradeoffs</h3>
 <ul>
-<li>IndexedDB transactions provide browser-profile-local durability, not cross-profile replication.</li>
-<li>A crash after daemon acceptance but before capture-result checkpointing can retry the HTTP request. Stable observation IDs make that retry idempotent at the daemon.</li>
-<li>Specialized media queue byte/count quotas and terminal cleanup/quarantine are defined by ADR-0049. Lifecycle compaction remains deferred rather than silently changing event semantics; preserving every accepted event is the current contract.</li>
-<li>Rolling back to the prior extension build does not delete IndexedDB rows, but that build cannot drain them; restoring this or a later build resumes delivery and idempotently imports any new legacy-array rows authored during the rollback.</li>
-<li>The temporary Chrome-storage fallback remains for one compatibility version and must be removed only after real-browser migration evidence is established.</li>
+<li>Task quota checks scan at most 500 metadata rows. Blob accounting scans only indexed numeric size keys after the one-time legacy-row cursor backfill, avoiding whole-blob telemetry reads.</li>
+<li>Failed rows and blobs intentionally consume quota for up to 24 hours to preserve a quarantine window.</li>
+<li>Browser media bytes remain disposable and profile-local; daemon SQLite remains the provenance authority.</li>
+<li>Whole-response browser fetch buffering remains a separate resource-usage concern. The per-item cap bounds it but does not turn Chrome's Fetch response into a streaming API.</li>
 </ul>
 <h2 id="verification">Verification</h2>
 <ul>
-<li><code>extension/tests/unit/outbox.test.js::concurrent enqueue preserves existing captures and visibly rejects only new work at capacity</code></li>
-<li><code>extension/tests/unit/outbox.test.js::claim, retry, due time, and acknowledgement are token-checked atomic transitions</code></li>
-<li><code>extension/tests/unit/outbox.test.js::stale claims recover after service-worker suspension without becoming concurrently claimable</code></li>
-<li><code>extension/tests/unit/outbox.test.js::legacy queue import is marked atomically and is idempotent before chrome storage cleanup</code></li>
-<li><code>extension/tests/unit/outbox.test.js::serialized byte accounting uses UTF-8 payload bytes and survives claim metadata changes</code></li>
-<li><code>extension/tests/unit/outbox.test.js::serialized byte quota rejects only the new row and reports required bytes</code></li>
-<li><code>extension/tests/unit/service_worker.test.js::service worker preserves queued captures while daemon is down and drains them after reload</code></li>
-<li><code>extension/tests/unit/service_worker.test.js::service worker queue overflow preserves old captures and visibly rejects the new capture</code></li>
-<li><code>extension/tests/unit/service_worker.test.js::service worker enforces byte quota and exposes redaction-safe outbox telemetry</code></li>
-<li><code>extension/tests/unit/service_worker.test.js::service worker transactionally imports and drains the legacy lifecycle queue before deleting it</code></li>
+<li><code>extension/tests/unit/media_queue.test.js::media task batch admission is atomic and preserves existing work at count quota</code></li>
+<li><code>extension/tests/unit/media_queue.test.js::media blob admission atomically applies replacement-aware byte quota and task transition</code></li>
+<li><code>extension/tests/unit/media_queue.test.js::terminal media quarantine cleanup retains fresh rows and atomically removes expired task and blob</code></li>
 <li><code>extension/tests/unit/service_worker.test.js::capture result checkpoint survives suspension without reposting before media enqueue compensation</code></li>
-<li>Isolated Chrome for Testing remains the system authority for the actual IndexedDB implementation and service-worker lifecycle.</li>
+<li><code>extension/tests/unit/service_worker.test.js::service worker cleans expired terminal media while capture is paused or tokenless</code></li>
+<li><code>extension/tests/unit/service_worker.test.js::service worker media upload retries keep fetched blob until successful upload</code></li>
+<li>Isolated Chrome for Testing verifies the actual version-2 IndexedDB path, media fetch/upload, empty terminal queues after success, and redaction-safe quota telemetry.</li>
 </ul>
   </article>
   <div class="md-footer">
-    Rendered from <code>docs/architecture/adr/0048-use-transactional-indexeddb-capture-lifecycle-outbox.md</code> — the Markdown file is the canonical,
+    Rendered from <code>docs/architecture/adr/0049-bound-browser-media-queue-lifecycle.md</code> — the Markdown file is the canonical,
     version-controlled source. This HTML is generated (regenerate with
     <code>scripts/render_docs.py</code>); do not hand-edit.
   </div>

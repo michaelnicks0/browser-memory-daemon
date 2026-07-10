@@ -143,8 +143,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tbody>
 <tr>
 <td>Windows Chrome extension</td>
-<td>✅ MV3 extension with service-worker-owned injection/transport, opaque observation/navigation IDs, and a transactional IndexedDB capture/lifecycle outbox with sequence IDs, token-checked claims, retry/stale recovery, legacy-array import, enforced count/byte backpressure, and redaction-safe popup/options telemetry.</td>
-<td><code>extension/src/outbox.js</code>, <code>extension/src/service_worker.js</code>, <code>extension/src/popup.js</code>, <code>extension/src/options.js</code>, extension unit tests, ADR-0048, real Chrome e2e.</td>
+<td>✅ MV3 extension with service-worker-owned injection/transport, opaque observation/navigation IDs, transactional IndexedDB capture/lifecycle outboxes, and a separate version-2 media task/blob queue with atomic compensation batches, count/byte quotas, stale recovery, 24-hour terminal quarantine, and redaction-safe popup/options telemetry.</td>
+<td><code>extension/src/outbox.js</code>, <code>extension/src/media_queue.js</code>, <code>extension/src/service_worker.js</code>, <code>extension/src/popup.js</code>, <code>extension/src/options.js</code>, extension unit tests, ADR-0048/0049, real Chrome e2e.</td>
 </tr>
 <tr>
 <td>WSL daemon</td>
@@ -226,7 +226,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <hr />
 <h2 id="requirement-posture">Requirement posture</h2>
 <!-- BEGIN GENERATED:requirement-posture -->
-<p>The canonical catalog contains <strong>43 stable requirements</strong>: <strong>38 active</strong> and <strong>5 planned</strong>. Normative statements, implementation links, V-model evidence, and legacy aliases are owned by <a href="../requirements/catalog.toml"><code>requirements/catalog.toml</code></a>; generated tables in this doc set must not be hand-edited.</p>
+<p>The canonical catalog contains <strong>43 stable requirements</strong>: <strong>39 active</strong> and <strong>4 planned</strong>. Normative statements, implementation links, V-model evidence, and legacy aliases are owned by <a href="../requirements/catalog.toml"><code>requirements/catalog.toml</code></a>; generated tables in this doc set must not be hand-edited.</p>
 <!-- END GENERATED:requirement-posture -->
 
 <hr />

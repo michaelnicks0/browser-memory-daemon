@@ -21,6 +21,9 @@ const MAX_CAPTURE_QUEUE = 100;
 const MAX_VISIT_EVENT_QUEUE = 200;
 const MAX_MEDIA_ARTIFACTS_PER_CAPTURE = 50;
 const MAX_MEDIA_ARTIFACT_BYTES = 250_000_000;
+const MAX_MEDIA_QUEUE_TASKS = 500;
+const MAX_MEDIA_QUEUE_BLOB_BYTES = 512 * 1024 * 1024;
+const MEDIA_TERMINAL_TTL_MS = 24 * 60 * 60 * 1000;
 const OUTBOX_STALE_CLAIM_MS = 5 * 60 * 1000;
 let outboxReadyPromise = null;
 
@@ -256,14 +259,15 @@ async function queueMediaArtifacts(capturePayload, captureResult) {
   const artifacts = Array.isArray(captureResult.media_artifacts) ? captureResult.media_artifacts : [];
   if (!refs.length || !artifacts.length) return { queued: 0 };
   const api = mediaQueueApi();
-  let queued = 0;
+  const tasks = [];
   for (let i = 0; i < artifacts.length; i += 1) {
     const task = mediaTaskFromArtifact(artifacts[i], refs[i], capturePayload, captureResult);
     if (!task.artifact_id || !task.source_url || !mediaFetchSupported(task.source_url)) continue;
-    await api.putMediaTask(task);
-    queued += 1;
+    tasks.push(task);
   }
-  return { queued };
+  const admitted = await api.putMediaTasks(tasks, { maxItems: MAX_MEDIA_QUEUE_TASKS });
+  if (!admitted.accepted) throw new Error(admitted.reason || 'media-task-quota');
+  return { queued: admitted.written.length };
 }
 
 function baseMediaStatusPayload(task, captureStatus, statusReason) {
@@ -412,8 +416,14 @@ async function processMediaTask(task, config) {
     if (fetched.failed) {
       throw new Error(fetched.reason);
     }
-    blobRecord = await api.putFetchedBlob(task.artifact_id, fetched.blob, { mime_type: fetched.mime_type, byte_size: fetched.blob.byteLength });
-    await api.markMediaTask(task.artifact_id, { status: 'pending-upload', last_error: '' });
+    const admitted = await api.putFetchedBlob(
+      task.artifact_id,
+      fetched.blob,
+      { mime_type: fetched.mime_type, byte_size: fetched.blob.byteLength },
+      { maxBlobBytes: MAX_MEDIA_ARTIFACT_BYTES, maxTotalBytes: MAX_MEDIA_QUEUE_BLOB_BYTES }
+    );
+    if (!admitted.accepted) throw new Error(admitted.reason || 'media-blob-quota');
+    blobRecord = admitted.row;
   }
   await api.markMediaTask(task.artifact_id, { status: 'uploading', last_error: '' });
   const uploaded = await putMediaArtifactBlob(task, blobRecord, config);
@@ -438,6 +448,7 @@ async function drainMediaQueue(options = {}) {
   const api = mediaQueueApi();
   const results = [];
   try {
+    await api.cleanupTerminalMediaTasks({ ttlMs: MEDIA_TERMINAL_TTL_MS, limit: 50 });
     if (config.capturePaused || !config.apiToken) return { skipped: true, reason: config.capturePaused ? 'paused' : 'missing-token' };
     const tasks = await api.getDueMediaTasks(limit, nowIso());
     for (const task of tasks) {
@@ -779,15 +790,17 @@ async function outboxStatus() {
   const api = await ensureOutboxReady();
   if (!api) return { available: false };
   const config = await getConfig();
-  const [capture, lifecycle, telemetry] = await Promise.all([
+  const [capture, lifecycle, media, telemetry] = await Promise.all([
     api.getStats('capture'),
     api.getStats('lifecycle'),
+    mediaQueueApi().getMediaQueueStats(),
     chrome.storage.local.get({ lastOutboxOverflow: null })
   ]);
   return {
     available: true,
     capture: { ...capture, max_items: MAX_CAPTURE_QUEUE, max_bytes: outboxByteLimit(config, 'capture') },
     lifecycle: { ...lifecycle, max_items: MAX_VISIT_EVENT_QUEUE, max_bytes: outboxByteLimit(config, 'lifecycle') },
+    media: { ...media, max_tasks: MAX_MEDIA_QUEUE_TASKS, max_blob_bytes: MAX_MEDIA_QUEUE_BLOB_BYTES, terminal_ttl_ms: MEDIA_TERMINAL_TTL_MS },
     last_overflow: telemetry.lastOutboxOverflow
   };
 }

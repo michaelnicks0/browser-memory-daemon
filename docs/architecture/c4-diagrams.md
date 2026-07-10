@@ -1483,7 +1483,7 @@ graph TB
       subgraph 5 ["Chrome MV3 Extension"]
         style 5 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
-        11["<div style='font-weight: bold'>Browser Media Queue Adapter</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Persists media tasks and<br />fetched blobs in IndexedDB so<br />browser-side media<br />fetch/upload can survive MV3<br />worker suspension.</div>"]
+        11["<div style='font-weight: bold'>Browser Media Queue Adapter</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Persists media tasks and<br />fetched blobs in versioned<br />IndexedDB with atomic<br />batch/blob transitions,<br />count/byte quotas,<br />stale-processing recovery,<br />and bounded terminal<br />quarantine cleanup.</div>"]
         style 11 fill:#85bbf0,stroke:#1168bd,color:#000000
         12["<div style='font-weight: bold'>CDP Recorder</div><div style='font-size: 70%; margin-top: 0px'>[Component: Chrome DevTools Protocol]</div><div style='font-size: 80%; margin-top:10px'>Uses chrome.debugger on<br />configured X/Twitter tabs to<br />capture video.twimg.com HLS<br />manifests and media segments<br />before they become opaque<br />blob player URLs.</div>"]
         style 12 fill:#85bbf0,stroke:#1168bd,color:#000000

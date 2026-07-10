@@ -39,7 +39,7 @@ No live extension install, Chrome-profile mutation, daemon restart, or daily-dri
 
 - IndexedDB transactions provide browser-profile-local durability, not cross-profile replication.
 - A crash after daemon acceptance but before capture-result checkpointing can retry the HTTP request. Stable observation IDs make that retry idempotent at the daemon.
-- `REQ-037` remains planned until specialized media queue byte/count quota and terminal cleanup/quarantine behavior close; lifecycle compaction remains deferred rather than silently changing event semantics.
+- Specialized media queue byte/count quotas and terminal cleanup/quarantine are defined by ADR-0049. Lifecycle compaction remains deferred rather than silently changing event semantics; preserving every accepted event is the current contract.
 - Rolling back to the prior extension build does not delete IndexedDB rows, but that build cannot drain them; restoring this or a later build resumes delivery and idempotently imports any new legacy-array rows authored during the rollback.
 - The temporary Chrome-storage fallback remains for one compatibility version and must be removed only after real-browser migration evidence is established.
 
