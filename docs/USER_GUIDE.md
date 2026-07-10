@@ -183,6 +183,8 @@ PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   recent --limit 25
 ```
 
+Recent and timeline items represent extraction observations, so repeated captures during one navigation appear separately while sharing deduplicated snapshots when text is unchanged. Historical visits without an observation row are retained as explicit ambiguous `legacy-visit` fallbacks. Document and snapshot details show the observation/snapshot relationship and keep page-provided URL claims separate from observed identity.
+
 Local UI:
 
 ```text

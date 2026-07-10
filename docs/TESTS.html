@@ -132,7 +132,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </blockquote>
 <!-- BEGIN GENERATED:inventory-summary -->
 <blockquote>
-<p><strong>Current inventory:</strong> 166 static test functions across 27 files — 137 daemon pytest tests + 29 extension node:test tests.</p>
+<p><strong>Current inventory:</strong> 168 static test functions across 28 files — 139 daemon pytest tests + 29 extension node:test tests.</p>
 </blockquote>
 <!-- END GENERATED:inventory-summary -->
 
@@ -190,7 +190,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <hr />
 <h2 id="generated-test-inventory">Generated test inventory</h2>
 <!-- BEGIN GENERATED:audit-run -->
-<p>Latest inventory: <strong>166 static test functions</strong> across <strong>27 files</strong> (137 daemon pytest; 29 extension node:test). Regenerate with <code>python3.11 scripts/generate_test_inventory.py --write</code>; enforce with <code>--check</code>. Counts are source-level test functions, not pytest parametrized case expansions.</p>
+<p>Latest inventory: <strong>168 static test functions</strong> across <strong>28 files</strong> (139 daemon pytest; 29 extension node:test). Regenerate with <code>python3.11 scripts/generate_test_inventory.py --write</code>; enforce with <code>--check</code>. Counts are source-level test functions, not pytest parametrized case expansions.</p>
 <!-- END GENERATED:audit-run -->
 
 <h2 id="requirements-traceability-gate">Requirements traceability gate</h2>
@@ -250,7 +250,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 </tr>
 <tr>
 <td>Static test inventory measured</td>
-<td>166 tests / 27 files</td>
+<td>168 tests / 28 files</td>
 </tr>
 </tbody>
 </table>
@@ -333,6 +333,11 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <td style="text-align: right;">13</td>
 </tr>
 <tr>
+<td><code>daemon/tests/integration/test_observation_reads.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr>
 <td><code>daemon/tests/integration/test_visit_lifecycle.py</code></td>
 <td>pytest</td>
 <td style="text-align: right;">5</td>
@@ -405,7 +410,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <tr>
 <td><strong>Total</strong></td>
 <td></td>
-<td style="text-align: right;"><strong>166</strong></td>
+<td style="text-align: right;"><strong>168</strong></td>
 </tr>
 </tbody>
 </table>
@@ -418,8 +423,8 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 | File | Runner | Suite | Test function | Line | Coverage note |
 |---|---|---|---|---:|---|
 | `daemon/tests/e2e/test_admin_api.py` | pytest | `(module)` | `test_admin_read_apis_and_ui_assets` | 57 | Admin read apis and ui assets. |
-| `daemon/tests/e2e/test_admin_api.py` | pytest | `(module)` | `test_policy_rule_blocks_future_capture_and_can_be_deleted` | 128 | Policy rule blocks future capture and can be deleted. |
-| `daemon/tests/e2e/test_admin_api.py` | pytest | `(module)` | `test_url_prefix_policy_rule_applies_in_all_mode_without_blocking_all_localhost` | 170 | Url prefix policy rule applies in all mode without blocking all localhost. |
+| `daemon/tests/e2e/test_admin_api.py` | pytest | `(module)` | `test_policy_rule_blocks_future_capture_and_can_be_deleted` | 135 | Policy rule blocks future capture and can be deleted. |
+| `daemon/tests/e2e/test_admin_api.py` | pytest | `(module)` | `test_url_prefix_policy_rule_applies_in_all_mode_without_blocking_all_localhost` | 177 | Url prefix policy rule applies in all mode without blocking all localhost. |
 | `daemon/tests/e2e/test_cli_admin.py` | pytest | `(module)` | `test_cli_admin_commands` | 35 | Cli admin commands. |
 | `daemon/tests/e2e/test_cli_admin.py` | pytest | `(module)` | `test_cli_migrate_check_is_read_only_then_execute_applies_pending_steps` | 98 | Cli migrate check is read only then execute applies pending steps. |
 | `daemon/tests/e2e/test_concurrency_stress.py` | pytest | `(module)` | `test_concurrency_stress_harness_exercises_shared_sqlite_db` | 6 | Concurrency stress harness exercises shared sqlite db. |
@@ -519,6 +524,8 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 | `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_injected_migration_failure_rolls_back_step_and_ledger` | 540 | Injected migration failure rolls back step and ledger. |
 | `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_destructive_migration_creates_online_backup_that_restores_search` | 569 | Destructive migration creates online backup that restores search. |
 | `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_destructive_migration_refuses_insufficient_backup_headroom_before_writes` | 607 | Destructive migration refuses insufficient backup headroom before writes. |
+| `daemon/tests/integration/test_observation_reads.py` | pytest | `(module)` | `test_observation_first_reads_preserve_contemporaneous_snapshots_and_unique_visit_summary` | 40 | Observation first reads preserve contemporaneous snapshots and unique visit summary. |
+| `daemon/tests/integration/test_observation_reads.py` | pytest | `(module)` | `test_legacy_visit_fallback_is_explicit_and_uses_its_linked_snapshot_not_latest_document_snapshot` | 146 | Legacy visit fallback is explicit and uses its linked snapshot not latest document snapshot. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_updates_dwell_and_is_idempotent` | 9 | Visit lifecycle event updates dwell and is idempotent. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_overlapping_lifecycle_events_do_not_double_count_dwell` | 67 | Overlapping lifecycle events do not double count dwell. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_can_attach_to_latest_visit_by_url` | 114 | Visit lifecycle event can attach to latest visit by url. |

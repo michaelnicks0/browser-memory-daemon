@@ -174,7 +174,19 @@ Response:
 
 In `all` mode, daemon redaction is disabled. In non-`all` modes, URL/title/body redaction runs before DB/FTS/blob storage.
 
-The normalized observed `url` is authoritative for new document identity. `canonical_url` is stored only as a URL claim when it differs; it never causes an automatic cross-origin document merge. Repeated captures may share one `visit_id`/`navigation_id` while producing distinct observations. Reusing an `observation_id` with identical stored provenance is idempotent; changing its navigation, document, snapshot, URL, capture time/method/reason, extraction version, title, or provenance quality is rejected. Reusing one `visit_id` for a different normalized observed navigation is also rejected.
+The normalized observed `url` is authoritative for new document identity. `canonical_url` is stored only as a URL claim when it differs; it never causes an automatic cross-origin document merge. Repeated captures may share one `visit_id`/`navigation_id` while producing distinct observations. Reusing an `observation_id` with identical stored provenance is idempotent; changing its navigation, document, snapshot, URL, capture time/method/reason, extraction version, title, or provenance quality is rejected. Identical retries return the stable URL-claim and media-artifact identifiers so a lost HTTP response does not strand asynchronous media work. Reusing one `visit_id` for a different normalized observed navigation is also rejected.
+
+---
+
+## Observation-first activity reads
+
+`GET /recent` and `GET /timeline` return one item per capture observation. Each item keeps the existing visit/document/snapshot fields and adds `observation_id`, `navigation_id`, `record_source`, capture method/reason/version, disposition, provenance quality, and `max_scroll_percent`. The snippet and media count are taken only from that observation's snapshot and stored media relationships.
+
+Historical visits without any observation row remain visible as `record_source: "legacy-visit"`, `disposition: "legacy-fallback"`, and `provenance_quality: "ambiguous"`. The fallback prefers a visit-linked snapshot and never labels a document-latest fallback as exact.
+
+`GET /timeline` also includes an additive `summary` for the bounded returned items: distinct visits, observation count, capture count, dwell summed once per visit, maximum lifecycle scroll, and media relationship count.
+
+Document detail includes ordered `observations` and `url_claims`; snapshot detail includes only observations referencing that exact snapshot. Existing `visits`, `snapshots`, and endpoint paths remain available for compatibility.
 
 ---
 

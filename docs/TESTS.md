@@ -5,7 +5,7 @@
 > **Runtime:** Python **3.11+** (`pyproject.toml` requires `>=3.11`). Use `BMD_PYTHON=/path/to/python3.11` when the host `python3` is older.
 
 <!-- BEGIN GENERATED:inventory-summary -->
-> **Current inventory:** 166 static test functions across 27 files — 137 daemon pytest tests + 29 extension node:test tests.
+> **Current inventory:** 168 static test functions across 28 files — 139 daemon pytest tests + 29 extension node:test tests.
 <!-- END GENERATED:inventory-summary -->
 
 ---
@@ -79,7 +79,7 @@ Use `--runtime-root PATH` only for explicit fixture roots; do not point the stre
 ## Generated test inventory
 
 <!-- BEGIN GENERATED:audit-run -->
-Latest inventory: **166 static test functions** across **27 files** (137 daemon pytest; 29 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
+Latest inventory: **168 static test functions** across **28 files** (139 daemon pytest; 29 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
 <!-- END GENERATED:audit-run -->
 
 ## Requirements traceability gate
@@ -100,7 +100,7 @@ Traceability gate: **✅ pass**.
 | Normative changes without revision increment | none |
 | Requirements removed without catalog disposition | none |
 | Catalog load errors | none |
-| Static test inventory measured | 166 tests / 27 files |
+| Static test inventory measured | 168 tests / 28 files |
 <!-- END GENERATED:traceability-gate -->
 
 ### Per-file counts
@@ -120,6 +120,7 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | 25 |
 | `daemon/tests/integration/test_media_worker.py` | pytest | 28 |
 | `daemon/tests/integration/test_migrations.py` | pytest | 13 |
+| `daemon/tests/integration/test_observation_reads.py` | pytest | 2 |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | 5 |
 | `daemon/tests/unit/test_config.py` | pytest | 3 |
 | `daemon/tests/unit/test_daily_driver_health.py` | pytest | 6 |
@@ -134,7 +135,7 @@ Traceability gate: **✅ pass**.
 | `extension/tests/unit/queue.test.js` | node:test | 1 |
 | `extension/tests/unit/service_worker.test.js` | node:test | 5 |
 | `extension/tests/unit/shared.test.js` | node:test | 2 |
-| **Total** |  | **166** |
+| **Total** |  | **168** |
 <!-- END GENERATED:per-file-counts -->
 
 <details>
@@ -144,8 +145,8 @@ Traceability gate: **✅ pass**.
 | File | Runner | Suite | Test function | Line | Coverage note |
 |---|---|---|---|---:|---|
 | `daemon/tests/e2e/test_admin_api.py` | pytest | `(module)` | `test_admin_read_apis_and_ui_assets` | 57 | Admin read apis and ui assets. |
-| `daemon/tests/e2e/test_admin_api.py` | pytest | `(module)` | `test_policy_rule_blocks_future_capture_and_can_be_deleted` | 128 | Policy rule blocks future capture and can be deleted. |
-| `daemon/tests/e2e/test_admin_api.py` | pytest | `(module)` | `test_url_prefix_policy_rule_applies_in_all_mode_without_blocking_all_localhost` | 170 | Url prefix policy rule applies in all mode without blocking all localhost. |
+| `daemon/tests/e2e/test_admin_api.py` | pytest | `(module)` | `test_policy_rule_blocks_future_capture_and_can_be_deleted` | 135 | Policy rule blocks future capture and can be deleted. |
+| `daemon/tests/e2e/test_admin_api.py` | pytest | `(module)` | `test_url_prefix_policy_rule_applies_in_all_mode_without_blocking_all_localhost` | 177 | Url prefix policy rule applies in all mode without blocking all localhost. |
 | `daemon/tests/e2e/test_cli_admin.py` | pytest | `(module)` | `test_cli_admin_commands` | 35 | Cli admin commands. |
 | `daemon/tests/e2e/test_cli_admin.py` | pytest | `(module)` | `test_cli_migrate_check_is_read_only_then_execute_applies_pending_steps` | 98 | Cli migrate check is read only then execute applies pending steps. |
 | `daemon/tests/e2e/test_concurrency_stress.py` | pytest | `(module)` | `test_concurrency_stress_harness_exercises_shared_sqlite_db` | 6 | Concurrency stress harness exercises shared sqlite db. |
@@ -245,6 +246,8 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_injected_migration_failure_rolls_back_step_and_ledger` | 540 | Injected migration failure rolls back step and ledger. |
 | `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_destructive_migration_creates_online_backup_that_restores_search` | 569 | Destructive migration creates online backup that restores search. |
 | `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_destructive_migration_refuses_insufficient_backup_headroom_before_writes` | 607 | Destructive migration refuses insufficient backup headroom before writes. |
+| `daemon/tests/integration/test_observation_reads.py` | pytest | `(module)` | `test_observation_first_reads_preserve_contemporaneous_snapshots_and_unique_visit_summary` | 40 | Observation first reads preserve contemporaneous snapshots and unique visit summary. |
+| `daemon/tests/integration/test_observation_reads.py` | pytest | `(module)` | `test_legacy_visit_fallback_is_explicit_and_uses_its_linked_snapshot_not_latest_document_snapshot` | 146 | Legacy visit fallback is explicit and uses its linked snapshot not latest document snapshot. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_updates_dwell_and_is_idempotent` | 9 | Visit lifecycle event updates dwell and is idempotent. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_overlapping_lifecycle_events_do_not_double_count_dwell` | 67 | Overlapping lifecycle events do not double count dwell. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_can_attach_to_latest_visit_by_url` | 114 | Visit lifecycle event can attach to latest visit by url. |

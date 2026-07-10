@@ -228,22 +228,22 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td><code>recent --limit N</code></td>
-<td>Recent captures.</td>
+<td>Recent capture observations with contemporaneous snapshot snippets; explicit ambiguous legacy-visit fallback.</td>
 <td>Pretty JSON list.</td>
 </tr>
 <tr>
 <td><code>timeline [--date YYYY-MM-DD] [--after ISO] [--before ISO] [--limit N]</code></td>
-<td>Capture timeline.</td>
+<td>Observation-first capture timeline plus a visit-deduplicated bounded summary.</td>
 <td>Pretty JSON.</td>
 </tr>
 <tr>
 <td><code>document DOCUMENT_ID</code></td>
-<td>Document details.</td>
+<td>Document details including observations and untrusted URL claims.</td>
 <td>Pretty JSON.</td>
 </tr>
 <tr>
 <td><code>snapshot SNAPSHOT_ID</code></td>
-<td>Snapshot details and text.</td>
+<td>Snapshot details, text, and exact referencing observations.</td>
 <td>Pretty JSON.</td>
 </tr>
 <tr>

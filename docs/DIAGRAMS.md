@@ -70,11 +70,11 @@ flowchart TD
   Policy --> Decision{"policy_mode"}
   Decision -->|"all"| All["Store original URL/title/text<br/>no daemon redaction"]
   Decision -->|"recall / balanced / strict"| Redact["Redact URL/title/body<br/>before persistence"]
-  All --> Store["Ingest pipeline<br/>normalize URL + text hash<br/>write visits/documents/snapshots/chunks/FTS"]
+  All --> Store["Ingest pipeline<br/>normalize URL + text hash<br/>write visits/observations/documents/snapshots/chunks/FTS"]
   Redact --> Store
   Store --> TextBlobs["Write clean-text snapshot blob"]
-  Store --> MediaRefs["Store media refs<br/>enqueue daemon-public tasks"]
-  Store --> Response["Return document/snapshot/chunk IDs<br/>+ media artifact IDs"]
+  Store --> MediaRefs["Store media refs + observation links<br/>enqueue daemon-public tasks"]
+  Store --> Response["Return observation/document/snapshot/chunk IDs<br/>+ media artifact IDs"]
   Response --> Queue["Queue browser media work<br/>in IndexedDB"]
 ```
 
@@ -125,11 +125,11 @@ flowchart TD
   DocID --> SnapshotID["snapshot_id = hash(document_id + text_hash)"]
   TextHash --> SnapshotID
   SnapshotID --> Exists{"snapshot exists?"}
-  Exists -->|"yes"| VisitOnly["Insert/update visit only"]
-  Exists -->|"no"| NewSnapshot["Create snapshot + chunks + FTS rows"]
+  Exists -->|"yes"| ObservationOnly["Insert observation linked to existing snapshot"]
+  Exists -->|"no"| NewSnapshot["Create snapshot + chunks + FTS rows<br/>then insert observation"]
 ```
 
-Repeated unchanged captures add visits without duplicating text. Changed text at the same normalized URL creates another snapshot under the same document.
+Repeated unchanged extractions add observations without duplicating text or replacing the visit. Changed text at the same normalized observed URL creates another snapshot under the same document, and each observation retains its contemporaneous snapshot.
 
 ---
 
@@ -154,10 +154,10 @@ Lifecycle events carry URL, timestamps, active seconds, and max-scroll percent. 
 ```mermaid
 flowchart LR
   Search["GET /search"] --> FTS[("chunks_fts")]
-  Recent["GET /recent"] --> DB[("SQLite")]
-  Timeline["GET /timeline"] --> DB
-  Detail["GET /documents/{id}"] --> DB
-  Snapshot["GET /snapshots/{id}"] --> DB
+  Recent["GET /recent<br/>observation-first + explicit legacy fallback"] --> DB[("SQLite")]
+  Timeline["GET /timeline<br/>observation-first"] --> DB
+  Detail["GET /documents/{id}<br/>observations + URL claims"] --> DB
+  Snapshot["GET /snapshots/{id}<br/>exact observations"] --> DB
   Media["GET /media-artifacts/{id}"] --> MediaBlobs[("blobs/media")]
   UI["Local UI"] --> Search
   UI --> Recent

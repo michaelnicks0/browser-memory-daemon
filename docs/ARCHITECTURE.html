@@ -550,7 +550,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Visits, capture observations, snapshots, lifecycle events, and media provenance shall have explicit temporal relationships.</td>
 <td>Capture Observation Model</td>
 <td><code>HRD-008</code></td>
-<td><code>daemon/src/browser_memory_daemon/models.py</code><br><code>daemon/src/browser_memory_daemon/ingest.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0004_capture_observations_and_url_claims.sql</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0005_backfill_historical_observations.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0006_link_media_artifacts_to_observations.py</code></td>
+<td><code>daemon/src/browser_memory_daemon/models.py</code><br><code>daemon/src/browser_memory_daemon/ingest.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/ops.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0004_capture_observations_and_url_claims.sql</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0005_backfill_historical_observations.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0006_link_media_artifacts_to_observations.py</code></td>
 <td>—</td>
 </tr>
 <tr>
@@ -801,8 +801,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Capture observation / URL-claim model</td>
-<td>Additive temporal observation, untrusted claim authority, and explicit media-reference provenance in SQLite.</td>
-<td>Version-4 tables, version-5 observation backfill, and version-6 media-observation links are current; ingest dual-writes these authorities, while observation-first activity read cutover remains target state.</td>
+<td>Additive temporal observation, untrusted claim authority, explicit media-reference provenance, and observation-first activity reads in SQLite.</td>
+<td>Version-4 tables, version-5 observation backfill, version-6 media-observation links, and contemporaneous recent/timeline/detail reads are current; lifecycle identity/interval-union cutover remains target state.</td>
 </tr>
 <tr>
 <td>Policy engine</td>
@@ -1185,7 +1185,7 @@ status_reason  = cache-evicted:global-oldest
 </tr>
 <tr>
 <td><code>capture_observations</code></td>
-<td>Additive extraction records with idempotency, visit/document/snapshot time relationships, observed URL, capture semantics, and provenance quality. New ingest writes observations; read APIs still use legacy joins pending cutover.</td>
+<td>Additive extraction records with idempotency, visit/document/snapshot time relationships, observed URL, capture semantics, and provenance quality. Recent/timeline/document/snapshot reads use observations first and retain an explicit ambiguous legacy-visit fallback.</td>
 </tr>
 <tr>
 <td><code>document_url_claims</code></td>

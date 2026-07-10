@@ -93,16 +93,22 @@ def test_admin_read_apis_and_ui_assets(server):
     assert status == 200
     assert [row["title"] for row in recent["results"]] == ["Rankine Notes", "Stirling Notes"]
     assert recent["results"][0]["snippet"]
+    assert recent["results"][1]["observation_id"] == first["observation_id"]
+    assert recent["results"][1]["record_source"] == "observation"
 
     q = urllib.parse.urlencode({"date": "2026-06-08", "limit": "10"})
     status, day = request("GET", f"{server}/timeline?{q}")
     assert status == 200
     assert day["count"] == 1
+    assert day["summary"]["observations"] == 1
+    assert day["summary"]["visits"] == 1
     assert day["items"][0]["title"] == "Stirling Notes"
 
     status, document = request("GET", f"{server}/documents/{first['document_id']}")
     assert status == 200
     assert document["document"]["title"] == "Stirling Notes"
+    assert document["observations"][0]["observation_id"] == first["observation_id"]
+    assert document["url_claims"] == []
     assert document["visits"][0]["url"] == "https://docs.example.org/articles/stirling"
     assert document["chunks"][0]["snippet"].startswith("Readable dashboard fixture")
 
@@ -110,6 +116,7 @@ def test_admin_read_apis_and_ui_assets(server):
     assert status == 200
     assert "low temperature engines" in snapshot["text"]
     assert snapshot["snapshot"]["has_clean_text"] is True
+    assert snapshot["observations"][0]["observation_id"] == first["observation_id"]
 
     status, doctor = request("GET", f"{server}/doctor")
     assert status == 200

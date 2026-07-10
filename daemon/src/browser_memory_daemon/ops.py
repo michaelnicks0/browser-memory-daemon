@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from datetime import date, datetime, time, timezone, timedelta
-from pathlib import Path
 import sqlite3
+from datetime import date, datetime, time, timedelta, timezone
+from pathlib import Path
 from typing import Any
 
 from . import __version__
@@ -33,103 +33,211 @@ def _parse_date_range(*, day: str | None = None, after: str | None = None, befor
     return after or None, before or None
 
 
-def recent_captures(conn: sqlite3.Connection, *, limit: int | str | None = 25) -> list[dict[str, Any]]:
-    selected_limit = _clamp_limit(limit)
-    rows = conn.execute(
-        """
-        SELECT
-          visits.id AS visit_id,
-          visits.url,
-          visits.normalized_url,
-          COALESCE(visits.title, documents.title, '') AS title,
-          visits.source_device,
-          visits.browser_profile,
-          visits.visit_started_at,
-          visits.captured_at,
-          visits.dwell_seconds,
-          documents.id AS document_id,
-          documents.domain,
-          snapshots.id AS snapshot_id,
-          snapshots.privacy_class,
-          snapshots.redaction_count,
-          chunks.text AS first_chunk,
-          (SELECT COUNT(*) FROM media_artifacts m WHERE m.snapshot_id = snapshots.id) AS media_artifact_count
-        FROM visits
-        JOIN documents ON documents.id = visits.document_id
-        LEFT JOIN snapshots ON snapshots.id = (
-          SELECT s.id FROM snapshots s
-          WHERE s.document_id = documents.id
-          ORDER BY s.captured_at DESC, s.created_at DESC
-          LIMIT 1
-        )
-        LEFT JOIN chunks ON chunks.id = (
-          SELECT c.id FROM chunks c
-          WHERE c.snapshot_id = snapshots.id
-          ORDER BY c.chunk_index ASC
-          LIMIT 1
-        )
-        WHERE visits.blocked = 0
-        ORDER BY visits.captured_at DESC, visits.created_at DESC
+_ACTIVITY_CTE = """
+WITH observation_activity AS (
+  SELECT
+    o.id AS observation_id,
+    o.navigation_id,
+    'observation' AS record_source,
+    o.capture_reason,
+    o.capture_method,
+    o.extraction_version,
+    o.disposition,
+    o.provenance_quality,
+    o.visit_id,
+    o.observed_url AS url,
+    o.normalized_observed_url AS normalized_url,
+    o.title,
+    v.source_device,
+    v.browser_profile,
+    v.visit_started_at,
+    o.captured_at,
+    COALESCE(v.dwell_seconds, 0) AS dwell_seconds,
+    COALESCE((
+      SELECT MAX(ve.max_scroll_percent) FROM visit_events ve
+      WHERE ve.visit_id = o.visit_id
+    ), 0) AS max_scroll_percent,
+    o.document_id,
+    d.domain,
+    o.snapshot_id,
+    s.privacy_class,
+    s.redaction_count,
+    c.text AS first_chunk,
+    (
+      SELECT COUNT(*) FROM media_artifact_observations mao
+      WHERE mao.observation_id = o.id
+    ) AS media_artifact_count,
+    o.created_at AS created_sort
+  FROM capture_observations o
+  JOIN documents d ON d.id = o.document_id
+  LEFT JOIN visits v ON v.id = o.visit_id
+  LEFT JOIN snapshots s ON s.id = o.snapshot_id
+  LEFT JOIN chunks c ON c.id = (
+    SELECT c2.id FROM chunks c2
+    WHERE c2.snapshot_id = o.snapshot_id
+    ORDER BY c2.chunk_index ASC
+    LIMIT 1
+  )
+  WHERE COALESCE(v.blocked, 0) = 0
+),
+legacy_activity AS (
+  SELECT
+    NULL AS observation_id,
+    NULL AS navigation_id,
+    'legacy-visit' AS record_source,
+    NULL AS capture_reason,
+    NULL AS capture_method,
+    NULL AS extraction_version,
+    'legacy-fallback' AS disposition,
+    'ambiguous' AS provenance_quality,
+    v.id AS visit_id,
+    v.url,
+    v.normalized_url,
+    COALESCE(v.title, d.title, '') AS title,
+    v.source_device,
+    v.browser_profile,
+    v.visit_started_at,
+    v.captured_at,
+    COALESCE(v.dwell_seconds, 0) AS dwell_seconds,
+    COALESCE((
+      SELECT MAX(ve.max_scroll_percent) FROM visit_events ve
+      WHERE ve.visit_id = v.id
+    ), 0) AS max_scroll_percent,
+    d.id AS document_id,
+    d.domain,
+    s.id AS snapshot_id,
+    s.privacy_class,
+    s.redaction_count,
+    c.text AS first_chunk,
+    (SELECT COUNT(*) FROM media_artifacts m WHERE m.snapshot_id = s.id) AS media_artifact_count,
+    v.created_at AS created_sort
+  FROM visits v
+  JOIN documents d ON d.id = v.document_id
+  LEFT JOIN snapshots s ON s.id = COALESCE(
+    (
+      SELECT s2.id FROM snapshots s2
+      WHERE s2.visit_id = v.id
+      ORDER BY s2.captured_at DESC, s2.created_at DESC
+      LIMIT 1
+    ),
+    (
+      SELECT s3.id FROM snapshots s3
+      WHERE s3.document_id = d.id
+      ORDER BY s3.captured_at DESC, s3.created_at DESC
+      LIMIT 1
+    )
+  )
+  LEFT JOIN chunks c ON c.id = (
+    SELECT c2.id FROM chunks c2
+    WHERE c2.snapshot_id = s.id
+    ORDER BY c2.chunk_index ASC
+    LIMIT 1
+  )
+  WHERE v.blocked = 0
+    AND NOT EXISTS (
+      SELECT 1 FROM capture_observations o WHERE o.visit_id = v.id
+    )
+),
+activity AS (
+  SELECT * FROM observation_activity
+  UNION ALL
+  SELECT * FROM legacy_activity
+)
+"""
+
+
+def _activity_rows(
+    conn: sqlite3.Connection,
+    *,
+    start: str | None,
+    end: str | None,
+    limit: int,
+) -> list[sqlite3.Row]:
+    where: list[str] = []
+    params: list[Any] = []
+    if start:
+        where.append("captured_at >= ?")
+        params.append(start)
+    if end:
+        where.append("captured_at < ?")
+        params.append(end)
+    params.append(limit)
+    predicate = f"WHERE {' AND '.join(where)}" if where else ""
+    return conn.execute(
+        f"""
+        {_ACTIVITY_CTE}
+        SELECT * FROM activity
+        {predicate}
+        ORDER BY captured_at DESC, created_sort DESC, observation_id DESC, visit_id DESC
         LIMIT ?
         """,
-        (selected_limit,),
+        params,
     ).fetchall()
-    return [_capture_row(row) for row in rows]
+
+
+def recent_captures(conn: sqlite3.Connection, *, limit: int | str | None = 25) -> list[dict[str, Any]]:
+    selected_limit = _clamp_limit(limit)
+    return [
+        _capture_row(row)
+        for row in _activity_rows(conn, start=None, end=None, limit=selected_limit)
+    ]
+
+
+def _activity_summary(items: list[dict[str, Any]]) -> dict[str, int]:
+    visits: dict[str, dict[str, Any]] = {}
+    for item in items:
+        visit_id = item.get("visit_id")
+        if visit_id and visit_id not in visits:
+            visits[visit_id] = item
+    return {
+        "visits": len(visits),
+        "observations": sum(item.get("observation_id") is not None for item in items),
+        "captures": len(items),
+        "total_dwell_seconds": sum(int(item.get("dwell_seconds") or 0) for item in visits.values()),
+        "max_scroll_percent": max((int(item.get("max_scroll_percent") or 0) for item in items), default=0),
+        "media_artifacts": sum(int(item.get("media_artifact_count") or 0) for item in items),
+    }
 
 
 def timeline(conn: sqlite3.Connection, *, day: str | None = None, after: str | None = None, before: str | None = None, limit: int | str | None = 100) -> dict[str, Any]:
     selected_limit = _clamp_limit(limit, default=100, maximum=250)
     start, end = _parse_date_range(day=day, after=after, before=before)
-    where = ["visits.blocked = 0"]
-    params: list[Any] = []
-    if start:
-        where.append("visits.captured_at >= ?")
-        params.append(start)
-    if end:
-        where.append("visits.captured_at < ?")
-        params.append(end)
-    params.append(selected_limit)
+    rows = _activity_rows(conn, start=start, end=end, limit=selected_limit)
+    items = [_capture_row(row) for row in rows]
+    return {
+        "items": items,
+        "range": {"date": day, "after": start, "before": end},
+        "count": len(items),
+        "summary": _activity_summary(items),
+    }
+
+
+def _observation_details(
+    conn: sqlite3.Connection,
+    *,
+    document_id: str | None = None,
+    snapshot_id: str | None = None,
+) -> list[dict[str, Any]]:
+    if (document_id is None) == (snapshot_id is None):
+        raise ValueError("exactly one observation detail selector is required")
+    column = "o.document_id" if document_id is not None else "o.snapshot_id"
+    value = document_id if document_id is not None else snapshot_id
     rows = conn.execute(
         f"""
-        SELECT
-          visits.id AS visit_id,
-          visits.url,
-          visits.normalized_url,
-          COALESCE(visits.title, documents.title, '') AS title,
-          visits.source_device,
-          visits.browser_profile,
-          visits.visit_started_at,
-          visits.captured_at,
-          visits.dwell_seconds,
-          documents.id AS document_id,
-          documents.domain,
-          snapshots.id AS snapshot_id,
-          snapshots.privacy_class,
-          snapshots.redaction_count,
-          chunks.text AS first_chunk,
-          (SELECT COUNT(*) FROM media_artifacts m WHERE m.snapshot_id = snapshots.id) AS media_artifact_count
-        FROM visits
-        JOIN documents ON documents.id = visits.document_id
-        LEFT JOIN snapshots ON snapshots.id = (
-          SELECT s.id FROM snapshots s
-          WHERE s.document_id = documents.id
-          ORDER BY s.captured_at DESC, s.created_at DESC
-          LIMIT 1
-        )
-        LEFT JOIN chunks ON chunks.id = (
-          SELECT c.id FROM chunks c
-          WHERE c.snapshot_id = snapshots.id
-          ORDER BY c.chunk_index ASC
-          LIMIT 1
-        )
-        WHERE {' AND '.join(where)}
-        ORDER BY visits.captured_at DESC, visits.created_at DESC
-        LIMIT ?
+        SELECT o.id AS observation_id, o.navigation_id, o.visit_id,
+               o.document_id, o.snapshot_id, o.observed_url,
+               o.normalized_observed_url, o.title, o.captured_at,
+               o.capture_reason, o.capture_method, o.extraction_version,
+               o.disposition, o.provenance_quality,
+               (SELECT COUNT(*) FROM media_artifact_observations mao
+                WHERE mao.observation_id = o.id) AS media_artifact_count
+        FROM capture_observations o
+        WHERE {column} = ?
+        ORDER BY o.captured_at DESC, o.created_at DESC, o.id DESC
         """,
-        params,
+        (value,),
     ).fetchall()
-    items = [_capture_row(row) for row in rows]
-    return {"items": items, "range": {"date": day, "after": start, "before": end}, "count": len(items)}
+    return [dict(row) for row in rows]
 
 
 def document_detail(conn: sqlite3.Connection, config: RuntimeConfig, document_id: str) -> dict[str, Any]:
@@ -179,8 +287,21 @@ def document_detail(conn: sqlite3.Connection, config: RuntimeConfig, document_id
         """,
         (document_id, document_id),
     ).fetchall()
+    url_claims = conn.execute(
+        """
+        SELECT id, observation_id, claim_type, claimed_url, normalized_claimed_url,
+               claim_origin, same_origin, identity_effect, provenance_quality,
+               first_observed_at, last_observed_at, created_at
+        FROM document_url_claims
+        WHERE document_id = ?
+        ORDER BY first_observed_at, id
+        """,
+        (document_id,),
+    ).fetchall()
     return {
         "document": dict(doc),
+        "observations": _observation_details(conn, document_id=document_id),
+        "url_claims": [dict(row) for row in url_claims],
         "visits": [dict(row) for row in visits],
         "visit_events": [dict(row) for row in visit_events],
         "snapshots": [_snapshot_summary(row, config) for row in snapshots],
@@ -221,6 +342,7 @@ def snapshot_detail(conn: sqlite3.Connection, config: RuntimeConfig, snapshot_id
     return {
         "snapshot": _snapshot_summary(snapshot, config),
         "document": dict(document) if document else None,
+        "observations": _observation_details(conn, snapshot_id=snapshot_id),
         "text": text[:max_text_chars],
         "text_truncated": truncated,
         "media_artifacts": media_artifacts_for_snapshot(conn, snapshot_id, config),
@@ -326,6 +448,14 @@ def _filesystem_census(root: Path) -> tuple[int, int]:
 
 def _capture_row(row: sqlite3.Row) -> dict[str, Any]:
     return {
+        "observation_id": row["observation_id"],
+        "navigation_id": row["navigation_id"],
+        "record_source": row["record_source"],
+        "capture_reason": row["capture_reason"],
+        "capture_method": row["capture_method"],
+        "extraction_version": row["extraction_version"],
+        "disposition": row["disposition"],
+        "provenance_quality": row["provenance_quality"],
         "visit_id": row["visit_id"],
         "document_id": row["document_id"],
         "snapshot_id": row["snapshot_id"],
@@ -338,6 +468,7 @@ def _capture_row(row: sqlite3.Row) -> dict[str, Any]:
         "visit_started_at": row["visit_started_at"],
         "captured_at": row["captured_at"],
         "dwell_seconds": row["dwell_seconds"],
+        "max_scroll_percent": row["max_scroll_percent"],
         "privacy_class": row["privacy_class"],
         "redaction_count": row["redaction_count"],
         "media_artifact_count": row["media_artifact_count"],

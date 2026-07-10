@@ -27,13 +27,13 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
 
             wslLoopbackDaemon = container "WSL Loopback HTTP Daemon" "Authenticated loopback HTTP API that handles capture, visit events, media artifact upload/fetch/purge, exact search, recent/timeline/detail, policy rules, doctor, forget, and static UI serving." "Python 3.11, ThreadingHTTPServer" {
                 httpRouter = component "HTTP Request Router" "Routes loopback API requests, serves UI assets, enforces bearer auth for memory/admin APIs, and applies CORS for allowed origins." "Python http.server" "Current"
-                migrationKernel = component "Database Migration Kernel" "Validates exact schema fingerprints, ordered migration names/checksums, and PRAGMA user_version; applies transactional steps, backup-gates destructive changes, and expands capture observations and URL claims at version 4." "Python + sqlite3" "Current"
+                migrationKernel = component "Database Migration Kernel" "Validates exact schema fingerprints, ordered migration names/checksums, and PRAGMA user_version; applies transactional steps, backup-gates destructive changes, and expands capture observations, URL claims, and media-observation provenance through version 6." "Python + sqlite3" "Current"
                 policyEngine = component "Policy Engine" "Evaluates all/recall/balanced/strict capture mode decisions and redacts URL/title/body text outside all mode." "Python" "Current"
                 policyStore = component "Policy Store" "Persists and evaluates explicit local block-domain and URL-prefix rules for every policy mode." "Python + SQLite" "Current"
-                ingestPipeline = component "Ingest Pipeline" "Normalizes URLs, computes document/snapshot IDs, stores visits/snapshots/chunks/FTS rows, writes clean text blobs, and records media references." "Python + sqlite3" "Current"
+                ingestPipeline = component "Ingest Pipeline" "Normalizes observed URLs, computes document/snapshot IDs, stores visits/observations/snapshots/chunks/FTS rows, records non-authoritative URL claims, writes clean text blobs, and links media references to observations." "Python + sqlite3" "Current"
                 lifecyclePipeline = component "Lifecycle Pipeline" "Stores metadata-only tab lifecycle events and updates visit dwell seconds idempotently." "Python + sqlite3" "Current"
                 mediaManager = component "Media Artifact Manager" "Records media references, validates blob uploads, enforces MIME/size/cache gates, writes blobs atomically, queues public fetch tasks, and purges or rehydrates cache entries." "Python + sqlite3 + filesystem" "Current"
-                searchReadModel = component "Search and Read Model" "Provides exact FTS search, recent captures, timeline, document detail, snapshot detail, and media artifact detail views." "Python + SQLite FTS5" "Current"
+                searchReadModel = component "Search and Read Model" "Provides exact FTS search plus observation-first recent/timeline/document/snapshot/media detail views with an explicit ambiguous legacy fallback." "Python + SQLite FTS5" "Current"
                 forgetPipeline = component "Forget Pipeline" "Deletes URL/domain-scoped memory rows, FTS entries, clean-text blobs, media blobs, lifecycle rows, and records deletion receipts." "Python + sqlite3" "Current"
                 opsDoctor = component "Ops Doctor and Audit" "Reports health, DB integrity, FTS consistency, runtime paths, storage counts, media queue status, and writes metadata-only audit events to SQLite." "Python + sqlite3" "Current"
             }
@@ -44,7 +44,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
 
             cli = container "CLI" "Command-line interface for serving the daemon, migration check/execute, health/doctor/search/recent/timeline/detail, policy/forget, capture fixtures, media worker, and media cache operations." "Python argparse"
 
-            sqliteDatabase = container "SQLite + FTS5 Database" "Durable relational and full-text store for migration ledger, sources, documents, visits, capture observations, URL claims, visit events, snapshots, chunks, chunks_fts, media artifacts, media fetch tasks, policy rules, audit events, and deletion receipts." "SQLite with FTS5" {
+            sqliteDatabase = container "SQLite + FTS5 Database" "Durable relational and full-text store for migration ledger, sources, documents, visits, capture observations, URL claims, visit events, snapshots, chunks, chunks_fts, media artifacts and observation links, media fetch tasks, policy rules, audit events, and deletion receipts." "SQLite with FTS5" {
                 tags "Database", "Data Store"
             }
 

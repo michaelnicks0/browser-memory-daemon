@@ -44,10 +44,10 @@ Global defaults:
 | `migrate --execute` | Apply pending ordered migrations. Future destructive steps require disk headroom and a verified online backup. | Pretty JSON including applied/stamped versions and backup path when applicable. |
 | `doctor [--storage-census]` | Fetch `/doctor`; default uses fast DB-derived storage counts, `--storage-census` opts into an exact filesystem walk. | Pretty JSON. |
 | `daily-driver-health [--journal-since WINDOW] [--extension-dir PATH] [--powershell PATH] [--skip-windows-loopback] [--no-fail]` | Redaction-safe daily-driver snapshot across services, loopback, journals, DB freshness, media queue, storage, and extension artifact state. | Pretty JSON. Exits non-zero on hard errors unless `--no-fail` is set. |
-| `recent --limit N` | Recent captures. | Pretty JSON list. |
-| `timeline [--date YYYY-MM-DD] [--after ISO] [--before ISO] [--limit N]` | Capture timeline. | Pretty JSON. |
-| `document DOCUMENT_ID` | Document details. | Pretty JSON. |
-| `snapshot SNAPSHOT_ID` | Snapshot details and text. | Pretty JSON. |
+| `recent --limit N` | Recent capture observations with contemporaneous snapshot snippets; explicit ambiguous legacy-visit fallback. | Pretty JSON list. |
+| `timeline [--date YYYY-MM-DD] [--after ISO] [--before ISO] [--limit N]` | Observation-first capture timeline plus a visit-deduplicated bounded summary. | Pretty JSON. |
+| `document DOCUMENT_ID` | Document details including observations and untrusted URL claims. | Pretty JSON. |
+| `snapshot SNAPSHOT_ID` | Snapshot details, text, and exact referencing observations. | Pretty JSON. |
 | `search QUERY [--limit N]` | Exact FTS query. | Pretty JSON search results. |
 | `policy-rules [--block-domain DOMAIN] [--block-url-prefix URL]` | List or add block-domain / URL-prefix rule. | Pretty JSON. Applies in every mode, including `all`. |
 | `forget [--domain DOMAIN] [--url URL]` | Delete memory by exactly one selector: literal domain hostname or absolute URL. | Pretty JSON deletion receipt. |
