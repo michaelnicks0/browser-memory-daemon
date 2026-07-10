@@ -132,7 +132,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </blockquote>
 <!-- BEGIN GENERATED:inventory-summary -->
 <blockquote>
-<p><strong>Current inventory:</strong> 230 static test functions across 36 files — 200 daemon pytest tests + 30 extension node:test tests.</p>
+<p><strong>Current inventory:</strong> 233 static test functions across 38 files — 203 daemon pytest tests + 30 extension node:test tests.</p>
 </blockquote>
 <!-- END GENERATED:inventory-summary -->
 
@@ -190,7 +190,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <hr />
 <h2 id="generated-test-inventory">Generated test inventory</h2>
 <!-- BEGIN GENERATED:audit-run -->
-<p>Latest inventory: <strong>230 static test functions</strong> across <strong>36 files</strong> (200 daemon pytest; 30 extension node:test). Regenerate with <code>python3.11 scripts/generate_test_inventory.py --write</code>; enforce with <code>--check</code>. Counts are source-level test functions, not pytest parametrized case expansions.</p>
+<p>Latest inventory: <strong>233 static test functions</strong> across <strong>38 files</strong> (203 daemon pytest; 30 extension node:test). Regenerate with <code>python3.11 scripts/generate_test_inventory.py --write</code>; enforce with <code>--check</code>. Counts are source-level test functions, not pytest parametrized case expansions.</p>
 <!-- END GENERATED:audit-run -->
 
 <h2 id="requirements-traceability-gate">Requirements traceability gate</h2>
@@ -250,7 +250,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 </tr>
 <tr>
 <td>Static test inventory measured</td>
-<td>230 tests / 36 files</td>
+<td>233 tests / 38 files</td>
 </tr>
 </tbody>
 </table>
@@ -340,7 +340,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <tr>
 <td><code>daemon/tests/integration/test_media_worker.py</code></td>
 <td>pytest</td>
-<td style="text-align: right;">28</td>
+<td style="text-align: right;">29</td>
 </tr>
 <tr>
 <td><code>daemon/tests/integration/test_migrations.py</code></td>
@@ -386,6 +386,16 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <td><code>daemon/tests/unit/test_db.py</code></td>
 <td>pytest</td>
 <td style="text-align: right;">2</td>
+</tr>
+<tr>
+<td><code>daemon/tests/unit/test_media_fetch.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td><code>daemon/tests/unit/test_media_hls.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">1</td>
 </tr>
 <tr>
 <td><code>daemon/tests/unit/test_media_models.py</code></td>
@@ -450,7 +460,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <tr>
 <td><strong>Total</strong></td>
 <td></td>
-<td style="text-align: right;"><strong>230</strong></td>
+<td style="text-align: right;"><strong>233</strong></td>
 </tr>
 </tbody>
 </table>
@@ -558,34 +568,35 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 | `daemon/tests/integration/test_media_storage.py` | pytest | `(module)` | `test_text_and_provenance_commit_when_external_media_has_no_spool` | 366 | Text and provenance commit when external media has no spool. |
 | `daemon/tests/integration/test_media_tasks.py` | pytest | `(module)` | `test_media_task_repository_allows_only_one_concurrent_lease_owner` | 53 | Media task repository allows only one concurrent lease owner. |
 | `daemon/tests/integration/test_media_tasks.py` | pytest | `(module)` | `test_media_task_repository_preserves_terminal_state_unless_force_reset` | 75 | Media task repository preserves terminal state unless force reset. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_public_fetch_rejects_dns_to_private_without_opening` | 103 | Guarded public fetch rejects dns to private without opening. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_public_fetch_rejects_ipv6_loopback_literal_without_resolving` | 125 | Guarded public fetch rejects ipv6 loopback literal without resolving. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_public_fetch_allowlisted_private_host_omits_referer` | 145 | Guarded public fetch allowlisted private host omits referer. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_public_fetch_revalidates_public_to_private_redirect` | 173 | Guarded public fetch revalidates public to private redirect. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_public_fetch_detects_redirect_loop` | 197 | Guarded public fetch detects redirect loop. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_hls_revalidates_private_child_url` | 221 | Guarded hls revalidates private child url. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_hls_enforces_total_request_budget` | 248 | Guarded hls enforces total request budget. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_processes_data_url_task_and_marks_success` | 276 | Media worker processes data url task and marks success. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_init_db_does_not_repeat_historical_media_task_seed` | 299 | Init db does not repeat historical media task seed. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_marks_pending_task_succeeded_when_artifact_already_stored` | 321 | Media worker marks pending task succeeded when artifact already stored. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_fetch_pending_media_artifacts_respects_active_lease_and_recovers_stale_lease` | 359 | Fetch pending media artifacts respects active lease and recovers stale lease. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_capture_media_fetch_on_capture_background_uses_task_leasing` | 398 | Capture media fetch on capture background uses task leasing. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_concurrent_media_blob_writes_use_distinct_temp_files` | 450 | Concurrent media blob writes use distinct temp files. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_rehydrates_purged_cache_when_source_still_fetchable` | 500 | Media worker rehydrates purged cache when source still fetchable. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_purge_media_cache_skips_db_paths_outside_media_root` | 527 | Purge media cache skips db paths outside media root. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_normalizes_terminal_failed_artifacts` | 563 | Media worker normalizes terminal failed artifacts. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_retry_backoff_releases_lease_and_waits_until_due` | 614 | Media worker retry backoff releases lease and waits until due. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_reclassifies_legacy_blob_video_skips_as_references` | 657 | Media worker reclassifies legacy blob video skips as references. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_stores_hls_master_playlist_as_video_mp4` | 738 | Media worker stores hls master playlist as video mp4. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_hls_assembly_uses_single_deadline_across_segments` | 766 | Hls assembly uses single deadline across segments. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_requeues_legacy_hls_video_unsupported_skips` | 799 | Media worker requeues legacy hls video unsupported skips. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_requeues_snapshot_budget_skips_after_cap_raise` | 831 | Media worker requeues snapshot budget skips after cap raise. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_requeues_storage_budget_skips_after_cap_raise` | 863 | Media worker requeues storage budget skips after cap raise. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_stores_hls_audio_rendition_sidecar` | 893 | Media worker stores hls audio rendition sidecar. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_requeues_legacy_hls_audio_rendition_refs` | 921 | Media worker requeues legacy hls audio rendition refs. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_requeues_cdp_hls_manifest_refs` | 951 | Media worker requeues cdp hls manifest refs. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_marks_blob_video_refs_covered_by_cdp_bytes` | 992 | Media worker marks blob video refs covered by cdp bytes. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_classifies_uncovered_blob_video_refs_as_opaque` | 1042 | Media worker classifies uncovered blob video refs as opaque. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_public_fetch_rejects_dns_to_private_without_opening` | 104 | Guarded public fetch rejects dns to private without opening. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_public_fetch_rejects_ipv6_loopback_literal_without_resolving` | 126 | Guarded public fetch rejects ipv6 loopback literal without resolving. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_public_fetch_allowlisted_private_host_omits_referer` | 146 | Guarded public fetch allowlisted private host omits referer. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_public_fetch_revalidates_public_to_private_redirect` | 174 | Guarded public fetch revalidates public to private redirect. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_public_fetch_detects_redirect_loop` | 198 | Guarded public fetch detects redirect loop. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_hls_revalidates_private_child_url` | 222 | Guarded hls revalidates private child url. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_hls_enforces_total_request_budget` | 249 | Guarded hls enforces total request budget. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_hls_enforces_initial_playlist_byte_budget` | 277 | Guarded hls enforces initial playlist byte budget. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_processes_data_url_task_and_marks_success` | 305 | Media worker processes data url task and marks success. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_init_db_does_not_repeat_historical_media_task_seed` | 328 | Init db does not repeat historical media task seed. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_marks_pending_task_succeeded_when_artifact_already_stored` | 350 | Media worker marks pending task succeeded when artifact already stored. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_fetch_pending_media_artifacts_respects_active_lease_and_recovers_stale_lease` | 388 | Fetch pending media artifacts respects active lease and recovers stale lease. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_capture_media_fetch_on_capture_background_uses_task_leasing` | 427 | Capture media fetch on capture background uses task leasing. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_concurrent_media_blob_writes_use_distinct_temp_files` | 479 | Concurrent media blob writes use distinct temp files. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_rehydrates_purged_cache_when_source_still_fetchable` | 529 | Media worker rehydrates purged cache when source still fetchable. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_purge_media_cache_skips_db_paths_outside_media_root` | 556 | Purge media cache skips db paths outside media root. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_normalizes_terminal_failed_artifacts` | 592 | Media worker normalizes terminal failed artifacts. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_retry_backoff_releases_lease_and_waits_until_due` | 643 | Media worker retry backoff releases lease and waits until due. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_reclassifies_legacy_blob_video_skips_as_references` | 686 | Media worker reclassifies legacy blob video skips as references. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_stores_hls_master_playlist_as_video_mp4` | 767 | Media worker stores hls master playlist as video mp4. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_hls_assembly_uses_single_deadline_across_segments` | 795 | Hls assembly uses single deadline across segments. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_requeues_legacy_hls_video_unsupported_skips` | 828 | Media worker requeues legacy hls video unsupported skips. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_requeues_snapshot_budget_skips_after_cap_raise` | 860 | Media worker requeues snapshot budget skips after cap raise. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_requeues_storage_budget_skips_after_cap_raise` | 892 | Media worker requeues storage budget skips after cap raise. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_stores_hls_audio_rendition_sidecar` | 922 | Media worker stores hls audio rendition sidecar. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_requeues_legacy_hls_audio_rendition_refs` | 950 | Media worker requeues legacy hls audio rendition refs. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_requeues_cdp_hls_manifest_refs` | 980 | Media worker requeues cdp hls manifest refs. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_marks_blob_video_refs_covered_by_cdp_bytes` | 1021 | Media worker marks blob video refs covered by cdp bytes. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_classifies_uncovered_blob_video_refs_as_opaque` | 1071 | Media worker classifies uncovered blob video refs as opaque. |
 | `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_fresh_database_migrates_to_ordered_versioned_ledger_and_preserves_fts` | 117 | Fresh database migrates to ordered versioned ledger and preserves fts. |
 | `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_unversioned_current_schema_is_stamped_then_historical_seed_runs_once` | 158 | Unversioned current schema is stamped then historical seed runs once. |
 | `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_capture_observation_and_url_claim_schema_enforces_expand_contract` | 188 | Capture observation and url claim schema enforces expand contract. |
@@ -636,6 +647,8 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 | `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_low_headroom_and_service_start_churn` | 356 | Daily driver health detects low headroom and service start churn. |
 | `daemon/tests/unit/test_db.py` | pytest | `(module)` | `test_connect_uses_extended_busy_timeout` | 5 | Connect uses extended busy timeout. |
 | `daemon/tests/unit/test_db.py` | pytest | `(module)` | `test_init_db_enforces_wal_and_connection_pragmas` | 12 | Init db enforces wal and connection pragmas. |
+| `daemon/tests/unit/test_media_fetch.py` | pytest | `(module)` | `test_media_facade_preserves_guarded_fetch_api_identity` | 4 | Media facade preserves guarded fetch api identity. |
+| `daemon/tests/unit/test_media_hls.py` | pytest | `(module)` | `test_media_facade_preserves_hls_transport_api_identity` | 4 | Media facade preserves hls transport api identity. |
 | `daemon/tests/unit/test_media_models.py` | pytest | `(module)` | `test_media_facade_preserves_public_state_and_task_symbols` | 15 | Media facade preserves public state and task symbols. |
 | `daemon/tests/unit/test_media_models.py` | pytest | `(module)` | `test_media_state_taxonomy_separates_internal_storage_recovery_states_from_caller_input` | 23 | Media state taxonomy separates internal storage recovery states from caller input. |
 | `daemon/tests/unit/test_media_models.py` | pytest | `(module)` | `test_media_transition_matrices_preserve_terminal_and_recovery_boundaries` | 32 | Media transition matrices preserve terminal and recovery boundaries. |

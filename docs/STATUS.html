@@ -178,8 +178,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Media artifacts</td>
-<td>✅ Durable image/video refs and binaries: fast text/manifest capture, browser IndexedDB lazy queue, credentialed fetch, raw blob upload, enabled-by-default X/Twitter CDP recorder with disable control, HLS/audio sidecar handling, explicit state taxonomy, atomic task leasing/retry repository, artifact publication/read/purge store with failed-write compensation, daemon public worker, rolling cache gates, purge/rehydrate controls; no OCR/media indexing.</td>
-<td><code>media_models.py</code>, <code>media_tasks.py</code>, <code>media_store.py</code>, <code>media.py</code>, worker/extension tests, ADR-0042 through ADR-0044.</td>
+<td>✅ Durable image/video refs and binaries: fast text/manifest capture, browser IndexedDB lazy queue, credentialed fetch, raw blob upload, enabled-by-default X/Twitter CDP recorder with disable control, guarded public transport, bounded HLS/audio assembly, explicit state taxonomy, atomic task leasing/retry repository, artifact publication/read/purge store with failed-write compensation, daemon public worker, rolling cache gates, purge/rehydrate controls; no OCR/media indexing.</td>
+<td><code>media_models.py</code>, <code>media_tasks.py</code>, <code>media_store.py</code>, <code>media_fetch.py</code>, <code>media_hls.py</code>, <code>media.py</code>, worker/extension tests, ADR-0042 through ADR-0045.</td>
 </tr>
 <tr>
 <td>Local UI</td>

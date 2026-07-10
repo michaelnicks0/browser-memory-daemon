@@ -40,7 +40,7 @@ No schema migration or API change is introduced.
 - Unique candidate locators consume a new filename for each replacement until the old tombstone is processed.
 - Media-root admission is still an estimate rather than a durable global in-flight-byte reservation. Global worker/request/byte budgets remain Phase 4.5 work under REQ-036.
 - `store_media_blob_stream` still buffers the bounded payload before repository publication; transport streaming remains deferred to Phase 4.5.
-- Guarded fetch and HLS transport remain in `media.py` until the next reversible extraction.
+- Guarded fetch and HLS transport are extracted separately by ADR-0045.
 
 ## Verification
 

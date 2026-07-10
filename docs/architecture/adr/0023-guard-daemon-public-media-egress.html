@@ -126,13 +126,14 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
   <article class="md-body">
 <hr />
 <p>id: ADR-0023
-status: accepted
+status: superseded
 date: 2026-07-10
 decision_date: 2026-07-10
 decider: Operator
 scope: repo
 supersedes: []
-superseded_by: []
+superseded_by:
+  - ADR-0045
 related:
   - docs/security-model.md
   - docs/media-artifacts.md
@@ -142,6 +143,9 @@ verification:
   - BMD_PYTHON=/tmp/browser-memory-daemon-verify-venv/bin/python -m pytest -q daemon/tests/integration/test_media_worker.py</p>
 <hr />
 <h1 id="adr-0023-guard-daemon-public-media-egress">ADR-0023: Guard daemon-public media egress</h1>
+<blockquote>
+<p>Superseded by <a href="0045-isolate-guarded-media-fetch-and-hls.html">ADR-0045</a>, which preserves this policy while moving guarded transport and HLS assembly behind dedicated modules.</p>
+</blockquote>
 <h2 id="context">Context</h2>
 <p>The media sidecar architecture keeps text capture independent from media bytes, but the daemon-public worker still fetches public <code>http:</code>/<code>https:</code> media outside Chrome. That path must not become a general-purpose proxy from authenticated local callers or captured page metadata to private networks.</p>
 <p>Before this decision, the daemon fetch path relied on <code>urllib</code> defaults. That allowed implicit redirects, did not validate every HLS child request, and could send a full page URL as the <code>Referer</code> header.</p>

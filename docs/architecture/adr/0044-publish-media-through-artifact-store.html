@@ -160,7 +160,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>Unique candidate locators consume a new filename for each replacement until the old tombstone is processed.</li>
 <li>Media-root admission is still an estimate rather than a durable global in-flight-byte reservation. Global worker/request/byte budgets remain Phase 4.5 work under REQ-036.</li>
 <li><code>store_media_blob_stream</code> still buffers the bounded payload before repository publication; transport streaming remains deferred to Phase 4.5.</li>
-<li>Guarded fetch and HLS transport remain in <code>media.py</code> until the next reversible extraction.</li>
+<li>Guarded fetch and HLS transport are extracted separately by ADR-0045.</li>
 </ul>
 <h2 id="verification">Verification</h2>
 <p>Repository evidence includes:</p>

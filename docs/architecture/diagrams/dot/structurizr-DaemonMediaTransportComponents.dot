@@ -1,0 +1,40 @@
+digraph {
+  compound=true
+  graph [fontname="Arial", rankdir=LR, ranksep=1.0, nodesep=1.0]
+  node [fontname="Arial", shape=box, margin="0.4,0.3"]
+  edge [fontname="Arial"]
+  label=<<br /><font point-size="34">Component View: Browser Memory Daemon - WSL Loopback HTTP Daemon</font>>
+
+  3 [id=3,shape=rect, label=<<font point-size="34">Web Sites and Media<br />Origins</font><br /><font point-size="19">[Software System]</font><br /><br /><font point-size="24">External web pages,<br />image/video URLs, and media<br />CDNs that Chrome loads or that<br />sidecars fetch as page-related<br />media.</font>>, style=filled, color="#6b6b6b", fillcolor="#999999", fontcolor="#ffffff"]
+
+  subgraph cluster_4 {
+    margin=25
+    label=<<font point-size="24"><br />Browser Memory Daemon</font><br /><font point-size="19">[Software System]</font>>
+    labelloc=b
+    color="#444444"
+    fontcolor="#444444"
+    fillcolor="#444444"
+
+    subgraph cluster_14 {
+      margin=25
+      label=<<font point-size="24"><br />WSL Loopback HTTP Daemon</font><br /><font point-size="19">[Container: Python 3.11, ThreadingHTTPServer]</font>>
+      labelloc=b
+      color="#444444"
+      fontcolor="#444444"
+      fillcolor="#444444"
+
+      21 [id=21,shape=rect, label=<<font point-size="34">Media Artifact<br />Manager</font><br /><font point-size="19">[Component: Python + sqlite3 + filesystem]</font><br /><br /><font point-size="24">Provides the compatibility<br />API, records media references,<br />normalizes bounded blob<br />uploads, delegates guarded<br />public transport, and drains<br />verified spool bytes without<br />coupling text ingest to media<br />availability.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
+      24 [id=24,shape=rect, label=<<font point-size="34">Media Artifact Store</font><br /><font point-size="19">[Component: Python + sqlite3 + BlobStore]</font><br /><br /><font point-size="24">Owns artifact rows, unique<br />staged publication,<br />failed-write compensation,<br />contained reads, cache<br />admission, oldest-first<br />eviction, purge/rehydration,<br />and lifecycle<br />registration/tombstones.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
+      25 [id=25,shape=rect, label=<<font point-size="34">Guarded Media Fetch</font><br /><font point-size="19">[Component: Python stdlib urllib + socket]</font><br /><br /><font point-size="24">Owns HTTP/data transport,<br />public-address validation,<br />redirect revalidation,<br />no-referrer requests,<br />response-byte limits, and<br />shared deadlines.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
+      26 [id=26,shape=rect, label=<<font point-size="34">Bounded HLS Transport</font><br /><font point-size="19">[Component: Python]</font><br /><br /><font point-size="24">Parses bounded playlists,<br />selects variants, expands init<br />maps/segments through the<br />guarded fetch boundary, and<br />assembles bytes within<br />depth/request/deadline limits.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
+    }
+
+  }
+
+  25 -> 26 [id=105, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Delegates detected<br />playlists for bounded<br />parsing and assembly to</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  25 -> 3 [id=106, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Validates and fetches<br />public media from</font><br /><font point-size="19">[HTTP(S), no Referer or Chrome cookies]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  26 -> 25 [id=108, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Fetches every variant,<br />init map, and segment<br />through</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  21 -> 24 [id=95, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Publishes, resolves,<br />purges, and rehydrates<br />artifacts through</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  21 -> 25 [id=96, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Delegates daemon-public<br />media transport to</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+
+}

@@ -1,12 +1,13 @@
 ---
 id: ADR-0023
-status: accepted
+status: superseded
 date: 2026-07-10
 decision_date: 2026-07-10
 decider: Operator
 scope: repo
 supersedes: []
-superseded_by: []
+superseded_by:
+  - ADR-0045
 related:
   - docs/security-model.md
   - docs/media-artifacts.md
@@ -17,6 +18,8 @@ verification:
 ---
 
 # ADR-0023: Guard daemon-public media egress
+
+> Superseded by [ADR-0045](0045-isolate-guarded-media-fetch-and-hls.md), which preserves this policy while moving guarded transport and HLS assembly behind dedicated modules.
 
 ## Context
 

@@ -10,7 +10,8 @@ from dataclasses import replace
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-import browser_memory_daemon.media as media_module
+import browser_memory_daemon.media_fetch as media_fetch_module
+import browser_memory_daemon.media_hls as media_hls_module
 from browser_memory_daemon.app import make_server
 from browser_memory_daemon.config import load_config
 from browser_memory_daemon.db import connect, init_db
@@ -93,9 +94,9 @@ class FakeFetchResponse:
 def fake_resolver_for(mapping: dict[str, str]):
     def resolver(host: str, port: int, *args, **kwargs):
         address = mapping[host]
-        family = media_module.socket.AF_INET6 if ":" in address else media_module.socket.AF_INET
-        sockaddr = (address, port, 0, 0) if family == media_module.socket.AF_INET6 else (address, port)
-        return [(family, media_module.socket.SOCK_STREAM, 6, "", sockaddr)]
+        family = media_fetch_module.socket.AF_INET6 if ":" in address else media_fetch_module.socket.AF_INET
+        sockaddr = (address, port, 0, 0) if family == media_fetch_module.socket.AF_INET6 else (address, port)
+        return [(family, media_fetch_module.socket.SOCK_STREAM, 6, "", sockaddr)]
 
     return resolver
 
@@ -104,10 +105,10 @@ def test_guarded_public_fetch_rejects_dns_to_private_without_opening(monkeypatch
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
     opened: list[str] = []
 
-    monkeypatch.setattr(media_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"cdn.example": "10.0.0.5"}))
-    monkeypatch.setattr(media_module, "_PUBLIC_FETCH_OPENER", lambda request, *, timeout: opened.append(request.full_url))
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"cdn.example": "10.0.0.5"}))
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", lambda request, *, timeout: opened.append(request.full_url))
 
-    content, mime_type, reason = media_module._fetch_media_bytes(
+    content, mime_type, reason = media_fetch_module._fetch_media_bytes(
         "https://cdn.example/private.png",
         "https://page.example/full/path?secret=1",
         media_type="image",
@@ -126,10 +127,10 @@ def test_guarded_public_fetch_rejects_ipv6_loopback_literal_without_resolving(mo
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
     opened: list[str] = []
 
-    monkeypatch.setattr(media_module, "_PUBLIC_FETCH_RESOLVER", lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("resolver should not run")))
-    monkeypatch.setattr(media_module, "_PUBLIC_FETCH_OPENER", lambda request, *, timeout: opened.append(request.full_url))
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_RESOLVER", lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("resolver should not run")))
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", lambda request, *, timeout: opened.append(request.full_url))
 
-    _content, _mime_type, reason = media_module._fetch_media_bytes(
+    _content, _mime_type, reason = media_fetch_module._fetch_media_bytes(
         "http://[::1]/loopback.png",
         "https://page.example/full/path?secret=1",
         media_type="image",
@@ -151,10 +152,10 @@ def test_guarded_public_fetch_allowlisted_private_host_omits_referer(monkeypatch
         requests.append(request)
         return FakeFetchResponse(headers={"content-type": "image/png"}, body=b"image-bytes")
 
-    monkeypatch.setattr(media_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"private.example": "10.0.0.8"}))
-    monkeypatch.setattr(media_module, "_PUBLIC_FETCH_OPENER", opener)
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"private.example": "10.0.0.8"}))
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", opener)
 
-    content, mime_type, reason = media_module._fetch_media_bytes(
+    content, mime_type, reason = media_fetch_module._fetch_media_bytes(
         "https://private.example/image.png",
         "https://page.example/full/path?secret=1",
         media_type="image",
@@ -178,10 +179,10 @@ def test_guarded_public_fetch_revalidates_public_to_private_redirect(monkeypatch
         opened.append(request.full_url)
         return FakeFetchResponse(status=302, headers={"location": "http://private.internal/image.png"})
 
-    monkeypatch.setattr(media_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"public.example": "8.8.8.8", "private.internal": "10.0.0.9"}))
-    monkeypatch.setattr(media_module, "_PUBLIC_FETCH_OPENER", opener)
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"public.example": "8.8.8.8", "private.internal": "10.0.0.9"}))
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", opener)
 
-    _content, _mime_type, reason = media_module._fetch_media_bytes(
+    _content, _mime_type, reason = media_fetch_module._fetch_media_bytes(
         "https://public.example/redirect.png",
         "https://page.example/full/path?secret=1",
         media_type="image",
@@ -202,10 +203,10 @@ def test_guarded_public_fetch_detects_redirect_loop(monkeypatch, tmp_path):
         opened.append(request.full_url)
         return FakeFetchResponse(status=302, headers={"location": request.full_url})
 
-    monkeypatch.setattr(media_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"loop.example": "8.8.8.8"}))
-    monkeypatch.setattr(media_module, "_PUBLIC_FETCH_OPENER", opener)
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"loop.example": "8.8.8.8"}))
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", opener)
 
-    _content, _mime_type, reason = media_module._fetch_media_bytes(
+    _content, _mime_type, reason = media_fetch_module._fetch_media_bytes(
         "https://loop.example/media.png",
         "https://page.example/full/path?secret=1",
         media_type="image",
@@ -229,10 +230,10 @@ def test_guarded_hls_revalidates_private_child_url(monkeypatch, tmp_path):
             body=b"#EXTM3U\n#EXTINF:1.0,\nhttp://192.168.1.10/segment.ts\n#EXT-X-ENDLIST\n",
         )
 
-    monkeypatch.setattr(media_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"media.example": "8.8.8.8"}))
-    monkeypatch.setattr(media_module, "_PUBLIC_FETCH_OPENER", opener)
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"media.example": "8.8.8.8"}))
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", opener)
 
-    _content, _mime_type, reason = media_module._fetch_media_bytes(
+    _content, _mime_type, reason = media_fetch_module._fetch_media_bytes(
         "https://media.example/master.m3u8",
         "https://page.example/full/path?secret=1",
         media_type="video",
@@ -257,10 +258,10 @@ def test_guarded_hls_enforces_total_request_budget(monkeypatch, tmp_path):
             body=b"#EXTM3U\n#EXTINF:1.0,\nhttps://media.example/segment.ts\n#EXT-X-ENDLIST\n",
         )
 
-    monkeypatch.setattr(media_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"media.example": "8.8.8.8"}))
-    monkeypatch.setattr(media_module, "_PUBLIC_FETCH_OPENER", opener)
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"media.example": "8.8.8.8"}))
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", opener)
 
-    _content, _mime_type, reason = media_module._fetch_media_bytes(
+    _content, _mime_type, reason = media_fetch_module._fetch_media_bytes(
         "https://media.example/master.m3u8",
         "https://page.example/full/path?secret=1",
         media_type="video",
@@ -271,6 +272,34 @@ def test_guarded_hls_enforces_total_request_budget(monkeypatch, tmp_path):
 
     assert reason == "hls-request-budget-exceeded"
     assert opened == ["https://media.example/master.m3u8"]
+
+
+def test_guarded_hls_enforces_initial_playlist_byte_budget(monkeypatch, tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    cfg = replace(cfg, media_hls_playlist_max_bytes=32)
+    opened: list[str] = []
+
+    def opener(request, *, timeout):
+        opened.append(request.full_url)
+        return FakeFetchResponse(
+            headers={"content-type": "application/x-mpegURL"},
+            body=b"#EXTM3U\n" + b"# oversized playlist padding\n" * 4,
+        )
+
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"media.example": "8.8.8.8"}))
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", opener)
+
+    _content, _mime_type, reason = media_fetch_module._fetch_media_bytes(
+        "https://media.example/disguised.bin",
+        "https://page.example/full/path?secret=1",
+        media_type="video",
+        max_bytes=1000,
+        timeout_seconds=1,
+        config=cfg,
+    )
+
+    assert reason == "media-too-large"
+    assert opened == ["https://media.example/disguised.bin"]
 
 
 def test_media_worker_processes_data_url_task_and_marks_success(tmp_path):
@@ -775,18 +804,18 @@ def test_hls_assembly_uses_single_deadline_across_segments(monkeypatch, tmp_path
         clock["now"] += 2.0
         return b"segment", ""
 
-    monkeypatch.setattr(media_module.time, "monotonic", monotonic)
-    monkeypatch.setattr(media_module, "_fetch_hls_asset", fake_fetch_hls_asset)
+    monkeypatch.setattr(media_hls_module.time, "monotonic", monotonic)
+    monkeypatch.setattr(media_hls_module, "_fetch_hls_asset", fake_fetch_hls_asset)
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
 
-    content, mime_type, reason = media_module._hls_playlist_to_media(
+    content, mime_type, reason = media_hls_module._hls_playlist_to_media(
         "https://media.example/playlist.m3u8",
         "https://example.com/page",
         "#EXTM3U\n#EXTINF:1.0,\nseg1.ts\n#EXTINF:1.0,\nseg2.ts\n#EXT-X-ENDLIST\n",
         max_bytes=100,
         timeout_seconds=10,
         config=cfg,
-        budget=media_module._HlsFetchBudget(requests_remaining=10, deadline=101.0),
+        budget=media_hls_module._HlsFetchBudget(requests_remaining=10, deadline=101.0),
         deadline=101.0,
     )
 

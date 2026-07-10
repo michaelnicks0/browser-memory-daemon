@@ -499,7 +499,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Daemon-public network fetches shall contact only approved destinations and shall revalidate every redirect and HLS-derived request.</td>
 <td>Guarded Media Fetch</td>
 <td><code>HRD-002</code></td>
-<td><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/config.py</code></td>
+<td><code>daemon/src/browser_memory_daemon/media_fetch.py</code><br><code>daemon/src/browser_memory_daemon/media_hls.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/config.py</code></td>
 <td><code>daemon/tests/integration/test_media_worker.py::test_guarded_public_fetch_revalidates_public_to_private_redirect</code></td>
 </tr>
 <tr>
@@ -948,8 +948,8 @@ text/FTS/media refs remain authoritative
 </tr>
 <tr>
 <td>Daemon lazy sidecar</td>
-<td>Public unauthenticated backfill with atomic leases, backoff, HLS assembly, and status classification.</td>
-<td><code>daemon/src/browser_memory_daemon/media_worker.py</code>, <code>media_tasks.py</code>, <code>media_models.py</code>, <code>media.py</code> compatibility facade</td>
+<td>Public unauthenticated backfill with atomic leases, backoff, guarded HLS assembly, and status classification.</td>
+<td><code>daemon/src/browser_memory_daemon/media_worker.py</code>, <code>media_tasks.py</code>, <code>media_models.py</code>, <code>media_fetch.py</code>, <code>media_hls.py</code>, <code>media.py</code> compatibility facade</td>
 </tr>
 <tr>
 <td>Cache management</td>
@@ -958,7 +958,7 @@ text/FTS/media refs remain authoritative
 </tr>
 </tbody>
 </table>
-<p>Media status vocabulary and ordinary transition matrices live in <code>media_models.py</code>. Durable task identity, terminal-state preservation, atomic leasing, stale-lease recovery, and retry/backoff live in <code>media_tasks.py</code>. Artifact publication, row ownership, contained reads, cache byte accounting/admission, purge, oldest-first eviction, and tombstone-backed deletion outcomes live in <code>media_store.py</code>. Each replacement uses a unique staged candidate so a failed row update can remove the candidate without overwriting the previous committed bytes. <code>media.py</code> remains the stable public compatibility surface and still owns bounded upload buffering plus guarded fetch/HLS transport until later reversible slices.</p>
+<p>Media status vocabulary and ordinary transition matrices live in <code>media_models.py</code>. Durable task identity, terminal-state preservation, atomic leasing, stale-lease recovery, and retry/backoff live in <code>media_tasks.py</code>. Artifact publication, row ownership, contained reads, cache byte accounting/admission, purge, oldest-first eviction, and tombstone-backed deletion outcomes live in <code>media_store.py</code>. Each replacement uses a unique staged candidate so a failed row update can remove the candidate without overwriting the previous committed bytes. Guarded HTTP/data transport and redirect/address policy live in <code>media_fetch.py</code>; bounded HLS parsing and assembly live in <code>media_hls.py</code>, with every child request routed back through the guarded fetch primitive. <code>media.py</code> remains the stable compatibility surface. Streamed assembly and global in-flight budgets remain a later reversible slice.</p>
 <h3 id="visual-references">Visual references</h3>
 <table>
 <thead>

@@ -30,7 +30,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0020](0020-enforce-static-requirement-traceability-gate.md) | superseded by ADR-0027 | Enforce static requirement traceability in the generated test inventory gate. |
 | [ADR-0021](0021-use-configurable-nas-blob-root-with-local-sqlite.md) | superseded by ADR-0039 | Use a configurable NAS-capable blob root while keeping SQLite/WAL local. |
 | [ADR-0022](0022-use-fast-doctor-and-media-queue-health-telemetry.md) | accepted | Use fast doctor and media-queue health telemetry. |
-| [ADR-0023](0023-guard-daemon-public-media-egress.md) | accepted | Guard daemon-public media egress. |
+| [ADR-0023](0023-guard-daemon-public-media-egress.md) | superseded by ADR-0045 | Guard daemon-public media egress. |
 | [ADR-0024](0024-contain-blob-and-media-artifact-paths.md) | accepted | Contain blob and media artifact paths. |
 | [ADR-0025](0025-literal-policy-aware-forget-selectors.md) | accepted | Use literal and policy-aware forget selectors. |
 | [ADR-0026](0026-harden-loopback-ui-and-required-blob-mounts.md) | accepted | Harden loopback UI and required blob mounts. |
@@ -52,6 +52,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0042](0042-separate-media-state-and-task-repository.md) | accepted | Separate media status/transition authority and durable task leasing/retry workflow from the compatibility facade. |
 | [ADR-0043](0043-isolate-media-cache-admission-and-eviction.md) | accepted | Isolate media cache accounting, admission, oldest-first eviction, and tombstone-backed deletion outcomes. |
 | [ADR-0044](0044-publish-media-through-artifact-store.md) | accepted | Publish, resolve, and purge media through the artifact store with unique candidates and failed-write compensation. |
+| [ADR-0045](0045-isolate-guarded-media-fetch-and-hls.md) | accepted | Isolate guarded media fetch and bounded HLS transport. |
 
 ## Backfilled decision history
 
