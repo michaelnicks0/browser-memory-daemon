@@ -9,14 +9,11 @@ const { TextEncoder } = require('node:util');
 const DIGEST_SOURCE = fs.readFileSync(path.join(__dirname, '../../src/capture_digest.js'), 'utf8');
 const CONTENT_SOURCE = fs.readFileSync(path.join(__dirname, '../../src/content_script.js'), 'utf8');
 
-function settle() {
-  return new Promise((resolve) => setImmediate(resolve));
-}
-
-async function waitFor(predicate) {
-  for (let attempt = 0; attempt < 50; attempt += 1) {
+async function waitFor(predicate, timeoutMs = 2000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
     if (predicate()) return;
-    await settle();
+    await new Promise((resolve) => setTimeout(resolve, 1));
   }
   throw new Error('timed out waiting for content-script transition');
 }
