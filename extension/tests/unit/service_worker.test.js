@@ -9,6 +9,10 @@ const { MemoryOutboxStore } = require('../../src/outbox.js');
 const BrowserMemoryConfigStore = require('../../src/config_store.js');
 const BrowserMemoryInjection = require('../../src/injection.js');
 const BrowserMemoryVisitTracker = require('../../src/visit_tracker.js');
+const BrowserMemoryMediaBridge = require('../../src/media_bridge.js');
+const BrowserMemoryTelemetry = require('../../src/telemetry.js');
+const BrowserMemoryCaptureBridge = require('../../src/capture_bridge.js');
+const BrowserMemoryCdpSession = require('../../src/cdp_session.js');
 const { normalizeDaemonUrl, authHeaders } = require('../../src/shared.js');
 const { shouldBlockUrl, normalizePolicyMode } = require('../../src/extractor.js');
 
@@ -163,6 +167,10 @@ function createServiceWorkerHarness({
     BrowserMemoryConfigStore,
     BrowserMemoryInjection,
     BrowserMemoryVisitTracker,
+    BrowserMemoryMediaBridge,
+    BrowserMemoryTelemetry,
+    BrowserMemoryCaptureBridge,
+    BrowserMemoryCdpSession,
     BrowserMemoryCdpRecorder: null,
     chrome,
     fetch: async (url, init = {}) => {

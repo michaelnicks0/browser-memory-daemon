@@ -33,17 +33,25 @@ flowchart LR
   ServiceWorker --> Config["config_store.js<br/>typed settings + durable restart context"]
   ServiceWorker --> Visit["visit_tracker.js<br/>navigation identity + lifecycle"]
   ServiceWorker --> Injection["injection.js<br/>active-tab reconstruction"]
-  ServiceWorker --> CDPSession["cdp_session.js<br/>attachment + provenance recovery"]
+  ServiceWorker --> CDPSession["cdp_session.js<br/>attachment + provenance + Network event recovery"]
+  ServiceWorker --> CaptureBridge["capture_bridge.js<br/>capture/lifecycle delivery + outbox drain"]
+  ServiceWorker --> MediaBridge["media_bridge.js<br/>credentialed fetch + blob delivery"]
+  ServiceWorker --> Telemetry["telemetry.js<br/>redaction-safe aggregate status"]
   Injection -->|"ordered idempotent executeScript"| Page
   Visit --> Config
   CDPSession --> Config
   CDPSession -->|"chrome.debugger"| Page
-  ServiceWorker --> Outbox[("IndexedDB capture/lifecycle outbox")]
-  Outbox -->|"atomic claim/checkpoint/ack/retry"| ServiceWorker
-  ServiceWorker -->|"POST /capture<br/>Bearer JSON"| DaemonCapture["WSL daemon /capture"]
-  ServiceWorker -->|"POST /visit-events<br/>metadata only"| DaemonVisit["WSL daemon /visit-events"]
-  ServiceWorker -->|"PUT /media-artifacts/{id}/blob<br/>raw bytes"| DaemonMedia["WSL media blob upload"]
-  ServiceWorker --> MediaIDB[("Separate IndexedDB media task/blob queue<br/>atomic batch/blob transitions<br/>500 tasks / 512 MiB / terminal TTL")]
+  CDPSession --> MediaBridge
+  CaptureBridge --> Outbox[("IndexedDB capture/lifecycle outbox")]
+  Outbox -->|"atomic claim/checkpoint/ack/retry"| CaptureBridge
+  CaptureBridge -->|"POST /capture<br/>Bearer JSON"| DaemonCapture["WSL daemon /capture"]
+  CaptureBridge -->|"POST /visit-events<br/>metadata only"| DaemonVisit["WSL daemon /visit-events"]
+  CaptureBridge --> MediaBridge
+  MediaBridge -->|"PUT /media-artifacts/{id}/blob<br/>raw bytes"| DaemonMedia["WSL media blob upload"]
+  MediaBridge --> MediaIDB[("Separate IndexedDB media task/blob queue<br/>atomic batch/blob transitions<br/>500 tasks / 512 MiB / terminal TTL")]
+  CaptureBridge --> Telemetry
+  MediaBridge --> Telemetry
+  CDPSession --> Telemetry
   Popup["popup.js"] -->|"runtime messages"| ServiceWorker
   Options["options.js"] --> Storage[("chrome.storage.local")]
   Storage --> Content

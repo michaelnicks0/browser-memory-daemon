@@ -13,7 +13,7 @@ digraph {
     fontcolor="#444444"
     fillcolor="#444444"
 
-    subgraph cluster_19 {
+    subgraph cluster_22 {
       margin=25
       label=<<font point-size="24"><br />WSL Loopback HTTP Daemon</font><br /><font point-size="19">[Container: Python 3.11, ThreadingHTTPServer]</font>>
       labelloc=b
@@ -21,15 +21,15 @@ digraph {
       fontcolor="#444444"
       fillcolor="#444444"
 
-      20 [id=20,shape=rect, label=<<font point-size="34">HTTP Request Router</font><br /><font point-size="19">[Component: Python http.server]</font><br /><br /><font point-size="24">Routes loopback API requests,<br />serves UI assets, enforces<br />bearer auth for memory/admin<br />APIs, and applies CORS for<br />allowed origins.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
-      22 [id=22,shape=rect, label=<<font point-size="34">Policy Engine</font><br /><font point-size="19">[Component: Python]</font><br /><br /><font point-size="24">Evaluates<br />all/recall/balanced/strict<br />capture mode decisions and<br />redacts URL/title/body text<br />outside all mode.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
-      23 [id=23,shape=rect, label=<<font point-size="34">Policy Store</font><br /><font point-size="19">[Component: Python + SQLite]</font><br /><br /><font point-size="24">Persists and evaluates<br />explicit local block-domain<br />and URL-prefix rules for every<br />policy mode.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
+      23 [id=23,shape=rect, label=<<font point-size="34">HTTP Request Router</font><br /><font point-size="19">[Component: Python http.server]</font><br /><br /><font point-size="24">Routes loopback API requests,<br />serves UI assets, enforces<br />bearer auth for memory/admin<br />APIs, and applies CORS for<br />allowed origins.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
+      25 [id=25,shape=rect, label=<<font point-size="34">Policy Engine</font><br /><font point-size="19">[Component: Python]</font><br /><br /><font point-size="24">Evaluates<br />all/recall/balanced/strict<br />capture mode decisions and<br />redacts URL/title/body text<br />outside all mode.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
+      26 [id=26,shape=rect, label=<<font point-size="34">Policy Store</font><br /><font point-size="19">[Component: Python + SQLite]</font><br /><br /><font point-size="24">Persists and evaluates<br />explicit local block-domain<br />and URL-prefix rules for every<br />policy mode.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
     }
 
   }
 
-  20 -> 22 [id=101, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Gets capture decisions<br />from</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-  20 -> 23 [id=103, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Manages policy rules<br />through</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-  22 -> 23 [id=111, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Combines static mode with<br />rules from</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  23 -> 25 [id=113, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Gets capture decisions<br />from</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  23 -> 26 [id=115, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Manages policy rules<br />through</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  25 -> 26 [id=123, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Combines static mode with<br />rules from</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
 
 }

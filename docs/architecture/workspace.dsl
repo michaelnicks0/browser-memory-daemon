@@ -15,14 +15,17 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
                 manifestEnvelope = component "Manifest and Permission Envelope" "Declares MV3 permissions, host permissions, service worker, popup, and options entrypoints." "manifest.json" "Current"
                 extractor = component "Extractor" "Traverses rendered light-DOM text with computed-style and ancestor visibility checks, discovers image/video references, and applies the selected policy mode." "JavaScript" "Current"
                 contentScript = component "Content Script" "Schedules initial, delayed, reinjected, and SPA captures; computes full deterministic SHA-256 capture digests; tracks scroll; and sends capture and inline blob upload messages to the service worker." "JavaScript content script" "Current"
-                serviceWorker = component "Service Worker" "Registers MV3 listeners and orchestrates capture/media delivery, outbox drains, alarms, and extracted state controllers." "JavaScript MV3 service worker" "Current"
+                serviceWorker = component "Service Worker" "Composes extension modules and registers MV3 message, tab, window, debugger, alarm, startup, and installation listeners." "JavaScript MV3 service worker" "Current"
                 configStore = component "Extension Config Store" "Owns typed configuration defaults/migration plus durable visit and minimal CDP capture-context maps." "JavaScript + chrome.storage.local" "Current"
                 visitTracker = component "Visit Tracker" "Owns tab/navigation identity, active-segment lifecycle state, deterministic lifecycle event identity, and capture decoration." "JavaScript" "Current"
                 injectionController = component "Injection Controller" "Reconstructs active-tab injection after worker restart and idempotently injects the complete ordered content-script set." "JavaScript + chrome.scripting" "Current"
+                captureBridge = component "Capture and Lifecycle Bridge" "Owns daemon delivery, transactional outbox import/admission/drain/checkpoint/retry, legacy fallback, media compensation, and queue status." "JavaScript" "Current"
+                mediaBridge = component "Credentialed Media Bridge" "Owns browser credentialed fetch, inline/CDP blob upload, specialized media queue drain/retry, and terminal cleanup." "JavaScript" "Current"
+                extensionTelemetry = component "Extension Telemetry" "Persists aggregate bridge/queue/CDP status after recursively removing captured fields and redacting URL-shaped errors." "JavaScript + chrome.storage.local" "Current"
                 captureLifecycleOutbox = component "Capture and Lifecycle Outbox" "Persists capture and lifecycle messages as independently sequenced IndexedDB rows with atomic enqueue/claim/checkpoint/ack/retry, stale-claim recovery, legacy queue import, item admission limits, and serialized-byte accounting." "JavaScript + IndexedDB" "Current"
                 browserMediaQueue = component "Browser Media Queue Adapter" "Persists media tasks and fetched blobs in versioned IndexedDB with atomic batch/blob transitions, count/byte quotas, stale-processing recovery, and bounded terminal quarantine cleanup." "JavaScript + IndexedDB" "Current"
                 cdpRecorder = component "CDP Recorder" "Classifies configured X/Twitter video.twimg.com HLS manifests and media segments before they become opaque blob player URLs." "Chrome DevTools Protocol" "Current"
-                cdpSession = component "CDP Session Controller" "Restores minimal capture provenance, reconciles extension-owned debugger attachments, and owns per-tab request/session state across MV3 worker restarts." "JavaScript + chrome.debugger" "Current"
+                cdpSession = component "CDP Session Controller" "Restores minimal capture provenance, reconciles debugger attachments, correlates Network events, retrieves bounded bodies, and dispatches media across MV3 worker restarts." "JavaScript + chrome.debugger" "Current"
                 popupOptions = component "Popup and Options UI" "Lets the operator view status, pause/resume capture, select policy mode, and trigger local controls from the extension." "HTML/JavaScript" "Current"
             }
 
@@ -124,18 +127,27 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
         configStore -> extensionBrowserStorage "Reads and writes typed settings and restart state in" "chrome.storage.local"
         visitTracker -> configStore "Persists tab/navigation lifecycle state through"
         injectionController -> windowsChrome "Injects the ordered extractor/digest/content-script set into" "chrome.scripting"
-        serviceWorker -> captureLifecycleOutbox "Enqueues, drains, checkpoints, retries, and recovers capture/lifecycle work through"
+        serviceWorker -> captureBridge "Delegates capture/lifecycle delivery and durable drains to"
+        serviceWorker -> mediaBridge "Delegates credentialed media delivery and durable drains to"
+        serviceWorker -> extensionTelemetry "Creates the redaction-safe telemetry boundary through"
+        captureBridge -> captureLifecycleOutbox "Enqueues, drains, checkpoints, retries, and recovers capture/lifecycle work through"
+        captureBridge -> extensionBrowserStorage "Imports and preserves the one-version queue fallback in" "chrome.storage.local"
+        captureBridge -> mediaBridge "Dispatches post-capture media compensation through"
+        captureBridge -> wslLoopbackDaemon "Delivers /capture and /visit-events to" "Bearer HTTP/JSON"
+        captureBridge -> extensionTelemetry "Records aggregate outbox status through"
         captureLifecycleOutbox -> extensionBrowserStorage "Reads and writes sequenced capture/lifecycle rows and migration metadata in" "IndexedDB"
-        serviceWorker -> extensionBrowserStorage "Persists aggregate telemetry and one-version queue fallback in" "chrome.storage.local"
-        serviceWorker -> wslLoopbackDaemon "Delivers /capture, /visit-events, media metadata, and raw blobs to" "Bearer HTTP/JSON; raw HTTP PUT"
-        serviceWorker -> browserMediaQueue "Persists and drains media work through"
+        mediaBridge -> browserMediaQueue "Persists and drains media work through"
+        mediaBridge -> wslLoopbackDaemon "Delivers media metadata and raw blobs to" "Bearer HTTP/JSON; raw HTTP PUT"
+        mediaBridge -> webSites "Fetches credentialed media from" "fetch(credentials: include)"
+        mediaBridge -> extensionTelemetry "Records aggregate media status through"
         browserMediaQueue -> extensionBrowserStorage "Reads and writes media tasks/blobs in" "IndexedDB"
-        serviceWorker -> cdpSession "Delegates debugger attachment and restart reconciliation to"
+        extensionTelemetry -> extensionBrowserStorage "Persists sanitized aggregate status in" "chrome.storage.local"
+        serviceWorker -> cdpSession "Delegates debugger attachment, event correlation, and restart reconciliation to"
         cdpSession -> configStore "Persists minimal per-tab capture context through"
-        cdpSession -> cdpRecorder "Feeds recovered CDP response state to"
-        serviceWorker -> webSites "Fetches credentialed media from" "fetch(credentials: include)"
-        cdpRecorder -> windowsChrome "Receives Network events from" "chrome.debugger/CDP"
-        cdpRecorder -> wslLoopbackDaemon "Uploads CDP media rows and blobs to" "Bearer HTTP/JSON; raw HTTP PUT"
+        cdpSession -> cdpRecorder "Uses configured media-response classification from"
+        cdpSession -> mediaBridge "Dispatches bounded CDP media rows and bodies through"
+        cdpSession -> extensionTelemetry "Records sanitized debugger status through"
+        cdpRecorder -> windowsChrome "Classifies Network events received through" "chrome.debugger/CDP"
         popupOptions -> serviceWorker "Updates pause, policy, token, and controls through" "chrome.storage.local, runtime messages"
         popupOptions -> wslLoopbackDaemon "Checks health and triggers forget/policy actions on" "HTTP/JSON"
 
@@ -281,6 +293,9 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
             include configStore
             include visitTracker
             include injectionController
+            include captureBridge
+            include mediaBridge
+            include extensionTelemetry
             include captureLifecycleOutbox
             include cdpSession
             include popupOptions
@@ -294,6 +309,8 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
             include contentScript
             include serviceWorker
             include configStore
+            include captureBridge
+            include extensionTelemetry
             include captureLifecycleOutbox
             include extensionBrowserStorage
             include wslLoopbackDaemon
@@ -304,6 +321,9 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
         component chromeExtension "ExtensionMediaComponents" {
             include serviceWorker
             include configStore
+            include captureBridge
+            include mediaBridge
+            include extensionTelemetry
             include browserMediaQueue
             include cdpRecorder
             include cdpSession

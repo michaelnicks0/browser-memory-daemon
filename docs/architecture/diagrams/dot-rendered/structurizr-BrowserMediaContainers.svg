@@ -29,9 +29,9 @@
 <text text-anchor="start" x="1680.5" y="-364.49" font-family="Arial" font-size="24.00" fill="#ffffff">sidecars fetch as page&#45;related</text>
 <text text-anchor="start" x="1806.5" y="-340.49" font-family="Arial" font-size="24.00" fill="#ffffff">media.</text>
 </g>
-<!-- 18 -->
-<g id="18" class="node">
-<title>18</title>
+<!-- 21 -->
+<g id="21" class="node">
+<title>21</title>
 <path fill="#2f95c8" stroke="#20688c" d="M739.5,-1408.78C739.5,-1437.01 637.98,-1459.94 513,-1459.94 388.02,-1459.94 286.5,-1437.01 286.5,-1408.78 286.5,-1408.78 286.5,-948.35 286.5,-948.35 286.5,-920.12 388.02,-897.19 513,-897.19 637.98,-897.19 739.5,-920.12 739.5,-948.35 739.5,-948.35 739.5,-1408.78 739.5,-1408.78"/>
 <path fill="none" stroke="#20688c" d="M739.5,-1408.78C739.5,-1380.55 637.98,-1357.62 513,-1357.62 388.02,-1357.62 286.5,-1380.55 286.5,-1408.78"/>
 <text text-anchor="start" x="371" y="-1334.86" font-family="Arial" font-size="34.00" fill="#ffffff">Extension Browser</text>
@@ -49,9 +49,9 @@
 <text text-anchor="start" x="344.5" y="-1025.86" font-family="Arial" font-size="24.00" fill="#ffffff">and one&#45;version queue fallback</text>
 <text text-anchor="start" x="488" y="-1001.86" font-family="Arial" font-size="24.00" fill="#ffffff">only.</text>
 </g>
-<!-- 19 -->
-<g id="19" class="node">
-<title>19</title>
+<!-- 22 -->
+<g id="22" class="node">
+<title>22</title>
 <polygon fill="#438dd5" stroke="#2e6295" points="1274,-1347.06 812,-1347.06 812,-1010.06 1274,-1010.06 1274,-1347.06"/>
 <text text-anchor="start" x="878.5" y="-1298.86" font-family="Arial" font-size="34.00" fill="#ffffff">WSL Loopback HTTP</text>
 <text text-anchor="start" x="978.5" y="-1264.86" font-family="Arial" font-size="34.00" fill="#ffffff">Daemon</text>
@@ -65,9 +65,9 @@
 <text text-anchor="start" x="891.5" y="-1061.86" font-family="Arial" font-size="24.00" fill="#ffffff">rules, doctor, durable forget,</text>
 <text text-anchor="start" x="930" y="-1037.86" font-family="Arial" font-size="24.00" fill="#ffffff">and static UI serving.</text>
 </g>
-<!-- 19&#45;&gt;3 -->
-<g id="132" class="edge">
-<title>19&#45;&gt;3</title>
+<!-- 22&#45;&gt;3 -->
+<g id="144" class="edge">
+<title>22&#45;&gt;3</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1253.27,-1010.05C1304.66,-964.47 1357.59,-913.28 1402,-861.38 1435.91,-821.75 1425.49,-796.42 1465,-762.38 1494.85,-736.66 1513.2,-748.2 1546,-726.38 1606.18,-686.32 1665.55,-633.71 1715.2,-584.91"/>
 <polygon fill="#444444" stroke="#444444" points="1717.8,-587.26 1722.45,-577.74 1712.88,-582.28 1717.8,-587.26"/>
 <polygon fill="white" stroke="transparent" points="1465,-774.38 1465,-849.38 1821,-849.38 1821,-774.38 1465,-774.38"/>
@@ -75,9 +75,9 @@
 <text text-anchor="start" x="1547" y="-802.67" font-family="Arial" font-size="24.00" fill="#444444">public media from</text>
 <text text-anchor="start" x="1469" y="-782.67" font-family="Arial" font-size="19.00" fill="#444444">[HTTP(S), no Referer or Chrome cookies]</text>
 </g>
-<!-- 44 -->
-<g id="44" class="node">
-<title>44</title>
+<!-- 47 -->
+<g id="47" class="node">
+<title>47</title>
 <path fill="#2f95c8" stroke="#20688c" d="M428.5,-675.4C428.5,-703.63 339.98,-726.56 231,-726.56 122.02,-726.56 33.5,-703.63 33.5,-675.4 33.5,-675.4 33.5,-214.97 33.5,-214.97 33.5,-186.74 122.02,-163.81 231,-163.81 339.98,-163.81 428.5,-186.74 428.5,-214.97 428.5,-214.97 428.5,-675.4 428.5,-675.4"/>
 <path fill="none" stroke="#20688c" d="M428.5,-675.4C428.5,-647.17 339.98,-624.24 231,-624.24 122.02,-624.24 33.5,-647.17 33.5,-675.4"/>
 <text text-anchor="start" x="118" y="-601.49" font-family="Arial" font-size="34.00" fill="#ffffff">SQLite + FTS5</text>
@@ -95,9 +95,9 @@
 <text text-anchor="start" x="105.5" y="-292.49" font-family="Arial" font-size="24.00" fill="#ffffff">rules, audit events, and</text>
 <text text-anchor="start" x="139" y="-268.49" font-family="Arial" font-size="24.00" fill="#ffffff">deletion receipts.</text>
 </g>
-<!-- 19&#45;&gt;44 -->
-<g id="66" class="edge">
-<title>19&#45;&gt;44</title>
+<!-- 22&#45;&gt;47 -->
+<g id="69" class="edge">
+<title>22&#45;&gt;47</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M919.46,-1009.98C878.5,-966.14 829.32,-923.81 775,-897.38 701.51,-861.62 474.94,-909.65 409,-861.38 365.21,-829.32 332.09,-784.26 307.07,-735.57"/>
 <polygon fill="#444444" stroke="#444444" points="310.1,-733.81 302.49,-726.44 303.85,-736.95 310.1,-733.81"/>
 <polygon fill="white" stroke="transparent" points="409,-762.38 409,-861.38 719,-861.38 719,-762.38 409,-762.38"/>
@@ -106,9 +106,9 @@
 <text text-anchor="start" x="508.5" y="-790.67" font-family="Arial" font-size="24.00" fill="#444444">receipts in</text>
 <text text-anchor="start" x="530.5" y="-770.67" font-family="Arial" font-size="19.00" fill="#444444">[sqlite3]</text>
 </g>
-<!-- 46 -->
-<g id="46" class="node">
-<title>46</title>
+<!-- 49 -->
+<g id="49" class="node">
+<title>49</title>
 <path fill="#2f95c8" stroke="#20688c" d="M1045,-621.4C1045,-643.01 923.09,-660.56 773,-660.56 622.91,-660.56 501,-643.01 501,-621.4 501,-621.4 501,-268.97 501,-268.97 501,-247.36 622.91,-229.81 773,-229.81 923.09,-229.81 1045,-247.36 1045,-268.97 1045,-268.97 1045,-621.4 1045,-621.4"/>
 <path fill="none" stroke="#20688c" d="M1045,-621.4C1045,-599.8 923.09,-582.24 773,-582.24 622.91,-582.24 501,-599.8 501,-621.4"/>
 <text text-anchor="start" x="617.5" y="-553.49" font-family="Arial" font-size="34.00" fill="#ffffff">Guarded Media Blob</text>
@@ -122,9 +122,9 @@
 <text text-anchor="start" x="623.5" y="-340.49" font-family="Arial" font-size="24.00" fill="#ffffff">identity&#45;marker proof before</text>
 <text text-anchor="start" x="732" y="-316.49" font-family="Arial" font-size="24.00" fill="#ffffff">access.</text>
 </g>
-<!-- 19&#45;&gt;46 -->
-<g id="68" class="edge">
-<title>19&#45;&gt;46</title>
+<!-- 22&#45;&gt;49 -->
+<g id="71" class="edge">
+<title>22&#45;&gt;49</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M852.26,-1009.92C814.22,-965.79 779.66,-915.29 759,-861.38 736.22,-801.92 730.82,-734.1 733.51,-670.76"/>
 <polygon fill="#444444" stroke="#444444" points="737.01,-670.79 734.01,-660.63 730.02,-670.44 737.01,-670.79"/>
 <polygon fill="white" stroke="transparent" points="759,-762.38 759,-861.38 1067,-861.38 1067,-762.38 759,-762.38"/>
@@ -133,9 +133,9 @@
 <text text-anchor="start" x="903.5" y="-790.67" font-family="Arial" font-size="24.00" fill="#444444">in</text>
 <text text-anchor="start" x="861.5" y="-770.67" font-family="Arial" font-size="19.00" fill="#444444">[Filesystem]</text>
 </g>
-<!-- 47 -->
-<g id="47" class="node">
-<title>47</title>
+<!-- 50 -->
+<g id="50" class="node">
+<title>50</title>
 <path fill="#2f95c8" stroke="#20688c" d="M1503,-634.9C1503,-658.17 1416.49,-677.06 1310,-677.06 1203.51,-677.06 1117,-658.17 1117,-634.9 1117,-634.9 1117,-255.47 1117,-255.47 1117,-232.21 1203.51,-213.31 1310,-213.31 1416.49,-213.31 1503,-232.21 1503,-255.47 1503,-255.47 1503,-634.9 1503,-634.9"/>
 <path fill="none" stroke="#20688c" d="M1503,-634.9C1503,-611.64 1416.49,-592.74 1310,-592.74 1203.51,-592.74 1117,-611.64 1117,-634.9"/>
 <text text-anchor="start" x="1146" y="-565.49" font-family="Arial" font-size="34.00" fill="#ffffff">Bounded Local Media</text>
@@ -150,9 +150,9 @@
 <text text-anchor="start" x="1162.5" y="-328.49" font-family="Arial" font-size="24.00" fill="#ffffff">before tier transition/source</text>
 <text text-anchor="start" x="1264" y="-304.49" font-family="Arial" font-size="24.00" fill="#ffffff">cleanup.</text>
 </g>
-<!-- 19&#45;&gt;47 -->
-<g id="69" class="edge">
-<title>19&#45;&gt;47</title>
+<!-- 22&#45;&gt;50 -->
+<g id="72" class="edge">
+<title>22&#45;&gt;50</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1055.65,-1009.97C1065.29,-932.72 1082.24,-840.96 1112,-762.38 1122.92,-733.54 1136.62,-704.5 1151.7,-676.33"/>
 <polygon fill="#444444" stroke="#444444" points="1154.95,-677.67 1156.64,-667.21 1148.8,-674.34 1154.95,-677.67"/>
 <polygon fill="white" stroke="transparent" points="1112,-762.38 1112,-861.38 1388,-861.38 1388,-762.38 1112,-762.38"/>
@@ -176,7 +176,7 @@
 <text text-anchor="start" x="960.5" y="-1730.55" font-family="Arial" font-size="24.00" fill="#ffffff">daemon.</text>
 </g>
 <!-- 5&#45;&gt;3 -->
-<g id="55" class="edge">
+<g id="58" class="edge">
 <title>5&#45;&gt;3</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1225.13,-1814.83C1331.56,-1791.68 1454.63,-1748.24 1539,-1666.75 1838.35,-1377.62 1860.47,-842.53 1852.23,-587.93"/>
 <polygon fill="#444444" stroke="#444444" points="1855.73,-587.75 1851.89,-577.88 1848.74,-587.99 1855.73,-587.75"/>
@@ -186,9 +186,9 @@
 <text text-anchor="start" x="1856.5" y="-1157.36" font-family="Arial" font-size="24.00" fill="#444444">credentialed media from</text>
 <text text-anchor="start" x="1845.5" y="-1137.36" font-family="Arial" font-size="19.00" fill="#444444">[DOM; fetch(credentials: include)]</text>
 </g>
-<!-- 5&#45;&gt;18 -->
-<g id="56" class="edge">
-<title>5&#45;&gt;18</title>
+<!-- 5&#45;&gt;21 -->
+<g id="59" class="edge">
+<title>5&#45;&gt;21</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M790.99,-1750.64C753.32,-1727.55 717.24,-1699.71 689,-1666.75 640.56,-1610.22 605.04,-1539.3 579.16,-1469.22"/>
 <polygon fill="#444444" stroke="#444444" points="582.44,-1467.99 575.73,-1459.78 575.86,-1470.38 582.44,-1467.99"/>
 <polygon fill="white" stroke="transparent" points="689,-1495.75 689,-1666.75 1000,-1666.75 1000,-1495.75 689,-1495.75"/>
@@ -200,9 +200,9 @@
 <text text-anchor="start" x="803" y="-1524.05" font-family="Arial" font-size="24.00" fill="#444444">blobs in</text>
 <text text-anchor="start" x="693.5" y="-1504.05" font-family="Arial" font-size="19.00" fill="#444444">[chrome.storage.local + IndexedDB]</text>
 </g>
-<!-- 5&#45;&gt;19 -->
-<g id="57" class="edge">
-<title>5&#45;&gt;19</title>
+<!-- 5&#45;&gt;22 -->
+<g id="60" class="edge">
+<title>5&#45;&gt;22</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1015.34,-1702.54C1020.65,-1602.12 1027.87,-1465.57 1033.6,-1357.18"/>
 <polygon fill="#444444" stroke="#444444" points="1037.1,-1357.28 1034.14,-1347.11 1030.11,-1356.91 1037.1,-1357.28"/>
 <polygon fill="white" stroke="transparent" points="1026,-1519.75 1026,-1642.75 1521,-1642.75 1521,-1519.75 1026,-1519.75"/>

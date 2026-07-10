@@ -17,14 +17,14 @@
 <text text-anchor="start" x="541" y="-72.8" font-family="Arial" font-size="19.00" fill="#444444">[Software System]</text>
 </g>
 <g id="clust2" class="cluster">
-<title>cluster_42</title>
+<title>cluster_45</title>
 <polygon fill="none" stroke="#444444" points="33,-711 33,-1174 487,-1174 487,-711 33,-711"/>
 <text text-anchor="start" x="241" y="-739.8" font-family="Arial" font-size="24.00" fill="#444444">CLI</text>
 <text text-anchor="start" x="139" y="-719.8" font-family="Arial" font-size="19.00" fill="#444444">[Container: Python argparse]</text>
 </g>
-<!-- 43 -->
-<g id="43" class="node">
-<title>43</title>
+<!-- 46 -->
+<g id="46" class="node">
+<title>46</title>
 <polygon fill="#85bbf0" stroke="#1168bd" points="462,-1148.5 58,-1148.5 58,-811.5 462,-811.5 462,-1148.5"/>
 <text text-anchor="start" x="105.5" y="-1100.3" font-family="Arial" font-size="34.00" fill="#000000">Backup and Restore</text>
 <text text-anchor="start" x="193" y="-1066.3" font-family="Arial" font-size="34.00" fill="#000000">Operator</text>
@@ -38,9 +38,9 @@
 <text text-anchor="start" x="127.5" y="-863.3" font-family="Arial" font-size="24.00" fill="#000000">derivatives and excludes</text>
 <text text-anchor="start" x="148.5" y="-839.3" font-family="Arial" font-size="24.00" fill="#000000">media/spool/secrets.</text>
 </g>
-<!-- 44 -->
-<g id="44" class="node">
-<title>44</title>
+<!-- 47 -->
+<g id="47" class="node">
+<title>47</title>
 <path fill="#2f95c8" stroke="#20688c" d="M1203,-675.22C1203,-703.44 1114.48,-726.38 1005.5,-726.38 896.52,-726.38 808,-703.44 808,-675.22 808,-675.22 808,-214.78 808,-214.78 808,-186.56 896.52,-163.62 1005.5,-163.62 1114.48,-163.62 1203,-186.56 1203,-214.78 1203,-214.78 1203,-675.22 1203,-675.22"/>
 <path fill="none" stroke="#20688c" d="M1203,-675.22C1203,-646.99 1114.48,-624.06 1005.5,-624.06 896.52,-624.06 808,-646.99 808,-675.22"/>
 <text text-anchor="start" x="892.5" y="-601.3" font-family="Arial" font-size="34.00" fill="#ffffff">SQLite + FTS5</text>
@@ -58,9 +58,9 @@
 <text text-anchor="start" x="880" y="-292.3" font-family="Arial" font-size="24.00" fill="#ffffff">rules, audit events, and</text>
 <text text-anchor="start" x="913.5" y="-268.3" font-family="Arial" font-size="24.00" fill="#ffffff">deletion receipts.</text>
 </g>
-<!-- 43&#45;&gt;44 -->
-<g id="152" class="edge">
-<title>43&#45;&gt;44</title>
+<!-- 46&#45;&gt;47 -->
+<g id="164" class="edge">
+<title>46&#45;&gt;47</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M462.2,-835.22C566.88,-759.9 694.6,-668 799.79,-592.31"/>
 <polygon fill="#444444" stroke="#444444" points="801.89,-595.11 807.96,-586.42 797.8,-589.42 801.89,-595.11"/>
 <polygon fill="white" stroke="transparent" points="500,-806 500,-905 770,-905 770,-806 500,-806"/>
@@ -69,9 +69,9 @@
 <text text-anchor="start" x="610.5" y="-834.3" font-family="Arial" font-size="24.00" fill="#444444">from</text>
 <text text-anchor="start" x="550.5" y="-814.3" font-family="Arial" font-size="19.00" fill="#444444">[sqlite3 backup API]</text>
 </g>
-<!-- 45 -->
-<g id="45" class="node">
-<title>45</title>
+<!-- 48 -->
+<g id="48" class="node">
+<title>48</title>
 <path fill="#2f95c8" stroke="#20688c" d="M1203,-1129.22C1203,-1147.51 1114.48,-1162.38 1005.5,-1162.38 896.52,-1162.38 808,-1147.51 808,-1129.22 808,-1129.22 808,-830.78 808,-830.78 808,-812.49 896.52,-797.62 1005.5,-797.62 1114.48,-797.62 1203,-812.49 1203,-830.78 1203,-830.78 1203,-1129.22 1203,-1129.22"/>
 <path fill="none" stroke="#20688c" d="M1203,-1129.22C1203,-1110.92 1114.48,-1096.06 1005.5,-1096.06 896.52,-1096.06 808,-1110.92 808,-1129.22"/>
 <text text-anchor="start" x="884" y="-1064.3" font-family="Arial" font-size="34.00" fill="#ffffff">Local Derivative</text>
@@ -83,9 +83,9 @@
 <text text-anchor="start" x="882" y="-899.3" font-family="Arial" font-size="24.00" fill="#ffffff">captures create no text</text>
 <text text-anchor="start" x="957" y="-875.3" font-family="Arial" font-size="24.00" fill="#ffffff">sidecars.</text>
 </g>
-<!-- 43&#45;&gt;45 -->
-<g id="153" class="edge">
-<title>43&#45;&gt;45</title>
+<!-- 46&#45;&gt;48 -->
+<g id="165" class="edge">
+<title>46&#45;&gt;48</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M462.2,-980C566.25,-980 693.06,-980 797.89,-980"/>
 <polygon fill="#444444" stroke="#444444" points="797.96,-983.5 807.96,-980 797.96,-976.5 797.96,-983.5"/>
 <polygon fill="white" stroke="transparent" points="516.5,-980 516.5,-1079 753.5,-1079 753.5,-980 516.5,-980"/>
@@ -94,9 +94,9 @@
 <text text-anchor="start" x="549.5" y="-1008.3" font-family="Arial" font-size="24.00" fill="#444444">derivatives from</text>
 <text text-anchor="start" x="584" y="-988.3" font-family="Arial" font-size="19.00" fill="#444444">[Filesystem]</text>
 </g>
-<!-- 48 -->
-<g id="48" class="node">
-<title>48</title>
+<!-- 51 -->
+<g id="51" class="node">
+<title>51</title>
 <path fill="#2f95c8" stroke="#20688c" d="M1203,-1582.78C1203,-1602.01 1114.48,-1617.63 1005.5,-1617.63 896.52,-1617.63 808,-1602.01 808,-1582.78 808,-1582.78 808,-1269.22 808,-1269.22 808,-1249.99 896.52,-1234.37 1005.5,-1234.37 1114.48,-1234.37 1203,-1249.99 1203,-1269.22 1203,-1269.22 1203,-1582.78 1203,-1582.78"/>
 <path fill="none" stroke="#20688c" d="M1203,-1582.78C1203,-1563.56 1114.48,-1547.94 1005.5,-1547.94 896.52,-1547.94 808,-1563.56 808,-1582.78"/>
 <text text-anchor="start" x="837" y="-1517.3" font-family="Arial" font-size="34.00" fill="#ffffff">Local Backup Bundles</text>
@@ -109,9 +109,9 @@
 <text text-anchor="start" x="845" y="-1338.3" font-family="Arial" font-size="24.00" fill="#ffffff">derivatives; media, spool, and</text>
 <text text-anchor="start" x="855" y="-1314.3" font-family="Arial" font-size="24.00" fill="#ffffff">secrets excluded by default.</text>
 </g>
-<!-- 43&#45;&gt;48 -->
-<g id="155" class="edge">
-<title>43&#45;&gt;48</title>
+<!-- 46&#45;&gt;51 -->
+<g id="167" class="edge">
+<title>46&#45;&gt;51</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M462.2,-1100.69C566.67,-1163.36 694.09,-1239.79 799.15,-1302.82"/>
 <polygon fill="#444444" stroke="#444444" points="797.58,-1305.96 807.96,-1308.1 801.19,-1299.96 797.58,-1305.96"/>
 <polygon fill="white" stroke="transparent" points="498,-1281 498,-1380 772,-1380 772,-1281 498,-1281"/>

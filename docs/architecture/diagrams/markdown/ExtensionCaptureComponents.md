@@ -35,44 +35,60 @@ graph TB
         style 11 fill:#85bbf0,stroke:#1168bd,color:#000000
         12["<div style='font-weight: bold'>Injection Controller</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + chrome.scripting]</div><div style='font-size: 80%; margin-top:10px'>Reconstructs active-tab<br />injection after worker<br />restart and idempotently<br />injects the complete ordered<br />content-script set.</div>"]
         style 12 fill:#85bbf0,stroke:#1168bd,color:#000000
-        13["<div style='font-weight: bold'>Capture and Lifecycle Outbox</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Persists capture and<br />lifecycle messages as<br />independently sequenced<br />IndexedDB rows with atomic<br />enqueue/claim/checkpoint/ack/retry,<br />stale-claim recovery, legacy<br />queue import, item admission<br />limits, and serialized-byte<br />accounting.</div>"]
+        13["<div style='font-weight: bold'>Capture and Lifecycle Bridge</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript]</div><div style='font-size: 80%; margin-top:10px'>Owns daemon delivery,<br />transactional outbox<br />import/admission/drain/checkpoint/retry,<br />legacy fallback, media<br />compensation, and queue<br />status.</div>"]
         style 13 fill:#85bbf0,stroke:#1168bd,color:#000000
-        16["<div style='font-weight: bold'>CDP Session Controller</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + chrome.debugger]</div><div style='font-size: 80%; margin-top:10px'>Restores minimal capture<br />provenance, reconciles<br />extension-owned debugger<br />attachments, and owns per-tab<br />request/session state across<br />MV3 worker restarts.</div>"]
+        14["<div style='font-weight: bold'>Credentialed Media Bridge</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript]</div><div style='font-size: 80%; margin-top:10px'>Owns browser credentialed<br />fetch, inline/CDP blob<br />upload, specialized media<br />queue drain/retry, and<br />terminal cleanup.</div>"]
+        style 14 fill:#85bbf0,stroke:#1168bd,color:#000000
+        15["<div style='font-weight: bold'>Extension Telemetry</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + chrome.storage.local]</div><div style='font-size: 80%; margin-top:10px'>Persists aggregate<br />bridge/queue/CDP status after<br />recursively removing captured<br />fields and redacting<br />URL-shaped errors.</div>"]
+        style 15 fill:#85bbf0,stroke:#1168bd,color:#000000
+        16["<div style='font-weight: bold'>Capture and Lifecycle Outbox</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Persists capture and<br />lifecycle messages as<br />independently sequenced<br />IndexedDB rows with atomic<br />enqueue/claim/checkpoint/ack/retry,<br />stale-claim recovery, legacy<br />queue import, item admission<br />limits, and serialized-byte<br />accounting.</div>"]
         style 16 fill:#85bbf0,stroke:#1168bd,color:#000000
-        17["<div style='font-weight: bold'>Popup and Options UI</div><div style='font-size: 70%; margin-top: 0px'>[Component: HTML/JavaScript]</div><div style='font-size: 80%; margin-top:10px'>Lets the operator view<br />status, pause/resume capture,<br />select policy mode, and<br />trigger local controls from<br />the extension.</div>"]
-        style 17 fill:#85bbf0,stroke:#1168bd,color:#000000
+        19["<div style='font-weight: bold'>CDP Session Controller</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + chrome.debugger]</div><div style='font-size: 80%; margin-top:10px'>Restores minimal capture<br />provenance, reconciles<br />debugger attachments,<br />correlates Network events,<br />retrieves bounded bodies, and<br />dispatches media across MV3<br />worker restarts.</div>"]
+        style 19 fill:#85bbf0,stroke:#1168bd,color:#000000
+        20["<div style='font-weight: bold'>Popup and Options UI</div><div style='font-size: 70%; margin-top: 0px'>[Component: HTML/JavaScript]</div><div style='font-size: 80%; margin-top:10px'>Lets the operator view<br />status, pause/resume capture,<br />select policy mode, and<br />trigger local controls from<br />the extension.</div>"]
+        style 20 fill:#85bbf0,stroke:#1168bd,color:#000000
         6["<div style='font-weight: bold'>Manifest and Permission Envelope</div><div style='font-size: 70%; margin-top: 0px'>[Component: manifest.json]</div><div style='font-size: 80%; margin-top:10px'>Declares MV3 permissions,<br />host permissions, service<br />worker, popup, and options<br />entrypoints.</div>"]
         style 6 fill:#85bbf0,stroke:#1168bd,color:#000000
         7["<div style='font-weight: bold'>Extractor</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript]</div><div style='font-size: 80%; margin-top:10px'>Traverses rendered light-DOM<br />text with computed-style and<br />ancestor visibility checks,<br />discovers image/video<br />references, and applies the<br />selected policy mode.</div>"]
         style 7 fill:#85bbf0,stroke:#1168bd,color:#000000
         8["<div style='font-weight: bold'>Content Script</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript content script]</div><div style='font-size: 80%; margin-top:10px'>Schedules initial, delayed,<br />reinjected, and SPA captures;<br />computes full deterministic<br />SHA-256 capture digests;<br />tracks scroll; and sends<br />capture and inline blob<br />upload messages to the<br />service worker.</div>"]
         style 8 fill:#85bbf0,stroke:#1168bd,color:#000000
-        9["<div style='font-weight: bold'>Service Worker</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript MV3 service worker]</div><div style='font-size: 80%; margin-top:10px'>Registers MV3 listeners and<br />orchestrates capture/media<br />delivery, outbox drains,<br />alarms, and extracted state<br />controllers.</div>"]
+        9["<div style='font-weight: bold'>Service Worker</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript MV3 service worker]</div><div style='font-size: 80%; margin-top:10px'>Composes extension modules<br />and registers MV3 message,<br />tab, window, debugger, alarm,<br />startup, and installation<br />listeners.</div>"]
         style 9 fill:#85bbf0,stroke:#1168bd,color:#000000
       end
 
-      18[("<div style='font-weight: bold'>Extension Browser Storage</div><div style='font-size: 70%; margin-top: 0px'>[Container: chrome.storage.local + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Browser-side IndexedDB<br />storage for transactional<br />capture/lifecycle outbox rows<br />plus specialized durable<br />media tasks/blobs;<br />chrome.storage.local retains<br />typed configuration,<br />lifecycle tab state, minimal<br />CDP capture context,<br />aggregate telemetry, and<br />one-version queue fallback<br />only.</div>")]
-      style 18 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      19["<div style='font-weight: bold'>WSL Loopback HTTP Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11, ThreadingHTTPServer]</div><div style='font-size: 80%; margin-top:10px'>Authenticated loopback HTTP<br />API that handles capture,<br />visit events, media artifact<br />upload/fetch/purge, exact<br />search,<br />recent/timeline/detail,<br />policy rules, doctor, durable<br />forget, and static UI<br />serving.</div>"]
-      style 19 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      21[("<div style='font-weight: bold'>Extension Browser Storage</div><div style='font-size: 70%; margin-top: 0px'>[Container: chrome.storage.local + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Browser-side IndexedDB<br />storage for transactional<br />capture/lifecycle outbox rows<br />plus specialized durable<br />media tasks/blobs;<br />chrome.storage.local retains<br />typed configuration,<br />lifecycle tab state, minimal<br />CDP capture context,<br />aggregate telemetry, and<br />one-version queue fallback<br />only.</div>")]
+      style 21 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      22["<div style='font-weight: bold'>WSL Loopback HTTP Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11, ThreadingHTTPServer]</div><div style='font-size: 80%; margin-top:10px'>Authenticated loopback HTTP<br />API that handles capture,<br />visit events, media artifact<br />upload/fetch/purge, exact<br />search,<br />recent/timeline/detail,<br />policy rules, doctor, durable<br />forget, and static UI<br />serving.</div>"]
+      style 22 fill:#438dd5,stroke:#2e6295,color:#ffffff
     end
 
-    17-. "<div>Checks health and triggers<br />forget/policy actions on</div><div style='font-size: 70%'>[HTTP/JSON]</div>" .->19
+    14-. "<div>Delivers media metadata and<br />raw blobs to</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT]</div>" .->22
+    14-. "<div>Records aggregate media<br />status through</div><div style='font-size: 70%'></div>" .->15
+    15-. "<div>Persists sanitized aggregate<br />status in</div><div style='font-size: 70%'>[chrome.storage.local]</div>" .->21
+    9-. "<div>Delegates debugger<br />attachment, event<br />correlation, and restart<br />reconciliation to</div><div style='font-size: 70%'></div>" .->19
+    19-. "<div>Persists minimal per-tab<br />capture context through</div><div style='font-size: 70%'></div>" .->10
+    19-. "<div>Dispatches bounded CDP media<br />rows and bodies through</div><div style='font-size: 70%'></div>" .->14
+    19-. "<div>Records sanitized debugger<br />status through</div><div style='font-size: 70%'></div>" .->15
+    20-. "<div>Updates pause, policy, token,<br />and controls through</div><div style='font-size: 70%'>[chrome.storage.local, runtime messages]</div>" .->9
+    20-. "<div>Checks health and triggers<br />forget/policy actions on</div><div style='font-size: 70%'>[HTTP/JSON]</div>" .->22
     8-. "<div>Builds capture payloads with</div><div style='font-size: 70%'></div>" .->7
     8-. "<div>Sends captures and inline<br />blobs to</div><div style='font-size: 70%'>[chrome.runtime.sendMessage]</div>" .->9
     9-. "<div>Reads typed settings and<br />durable restart state through</div><div style='font-size: 70%'></div>" .->10
     9-. "<div>Delegates navigation identity<br />and lifecycle accounting to</div><div style='font-size: 70%'></div>" .->11
     9-. "<div>Delegates idempotent<br />active-tab reconstruction to</div><div style='font-size: 70%'></div>" .->12
-    10-. "<div>Reads and writes typed<br />settings and restart state in</div><div style='font-size: 70%'>[chrome.storage.local]</div>" .->18
+    10-. "<div>Reads and writes typed<br />settings and restart state in</div><div style='font-size: 70%'>[chrome.storage.local]</div>" .->21
     11-. "<div>Persists tab/navigation<br />lifecycle state through</div><div style='font-size: 70%'></div>" .->10
     12-. "<div>Injects the ordered<br />extractor/digest/content-script<br />set into</div><div style='font-size: 70%'>[chrome.scripting]</div>" .->2
-    9-. "<div>Enqueues, drains,<br />checkpoints, retries, and<br />recovers capture/lifecycle<br />work through</div><div style='font-size: 70%'></div>" .->13
-    13-. "<div>Reads and writes sequenced<br />capture/lifecycle rows and<br />migration metadata in</div><div style='font-size: 70%'>[IndexedDB]</div>" .->18
-    9-. "<div>Persists aggregate telemetry<br />and one-version queue<br />fallback in</div><div style='font-size: 70%'>[chrome.storage.local]</div>" .->18
-    9-. "<div>Delivers /capture,<br />/visit-events, media<br />metadata, and raw blobs to</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT]</div>" .->19
-    9-. "<div>Delegates debugger attachment<br />and restart reconciliation to</div><div style='font-size: 70%'></div>" .->16
-    16-. "<div>Persists minimal per-tab<br />capture context through</div><div style='font-size: 70%'></div>" .->10
-    17-. "<div>Updates pause, policy, token,<br />and controls through</div><div style='font-size: 70%'>[chrome.storage.local, runtime messages]</div>" .->9
+    9-. "<div>Delegates capture/lifecycle<br />delivery and durable drains<br />to</div><div style='font-size: 70%'></div>" .->13
+    9-. "<div>Delegates credentialed media<br />delivery and durable drains<br />to</div><div style='font-size: 70%'></div>" .->14
+    9-. "<div>Creates the redaction-safe<br />telemetry boundary through</div><div style='font-size: 70%'></div>" .->15
+    13-. "<div>Enqueues, drains,<br />checkpoints, retries, and<br />recovers capture/lifecycle<br />work through</div><div style='font-size: 70%'></div>" .->16
+    13-. "<div>Imports and preserves the<br />one-version queue fallback in</div><div style='font-size: 70%'>[chrome.storage.local]</div>" .->21
+    13-. "<div>Dispatches post-capture media<br />compensation through</div><div style='font-size: 70%'></div>" .->14
+    13-. "<div>Delivers /capture and<br />/visit-events to</div><div style='font-size: 70%'>[Bearer HTTP/JSON]</div>" .->22
+    13-. "<div>Records aggregate outbox<br />status through</div><div style='font-size: 70%'></div>" .->15
+    16-. "<div>Reads and writes sequenced<br />capture/lifecycle rows and<br />migration metadata in</div><div style='font-size: 70%'>[IndexedDB]</div>" .->21
 
   end
 ```

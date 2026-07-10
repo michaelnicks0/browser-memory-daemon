@@ -59,6 +59,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0049](0049-bound-browser-media-queue-lifecycle.md) | accepted | Bound the browser media task and blob lifecycle. |
 | [ADR-0050](0050-use-full-capture-digest-and-rendered-visibility.md) | accepted | Use full capture digests and a conservative rendered-visibility contract. |
 | [ADR-0051](0051-extract-mv3-restart-state-controllers.md) | accepted | Extract MV3 restart-state controllers from the service worker. |
+| [ADR-0052](0052-complete-mv3-service-worker-orchestration-split.md) | accepted | Complete the MV3 service-worker orchestration split. |
 
 ## Backfilled decision history
 

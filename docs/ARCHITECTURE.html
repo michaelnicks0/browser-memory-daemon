@@ -602,7 +602,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Browser capture, lifecycle, and media queues shall be transactional, restart-safe, quota-aware, and never silently truncate.</td>
 <td>Extension Durable Outboxes</td>
 <td><code>HRD-012</code></td>
-<td><code>extension/src/config_store.js</code><br><code>extension/src/visit_tracker.js</code><br><code>extension/src/injection.js</code><br><code>extension/src/cdp_session.js</code><br><code>extension/src/outbox.js</code><br><code>extension/src/service_worker.js</code><br><code>extension/src/popup.js</code><br><code>extension/src/options.js</code><br><code>extension/src/media_queue.js</code></td>
+<td><code>extension/src/config_store.js</code><br><code>extension/src/capture_bridge.js</code><br><code>extension/src/media_bridge.js</code><br><code>extension/src/telemetry.js</code><br><code>extension/src/visit_tracker.js</code><br><code>extension/src/injection.js</code><br><code>extension/src/cdp_session.js</code><br><code>extension/src/outbox.js</code><br><code>extension/src/service_worker.js</code><br><code>extension/src/popup.js</code><br><code>extension/src/options.js</code><br><code>extension/src/media_queue.js</code></td>
 <td><code>extension/tests/unit/injection.test.js::startup reconstruction revisits every active tab</code><br><code>extension/tests/unit/cdp_session.test.js::CDP session reconstructs an attachment already owned by the extension after worker restart</code><br><code>extension/tests/unit/service_worker.test.js::service worker preserves queued captures while daemon is down and drains them after reload</code><br><code>extension/tests/unit/service_worker.test.js::service worker queue overflow preserves old captures and visibly rejects the new capture</code><br><code>extension/tests/unit/service_worker.test.js::service worker enforces byte quota and exposes redaction-safe outbox telemetry</code><br><code>extension/tests/unit/service_worker.test.js::capture result checkpoint survives suspension without reposting before media enqueue compensation</code><br><code>extension/tests/unit/service_worker.test.js::service worker cleans expired terminal media while capture is paused or tokenless</code><br><code>extension/tests/unit/service_worker.test.js::service worker media upload retries keep fetched blob until successful upload</code></td>
 </tr>
 <tr>
@@ -788,8 +788,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Service worker</td>
-<td>Register MV3 listeners and orchestrate daemon transport, transactional drains, alarms, and extracted browser-state controllers.</td>
-<td>Text capture does not wait on media bytes; capture and media bridge code remains here pending later reversible extraction.</td>
+<td>Compose extension modules and register MV3 message, tab, window, debugger, alarm, startup, and installation listeners.</td>
+<td>Listener/orchestration shell only; text capture does not wait on media bytes.</td>
 </tr>
 <tr>
 <td>Extension config store</td>
@@ -807,8 +807,23 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Does not trust process-local injected-tab memory after MV3 suspension; ordinary rehydration avoids racing or rewriting durable active-lifecycle state.</td>
 </tr>
 <tr>
+<td>Capture bridge</td>
+<td>Own daemon capture/lifecycle delivery, transactional outbox import/admission/drain/checkpoint/retry, legacy fallback, media compensation, and queue status.</td>
+<td>Capture acceptance checkpoints before media admission so media failure cannot repost accepted text.</td>
+</tr>
+<tr>
+<td>Media bridge</td>
+<td>Own credentialed browser fetch, inline/CDP blob upload, specialized media queue drain/retry, and terminal cleanup.</td>
+<td>Media failure remains independent from accepted searchable text.</td>
+</tr>
+<tr>
+<td>Extension telemetry</td>
+<td>Persist aggregate redaction-safe queue/CDP/bridge status.</td>
+<td>Recursively removes payload/text/body/content/URL/token/header fields and redacts URL-shaped error substrings.</td>
+</tr>
+<tr>
 <td>CDP session controller</td>
-<td>Reconcile debugger attachment state and recover minimal capture provenance after worker restart.</td>
+<td>Reconcile debugger attachment state, recover minimal capture provenance, correlate Network events, retrieve bounded response bodies, and dispatch through the media bridge.</td>
 <td>Accepts attachment recovery only with matching <code>chrome.debugger.getTargets</code> evidence; mismatched page URLs clear stale provenance.</td>
 </tr>
 <tr>

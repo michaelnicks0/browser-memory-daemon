@@ -16,9 +16,9 @@
 <text text-anchor="start" x="531.5" y="-375.3" font-family="Arial" font-size="24.00" fill="#444444">Browser Memory Daemon</text>
 <text text-anchor="start" x="595.5" y="-355.3" font-family="Arial" font-size="19.00" fill="#444444">[Software System]</text>
 </g>
-<!-- 40 -->
-<g id="40" class="node">
-<title>40</title>
+<!-- 43 -->
+<g id="43" class="node">
+<title>43</title>
 <polygon fill="#438dd5" stroke="#2e6295" points="387,-814 33,-814 33,-511 387,-511 387,-814"/>
 <text text-anchor="start" x="63" y="-765.8" font-family="Arial" font-size="34.00" fill="#ffffff">WSL Media Worker</text>
 <text text-anchor="start" x="70" y="-743.8" font-family="Arial" font-size="19.00" fill="#ffffff">[Container: Python 3.11 CLI loop]</text>
@@ -31,9 +31,9 @@
 <text text-anchor="start" x="64" y="-562.8" font-family="Arial" font-size="24.00" fill="#ffffff">states, and updates artifact</text>
 <text text-anchor="start" x="181" y="-538.8" font-family="Arial" font-size="24.00" fill="#ffffff">rows.</text>
 </g>
-<!-- 44 -->
-<g id="44" class="node">
-<title>44</title>
+<!-- 47 -->
+<g id="47" class="node">
+<title>47</title>
 <path fill="#2f95c8" stroke="#20688c" d="M1237.5,-957.72C1237.5,-985.94 1148.98,-1008.88 1040,-1008.88 931.02,-1008.88 842.5,-985.94 842.5,-957.72 842.5,-957.72 842.5,-497.28 842.5,-497.28 842.5,-469.06 931.02,-446.12 1040,-446.12 1148.98,-446.12 1237.5,-469.06 1237.5,-497.28 1237.5,-497.28 1237.5,-957.72 1237.5,-957.72"/>
 <path fill="none" stroke="#20688c" d="M1237.5,-957.72C1237.5,-929.49 1148.98,-906.56 1040,-906.56 931.02,-906.56 842.5,-929.49 842.5,-957.72"/>
 <text text-anchor="start" x="927" y="-883.8" font-family="Arial" font-size="34.00" fill="#ffffff">SQLite + FTS5</text>
@@ -51,9 +51,9 @@
 <text text-anchor="start" x="914.5" y="-574.8" font-family="Arial" font-size="24.00" fill="#ffffff">rules, audit events, and</text>
 <text text-anchor="start" x="948" y="-550.8" font-family="Arial" font-size="24.00" fill="#ffffff">deletion receipts.</text>
 </g>
-<!-- 40&#45;&gt;44 -->
-<g id="70" class="edge">
-<title>40&#45;&gt;44</title>
+<!-- 43&#45;&gt;47 -->
+<g id="73" class="edge">
+<title>43&#45;&gt;47</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M387.26,-600.58C399.26,-597.78 411.24,-595.36 423,-593.5 558.64,-571.98 597.56,-565.44 732,-593.5 765.42,-600.48 799.66,-611.3 832.58,-623.84"/>
 <polygon fill="#444444" stroke="#444444" points="831.7,-627.25 842.28,-627.6 834.22,-620.72 831.7,-627.25"/>
 <polygon fill="white" stroke="transparent" points="472.5,-593.5 472.5,-692.5 682.5,-692.5 682.5,-593.5 472.5,-593.5"/>
@@ -62,9 +62,9 @@
 <text text-anchor="start" x="476.5" y="-621.8" font-family="Arial" font-size="24.00" fill="#444444">media_fetch_tasks</text>
 <text text-anchor="start" x="544" y="-601.8" font-family="Arial" font-size="19.00" fill="#444444">[sqlite3]</text>
 </g>
-<!-- 40&#45;&gt;44 -->
-<g id="70" class="edge">
-<title>40&#45;&gt;44</title>
+<!-- 43&#45;&gt;47 -->
+<g id="73" class="edge">
+<title>43&#45;&gt;47</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M387.04,-701.41C399.17,-703.36 411.24,-705.09 423,-706.5 558.76,-722.78 712.47,-728.04 832.38,-729.23"/>
 <polygon fill="#444444" stroke="#444444" points="832.38,-732.73 842.42,-729.32 832.45,-725.73 832.38,-732.73"/>
 <polygon fill="white" stroke="transparent" points="440.5,-726.5 440.5,-849.5 714.5,-849.5 714.5,-726.5 440.5,-726.5"/>
@@ -74,9 +74,9 @@
 <text text-anchor="start" x="540" y="-754.8" font-family="Arial" font-size="24.00" fill="#444444">reason</text>
 <text text-anchor="start" x="544" y="-734.8" font-family="Arial" font-size="19.00" fill="#444444">[sqlite3]</text>
 </g>
-<!-- 46 -->
-<g id="46" class="node">
-<title>46</title>
+<!-- 49 -->
+<g id="49" class="node">
+<title>49</title>
 <path fill="#2f95c8" stroke="#20688c" d="M1312,-1471.72C1312,-1493.32 1190.09,-1510.88 1040,-1510.88 889.91,-1510.88 768,-1493.32 768,-1471.72 768,-1471.72 768,-1119.28 768,-1119.28 768,-1097.68 889.91,-1080.12 1040,-1080.12 1190.09,-1080.12 1312,-1097.68 1312,-1119.28 1312,-1119.28 1312,-1471.72 1312,-1471.72"/>
 <path fill="none" stroke="#20688c" d="M1312,-1471.72C1312,-1450.11 1190.09,-1432.56 1040,-1432.56 889.91,-1432.56 768,-1450.11 768,-1471.72"/>
 <text text-anchor="start" x="884.5" y="-1403.8" font-family="Arial" font-size="34.00" fill="#ffffff">Guarded Media Blob</text>
@@ -90,9 +90,9 @@
 <text text-anchor="start" x="890.5" y="-1190.8" font-family="Arial" font-size="24.00" fill="#ffffff">identity&#45;marker proof before</text>
 <text text-anchor="start" x="999" y="-1166.8" font-family="Arial" font-size="24.00" fill="#ffffff">access.</text>
 </g>
-<!-- 40&#45;&gt;46 -->
-<g id="77" class="edge">
-<title>40&#45;&gt;46</title>
+<!-- 43&#45;&gt;49 -->
+<g id="80" class="edge">
+<title>43&#45;&gt;49</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M362.01,-814.17C382.08,-832.63 402.73,-850.84 423,-867.5 528.77,-954.43 651.57,-1042.15 759.56,-1115.34"/>
 <polygon fill="#444444" stroke="#444444" points="757.72,-1118.33 767.97,-1121.03 761.64,-1112.53 757.72,-1118.33"/>
 <polygon fill="white" stroke="transparent" points="423,-1087.5 423,-1186.5 732,-1186.5 732,-1087.5 423,-1087.5"/>
@@ -114,9 +114,9 @@
 <text text-anchor="start" x="877.5" y="-107.8" font-family="Arial" font-size="24.00" fill="#ffffff">sidecars fetch as page&#45;related</text>
 <text text-anchor="start" x="1003.5" y="-83.8" font-family="Arial" font-size="24.00" fill="#ffffff">media.</text>
 </g>
-<!-- 40&#45;&gt;3 -->
-<g id="76" class="edge">
-<title>40&#45;&gt;3</title>
+<!-- 43&#45;&gt;3 -->
+<g id="79" class="edge">
+<title>43&#45;&gt;3</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M354.58,-510.8C376.48,-491.57 399.6,-473.17 423,-457.5 548.68,-373.32 705.02,-305.42 828.74,-258.9"/>
 <polygon fill="#444444" stroke="#444444" points="830.2,-262.09 838.34,-255.31 827.75,-255.53 830.2,-262.09"/>
 <polygon fill="white" stroke="transparent" points="423.5,-457.5 423.5,-556.5 731.5,-556.5 731.5,-457.5 423.5,-457.5"/>

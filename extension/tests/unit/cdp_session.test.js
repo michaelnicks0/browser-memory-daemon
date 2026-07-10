@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { createCdpSession } = require('../../src/cdp_session.js');
+const { createCdpSession, createCdpRecorderController } = require('../../src/cdp_session.js');
 
 function configStore(initial = {}) {
   let contexts = { ...initial };
@@ -71,4 +71,55 @@ test('CDP capture-context writes serialize so tab close cannot be overwritten by
   await Promise.all([remember, clear]);
   assert.deepEqual(stored, {});
   assert.equal(await session.getCaptureContext(7), null);
+});
+
+test('CDP recorder controller owns response correlation and media-body delivery outside the service worker', async () => {
+  const state = { commands: [], cleared: [], detached: [] };
+  const session = {
+    recorderByTab: new Map(),
+    captureContextByTab: new Map(),
+    async ready() {},
+    async clearCaptureContextIfUrlChanged(tabId, url) { state.cleared.push([tabId, url]); },
+    async attachOrRecover() { return { attached: true, recovered: true }; },
+    async command(tabId, method) {
+      state.commands.push([tabId, method]);
+      return method === 'Network.getResponseBody' ? { base64Encoded: false, body: 'video-bytes' } : {};
+    },
+    async getCaptureContext() { return { document_id: 'doc-1', snapshot_id: 'snap-1', visit_id: 'visit-1', page_url: 'https://x.com/post' }; },
+    async clearCaptureContext(tabId) { state.cleared.push([tabId, null]); },
+    async detach(tabId) { state.detached.push(tabId); }
+  };
+  const recorderApi = {
+    DEFAULT_CDP_RECORDER_DOMAINS: ['x.com'],
+    DEFAULT_CDP_MEDIA_HOSTS: ['video.twimg.com'],
+    normalizeDomains(value, fallback) { return value || fallback; },
+    shouldRecordTabUrl() { return true; },
+    cdpMediaCandidate() { return { source_url: 'https://video.twimg.com/segment.mp4', mime_type: 'video/mp4', role: 'cdp-segment', is_manifest: false }; },
+    cdpMediaArtifactPayload(context, candidate, extra = {}) { return { ...context, ...candidate, ...extra }; },
+    approxBase64Bytes(value) { return String(value).length; },
+    cdpBodyToBlob(body, mime) { return new Blob([body.body], { type: mime }); }
+  };
+  const uploads = [];
+  const mediaBridge = {
+    async postMediaArtifact() { return { artifact_id: 'artifact-1' }; },
+    async putMediaArtifactBlob(task, blob) { uploads.push({ task, blob }); return { stored: true }; },
+    async fetchPendingMediaArtifacts() { return {}; }
+  };
+  const telemetry = { async record() {}, async recordError() {}, safeError: (error) => String(error.message || error) };
+  const controller = createCdpRecorderController({
+    chromeApi: { debugger: { attach() {} } }, session, recorderApi, mediaBridge, telemetry,
+    getConfig: async () => ({ apiToken: 'token', capturePaused: false, cdpRecorderEnabled: true })
+  });
+
+  assert.deepEqual(await controller.ensureRecorder(4, 'https://x.com/post'), { ok: true, attached: true, recovered: true });
+  controller.handleEvent({ tabId: 4 }, 'Network.responseReceived', { requestId: 'request-1', response: {}, type: 'Media' });
+  controller.handleEvent({ tabId: 4 }, 'Network.loadingFinished', { requestId: 'request-1', encodedDataLength: 11 });
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(uploads.length, 1);
+  assert.equal(uploads[0].task.document_id, 'doc-1');
+  assert.deepEqual(state.commands.map((item) => item[1]), ['Network.enable', 'Network.getResponseBody']);
+  controller.removeTab(4);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(state.detached, [4]);
 });
