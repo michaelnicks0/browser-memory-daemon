@@ -66,7 +66,7 @@ Every component in `workspace.dsl` carries the `Current` tag. Planned target-sta
 | `DaemonPolicyComponents` | C3 Component | WSL daemon policy internals: router/auth, static policy engine, and persistent block rules. |
 | `DaemonIngestComponents` | C3 Component | WSL daemon ingest internals: router, ingest pipeline, SQLite/FTS rows, and text blobs. |
 | `DaemonLifecycleComponents` | C3 Component | WSL daemon lifecycle internals: router, lifecycle pipeline, and SQLite dwell/event rows. |
-| `DaemonMediaComponents` | C3 Component | WSL daemon media internals: router, media manager, SQLite task/artifact rows, and media cache. |
+| `DaemonMediaComponents` | C3 Component | WSL daemon media internals: router, artifact manager, state model, durable task repository, SQLite rows, BlobStore, reconciliation, and guarded media cache/spool. |
 | `DaemonReadComponents` | C3 Component | WSL daemon read internals: router, search/read model, SQLite/FTS, text blobs, and media cache. |
 | `DaemonForgetComponents` | C3 Component | WSL daemon deletion internals: router, forget pipeline, SQLite receipts, text blobs, and media cache. |
 | `DaemonDoctorComponents` | C3 Component | WSL daemon diagnostics internals: router, doctor/audit, SQLite checks, and storage counts. |

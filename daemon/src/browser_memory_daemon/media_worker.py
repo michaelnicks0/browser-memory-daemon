@@ -8,10 +8,11 @@ from typing import Any
 
 from .config import RuntimeConfig
 from .db import audit, connect, init_db
-from .media import (
+from .media import fetch_and_store_media_artifact
+from .media_models import media_capture_status_for_fetch_reason
+from .media_tasks import (
     claim_media_fetch_tasks,
     ensure_media_fetch_task,
-    media_capture_status_for_fetch_reason,
     process_media_fetch_task_rows,
 )
 
@@ -367,7 +368,12 @@ def run_once(
         normalized_terminal = normalize_terminal_failed_artifacts(conn, worker_kind=worker_kind)
         already_stored = mark_already_stored_tasks_succeeded(conn, worker_kind=worker_kind)
         rows = claim_media_fetch_tasks(conn, worker_id=worker_id, worker_kind=worker_kind, limit=limit)
-    results = process_media_fetch_task_rows(conn, config, rows)
+    results = process_media_fetch_task_rows(
+        conn,
+        config,
+        rows,
+        fetch_artifact=fetch_and_store_media_artifact,
+    )
     summary = {
         "worker_id": worker_id,
         "worker_kind": worker_kind,

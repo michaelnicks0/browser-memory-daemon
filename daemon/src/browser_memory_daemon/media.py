@@ -9,7 +9,6 @@ import sqlite3
 import time
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
@@ -19,33 +18,43 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 from .blob_lifecycle import process_blob_tombstones, register_committed_blob, tombstone_blob
 from .blob_store import prefer_relative_locator
 from .config import RuntimeConfig
+from .media_models import (
+    MEDIA_CAPTURE_STATUSES as MEDIA_CAPTURE_STATUSES,
+)
+from .media_models import (
+    MEDIA_ROLES,
+    MEDIA_TYPES,
+    media_capture_status_for_fetch_reason,
+    normalize_capture_status,
+)
+from .media_models import (
+    MEDIA_TASK_STATUSES as MEDIA_TASK_STATUSES,
+)
+from .media_models import (
+    normalize_task_status as normalize_task_status,
+)
 from .media_storage import (
     choose_media_blob_destination,
     media_blob_store_and_locator,
     release_media_spool_reservation,
     reserve_media_spool,
 )
+from .media_tasks import (
+    _pending_media_artifact_filters,
+    claim_media_fetch_tasks,
+    ensure_media_fetch_task,
+    mark_media_fetch_task,
+)
+from .media_tasks import (
+    media_fetch_task_id as media_fetch_task_id,
+)
+from .media_tasks import (
+    process_media_fetch_task_rows as _process_media_fetch_task_rows,
+)
 from .normalize import normalize_url
 from .policy import POLICY_MODE_ALL, redact_text, redact_url
 from .storage_paths import storage_stem, validate_media_artifact_id
 
-MEDIA_TYPES = {"image", "video"}
-MEDIA_ROLES = {"content", "poster", "source"}
-MEDIA_CAPTURE_STATUSES = {
-    "referenced",
-    "metadata-only",
-    "queued",
-    "fetching",
-    "fetched",
-    "uploading",
-    "stored",
-    "retrying",
-    "failed",
-    "skipped",
-    "expired",
-    "purged",
-}
-MEDIA_TASK_STATUSES = {"pending", "leased", "retrying", "succeeded", "failed", "skipped"}
 MAX_HTTP_MEDIA_SOURCE_URL_CHARS = 65_536
 MAX_DATA_MEDIA_SOURCE_URL_CHARS = 1_100_000
 SAFE_MEDIA_SUFFIX_MIME = {
@@ -65,27 +74,6 @@ SAFE_MEDIA_SUFFIX_MIME = {
     ".aac": "audio/aac",
     ".mp3": "audio/mpeg",
 }
-PERMANENT_SKIP_REASONS = {
-    "unsupported-media-url-scheme",
-    "invalid-data-url",
-    "invalid-data-url-payload",
-    "media-too-large",
-    "non-media-content-type",
-    "disallowed-mime",
-    "snapshot-media-budget",
-    "domain-media-budget",
-    "media-cache-budget",
-    "priority-below-threshold",
-    "fetch-blocked-private-address",
-    "fetch-blocked-private-host",
-    "fetch-blocked-reserved-address",
-    "fetch-blocked-url-scheme",
-    "fetch-redirect-loop",
-    "fetch-redirect-missing-location",
-    "fetch-too-many-redirects",
-}
-
-
 def stable_id(prefix: str, value: str) -> str:
     digest = hashlib.sha256(value.encode("utf-8")).hexdigest()[:32]
     return f"{prefix}_{digest}"
@@ -319,50 +307,11 @@ def media_artifact_id_from_parts(snapshot_id: str, media_type: str, role: str, s
     return stable_id("media", f"{snapshot_id}:{media_type}|{role}|{source_url}")
 
 
-def media_fetch_task_id(artifact_id: str, worker_kind: str) -> str:
-    return stable_id("mtask", f"{worker_kind}:{artifact_id}")
-
-
-def _utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-
-
-def normalize_capture_status(value: Any, *, default: str = "metadata-only") -> str:
-    status = str(value or "").lower().strip().replace("_", "-")
-    return status if status in MEDIA_CAPTURE_STATUSES else default
-
-
-def normalize_task_status(value: Any, *, default: str = "pending") -> str:
-    status = str(value or "").lower().strip().replace("_", "-")
-    return status if status in MEDIA_TASK_STATUSES else default
-
-
 def _media_fetch_supported(source_url: str) -> bool:
     try:
         return urlsplit(source_url).scheme in {"http", "https", "data"}
     except Exception:
         return False
-
-
-def media_capture_status_for_fetch_reason(reason: str, *, source_url: str = "", media_type: str = "") -> str:
-    normalized = str(reason or "").strip()
-    lower = normalized.lower()
-    source_scheme = urlsplit(source_url or "").scheme.lower()
-    if normalized in PERMANENT_SKIP_REASONS:
-        if lower == "non-media-content-type" and str(media_type or "").lower() == "video":
-            return "referenced"
-        return "skipped"
-    if source_scheme == "data" and lower in {"failed to fetch", "invalid-data-url", "invalid-data-url-payload"}:
-        return "skipped"
-    if lower.startswith(("fetch-status-401", "fetch-status-403", "fetch-status-404", "fetch-status-410")):
-        return "expired"
-    if lower.startswith(("fetch-status-429", "fetch-timeout", "fetch-error-")):
-        return "retrying"
-    if lower.startswith("hls-"):
-        return "referenced"
-    if lower in {"empty-media-response", "failed to fetch"}:
-        return "retrying"
-    return "failed"
 
 
 def _metadata_priority(metadata: dict[str, Any] | None) -> int:
@@ -579,97 +528,6 @@ def media_storage_allowed(
     return True, ""
 
 
-def ensure_media_fetch_task(
-    conn: sqlite3.Connection,
-    artifact_id: str,
-    *,
-    worker_kind: str = "daemon-public",
-    priority: int = 50,
-    status: str = "pending",
-    last_error: str = "",
-    force_reset: bool = False,
-) -> str:
-    task_id = media_fetch_task_id(artifact_id, worker_kind)
-    normalized_status = normalize_task_status(status)
-    now = _utc_now()
-    force = bool(force_reset)
-    conn.execute(
-        """
-        INSERT INTO media_fetch_tasks(
-          id, artifact_id, worker_kind, status, priority, attempts, max_attempts,
-          next_attempt_at, lease_owner, lease_until, last_error, updated_at
-        ) VALUES (?, ?, ?, ?, ?, 0, 5, NULL, NULL, NULL, ?, ?)
-        ON CONFLICT(id) DO UPDATE SET
-          priority=MAX(media_fetch_tasks.priority, excluded.priority),
-          status=CASE
-            WHEN ? THEN excluded.status
-            WHEN media_fetch_tasks.status IN ('succeeded', 'skipped') THEN media_fetch_tasks.status
-            WHEN media_fetch_tasks.status = 'leased' AND media_fetch_tasks.lease_until IS NOT NULL THEN media_fetch_tasks.status
-            ELSE excluded.status
-          END,
-          attempts=CASE WHEN ? THEN 0 ELSE media_fetch_tasks.attempts END,
-          next_attempt_at=CASE WHEN ? THEN NULL ELSE media_fetch_tasks.next_attempt_at END,
-          lease_owner=CASE WHEN ? THEN NULL ELSE media_fetch_tasks.lease_owner END,
-          lease_until=CASE WHEN ? THEN NULL ELSE media_fetch_tasks.lease_until END,
-          last_error=CASE WHEN ? THEN NULL ELSE COALESCE(NULLIF(excluded.last_error, ''), media_fetch_tasks.last_error) END,
-          updated_at=excluded.updated_at
-        """,
-        (task_id, artifact_id, worker_kind, normalized_status, int(priority), None if force else (last_error or None), now, force, force, force, force, force, force),
-    )
-    return task_id
-
-
-def mark_media_fetch_task(
-    conn: sqlite3.Connection,
-    artifact_id: str,
-    *,
-    worker_kind: str = "daemon-public",
-    status: str,
-    error: str = "",
-) -> None:
-    conn.execute(
-        """
-        UPDATE media_fetch_tasks
-        SET status = ?, last_error = NULLIF(?, ''), lease_owner = NULL, lease_until = NULL,
-            updated_at = ?
-        WHERE id = ?
-        """,
-        (normalize_task_status(status), error[:512], _utc_now(), media_fetch_task_id(artifact_id, worker_kind)),
-    )
-
-
-def _backoff_seconds(attempts: int) -> int:
-    return min(3600, 30 * (2 ** max(0, attempts - 1)))
-
-
-def _retryable_media_error(error: str) -> bool:
-    return media_capture_status_for_fetch_reason(error) == "retrying"
-
-
-def _pending_media_artifact_filters(
-    *,
-    snapshot_id: str | None = None,
-    document_id: str | None = None,
-    domain: str | None = None,
-) -> tuple[list[str], list[Any]]:
-    where = [
-        "m.capture_status IN ('referenced', 'metadata-only', 'queued', 'retrying', 'failed', 'purged')",
-        "COALESCE(m.blob_locator, '') = '' AND COALESCE(m.spool_locator, '') = '' AND COALESCE(m.file_path, '') = ''",
-    ]
-    params: list[Any] = []
-    if snapshot_id:
-        where.append("m.snapshot_id = ?")
-        params.append(snapshot_id)
-    if document_id:
-        where.append("m.document_id = ?")
-        params.append(document_id)
-    if domain:
-        normalized_domain = domain.lower().strip()
-        where.append("(lower(d.domain) = ? OR lower(m.page_url) LIKE ? OR lower(m.source_url) LIKE ?)")
-        params.extend([normalized_domain, f"%://{normalized_domain}/%", f"%{normalized_domain}%"])
-    return where, params
-
-
 def _seed_media_fetch_tasks_for_pending_artifacts(
     conn: sqlite3.Connection,
     *,
@@ -704,124 +562,13 @@ def _seed_media_fetch_tasks_for_pending_artifacts(
     return seeded
 
 
-def claim_media_fetch_tasks(
-    conn: sqlite3.Connection,
-    *,
-    worker_id: str,
-    worker_kind: str = "daemon-public",
-    limit: int = 25,
-    lease_seconds: int = 120,
-    snapshot_id: str | None = None,
-    document_id: str | None = None,
-    domain: str | None = None,
-) -> list[sqlite3.Row]:
-    """Atomically lease due media tasks and return the rows this worker owns."""
-    now_s = _utc_now()
-    lease_until = (datetime.now(timezone.utc) + timedelta(seconds=lease_seconds)).isoformat().replace("+00:00", "Z")
-    where, artifact_params = _pending_media_artifact_filters(snapshot_id=snapshot_id, document_id=document_id, domain=domain)
-    artifact_filter_sql = " AND ".join(where)
-    candidates = [
-        row["id"]
-        for row in conn.execute(
-            f"""
-            SELECT t.id
-            FROM media_fetch_tasks t
-            JOIN media_artifacts m ON m.id = t.artifact_id
-            LEFT JOIN documents d ON d.id = m.document_id
-            WHERE t.worker_kind = ?
-              AND t.status IN ('pending', 'retrying', 'leased')
-              AND {artifact_filter_sql}
-              AND (t.next_attempt_at IS NULL OR t.next_attempt_at <= ?)
-              AND (t.lease_until IS NULL OR t.lease_until <= ? OR t.lease_owner = ?)
-            ORDER BY t.priority DESC, t.created_at ASC, t.id
-            LIMIT ?
-            """,
-            [worker_kind, *artifact_params, now_s, now_s, worker_id, max(1, int(limit))],
-        ).fetchall()
-    ]
-    claimed_ids: list[str] = []
-    for task_id in candidates:
-        cursor = conn.execute(
-            f"""
-            UPDATE media_fetch_tasks
-            SET status = 'leased', lease_owner = ?, lease_until = ?, updated_at = ?
-            WHERE id = ?
-              AND worker_kind = ?
-              AND status IN ('pending', 'retrying', 'leased')
-              AND artifact_id IN (
-                SELECT m.id
-                FROM media_artifacts m
-                LEFT JOIN documents d ON d.id = m.document_id
-                WHERE {artifact_filter_sql}
-              )
-              AND (next_attempt_at IS NULL OR next_attempt_at <= ?)
-              AND (lease_until IS NULL OR lease_until <= ? OR lease_owner = ?)
-            """,
-            [worker_id, lease_until, now_s, task_id, worker_kind, *artifact_params, now_s, now_s, worker_id],
-        )
-        if cursor.rowcount:
-            claimed_ids.append(task_id)
-    if not claimed_ids:
-        return []
-    placeholders = ",".join("?" for _ in claimed_ids)
-    return conn.execute(
-        f"""
-        SELECT t.id AS task_id, t.status AS task_status, t.attempts AS task_attempts,
-               t.max_attempts AS task_max_attempts, t.worker_kind AS task_worker_kind,
-               t.priority AS task_priority, m.*
-        FROM media_fetch_tasks t
-        JOIN media_artifacts m ON m.id = t.artifact_id
-        WHERE t.id IN ({placeholders})
-          AND t.lease_owner = ?
-        ORDER BY t.priority DESC, t.created_at ASC, t.id
-        """,
-        [*claimed_ids, worker_id],
-    ).fetchall()
-
-
 def process_media_fetch_task_rows(conn: sqlite3.Connection, config: RuntimeConfig, rows: list[sqlite3.Row]) -> list[dict[str, Any]]:
-    results: list[dict[str, Any]] = []
-    for row in rows:
-        artifact_id = row["id"]
-        task_id = row["task_id"]
-        attempts = int(row["task_attempts"] or 0) + 1
-        max_attempts = int(row["task_max_attempts"] or 5)
-        try:
-            result = fetch_and_store_media_artifact(conn, config, row)
-            status = str(result.get("capture_status") or "")
-            if result.get("stored"):
-                with conn:
-                    conn.execute(
-                        "UPDATE media_fetch_tasks SET status = 'succeeded', attempts = ?, lease_owner = NULL, lease_until = NULL, last_error = NULL, updated_at = ? WHERE id = ?",
-                        (attempts, _utc_now(), task_id),
-                    )
-            elif status in {"skipped", "expired", "referenced"}:
-                with conn:
-                    conn.execute(
-                        "UPDATE media_fetch_tasks SET status = 'skipped', attempts = ?, lease_owner = NULL, lease_until = NULL, last_error = ?, updated_at = ? WHERE id = ?",
-                        (attempts, str(result.get("status_reason") or result.get("reason") or status)[:512], _utc_now(), task_id),
-                    )
-            else:
-                error = str(result.get("status_reason") or result.get("error") or "fetch failed")[:512]
-                next_status = "retrying" if status == "retrying" or _retryable_media_error(error) or attempts < max_attempts else "failed"
-                next_attempt = None if next_status == "failed" else (datetime.now(timezone.utc) + timedelta(seconds=_backoff_seconds(attempts))).isoformat().replace("+00:00", "Z")
-                with conn:
-                    conn.execute(
-                        "UPDATE media_fetch_tasks SET status = ?, attempts = ?, next_attempt_at = ?, lease_owner = NULL, lease_until = NULL, last_error = ?, updated_at = ? WHERE id = ?",
-                        (next_status, attempts, next_attempt, error, _utc_now(), task_id),
-                    )
-            results.append(result)
-        except Exception as exc:
-            error = str(exc)[:512]
-            next_status = "retrying" if _retryable_media_error(error) or attempts < max_attempts else "failed"
-            next_attempt = None if next_status == "failed" else (datetime.now(timezone.utc) + timedelta(seconds=_backoff_seconds(attempts))).isoformat().replace("+00:00", "Z")
-            with conn:
-                conn.execute(
-                    "UPDATE media_fetch_tasks SET status = ?, attempts = ?, next_attempt_at = ?, lease_owner = NULL, lease_until = NULL, last_error = ?, updated_at = ? WHERE id = ?",
-                    (next_status, attempts, next_attempt, error, _utc_now(), task_id),
-                )
-            results.append({"stored": False, "artifact_id": artifact_id, "capture_status": "failed", "error": error})
-    return results
+    return _process_media_fetch_task_rows(
+        conn,
+        config,
+        rows,
+        fetch_artifact=fetch_and_store_media_artifact,
+    )
 
 
 def media_queue_status(conn: sqlite3.Connection, config: RuntimeConfig, *, limit: int = 50) -> dict[str, Any]:
