@@ -125,9 +125,17 @@ def migrate_blob_root(
         with conn:
             for plan in updates:
                 if plan.table == "snapshots":
-                    conn.execute("UPDATE snapshots SET cleaned_text_path = ? WHERE id = ?", (str(plan.target_path), plan.row_id))
+                    locator = BlobStore(config.clean_text_root).relative_locator(plan.target_path)
+                    conn.execute(
+                        "UPDATE snapshots SET cleaned_text_path = ?, cleaned_text_locator = ? WHERE id = ?",
+                        (str(plan.target_path), locator, plan.row_id),
+                    )
                 elif plan.table == "media_artifacts":
-                    conn.execute("UPDATE media_artifacts SET file_path = ? WHERE id = ?", (str(plan.target_path), plan.row_id))
+                    locator = BlobStore(config.media_root).relative_locator(plan.target_path)
+                    conn.execute(
+                        "UPDATE media_artifacts SET file_path = ?, blob_locator = ? WHERE id = ?",
+                        (str(plan.target_path), locator, plan.row_id),
+                    )
                 summary["updated"] += 1
         if remove_source:
             for plan in updates:

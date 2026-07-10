@@ -192,6 +192,14 @@ Document detail includes ordered `observations` and `url_claims`; snapshot detai
 
 ---
 
+## Blob locator read contract
+
+SQLite migration version 8 adds root-relative blob locators while retaining legacy absolute compatibility paths. New clean-text and media writes populate both forms. Snapshot/media reads, media serving, forget, purge, and eviction prefer the relative locator and use the legacy absolute path only when the relative field is null or empty. Every selected value still resolves through the configured-root `BlobStore`; a populated invalid relative locator fails closed rather than falling back.
+
+Snapshot summaries expose `clean_text_locator_kind`; media metadata exposes `file_locator_kind`. Values are `relative`, `legacy-absolute`, or `unresolved` where configuration is unavailable. `clean_text_path_status` and `file_path_status` report containment/availability such as `ok`, `missing`, `outside-root`, or `config-required`. List/detail projections do not expose the underlying locator strings.
+
+---
+
 ## Media artifact APIs
 
 Media references in `/capture` are relationship metadata only. Binary storage is asynchronous: the browser lazy sidecar fetches with Chrome cookies and uploads raw blobs, while the daemon media worker backfills public refs without Chrome cookies.

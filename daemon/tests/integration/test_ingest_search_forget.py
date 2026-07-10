@@ -273,11 +273,19 @@ def test_ingest_and_media_write_to_configured_blob_root(tmp_path):
                 "content_base64": base64.b64encode(b"nasbytes").decode("ascii"),
             },
         )
-        row = conn.execute("SELECT cleaned_text_path FROM snapshots WHERE id = ?", (result["snapshot_id"],)).fetchone()
-        media_row = conn.execute("SELECT file_path FROM media_artifacts WHERE id = ?", (stored["artifact_id"],)).fetchone()
+        row = conn.execute(
+            "SELECT cleaned_text_path, cleaned_text_locator FROM snapshots WHERE id = ?",
+            (result["snapshot_id"],),
+        ).fetchone()
+        media_row = conn.execute(
+            "SELECT file_path, blob_locator FROM media_artifacts WHERE id = ?",
+            (stored["artifact_id"],),
+        ).fetchone()
 
     assert row["cleaned_text_path"] == str(clean_path)
+    assert row["cleaned_text_locator"] == clean_path.name
     media_path = Path(media_row["file_path"])
+    assert media_row["blob_locator"] == media_path.name
     assert media_path.parent == cfg.media_root
     assert media_path.name != f"{stored['artifact_id']}.png"
     assert media_path.exists()
@@ -317,8 +325,30 @@ def test_blob_path_consumers_reject_db_paths_outside_configured_roots(tmp_path):
                 "content_base64": base64.b64encode(b"inside").decode("ascii"),
             },
         )
-        conn.execute("UPDATE snapshots SET cleaned_text_path = ? WHERE id = ?", (str(outside_clean), result["snapshot_id"]))
-        conn.execute("UPDATE media_artifacts SET file_path = ?, byte_size = ? WHERE id = ?", (str(outside_media), outside_media.stat().st_size, stored["artifact_id"]))
+        conn.execute(
+            "UPDATE snapshots SET cleaned_text_path = ? WHERE id = ?",
+            (str(outside_clean), result["snapshot_id"]),
+        )
+        conn.execute(
+            "UPDATE media_artifacts SET file_path = ? WHERE id = ?",
+            (str(outside_media), stored["artifact_id"]),
+        )
+
+        relative_detail = snapshot_detail(conn, cfg, result["snapshot_id"])
+        assert "Readable in-database fallback text." in relative_detail["text"]
+        assert relative_detail["snapshot"]["clean_text_locator_kind"] == "relative"
+        relative_media = media_artifacts_for_snapshot(conn, result["snapshot_id"], cfg)[0]
+        assert relative_media["has_file"] is True
+        assert relative_media["file_locator_kind"] == "relative"
+
+        conn.execute(
+            "UPDATE snapshots SET cleaned_text_locator = ? WHERE id = ?",
+            (str(outside_clean), result["snapshot_id"]),
+        )
+        conn.execute(
+            "UPDATE media_artifacts SET blob_locator = ?, byte_size = ? WHERE id = ?",
+            (str(outside_media), outside_media.stat().st_size, stored["artifact_id"]),
+        )
 
         detail = snapshot_detail(conn, cfg, result["snapshot_id"])
         assert "OUTSIDE_CLEAN_SECRET" not in detail["text"]
@@ -380,15 +410,23 @@ def test_blob_root_migration_copies_files_and_rewrites_db_paths(tmp_path, monkey
         assert dry_run["dry_run"] is True
         assert dry_run["planned"] == 2
         executed = migrate_blob_root(conn, new_cfg, execute=True)
-        row = conn.execute("SELECT cleaned_text_path FROM snapshots WHERE id = ?", (result["snapshot_id"],)).fetchone()
-        media_row = conn.execute("SELECT file_path FROM media_artifacts WHERE id = ?", (stored["artifact_id"],)).fetchone()
+        row = conn.execute(
+            "SELECT cleaned_text_path, cleaned_text_locator FROM snapshots WHERE id = ?",
+            (result["snapshot_id"],),
+        ).fetchone()
+        media_row = conn.execute(
+            "SELECT file_path, blob_locator FROM media_artifacts WHERE id = ?",
+            (stored["artifact_id"],),
+        ).fetchone()
 
     assert executed["copied"] == 2
     assert executed["updated"] == 2
     assert old_clean_path.exists()
     assert old_media_path.exists()
     assert row["cleaned_text_path"] == str(new_cfg.clean_text_root / f"{result['snapshot_id']}.txt")
+    assert row["cleaned_text_locator"] == f"{result['snapshot_id']}.txt"
     assert media_row["file_path"] == str(new_cfg.media_root / old_media_relative)
+    assert media_row["blob_locator"] == old_media_relative.as_posix()
     assert (new_cfg.clean_text_root / f"{result['snapshot_id']}.txt").read_text() == "Readable body before blob migration."
     assert (new_cfg.media_root / old_media_relative).read_bytes() == b"movebytes"
 
@@ -445,9 +483,14 @@ def test_media_global_cache_rolls_oldest_blob_when_limit_would_be_exceeded(tmp_p
 
         assert new["stored"] is True
         assert not old_path.exists()
-        rows = {row["id"]: dict(row) for row in conn.execute("SELECT id, capture_status, status_reason, file_path FROM media_artifacts")}
+        rows = {
+            row["id"]: dict(row)
+            for row in conn.execute("SELECT id, capture_status, status_reason, file_path, blob_locator FROM media_artifacts")
+        }
         assert rows[old["artifact_id"]]["capture_status"] == "purged"
         assert rows[old["artifact_id"]]["status_reason"] == "cache-evicted:global-oldest"
+        assert rows[old["artifact_id"]]["file_path"] == ""
+        assert rows[old["artifact_id"]]["blob_locator"] == ""
         assert rows[new["artifact_id"]]["capture_status"] == "stored"
 
 

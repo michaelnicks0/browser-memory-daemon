@@ -23,9 +23,13 @@ def test_blob_store_stages_streams_verifies_hash_and_commits_atomically(tmp_path
     committed = store.commit(staged, "media.bin")
 
     assert committed == tmp_path / "blobs" / "media.bin"
+    assert store.relative_locator(committed) == "media.bin"
+    assert store.relative_locator("media.bin") == "media.bin"
     assert store.read_bytes("media.bin") == content
     assert store.stat("media.bin").st_size == len(content)
     assert store.staged_paths() == []
+    with pytest.raises(BlobStoreError, match="cannot name the storage root"):
+        store.relative_locator(store.root)
 
 
 def test_blob_store_mismatch_aborts_stage_without_publishing(tmp_path):

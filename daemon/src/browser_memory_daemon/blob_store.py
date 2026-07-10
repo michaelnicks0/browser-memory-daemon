@@ -11,6 +11,10 @@ from typing import BinaryIO, cast
 from .storage_paths import StoragePathResolution, contained_child_path, resolve_db_path_under
 
 
+def prefer_relative_locator(relative_locator: str | None, legacy_path: str | None) -> str | None:
+    return relative_locator if relative_locator not in {None, ""} else legacy_path
+
+
 class BlobStoreError(RuntimeError):
     """Raised when a contained blob operation cannot be completed safely."""
 
@@ -64,6 +68,13 @@ class BlobStore:
 
     def resolve(self, locator: str | Path | None, *, require_file: bool = False) -> StoragePathResolution:
         return resolve_db_path_under(self.root, locator, require_file=require_file)
+
+    def relative_locator(self, locator: str | Path) -> str:
+        path = self._required_path(locator)
+        relative = path.relative_to(self.root)
+        if not relative.parts:
+            raise BlobStoreError("blob locator cannot name the storage root")
+        return relative.as_posix()
 
     def _required_path(self, locator: str | Path, *, require_file: bool = False) -> Path:
         resolution = self.resolve(locator, require_file=require_file)

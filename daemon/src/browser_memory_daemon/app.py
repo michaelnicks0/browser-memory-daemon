@@ -8,7 +8,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 
 from . import __version__
-from .blob_store import BlobStore
+from .blob_store import BlobStore, prefer_relative_locator
 from .config import RuntimeConfig
 from .db import audit, connect, init_db
 from .forget import forget
@@ -362,14 +362,22 @@ def make_handler(config: RuntimeConfig):
                         conn.commit()
                     artifact.pop("resolved_file_path", None)
                     store = BlobStore(config.media_root)
-                    resolution = store.resolve(artifact.get("file_path"), require_file=True)
+                    locator = prefer_relative_locator(artifact.get("blob_locator"), artifact.get("file_path"))
+                    resolution = store.resolve(locator, require_file=True)
                     if not artifact.get("has_file") or resolution.path is None:
-                        _json_response(self, 404, {"error": "media artifact file not stored", "artifact": {k: v for k, v in artifact.items() if k != "file_path"}})
+                        _json_response(
+                            self,
+                            404,
+                            {
+                                "error": "media artifact file not stored",
+                                "artifact": {k: v for k, v in artifact.items() if k not in {"file_path", "blob_locator"}},
+                            },
+                        )
                         return
                     _binary_response(
                         self,
                         200,
-                        store.read_bytes(artifact["file_path"]),
+                        store.read_bytes(resolution.path),
                         content_type=artifact.get("mime_type") or "application/octet-stream",
                         filename=resolution.path.name,
                     )

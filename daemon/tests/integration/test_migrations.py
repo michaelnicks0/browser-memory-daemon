@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor
 import shutil
 import sqlite3
+from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 from types import SimpleNamespace
 
 import pytest
-
 from browser_memory_daemon.config import load_config
 from browser_memory_daemon.db import SCHEMA_PATH, connect, init_db
 from browser_memory_daemon.ingest import ingest_capture
@@ -29,6 +28,7 @@ from browser_memory_daemon.migrations import (
     schema_fingerprint,
 )
 from browser_memory_daemon.models import CapturePayload
+from browser_memory_daemon.ops import snapshot_detail
 from browser_memory_daemon.search import search_memory
 
 
@@ -46,6 +46,11 @@ def _drop_claimed_visit_identity(conn: sqlite3.Connection) -> None:
     conn.execute("DROP INDEX IF EXISTS idx_visit_events_claimed_visit")
     conn.execute("ALTER TABLE visit_events DROP COLUMN attachment_method")
     conn.execute("ALTER TABLE visit_events DROP COLUMN claimed_visit_id")
+
+
+def _drop_relative_blob_locators(conn: sqlite3.Connection) -> None:
+    conn.execute("ALTER TABLE media_artifacts DROP COLUMN blob_locator")
+    conn.execute("ALTER TABLE snapshots DROP COLUMN cleaned_text_locator")
 
 
 def _create_unversioned_current_db(cfg, *, with_media_ref: bool = False) -> None:
@@ -243,6 +248,7 @@ def test_version_three_fixture_upgrades_once_to_capture_model_expand_schema(tmp_
     cfg = _config(tmp_path)
     init_db(cfg)
     with connect(cfg.db_path) as conn:
+        _drop_relative_blob_locators(conn)
         _drop_claimed_visit_identity(conn)
         conn.execute("DROP TABLE media_artifact_observations")
         conn.execute("DROP TABLE document_url_claims")
@@ -253,9 +259,9 @@ def test_version_three_fixture_upgrades_once_to_capture_model_expand_schema(tmp_
 
     before = migration_status(cfg)
     assert before["current_version"] == 3
-    assert before["pending_versions"] == [4, 5, 6, 7]
+    assert before["pending_versions"] == [4, 5, 6, 7, 8]
     result = migrate_database(cfg, execute=True)
-    assert result["applied_versions"] == [4, 5, 6, 7]
+    assert result["applied_versions"] == [4, 5, 6, 7, 8]
     with connect(cfg.db_path) as conn:
         tables = {
             row["name"]
@@ -268,13 +274,14 @@ def test_version_three_fixture_upgrades_once_to_capture_model_expand_schema(tmp_
             "document_url_claims",
             "media_artifact_observations",
         } <= tables
-        assert schema_fingerprint(conn) == MIGRATIONS[6].schema_fingerprint
+        assert schema_fingerprint(conn) == MIGRATIONS[7].schema_fingerprint
 
 
 def test_version_five_backfills_only_evidence_supported_historical_relationships(tmp_path):
     cfg = _config(tmp_path)
     init_db(cfg)
     with connect(cfg.db_path) as conn:
+        _drop_relative_blob_locators(conn)
         _drop_claimed_visit_identity(conn)
         conn.execute("DELETE FROM document_url_claims")
         conn.execute("DELETE FROM capture_observations")
@@ -430,6 +437,7 @@ def test_version_six_backfills_only_unambiguous_media_observation_links(tmp_path
             "UPDATE media_artifacts SET visit_id = NULL WHERE id = ?",
             (no_visit["media_artifacts"][0]["artifact_id"],),
         )
+        _drop_relative_blob_locators(conn)
         _drop_claimed_visit_identity(conn)
         conn.execute("DROP TABLE media_artifact_observations")
         conn.execute("DELETE FROM schema_migrations WHERE version >= 6")
@@ -505,14 +513,15 @@ def test_version_seven_preserves_claimed_visit_identity_for_historical_events(tm
                 "2026-01-06T00:00:10Z",
             ),
         )
+        _drop_relative_blob_locators(conn)
         _drop_claimed_visit_identity(conn)
-        conn.execute("DELETE FROM schema_migrations WHERE version = 7")
+        conn.execute("DELETE FROM schema_migrations WHERE version >= 7")
         conn.execute("PRAGMA user_version = 6")
 
-    pending = migration_status(cfg)
+    pending = migration_status(cfg, steps=MIGRATIONS[:7])
     assert pending["current_version"] == 6
     assert pending["pending_versions"] == [7]
-    result = migrate_database(cfg, execute=True)
+    result = migrate_database(cfg, execute=True, steps=MIGRATIONS[:7])
     assert result["applied_versions"] == [7]
 
     with connect(cfg.db_path) as conn:
@@ -528,6 +537,61 @@ def test_version_seven_preserves_claimed_visit_identity_for_historical_events(tm
             "attachment_method": "historical",
         }
         assert schema_fingerprint(conn) == MIGRATIONS[6].schema_fingerprint
+        assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
+
+
+def test_version_eight_adds_nullable_relative_locators_and_new_ingest_dual_writes(tmp_path):
+    cfg = _config(tmp_path)
+    init_db(cfg)
+    with connect(cfg.db_path) as conn:
+        legacy = _capture(conn, cfg)
+        legacy_path = conn.execute(
+            "SELECT cleaned_text_path FROM snapshots WHERE id = ?",
+            (legacy["snapshot_id"],),
+        ).fetchone()["cleaned_text_path"]
+        _drop_relative_blob_locators(conn)
+        conn.execute("DELETE FROM schema_migrations WHERE version = 8")
+        conn.execute("PRAGMA user_version = 7")
+
+    pending = migration_status(cfg)
+    assert pending["current_version"] == 7
+    assert pending["pending_versions"] == [8]
+    result = migrate_database(cfg, execute=True)
+    assert result["applied_versions"] == [8]
+
+    with connect(cfg.db_path) as conn:
+        legacy_row = conn.execute(
+            "SELECT cleaned_text_path, cleaned_text_locator FROM snapshots WHERE id = ?",
+            (legacy["snapshot_id"],),
+        ).fetchone()
+        assert dict(legacy_row) == {
+            "cleaned_text_path": legacy_path,
+            "cleaned_text_locator": None,
+        }
+        legacy_detail = snapshot_detail(conn, cfg, legacy["snapshot_id"])
+        assert "Versioned migration preserves searchable full text." in legacy_detail["text"]
+        assert legacy_detail["snapshot"]["clean_text_locator_kind"] == "legacy-absolute"
+        assert legacy_detail["snapshot"]["clean_text_path_status"] == "ok"
+        stored = ingest_capture(
+            conn,
+            cfg,
+            CapturePayload.from_dict(
+                {
+                    "visit_id": "migration-v8-new-visit",
+                    "url": "https://example.com/migration-v8-new",
+                    "title": "Migration v8 new write",
+                    "text": "New writes dual-write a contained relative clean-text locator.",
+                },
+                allow_any_url=True,
+            ),
+        )
+        new_row = conn.execute(
+            "SELECT cleaned_text_path, cleaned_text_locator FROM snapshots WHERE id = ?",
+            (stored["snapshot_id"],),
+        ).fetchone()
+        assert new_row["cleaned_text_locator"] == f"{stored['snapshot_id']}.txt"
+        assert new_row["cleaned_text_path"] == str(cfg.clean_text_root / new_row["cleaned_text_locator"])
+        assert schema_fingerprint(conn) == MIGRATIONS[7].schema_fingerprint
         assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
 
 

@@ -520,7 +520,10 @@ def test_purge_media_cache_skips_db_paths_outside_media_root(tmp_path):
         result = ingest_capture(conn, cfg, payload)
         assert run_once(conn, cfg, worker_id="test-worker", limit=10)["stored"] == 1
         media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
-        conn.execute("UPDATE media_artifacts SET file_path = ?, byte_size = ? WHERE id = ?", (str(outside_media), outside_media.stat().st_size, media["id"]))
+        conn.execute(
+            "UPDATE media_artifacts SET file_path = ?, blob_locator = ?, byte_size = ? WHERE id = ?",
+            (str(outside_media), str(outside_media), outside_media.stat().st_size, media["id"]),
+        )
 
         purged = purge_media_cache(conn, cfg, {"domain": "example.com", "dry_run": False})
         row = conn.execute("SELECT capture_status, file_path FROM media_artifacts WHERE id = ?", (media["id"],)).fetchone()

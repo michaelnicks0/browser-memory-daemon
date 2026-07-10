@@ -231,6 +231,11 @@ date: "2026-07-10"</p>
 <td><code>add_claimed_visit_identity</code></td>
 <td>Preserve claimed lifecycle visit identity, expose attachment method, and enable exact delayed-capture reconciliation without URL-recency guesses.</td>
 </tr>
+<tr>
+<td style="text-align: right;"><code>8</code></td>
+<td><code>add_relative_blob_locators</code></td>
+<td>Add nullable clean-text and media locators relative to their configured containment roots. Historical rows remain <code>NULL</code>; new writes dual-write relative and absolute compatibility fields. The migration performs no filesystem inference or mutation.</td>
+</tr>
 </tbody>
 </table>
 <p>Each <code>schema_migrations</code> row stores version, unique name, SHA-256 checksum, and applied timestamp. <code>PRAGMA user_version</code> must match the highest contiguous ledger version. Unknown-newer versions, gaps, name drift, checksum drift, and schema-fingerprint drift fail closed.</p>
@@ -250,7 +255,7 @@ date: "2026-07-10"</p>
 <span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2">$BMD_PYTHON</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pytest<span style="color: #F8F8F2"> </span>-q<span style="color: #F8F8F2"> </span>daemon/tests/integration/test_migrations.py
 </code></pre></div>
 
-<p>The fixture suite covers fresh initialization, exact unversioned detection, repeated and concurrent no-op/application behavior, checksum and unknown-newer rejection, injected rollback, FTS/foreign-key/integrity checks, destructive headroom refusal, online backup, restore-backed search, a version-3-to-latest expand upgrade, observation/claim constraints, version-5 evidence-bounded historical backfill, and version-6 conservative media-observation linking.</p>
+<p>The fixture suite covers fresh initialization, exact unversioned detection, repeated and concurrent no-op/application behavior, checksum and unknown-newer rejection, injected rollback, FTS/foreign-key/integrity checks, destructive headroom refusal, online backup, restore-backed search, a version-3-to-latest expand upgrade, observation/claim constraints, version-5 evidence-bounded historical backfill, version-6 conservative media-observation linking, version-7 claimed lifecycle identity, and version-8 nullable relative-locator expansion plus new-write dual-write behavior.</p>
   </article>
   <div class="md-footer">
     Rendered from <code>docs/database-migrations.md</code> — the Markdown file is the canonical,

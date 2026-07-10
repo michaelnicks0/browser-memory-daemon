@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Blob-Root-Migration — browser-memory-daemon</title>
+<title>0037-Expand-Blob-References-With-Relative-Locators — browser-memory-daemon</title>
 <style>
 :root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
@@ -120,56 +120,109 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <body>
 <div class="wrap">
   <div class="docbar">
-    <a class="home" href="../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
-    <span class="crumb">/ <b>docs/blob-root-migration.md</b></span>
+    <a class="home" href="../../../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
+    <span class="crumb">/ <b>docs/architecture/adr/0037-expand-blob-references-with-relative-locators.md</b></span>
   </div>
   <article class="md-body">
-<h1 id="blob-root-migration">Blob-Root Migration</h1>
-<blockquote>
-<p><strong>Status:</strong> Current helper documented; live migration remains approval-gated.
-<strong>Authority:</strong> <code>daemon/src/browser_memory_daemon/blob_migration.py</code> and <code>blob-root migrate</code> in <code>cli.py</code>.
-<strong>Scope:</strong> Move DB-referenced clean-text and media blob files while keeping SQLite/WAL local.</p>
-</blockquote>
 <hr />
-<h2 id="current-contract">Current contract</h2>
-<p><code>blob-root migrate</code> plans relocation only for DB-referenced paths beneath the selected source root and under the recognized <code>clean-text/</code>, <code>raw-html/</code>, or <code>media/</code> subtrees. The configured <code>BMD_BLOB_ROOT</code> is the target. The command is a dry run unless <code>--execute</code> is supplied.</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">PYTHONPATH</span><span style="color: #FF4689">=</span>daemon/src<span style="color: #F8F8F2"> BMD_BLOB_ROOT</span><span style="color: #FF4689">=</span>/explicit/target/blobs<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
-<span style="color: #F8F8F2">  </span>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span>blob-root<span style="color: #F8F8F2"> </span>migrate
-</code></pre></div>
-
-<p>The summary reports planned, copied, already-present, missing-source, updated, source-removal, and error counts. Dry-run does not copy files, rewrite SQLite paths, or remove source bytes. Executed copies stream through the contained <code>BlobStore</code>, verify the source byte count before publication, and atomically commit the target.</p>
-<h2 id="execute-boundary">Execute boundary</h2>
-<p>Repository verification must use temporary fixture roots only. A live DB migration, external mount mutation, or deletion of source bytes requires separate explicit operator approval.</p>
-<p>When approved for a real deployment, the minimum sequence is:</p>
-<ol>
-<li>stop capture and media-worker writes;</li>
-<li>create and verify a SQLite online backup;</li>
-<li>verify target mount availability, free space, and expected storage identity;</li>
-<li>run the command without <code>--execute</code> and review every count/path boundary;</li>
-<li>run with <code>--execute</code> but without <code>--remove-source</code>;</li>
-<li>verify DB integrity, FTS reads, snapshot detail, media reads, and service health against the target;</li>
-<li>retain the prior copy until an explicit later cleanup approval.</li>
-</ol>
-<h2 id="current-limitations">Current limitations</h2>
+<p>status: accepted
+date: 2026-07-10
+decision-makers: [Michael]
+consulted: [TARS]
+informed: []</p>
+<hr />
+<h1 id="adr-0037-expand-blob-references-with-root-relative-locators">ADR-0037: Expand blob references with root-relative locators</h1>
+<h2 id="context-and-problem-statement">Context and problem statement</h2>
+<p>ADR-0036 established a contained, streaming <code>BlobStore</code>, but SQLite still stored only absolute filesystem paths. Absolute paths couple database rows to one workstation or mount point and complicate blob-root relocation, restore, and verification.</p>
+<p>Changing every row in place would create a flag-day migration. The versioned SQLite migration kernel also must not inspect or mutate the filesystem while applying schema changes: it does not have reliable runtime root identity, mount state, or proof that a historical path belongs to the currently configured root.</p>
+<p>The next storage slice therefore needs a reversible expand phase that improves locator portability without making historical rows unreadable or weakening path containment.</p>
+<h2 id="decision-drivers">Decision drivers</h2>
 <ul>
-<li>Existing target files are treated as present; this helper does not yet compare hashes or content.</li>
-<li>SQLite path updates occur after copy attempts, but the filesystem copies and DB transaction are not one crash-consistent transaction.</li>
-<li><code>--remove-source</code> unlinks after DB updates and is not tombstone/reconciliation-backed.</li>
-<li>Successful DB rewrites populate both the target absolute compatibility path and the locator relative to the target clean-text or media root. Historical rows not selected by this operator migration retain their existing nullable relative-locator state.</li>
-<li>It is an operator blob-layout migration, not a versioned SQLite schema migration.</li>
+<li>Preserve compatibility with databases whose blob columns contain absolute paths.</li>
+<li>Make new blob references portable across root relocation and restore.</li>
+<li>Keep all database-provided values untrusted and resolved through <code>BlobStore</code>.</li>
+<li>Avoid filesystem reads or inferred path backfills inside schema migration transactions.</li>
+<li>Keep the change additive and reversible before eventual absolute-path contraction.</li>
+<li>Fail closed when a populated preferred locator is invalid; do not silently downgrade to a second database-controlled path.</li>
 </ul>
-<p>These limitations are why the default remains dry-run and why <code>--remove-source</code> is a separate explicit flag.</p>
-<h2 id="hermetic-verification">Hermetic verification</h2>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span>/tmp/browser-memory-daemon-verify-venv/bin/python
-<span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2">$BMD_PYTHON</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pytest<span style="color: #F8F8F2"> </span>-q<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
-<span style="color: #F8F8F2">  </span>daemon/tests/integration/test_ingest_search_forget.py<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
-<span style="color: #F8F8F2">  </span>-k<span style="color: #F8F8F2"> </span>blob_root_migration
-</code></pre></div>
-
-<p>The test uses temporary runtime/blob roots and does not touch the daily-driver database, user blob root, or NAS.</p>
+<h2 id="decision">Decision</h2>
+<p>Add nullable relative-locator columns in migration version 8:</p>
+<ul>
+<li><code>snapshots.cleaned_text_locator</code>, relative to <code>RuntimeConfig.clean_text_root</code>;</li>
+<li><code>media_artifacts.blob_locator</code>, relative to <code>RuntimeConfig.media_root</code>.</li>
+</ul>
+<p>New clean-text and media writes dual-write:</p>
+<ol>
+<li>the new relative locator; and</li>
+<li>the existing absolute compatibility path.</li>
+</ol>
+<p>Read, serve, stat, delete, purge, eviction, and forget flows use this precedence:</p>
+<ol>
+<li>use the relative locator when it is non-null and non-empty;</li>
+<li>otherwise use the legacy absolute path;</li>
+<li>resolve the selected value through the configured-root <code>BlobStore</code>.</li>
+</ol>
+<p>A non-empty invalid or out-of-root relative locator fails closed. The system does <strong>not</strong> fall back to the absolute column after rejecting the preferred locator because doing so would turn locator corruption into an implicit policy downgrade.</p>
+<p>Migration version 8 adds nullable columns only. It does not guess historical relative locators. Historical rows retain <code>NULL</code> and continue through the contained legacy fallback. The operator blob-root migration populates both absolute and relative fields when it successfully relocates a known blob.</p>
+<p>Media purge and eviction clear both media locator columns when bytes cease to be authoritative. Availability responses expose locator kind (<code>relative</code>, <code>legacy-absolute</code>, or <code>unresolved</code>) and containment status without exposing the selected locator in list/detail projections.</p>
+<h2 id="considered-alternatives">Considered alternatives</h2>
+<h3 id="rewrite-existing-absolute-paths-during-migration-version-8">Rewrite existing absolute paths during migration version 8</h3>
+<p>Rejected. Schema migration lacks trusted runtime root/mount context, and basename-based inference would silently misclassify customized or historical layouts.</p>
+<h3 id="replace-the-absolute-columns-immediately">Replace the absolute columns immediately</h3>
+<p>Rejected. A contraction would remove the rollback/read compatibility needed while relative-locator behavior is still being validated.</p>
+<h3 id="fall-back-to-the-absolute-path-whenever-the-relative-locator-fails-containment">Fall back to the absolute path whenever the relative locator fails containment</h3>
+<p>Rejected. A tampered preferred locator must remain visible and fail closed; silently trying another database-controlled path hides corruption and makes precedence non-deterministic.</p>
+<h3 id="store-locators-relative-to-the-top-level-blob-root">Store locators relative to the top-level blob root</h3>
+<p>Rejected for this expand slice. Clean text and media already have separate configured containment roots. Root-specific locators keep the current security boundary explicit and prepare for later media-root separation.</p>
+<h2 id="consequences">Consequences</h2>
+<h3 id="positive">Positive</h3>
+<ul>
+<li>New references survive root relocation without embedding host-specific prefixes.</li>
+<li>Existing databases remain readable without a filesystem-coupled schema migration.</li>
+<li>Read precedence is deterministic and testable.</li>
+<li>Locator corruption cannot force unchecked or cross-root access.</li>
+<li>Blob-root migration can converge historical rows while copying bytes under operator control.</li>
+</ul>
+<h3 id="negative">Negative</h3>
+<ul>
+<li>Two locator columns describe each blob during the expand window.</li>
+<li>Historical rows remain absolute until an evidence-backed operator migration or later reconciliation fills the relative locator.</li>
+<li>A corrupt non-empty relative locator makes an otherwise valid legacy path unavailable until repaired; this is intentional fail-closed behavior.</li>
+<li>Absolute-column contraction and durable reconciliation/tombstones remain separate later phases.</li>
+</ul>
+<h2 id="verification-and-validation">Verification and validation</h2>
+<p>Required executable evidence:</p>
+<ul>
+<li>migration version 8 upgrades version 7 exactly once and preserves historical rows with nullable locators;</li>
+<li>new ingest and media writes populate both relative and absolute columns;</li>
+<li>read paths prefer valid relative locators even when legacy paths are tampered;</li>
+<li>invalid preferred locators are rejected rather than falling back;</li>
+<li>historical <code>NULL</code> locators use contained legacy absolute paths;</li>
+<li>purge and eviction clear both media columns;</li>
+<li>blob-root migration copies bytes and updates both locator forms;</li>
+<li>migration fingerprints, foreign keys, focused storage tests, broad repository gates, generated documentation, secret scan, and diff checks pass.</li>
+</ul>
+<p>Recorded implementation evidence on 2026-07-10:</p>
+<ul>
+<li><code>pytest</code> migration suite: 15 passed;</li>
+<li>focused BlobStore/migration/ingest/media/observation/HTTP/admin group: 96 passed;</li>
+<li><code>scripts/run-fast-gate.sh</code>: passed with 147 pytest tests, 30 Node tests, strict mypy/Ruff, and 81.17% aggregate branch coverage;</li>
+<li><code>scripts/run-e2e.sh</code> with isolated real-Chrome delegation disabled: passed;</li>
+<li><code>scripts/run-real-chrome-e2e.sh</code> with cached Chrome for Testing: passed, including relative clean-text/media locator assertions;</li>
+<li><code>scripts/run-concurrency-stress.sh</code>: passed with 12/12 captures, 40/40 mixed operations, SQLite integrity <code>ok</code>, and no missing FTS rows;</li>
+<li>generated test inventory, rendered documentation, showcase, secret scan, and diff checks: passed.</li>
+</ul>
+<h2 id="rollback">Rollback</h2>
+<p>The code can revert to legacy absolute-path reads while the additive nullable columns remain harmless. Do not drop the new columns until a later contraction decision proves that all supported binaries and historical rows no longer require the absolute compatibility fields.</p>
+<h2 id="related-decisions">Related decisions</h2>
+<ul>
+<li><a href="0021-use-configurable-nas-blob-root-with-local-sqlite.html">ADR-0021</a></li>
+<li><a href="0028-use-versioned-restore-backed-sqlite-migrations.html">ADR-0028</a></li>
+<li><a href="0036-route-blob-operations-through-contained-blobstore.html">ADR-0036</a></li>
+</ul>
   </article>
   <div class="md-footer">
-    Rendered from <code>docs/blob-root-migration.md</code> — the Markdown file is the canonical,
+    Rendered from <code>docs/architecture/adr/0037-expand-blob-references-with-relative-locators.md</code> — the Markdown file is the canonical,
     version-controlled source. This HTML is generated (regenerate with
     <code>scripts/render_docs.py</code>); do not hand-edit.
   </div>

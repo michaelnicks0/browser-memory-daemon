@@ -207,6 +207,7 @@ def ingest_capture(conn: sqlite3.Connection, config: RuntimeConfig, payload: Cap
         normalized_url=normalized,
     )
     clean_path = _clean_text_path(config, snapshot_id)
+    clean_locator = BlobStore(config.clean_text_root).relative_locator(clean_path)
     chunks = chunk_text(stored_text)
     media_refs = parse_media_refs(payload.media_artifacts, max_refs=config.max_media_artifacts_per_capture)
 
@@ -279,8 +280,8 @@ def ingest_capture(conn: sqlite3.Connection, config: RuntimeConfig, payload: Cap
             """
             INSERT OR IGNORE INTO snapshots(
               id, document_id, visit_id, captured_at, content_type, extraction_method,
-              text_hash, cleaned_text_path, privacy_class, redaction_count
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              text_hash, cleaned_text_path, privacy_class, redaction_count, cleaned_text_locator
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 snapshot_id,
@@ -293,6 +294,7 @@ def ingest_capture(conn: sqlite3.Connection, config: RuntimeConfig, payload: Cap
                 str(clean_path),
                 config.policy_mode,
                 redaction_count,
+                clean_locator,
             ),
         )
         snapshot_created = bool(snapshot_cursor.rowcount)

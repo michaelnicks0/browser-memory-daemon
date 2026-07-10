@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS snapshots (
   privacy_class TEXT NOT NULL DEFAULT 'normal',
   redaction_count INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  cleaned_text_locator TEXT,
   FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE,
   FOREIGN KEY(visit_id) REFERENCES visits(id) ON DELETE SET NULL
 );
@@ -119,6 +120,7 @@ CREATE TABLE IF NOT EXISTS media_artifacts (
   status_reason TEXT,
   metadata_json TEXT NOT NULL DEFAULT '{}',
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  blob_locator TEXT,
   FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE,
   FOREIGN KEY(snapshot_id) REFERENCES snapshots(id) ON DELETE CASCADE,
   FOREIGN KEY(visit_id) REFERENCES visits(id) ON DELETE SET NULL

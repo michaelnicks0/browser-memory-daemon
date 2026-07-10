@@ -36,7 +36,7 @@ When approved for a real deployment, the minimum sequence is:
 - Existing target files are treated as present; this helper does not yet compare hashes or content.
 - SQLite path updates occur after copy attempts, but the filesystem copies and DB transaction are not one crash-consistent transaction.
 - `--remove-source` unlinks after DB updates and is not tombstone/reconciliation-backed.
-- The helper stores absolute paths; root-relative BlobStore locators arrive in the planned storage phase.
+- Successful DB rewrites populate both the target absolute compatibility path and the locator relative to the target clean-text or media root. Historical rows not selected by this operator migration retain their existing nullable relative-locator state.
 - It is an operator blob-layout migration, not a versioned SQLite schema migration.
 
 These limitations are why the default remains dry-run and why `--remove-source` is a separate explicit flag.

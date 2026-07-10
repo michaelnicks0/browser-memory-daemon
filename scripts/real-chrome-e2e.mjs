@@ -669,6 +669,7 @@ counts = {}
 for table in ['documents', 'visits', 'visit_events', 'capture_observations', 'snapshots', 'chunks', 'media_artifacts', 'media_fetch_tasks', 'audit_events']:
     counts[table] = conn.execute(f'SELECT COUNT(*) FROM {table}').fetchone()[0]
 counts['browser_identity_observations'] = conn.execute("SELECT COUNT(*) FROM capture_observations WHERE idempotency_key LIKE 'browser:%' AND navigation_id IS NOT NULL AND TRIM(navigation_id) != ''").fetchone()[0]
+counts['relative_snapshot_locators'] = conn.execute("SELECT COUNT(*) FROM snapshots WHERE cleaned_text_locator IS NOT NULL AND TRIM(cleaned_text_locator) != '' AND cleaned_text_locator NOT LIKE '/%'").fetchone()[0]
 counts['audit_event_types'] = dict(conn.execute('SELECT event_type, COUNT(*) FROM audit_events GROUP BY event_type').fetchall())
 print(json.dumps(counts, sort_keys=True))
 `;
@@ -683,12 +684,14 @@ function queryDbMediaState() {
 import json, pathlib, sqlite3
 conn = sqlite3.connect(${JSON.stringify(dbPath)})
 conn.row_factory = sqlite3.Row
-rows = [dict(row) for row in conn.execute('SELECT id, media_type, role, source_url, mime_type, byte_size, file_path, capture_status FROM media_artifacts ORDER BY created_at ASC').fetchall()]
+rows = [dict(row) for row in conn.execute('SELECT id, media_type, role, source_url, mime_type, byte_size, file_path, blob_locator, capture_status FROM media_artifacts ORDER BY created_at ASC').fetchall()]
 tasks = dict(conn.execute('SELECT status, COUNT(*) FROM media_fetch_tasks GROUP BY status').fetchall())
 for row in rows:
     path = pathlib.Path(row['file_path']) if row.get('file_path') else None
     row['has_file'] = bool(path and path.exists())
     row['file_size'] = path.stat().st_size if path and path.exists() else 0
+    locator = pathlib.PurePosixPath(row['blob_locator']) if row.get('blob_locator') else None
+    row['locator_is_relative'] = bool(locator and not locator.is_absolute() and '..' not in locator.parts)
 print(json.dumps({'rows': rows, 'stored': sum(1 for row in rows if row.get('has_file')), 'bytes': sum(row.get('file_size', 0) for row in rows), 'tasks': tasks}, sort_keys=True))
 `;
   const result = spawnSync(pythonBin, ['-c', script], { encoding: 'utf8' });
@@ -701,7 +704,8 @@ async function waitForMediaArtifactStored(timeoutMs = 20000) {
   let media = { rows: [], stored: 0, bytes: 0, tasks: {} };
   while (Date.now() - started < timeoutMs) {
     media = queryDbMediaState();
-    if (media.stored >= 2 && media.bytes >= 16) return media;
+    const storedRows = media.rows.filter((row) => row.has_file);
+    if (media.stored >= 2 && media.bytes >= 16 && storedRows.every((row) => row.locator_is_relative)) return media;
     await sleep(500);
   }
   fail(`timed out waiting for stored media artifacts: ${JSON.stringify(media)}`);
@@ -712,7 +716,7 @@ async function waitForBlobVideoStored(timeoutMs = 20000) {
   let media = { rows: [], stored: 0, bytes: 0, tasks: {} };
   while (Date.now() - started < timeoutMs) {
     media = queryDbMediaState();
-    const row = media.rows.find((item) => item.media_type === 'video' && String(item.source_url || '').startsWith('blob:') && item.has_file && Number(item.file_size || 0) >= 16);
+    const row = media.rows.find((item) => item.media_type === 'video' && String(item.source_url || '').startsWith('blob:') && item.has_file && item.locator_is_relative && Number(item.file_size || 0) >= 16);
     if (row) return { media, row };
     await sleep(500);
   }
@@ -871,7 +875,7 @@ async function runScenario() {
   const counts = queryDbCounts();
   const expectedDocuments = allMode ? 6 : 3;
   const expectedSnapshots = allMode ? 6 : 3;
-  if (counts.documents !== expectedDocuments || counts.snapshots !== expectedSnapshots || counts.chunks < expectedSnapshots || counts.visit_events < 1 || counts.browser_identity_observations < expectedSnapshots) {
+  if (counts.documents !== expectedDocuments || counts.snapshots !== expectedSnapshots || counts.relative_snapshot_locators !== expectedSnapshots || counts.chunks < expectedSnapshots || counts.visit_events < 1 || counts.browser_identity_observations < expectedSnapshots) {
     fail(`unexpected DB counts after policy-mode scenarios: ${JSON.stringify({ policyMode, counts, expectedDocuments, expectedSnapshots })}`);
   }
   log(`DB counts ${JSON.stringify(counts)}`);

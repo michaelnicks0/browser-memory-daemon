@@ -13,6 +13,7 @@ from . import (
     v0005_backfill_historical_observations,
     v0006_link_media_artifacts_to_observations,
     v0007_add_claimed_visit_identity,
+    v0008_add_relative_blob_locators,
 )
 
 
@@ -95,6 +96,17 @@ MIGRATIONS = (
         ),
         sql=v0007_add_claimed_visit_identity.SQL,
         schema_fingerprint=v0007_add_claimed_visit_identity.SCHEMA_FINGERPRINT,
+    ),
+    MigrationStep(
+        version=8,
+        name=v0008_add_relative_blob_locators.NAME,
+        checksum=migration_checksum(
+            8,
+            v0008_add_relative_blob_locators.NAME,
+            v0008_add_relative_blob_locators.CHECKSUM_PAYLOAD,
+        ),
+        sql=v0008_add_relative_blob_locators.SQL,
+        schema_fingerprint=v0008_add_relative_blob_locators.SCHEMA_FINGERPRINT,
     ),
 )
 

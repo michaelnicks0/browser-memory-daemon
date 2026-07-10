@@ -1,14 +1,19 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import sqlite3
 import time
 import uuid
+from datetime import datetime, timezone
 from typing import Any
 
 from .config import RuntimeConfig
 from .db import audit, connect, init_db
-from .media import claim_media_fetch_tasks, ensure_media_fetch_task, media_capture_status_for_fetch_reason, process_media_fetch_task_rows
+from .media import (
+    claim_media_fetch_tasks,
+    ensure_media_fetch_task,
+    media_capture_status_for_fetch_reason,
+    process_media_fetch_task_rows,
+)
 
 
 def utc_now() -> str:
@@ -280,7 +285,7 @@ def normalize_cdp_covered_blob_video_refs(conn: sqlite3.Connection) -> int:
             FROM media_artifacts cdp
             WHERE cdp.media_type = 'video'
               AND cdp.capture_status = 'stored'
-              AND COALESCE(cdp.file_path, '') != ''
+              AND (COALESCE(cdp.blob_locator, '') != '' OR COALESCE(cdp.file_path, '') != '')
               AND (
                 cdp.id LIKE 'media_cdp_%'
                 OR json_extract(cdp.metadata_json, '$.cdp_recorder') = 1
@@ -332,7 +337,7 @@ def mark_already_stored_tasks_succeeded(conn: sqlite3.Connection, *, worker_kind
             SELECT id
             FROM media_artifacts
             WHERE capture_status = 'stored'
-              AND COALESCE(file_path, '') != ''
+              AND (COALESCE(blob_locator, '') != '' OR COALESCE(file_path, '') != '')
           )
         """,
         (utc_now(), worker_kind),

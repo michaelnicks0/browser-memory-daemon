@@ -65,6 +65,7 @@ Exit codes:
 | `5` | `backfill_historical_capture_observations_and_url_claims` | One-time evidence-bounded backfill: inferred observations only from stored snapshot/visit links, ambiguous observations when no visit survives, and historical canonical-authority claims without speculative splits. |
 | `6` | `link_media_artifacts_to_capture_observations` | Add the observation/artifact relation; backfill only a unique visit+snapshot candidate as inferred or a unique snapshot-only candidate as ambiguous, leaving multi-candidate history unresolved. |
 | `7` | `add_claimed_visit_identity` | Preserve claimed lifecycle visit identity, expose attachment method, and enable exact delayed-capture reconciliation without URL-recency guesses. |
+| `8` | `add_relative_blob_locators` | Add nullable clean-text and media locators relative to their configured containment roots. Historical rows remain `NULL`; new writes dual-write relative and absolute compatibility fields. The migration performs no filesystem inference or mutation. |
 
 Each `schema_migrations` row stores version, unique name, SHA-256 checksum, and applied timestamp. `PRAGMA user_version` must match the highest contiguous ledger version. Unknown-newer versions, gaps, name drift, checksum drift, and schema-fingerprint drift fail closed.
 
@@ -89,4 +90,4 @@ BMD_PYTHON=/tmp/browser-memory-daemon-verify-venv/bin/python
 "$BMD_PYTHON" -m pytest -q daemon/tests/integration/test_migrations.py
 ```
 
-The fixture suite covers fresh initialization, exact unversioned detection, repeated and concurrent no-op/application behavior, checksum and unknown-newer rejection, injected rollback, FTS/foreign-key/integrity checks, destructive headroom refusal, online backup, restore-backed search, a version-3-to-latest expand upgrade, observation/claim constraints, version-5 evidence-bounded historical backfill, and version-6 conservative media-observation linking.
+The fixture suite covers fresh initialization, exact unversioned detection, repeated and concurrent no-op/application behavior, checksum and unknown-newer rejection, injected rollback, FTS/foreign-key/integrity checks, destructive headroom refusal, online backup, restore-backed search, a version-3-to-latest expand upgrade, observation/claim constraints, version-5 evidence-bounded historical backfill, version-6 conservative media-observation linking, version-7 claimed lifecycle identity, and version-8 nullable relative-locator expansion plus new-write dual-write behavior.

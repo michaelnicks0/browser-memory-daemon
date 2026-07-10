@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from . import __version__
-from .blob_store import BlobStore
+from .blob_store import BlobStore, prefer_relative_locator
 from .config import RuntimeConfig
 from .media import media_artifacts_for_document, media_artifacts_for_snapshot, media_queue_status
 
@@ -257,7 +257,7 @@ def document_detail(conn: sqlite3.Connection, config: RuntimeConfig, document_id
     snapshots = conn.execute(
         """
         SELECT id, captured_at, content_type, extraction_method, text_hash, privacy_class,
-               redaction_count, cleaned_text_path
+               redaction_count, cleaned_text_path, cleaned_text_locator
         FROM snapshots
         WHERE document_id = ?
         ORDER BY captured_at DESC, created_at DESC
@@ -331,12 +331,12 @@ def snapshot_detail(conn: sqlite3.Connection, config: RuntimeConfig, snapshot_id
         (snapshot_id,),
     ).fetchall()
     text = ""
-    path = snapshot["cleaned_text_path"]
-    if path:
+    locator = prefer_relative_locator(snapshot["cleaned_text_locator"], snapshot["cleaned_text_path"])
+    if locator:
         store = BlobStore(config.clean_text_root)
-        resolution = store.resolve(path, require_file=True)
+        resolution = store.resolve(locator, require_file=True)
         if resolution.path is not None:
-            text = store.read_text(path, encoding="utf-8", errors="replace")
+            text = store.read_text(locator, encoding="utf-8", errors="replace")
     if not text:
         text = "\n\n".join(row["text"] for row in chunks)
     truncated = len(text) > max_text_chars
@@ -403,19 +403,19 @@ def _doctor_storage(config: RuntimeConfig, conn: sqlite3.Connection, *, storage_
     if not storage_census:
         clean = conn.execute(
             """
-            SELECT COUNT(DISTINCT cleaned_text_path) AS files,
+            SELECT COUNT(DISTINCT COALESCE(NULLIF(cleaned_text_locator, ''), cleaned_text_path)) AS files,
                    COALESCE(SUM(LENGTH(text)), 0) AS bytes
             FROM snapshots
             LEFT JOIN chunks ON chunks.snapshot_id = snapshots.id
-            WHERE COALESCE(cleaned_text_path, '') != ''
+            WHERE COALESCE(cleaned_text_locator, '') != '' OR COALESCE(cleaned_text_path, '') != ''
             """
         ).fetchone()
         media = conn.execute(
             """
-            SELECT COUNT(DISTINCT file_path) AS files,
+            SELECT COUNT(DISTINCT COALESCE(NULLIF(blob_locator, ''), file_path)) AS files,
                    COALESCE(SUM(byte_size), 0) AS bytes
             FROM media_artifacts
-            WHERE COALESCE(file_path, '') != ''
+            WHERE COALESCE(blob_locator, '') != '' OR COALESCE(file_path, '') != ''
             """
         ).fetchone()
         return {
@@ -480,11 +480,15 @@ def _capture_row(row: sqlite3.Row) -> dict[str, Any]:
 def _snapshot_summary(row: sqlite3.Row, config: RuntimeConfig | None = None) -> dict[str, Any]:
     value = dict(row)
     path = value.pop("cleaned_text_path", None)
+    relative_locator = value.pop("cleaned_text_locator", None)
+    locator = prefer_relative_locator(relative_locator, path)
     if config:
-        resolution = BlobStore(config.clean_text_root).resolve(path, require_file=True)
+        resolution = BlobStore(config.clean_text_root).resolve(locator, require_file=True)
         value["has_clean_text"] = resolution.path is not None
         value["clean_text_path_status"] = resolution.status
+        value["clean_text_locator_kind"] = "relative" if relative_locator not in {None, ""} else "legacy-absolute"
     else:
-        value["has_clean_text"] = bool(path and Path(path).exists())
-        value["clean_text_path_status"] = "legacy-unchecked"
+        value["has_clean_text"] = False
+        value["clean_text_path_status"] = "config-required"
+        value["clean_text_locator_kind"] = "unresolved"
     return value

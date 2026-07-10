@@ -5,7 +5,7 @@ import sqlite3
 import uuid
 from urllib.parse import urlsplit
 
-from .blob_store import BlobStore
+from .blob_store import BlobStore, prefer_relative_locator
 from .config import RuntimeConfig
 from .normalize import domain_from_url, normalize_url
 from .policy import POLICY_MODE_ALL, redact_url
@@ -120,11 +120,18 @@ def forget(conn: sqlite3.Connection, config: RuntimeConfig, *, domain: str | Non
     clean_text_paths: list[str] = []
     with conn:
         for document_id in document_ids:
-            snapshot_rows = conn.execute("SELECT id, cleaned_text_path FROM snapshots WHERE document_id = ?", (document_id,)).fetchall()
-            media_rows = conn.execute("SELECT id, file_path FROM media_artifacts WHERE document_id = ?", (document_id,)).fetchall()
+            snapshot_rows = conn.execute(
+                "SELECT id, cleaned_text_path, cleaned_text_locator FROM snapshots WHERE document_id = ?",
+                (document_id,),
+            ).fetchall()
+            media_rows = conn.execute(
+                "SELECT id, file_path, blob_locator FROM media_artifacts WHERE document_id = ?",
+                (document_id,),
+            ).fetchall()
             for media in media_rows:
-                if media["file_path"]:
-                    media_paths.append(str(media["file_path"]))
+                locator = prefer_relative_locator(media["blob_locator"], media["file_path"])
+                if locator:
+                    media_paths.append(locator)
             counts["media_artifacts"] += conn.execute("DELETE FROM media_artifacts WHERE document_id = ?", (document_id,)).rowcount
             chunk_rows = conn.execute("SELECT id FROM chunks WHERE document_id = ?", (document_id,)).fetchall()
             for chunk in chunk_rows:
@@ -134,8 +141,9 @@ def forget(conn: sqlite3.Connection, config: RuntimeConfig, *, domain: str | Non
                 counts["fts"] += 1
             for snap in snapshot_rows:
                 counts["redactions"] += conn.execute("DELETE FROM redactions WHERE snapshot_id = ?", (snap["id"],)).rowcount
-                if snap["cleaned_text_path"]:
-                    clean_text_paths.append(str(snap["cleaned_text_path"]))
+                locator = prefer_relative_locator(snap["cleaned_text_locator"], snap["cleaned_text_path"])
+                if locator:
+                    clean_text_paths.append(locator)
             counts["chunks"] += conn.execute("DELETE FROM chunks WHERE document_id = ?", (document_id,)).rowcount
             counts["snapshots"] += conn.execute("DELETE FROM snapshots WHERE document_id = ?", (document_id,)).rowcount
             counts["visit_events"] += conn.execute(
