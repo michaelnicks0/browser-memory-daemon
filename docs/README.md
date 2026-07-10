@@ -25,6 +25,7 @@
 | Understand retention, compaction, export, and backup posture | [`retention-compaction-backup.md`](retention-compaction-backup.md) |
 | Understand durable lazy media sidecars | [`ARCHITECTURE.md`](ARCHITECTURE.md#durable-media-sidecar-architecture), [`media-artifacts.md`](media-artifacts.md) |
 | Run verification gates | [`TESTS.md`](TESTS.md), [`test-plan.md`](test-plan.md) |
+| Review Phase 0 gate evidence | [`verification/phase-0-gate-2026-07-10.md`](verification/phase-0-gate-2026-07-10.md) |
 
 ---
 

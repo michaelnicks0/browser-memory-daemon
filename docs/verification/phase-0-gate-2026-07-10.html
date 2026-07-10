@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Readme — browser-memory-daemon</title>
+<title>Phase-0-Gate-2026-07-10 — browser-memory-daemon</title>
 <style>
 :root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
@@ -120,204 +120,134 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <body>
 <div class="wrap">
   <div class="docbar">
-    <a class="home" href="../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
-    <span class="crumb">/ <b>docs/README.md</b></span>
+    <a class="home" href="../../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
+    <span class="crumb">/ <b>docs/verification/phase-0-gate-2026-07-10.md</b></span>
   </div>
   <article class="md-body">
-<h1 id="browser-memory-daemon-docs-reading-path">Browser Memory Daemon Docs — Reading Path</h1>
+<h1 id="phase-0-gate-verification-evidence-2026-07-10">Phase 0 Gate Verification Evidence — 2026-07-10</h1>
 <blockquote>
-<p><strong>Audience:</strong> Operator and future agents maintaining the Windows Chrome → WSL browser-memory stack.
-<strong>Status:</strong> ✅ Publish-ready doc set with executive brief, user guide, generated HTML companions, architecture, diagrams, CLI/API, tests, deployment, and status pages.
-<strong>Data boundary:</strong> Live browser memory stays under WSL runtime paths, never in this repo.</p>
+<p><strong>Branch:</strong> <code>hardening/browser-memory-architectural-consolidation</code>
+<strong>HEAD at gate:</strong> <code>8bd768c7cb1f02b834b65114b7531f007229e5b7</code>
+<strong>Recorded:</strong> <code>2026-07-10T04:26:20Z</code>
+<strong>Scope:</strong> Phase 0 hardening/consolidation gate after Phases 0.1–0.5.</p>
 </blockquote>
 <hr />
-<h2 id="start-here">Start here</h2>
+<h2 id="phase-commits-covered">Phase commits covered</h2>
 <table>
 <thead>
 <tr>
-<th>If you need to...</th>
-<th>Read</th>
+<th>Phase</th>
+<th>Commit</th>
+<th>Scope</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Get the polished visual overview</td>
-<td><a href="../browser-memory-daemon-high-level-doc.html"><code>../browser-memory-daemon-high-level-doc.html</code></a></td>
+<td>0.1</td>
+<td><code>3ea3785</code></td>
+<td>Hermetic benchmark blob/runtime storage.</td>
 </tr>
 <tr>
-<td>Understand value, maturity, and risk posture quickly</td>
-<td><a href="EXECUTIVE_BRIEF.html"><code>EXECUTIVE_BRIEF.md</code></a></td>
+<td>0.2</td>
+<td><code>32de66e</code></td>
+<td>Guarded daemon-public media fetch policy.</td>
 </tr>
 <tr>
-<td>Use the system day to day</td>
-<td><a href="USER_GUIDE.html"><code>USER_GUIDE.md</code></a></td>
+<td>0.3</td>
+<td><code>1d299df</code></td>
+<td>Contained blob/media artifact paths.</td>
 </tr>
 <tr>
-<td>Understand the architecture</td>
-<td><a href="ARCHITECTURE.html"><code>ARCHITECTURE.md</code></a>, <a href="architecture/c4-diagrams.html"><code>architecture/c4-diagrams.md</code></a></td>
+<td>0.4</td>
+<td><code>47072dc</code></td>
+<td>Literal, policy-aware destructive forget selectors.</td>
 </tr>
 <tr>
-<td>Understand architecture/design decision history</td>
-<td><a href="architecture/adr/README.html"><code>architecture/adr/README.md</code></a></td>
-</tr>
-<tr>
-<td>See behavioral Mermaid flows/diagrams</td>
-<td><a href="DIAGRAMS.html"><code>DIAGRAMS.md</code></a></td>
-</tr>
-<tr>
-<td>Call or extend the HTTP API</td>
-<td><a href="api.html"><code>api.md</code></a></td>
-</tr>
-<tr>
-<td>Understand CLI commands and flags</td>
-<td><a href="CLI_UX_CONTRACT.html"><code>CLI_UX_CONTRACT.md</code></a></td>
-</tr>
-<tr>
-<td>Install/refresh daily Chrome</td>
-<td><a href="daily-driver-deployment.html"><code>daily-driver-deployment.md</code></a></td>
-</tr>
-<tr>
-<td>Understand policy/security tradeoffs</td>
-<td><a href="security-model.html"><code>security-model.md</code></a></td>
-</tr>
-<tr>
-<td>Check what is implemented vs pending</td>
-<td><a href="STATUS.html"><code>STATUS.md</code></a></td>
-</tr>
-<tr>
-<td>Model storage growth</td>
-<td><a href="storage-growth-model.html"><code>storage-growth-model.md</code></a></td>
-</tr>
-<tr>
-<td>Understand retention, compaction, export, and backup posture</td>
-<td><a href="retention-compaction-backup.html"><code>retention-compaction-backup.md</code></a></td>
-</tr>
-<tr>
-<td>Understand durable lazy media sidecars</td>
-<td><a href="ARCHITECTURE.html#durable-media-sidecar-architecture"><code>ARCHITECTURE.md</code></a>, <a href="media-artifacts.html"><code>media-artifacts.md</code></a></td>
-</tr>
-<tr>
-<td>Run verification gates</td>
-<td><a href="TESTS.html"><code>TESTS.md</code></a>, <a href="test-plan.html"><code>test-plan.md</code></a></td>
-</tr>
-<tr>
-<td>Review Phase 0 gate evidence</td>
-<td><a href="verification/phase-0-gate-2026-07-10.html"><code>verification/phase-0-gate-2026-07-10.md</code></a></td>
+<td>0.5</td>
+<td><code>8bd768c</code></td>
+<td>Loopback UI hardening, required blob mount guard, installer/health slices.</td>
 </tr>
 </tbody>
 </table>
 <hr />
-<h2 id="ownership-map">Ownership map</h2>
+<h2 id="gate-result">Gate result</h2>
+<p><strong>Result: PASS.</strong> The repository broad gate completed on isolated Python via <code>BMD_PYTHON=/tmp/browser-memory-daemon-verify-venv/bin/python</code>, with no remaining dirty working tree before this evidence record was created.</p>
+<h2 id="commands-and-observed-outcomes">Commands and observed outcomes</h2>
 <table>
 <thead>
 <tr>
-<th>Area</th>
-<th>Canonical files</th>
+<th>Gate</th>
+<th>Command</th>
+<th>Outcome</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Publish-ready front door</td>
-<td><code>browser-memory-daemon-high-level-doc.html</code>, <code>scripts/showcase.spec.json</code>, <code>scripts/generate_showcase.py</code></td>
+<td>Python test suite</td>
+<td><code>python -m pytest -q</code></td>
+<td>Pass: <code>108 pytest</code> tests.</td>
 </tr>
 <tr>
-<td>Markdown-to-HTML companions</td>
-<td><code>scripts/render_docs.py</code>, <code>scripts/mermaid-theme.json</code>, generated <code>*.html</code> siblings</td>
+<td>Extension unit tests</td>
+<td><code>cd extension &amp;&amp; npm test</code></td>
+<td>Pass: <code>27 node:test</code> tests.</td>
 </tr>
 <tr>
-<td>Generated test inventory</td>
-<td><code>scripts/generate_test_inventory.py</code>, <code>docs/TESTS.md</code> generated regions</td>
+<td>Extension build</td>
+<td><code>cd extension &amp;&amp; npm run build</code></td>
+<td>Pass: built <code>extension/dist</code>.</td>
 </tr>
 <tr>
-<td>Daemon runtime/config</td>
-<td><code>daemon/src/browser_memory_daemon/config.py</code>, <code>scripts/install-daily-driver.sh</code></td>
+<td>Full repo e2e bundle</td>
+<td><code>BMD_PYTHON=/tmp/browser-memory-daemon-verify-venv/bin/python ./scripts/run-e2e.sh</code></td>
+<td>Pass: pytest, extension tests/build, real Chrome e2e matrix, secret scan, diff check.</td>
 </tr>
 <tr>
-<td>HTTP API and UI serving</td>
-<td><code>daemon/src/browser_memory_daemon/app.py</code>, <code>ui/</code></td>
+<td>Real Chrome e2e matrix</td>
+<td>included in <code>./scripts/run-e2e.sh</code></td>
+<td>Pass: <code>all</code> and <code>strict</code> policy modes; capture/search/lifecycle/media queues verified.</td>
 </tr>
 <tr>
-<td>Ingest/storage/search/forget</td>
-<td><code>ingest.py</code>, <code>schema.sql</code>, <code>search.py</code>, <code>forget.py</code></td>
+<td>Test inventory</td>
+<td><code>python scripts/generate_test_inventory.py --check</code></td>
+<td>Pass: <code>135 tests / 24 files (108 pytest, 27 node:test)</code>.</td>
 </tr>
 <tr>
-<td>Capture policy modes</td>
-<td><code>policy.py</code>, <code>policy_store.py</code>, <code>extension/src/extractor.js</code>, <code>service_worker.js</code></td>
+<td>Showcase artifact</td>
+<td><code>python scripts/generate_showcase.py --spec scripts/showcase.spec.json --check</code></td>
+<td>Pass: <code>browser-memory-daemon-high-level-doc.html ok</code>.</td>
 </tr>
 <tr>
-<td>Media sidecars</td>
-<td><code>daemon/src/browser_memory_daemon/media.py</code>, <code>media_worker.py</code>, <code>extension/src/media_queue.js</code>, <code>service_worker.js</code></td>
+<td>Rendered docs</td>
+<td><code>python scripts/render_docs.py --repo . --slug browser-memory-daemon --check</code></td>
+<td>Pass: <code>87 rendered docs match source</code>.</td>
 </tr>
 <tr>
-<td>Chrome extension extraction/bridge</td>
-<td><code>extension/src/extractor.js</code>, <code>content_script.js</code>, <code>service_worker.js</code></td>
+<td>Shell syntax</td>
+<td><code>bash -n scripts/install-daily-driver.sh &amp;&amp; bash -n scripts/daily-driver-health.sh</code></td>
+<td>Pass.</td>
 </tr>
 <tr>
-<td>Real browser verification</td>
-<td><code>scripts/real-chrome-e2e.mjs</code>, <code>scripts/run-real-chrome-e2e.sh</code></td>
+<td>Secret scan</td>
+<td><code>./scripts/secret-scan.sh</code></td>
+<td>Pass: <code>secret scan passed</code>.</td>
 </tr>
 <tr>
-<td>Daily-driver install</td>
-<td><code>scripts/install-daily-driver.sh</code>, Chrome Load-unpacked UI</td>
+<td>Whitespace</td>
+<td><code>git diff --check -- .</code> and <code>git diff --cached --check</code> for phase commits</td>
+<td>Pass.</td>
 </tr>
 </tbody>
 </table>
-<hr />
-<h2 id="current-policy-posture">Current policy posture</h2>
-<p>The daily-driver default is now:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>policy_mode = all
-</code></pre></div>
-
-<p><code>all</code> is intentionally the least restrictive mode: it disables built-in URL/incognito/private-host filtering and redaction, while still applying explicit local block rules. Other modes remain available:</p>
-<table>
-<thead>
-<tr>
-<th>Mode</th>
-<th>Intended use</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>all</code></td>
-<td>Maximum personal recall; no daemon redaction or built-in URL policy filtering; explicit local block rules still apply; DOM extraction still skips hidden/form/editable/script/style/no-script text.</td>
-</tr>
-<tr>
-<td><code>recall</code></td>
-<td>Broad capture with browser/internal scheme and incognito blocks plus redaction.</td>
-</tr>
-<tr>
-<td><code>balanced</code></td>
-<td>Broad capture with known high-risk domain/query/private-host blocks plus redaction.</td>
-</tr>
-<tr>
-<td><code>strict</code></td>
-<td>Legacy broad privacy filtering plus redaction.</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="verification-quickstart">Verification quickstart</h2>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>venv<span style="color: #F8F8F2"> </span>.venv
-.<span style="color: #F8F8F2"> </span>.venv/bin/activate
-python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pip<span style="color: #F8F8F2"> </span>install<span style="color: #F8F8F2"> </span>-r<span style="color: #F8F8F2"> </span>requirements-dev.txt
-<span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-e2e.sh
-python<span style="color: #F8F8F2"> </span>scripts/generate_test_inventory.py<span style="color: #F8F8F2"> </span>--check
-python<span style="color: #F8F8F2"> </span>scripts/generate_showcase.py<span style="color: #F8F8F2"> </span>--spec<span style="color: #F8F8F2"> </span>scripts/showcase.spec.json<span style="color: #F8F8F2"> </span>--check
-python<span style="color: #F8F8F2"> </span>scripts/render_docs.py<span style="color: #F8F8F2"> </span>--repo<span style="color: #F8F8F2"> </span>.<span style="color: #F8F8F2"> </span>--slug<span style="color: #F8F8F2"> </span>browser-memory-daemon<span style="color: #F8F8F2"> </span>--check
-python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pytest<span style="color: #F8F8F2"> </span>-q
-<span style="color: #F8F8F2">cd </span>extension<span style="color: #F8F8F2"> </span><span style="color: #FF4689">&amp;&amp;</span><span style="color: #F8F8F2"> </span>npm<span style="color: #F8F8F2"> test </span><span style="color: #FF4689">&amp;&amp;</span><span style="color: #F8F8F2"> </span>npm<span style="color: #F8F8F2"> </span>run<span style="color: #F8F8F2"> </span>build
-<span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
-./scripts/secret-scan.sh
-git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span>--check<span style="color: #F8F8F2"> </span>--<span style="color: #F8F8F2"> </span>.
-</code></pre></div>
-
-<p>For daily-driver refresh after extension code changes:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_POLICY_MODE</span><span style="color: #FF4689">=</span>all<span style="color: #F8F8F2"> </span>./scripts/install-daily-driver.sh
-<span style="color: #959077"># Then in Chrome: chrome://extensions → Browser Memory Daemon → Reload</span>
-</code></pre></div>
+<h2 id="notes">Notes</h2>
+<ul>
+<li>The real Chrome run used Chrome for Testing through the repo e2e harness, not the operator's normal Chrome profile.</li>
+<li>Runtime roots used by tests/e2e were temporary and outside the repo.</li>
+<li>No live daily-driver data mutation was required for this gate.</li>
+</ul>
   </article>
   <div class="md-footer">
-    Rendered from <code>docs/README.md</code> — the Markdown file is the canonical,
+    Rendered from <code>docs/verification/phase-0-gate-2026-07-10.md</code> — the Markdown file is the canonical,
     version-controlled source. This HTML is generated (regenerate with
     <code>scripts/render_docs.py</code>); do not hand-edit.
   </div>
