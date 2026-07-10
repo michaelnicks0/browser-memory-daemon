@@ -35,7 +35,9 @@ test('claim, retry, due time, and acknowledgement are token-checked atomic trans
   assert.equal(retried.sequence_id, claimed.sequence_id);
   assert.equal(retried.attempts, 2);
   assert.equal(await outbox.acknowledge(retried.sequence_id, 'worker-b'), true);
-  assert.equal((await outbox.getStats('lifecycle')).count, 0);
+  const finalStats = await outbox.getStats('lifecycle');
+  assert.equal(finalStats.count, 0);
+  assert.ok(finalStats.last_success_at);
 });
 
 test('stale claims recover after service-worker suspension without becoming concurrently claimable', async () => {
@@ -93,4 +95,16 @@ test('serialized byte accounting uses UTF-8 payload bytes and survives claim met
   const [claimed] = await outbox.claim('capture', { claimToken: 'worker' });
   assert.equal(claimed.serialized_bytes, before.serialized_bytes);
   assert.equal((await outbox.getStats('capture')).claimed, 1);
+});
+
+test('serialized byte quota rejects only the new row and reports required bytes', async () => {
+  const outbox = new MemoryOutboxStore();
+  const first = await outbox.enqueue('capture', { text: 'abc' }, { maxBytes: 100 });
+  const second = await outbox.enqueue('capture', { text: 'x'.repeat(100) }, { maxBytes: 100 });
+
+  assert.equal(first.accepted, true);
+  assert.equal(second.accepted, false);
+  assert.equal(second.reason, 'queue-bytes-full');
+  assert.ok(second.required_bytes > 100);
+  assert.equal((await outbox.list('capture')).length, 1);
 });

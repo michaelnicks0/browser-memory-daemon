@@ -8,6 +8,8 @@ const DEFAULTS = {
   cdpRecorderEnabled: true,
   cdpRecorderDomains: ['x.com', 'twitter.com'],
   cdpRecorderMediaHosts: ['video.twimg.com'],
+  captureOutboxMaxBytes: 32 * 1024 * 1024,
+  lifecycleOutboxMaxBytes: 2 * 1024 * 1024,
   captureQueue: [],
   visitEventQueue: [],
   tabVisitState: {}
@@ -767,6 +769,29 @@ async function enqueueLegacyVisitEvent(payload) {
   }
 }
 
+function outboxByteLimit(config, kind) {
+  const key = kind === 'capture' ? 'captureOutboxMaxBytes' : 'lifecycleOutboxMaxBytes';
+  const configured = Number(config[key]);
+  return Number.isFinite(configured) && configured > 0 ? Math.floor(configured) : DEFAULTS[key];
+}
+
+async function outboxStatus() {
+  const api = await ensureOutboxReady();
+  if (!api) return { available: false };
+  const config = await getConfig();
+  const [capture, lifecycle, telemetry] = await Promise.all([
+    api.getStats('capture'),
+    api.getStats('lifecycle'),
+    chrome.storage.local.get({ lastOutboxOverflow: null })
+  ]);
+  return {
+    available: true,
+    capture: { ...capture, max_items: MAX_CAPTURE_QUEUE, max_bytes: outboxByteLimit(config, 'capture') },
+    lifecycle: { ...lifecycle, max_items: MAX_VISIT_EVENT_QUEUE, max_bytes: outboxByteLimit(config, 'lifecycle') },
+    last_overflow: telemetry.lastOutboxOverflow
+  };
+}
+
 async function drainCaptureOutbox(api, config) {
   const delivered = [];
   const claimToken = randomId('capture-claim');
@@ -865,7 +890,7 @@ async function enqueueCapture(payload) {
   if (!config.apiToken) return { skipped: true, reason: 'missing-token' };
   const api = await ensureOutboxReady();
   if (!api) return enqueueLegacyCapture(payload);
-  const enqueued = await api.enqueue('capture', ensureCaptureIdentity(payload), { maxItems: MAX_CAPTURE_QUEUE });
+  const enqueued = await api.enqueue('capture', ensureCaptureIdentity(payload), { maxItems: MAX_CAPTURE_QUEUE, maxBytes: outboxByteLimit(config, 'capture') });
   if (!enqueued.accepted) {
     await chrome.storage.local.set({
       lastOutboxOverflow: { at: nowIso(), kind: 'capture', reason: enqueued.reason, count: enqueued.stats.count, serialized_bytes: enqueued.stats.serialized_bytes }
@@ -884,7 +909,7 @@ async function enqueueVisitEvent(payload) {
   if (!isTrackableUrl(payload.url, config.policyMode)) return { skipped: true, reason: 'blocked-url' };
   const api = await ensureOutboxReady();
   if (!api) return enqueueLegacyVisitEvent(payload);
-  const enqueued = await api.enqueue('lifecycle', payload, { maxItems: MAX_VISIT_EVENT_QUEUE });
+  const enqueued = await api.enqueue('lifecycle', payload, { maxItems: MAX_VISIT_EVENT_QUEUE, maxBytes: outboxByteLimit(config, 'lifecycle') });
   if (!enqueued.accepted) {
     await chrome.storage.local.set({
       lastOutboxOverflow: { at: nowIso(), kind: 'lifecycle', reason: enqueued.reason, count: enqueued.stats.count, serialized_bytes: enqueued.stats.serialized_bytes }
@@ -1089,6 +1114,12 @@ function bootstrapActiveTabs() {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (!message || !message.type) return false;
+  if (message.type === 'BMD_OUTBOX_STATUS') {
+    outboxStatus()
+      .then((result) => sendResponse({ ok: true, result }))
+      .catch((error) => sendResponse({ ok: false, error: String(error.message || error) }));
+    return true;
+  }
   if (message.type === 'BMD_MEDIA_BLOB_UPLOADS') {
     uploadInlineMediaBlobs(message.uploads || [])
       .then((result) => sendResponse({ ok: true, result }))

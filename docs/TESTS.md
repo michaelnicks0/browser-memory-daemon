@@ -5,7 +5,7 @@
 > **Runtime:** Python **3.11+** (`pyproject.toml` requires `>=3.11`). Use `BMD_PYTHON=/path/to/python3.11` when the host `python3` is older.
 
 <!-- BEGIN GENERATED:inventory-summary -->
-> **Current inventory:** 256 static test functions across 42 files — 219 daemon pytest tests + 37 extension node:test tests.
+> **Current inventory:** 258 static test functions across 42 files — 219 daemon pytest tests + 39 extension node:test tests.
 <!-- END GENERATED:inventory-summary -->
 
 ---
@@ -79,7 +79,7 @@ Use `--runtime-root PATH` only for explicit fixture roots; do not point the stre
 ## Generated test inventory
 
 <!-- BEGIN GENERATED:audit-run -->
-Latest inventory: **256 static test functions** across **42 files** (219 daemon pytest; 37 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
+Latest inventory: **258 static test functions** across **42 files** (219 daemon pytest; 39 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
 <!-- END GENERATED:audit-run -->
 
 ## Requirements traceability gate
@@ -100,7 +100,7 @@ Traceability gate: **✅ pass**.
 | Normative changes without revision increment | none |
 | Requirements removed without catalog disposition | none |
 | Catalog load errors | none |
-| Static test inventory measured | 256 tests / 42 files |
+| Static test inventory measured | 258 tests / 42 files |
 <!-- END GENERATED:traceability-gate -->
 
 ### Per-file counts
@@ -145,11 +145,11 @@ Traceability gate: **✅ pass**.
 | `extension/tests/unit/cdp_recorder.test.js` | node:test | 4 |
 | `extension/tests/unit/extractor.test.js` | node:test | 11 |
 | `extension/tests/unit/media_queue.test.js` | node:test | 6 |
-| `extension/tests/unit/outbox.test.js` | node:test | 5 |
+| `extension/tests/unit/outbox.test.js` | node:test | 6 |
 | `extension/tests/unit/queue.test.js` | node:test | 1 |
-| `extension/tests/unit/service_worker.test.js` | node:test | 8 |
+| `extension/tests/unit/service_worker.test.js` | node:test | 9 |
 | `extension/tests/unit/shared.test.js` | node:test | 2 |
-| **Total** |  | **256** |
+| **Total** |  | **258** |
 <!-- END GENERATED:per-file-counts -->
 
 <details>
@@ -400,18 +400,20 @@ Traceability gate: **✅ pass**.
 | `extension/tests/unit/media_queue.test.js` | node:test | `(module)` | `media task due-state classifier rejects terminal and malformed processing states` | 46 | Media task due-state classifier rejects terminal and malformed processing states. |
 | `extension/tests/unit/outbox.test.js` | node:test | `(module)` | `concurrent enqueue preserves existing captures and visibly rejects only new work at capacity` | 5 | Concurrent enqueue preserves existing captures and visibly rejects only new work at capacity. |
 | `extension/tests/unit/outbox.test.js` | node:test | `(module)` | `claim, retry, due time, and acknowledgement are token-checked atomic transitions` | 19 | Claim, retry, due time, and acknowledgement are token-checked atomic transitions. |
-| `extension/tests/unit/outbox.test.js` | node:test | `(module)` | `stale claims recover after service-worker suspension without becoming concurrently claimable` | 40 | Stale claims recover after service-worker suspension without becoming concurrently claimable. |
-| `extension/tests/unit/outbox.test.js` | node:test | `(module)` | `legacy queue import is marked atomically and is idempotent before chrome storage cleanup` | 65 | Legacy queue import is marked atomically and is idempotent before chrome storage cleanup. |
-| `extension/tests/unit/outbox.test.js` | node:test | `(module)` | `serialized byte accounting uses UTF-8 payload bytes and survives claim metadata changes` | 85 | Serialized byte accounting uses UTF-8 payload bytes and survives claim metadata changes. |
+| `extension/tests/unit/outbox.test.js` | node:test | `(module)` | `stale claims recover after service-worker suspension without becoming concurrently claimable` | 42 | Stale claims recover after service-worker suspension without becoming concurrently claimable. |
+| `extension/tests/unit/outbox.test.js` | node:test | `(module)` | `legacy queue import is marked atomically and is idempotent before chrome storage cleanup` | 67 | Legacy queue import is marked atomically and is idempotent before chrome storage cleanup. |
+| `extension/tests/unit/outbox.test.js` | node:test | `(module)` | `serialized byte accounting uses UTF-8 payload bytes and survives claim metadata changes` | 87 | Serialized byte accounting uses UTF-8 payload bytes and survives claim metadata changes. |
+| `extension/tests/unit/outbox.test.js` | node:test | `(module)` | `serialized byte quota rejects only the new row and reports required bytes` | 99 | Serialized byte quota rejects only the new row and reports required bytes. |
 | `extension/tests/unit/queue.test.js` | node:test | `(module)` | `queue preserves FIFO order` | 4 | Queue preserves FIFO order. |
 | `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker preserves queued captures while daemon is down and drains them after reload` | 190 | Service worker preserves queued captures while daemon is down and drains them after reload. |
 | `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker keeps navigation identity stable per URL state and emits a new observation per extraction` | 239 | Service worker keeps navigation identity stable per URL state and emits a new observation per extraction. |
 | `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker queue overflow preserves old captures and visibly rejects the new capture` | 283 | Service worker queue overflow preserves old captures and visibly rejects the new capture. |
-| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker skips missing token and pause without mutating capture queue, then resumes` | 317 | Service worker skips missing token and pause without mutating capture queue, then resumes. |
-| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker transactionally imports and drains the legacy lifecycle queue before deleting it` | 348 | Service worker transactionally imports and drains the legacy lifecycle queue before deleting it. |
-| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `capture result checkpoint survives suspension without reposting before media enqueue compensation` | 382 | Capture result checkpoint survives suspension without reposting before media enqueue compensation. |
-| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker injection respects stale token, pause, and strict URL controls` | 435 | Service worker injection respects stale token, pause, and strict URL controls. |
-| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker media upload retries keep fetched blob until successful upload` | 464 | Service worker media upload retries keep fetched blob until successful upload. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker enforces byte quota and exposes redaction-safe outbox telemetry` | 317 | Service worker enforces byte quota and exposes redaction-safe outbox telemetry. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker skips missing token and pause without mutating capture queue, then resumes` | 341 | Service worker skips missing token and pause without mutating capture queue, then resumes. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker transactionally imports and drains the legacy lifecycle queue before deleting it` | 372 | Service worker transactionally imports and drains the legacy lifecycle queue before deleting it. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `capture result checkpoint survives suspension without reposting before media enqueue compensation` | 406 | Capture result checkpoint survives suspension without reposting before media enqueue compensation. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker injection respects stale token, pause, and strict URL controls` | 459 | Service worker injection respects stale token, pause, and strict URL controls. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker media upload retries keep fetched blob until successful upload` | 488 | Service worker media upload retries keep fetched blob until successful upload. |
 | `extension/tests/unit/shared.test.js` | node:test | `(module)` | `daemon URL normalization strips trailing slashes` | 4 | Daemon URL normalization strips trailing slashes. |
 | `extension/tests/unit/shared.test.js` | node:test | `(module)` | `auth headers include bearer token` | 9 | Auth headers include bearer token. |
 <!-- END GENERATED:test-case-inventory -->

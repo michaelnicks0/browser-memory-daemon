@@ -315,6 +315,30 @@ test('service worker queue overflow preserves old captures and visibly rejects t
   assert.equal(storage.lastOutboxOverflow.kind, 'capture');
 });
 
+test('service worker enforces byte quota and exposes redaction-safe outbox telemetry', async () => {
+  const storage = {
+    apiToken: 'token',
+    daemonUrl: 'http://127.0.0.1:8765',
+    policyMode: 'all',
+    capturePaused: false,
+    captureOutboxMaxBytes: 1
+  };
+  const outbox = new MemoryOutboxStore();
+  const worker = createServiceWorkerHarness({ storage, outbox });
+
+  const rejected = await worker.sendMessage({ type: 'BMD_CAPTURE', payload: capturePayload('byte-limit-secret') });
+  const status = await worker.sendMessage({ type: 'BMD_OUTBOX_STATUS' });
+
+  assert.equal(rejected.ok, false);
+  assert.equal(rejected.result.reason, 'queue-bytes-full');
+  assert.equal((await outbox.list('capture')).length, 0);
+  assert.equal(status.ok, true);
+  assert.equal(status.result.capture.count, 0);
+  assert.equal(status.result.capture.max_bytes, 1);
+  assert.equal(status.result.last_overflow.reason, 'queue-bytes-full');
+  assert.equal(JSON.stringify(status).includes('byte-limit-secret'), false);
+});
+
 test('service worker skips missing token and pause without mutating capture queue, then resumes', async () => {
   const storage = { daemonUrl: 'http://127.0.0.1:8765', policyMode: 'all', apiToken: '' };
   let postCount = 0;

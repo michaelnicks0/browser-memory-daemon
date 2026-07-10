@@ -675,6 +675,16 @@ async function getQueueDebug(cdp, storageSessionId) {
   return JSON.parse(stored || '{}');
 }
 
+async function getOutboxTelemetry(cdp, storageSessionId) {
+  const stored = await evaluate(
+    cdp,
+    storageSessionId,
+    `outboxStatus().then((value) => JSON.stringify(value))`,
+    { awaitPromise: true }
+  );
+  return JSON.parse(stored || '{}');
+}
+
 function queryDbCounts() {
   const dbPath = path.join(runtimeRoot, 'browser-memory.sqlite3');
   const script = `
@@ -884,6 +894,10 @@ async function runScenario() {
   if (queueLengths.captureQueue !== 0 || queueLengths.visitEventQueue !== 0 || queueLengths.legacyCaptureQueue !== 0 || queueLengths.legacyVisitEventQueue !== 0 || mediaQueueTotal !== 0) {
     const queueDebug = await getQueueDebug(browserCdp, storageSessionId);
     fail(`extension queues not drained/empty: ${JSON.stringify({ ...queueLengths, mediaQueueCounts })} debug=${JSON.stringify(queueDebug).slice(0, 2000)}`);
+  }
+  const outboxTelemetry = await getOutboxTelemetry(browserCdp, storageSessionId);
+  if (!outboxTelemetry.available || outboxTelemetry.capture?.max_bytes !== 32 * 1024 * 1024 || outboxTelemetry.lifecycle?.max_bytes !== 2 * 1024 * 1024) {
+    fail(`extension outbox telemetry/quota verification failed: ${JSON.stringify(outboxTelemetry)}`);
   }
   log('extension capture, lifecycle, and media queues are empty');
 

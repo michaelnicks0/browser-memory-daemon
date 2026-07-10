@@ -121,12 +121,14 @@ function statsFor(items, kind = null, now = nowIso()) {
     count: filtered.length,
     serialized_bytes: filtered.reduce((total, item) => total + Number(item.serialized_bytes || 0), 0),
     claimed: filtered.filter((item) => item.state === 'claimed').length,
+    attempts: filtered.reduce((total, item) => total + Number(item.attempts || 0), 0),
+    errors: filtered.filter((item) => Boolean(item.last_error)).length,
     oldest_queued_at: oldest,
     oldest_age_ms: Number.isFinite(oldestMs) && Number.isFinite(nowMs) ? Math.max(0, nowMs - oldestMs) : 0
   };
 }
 
-async function enqueue(kind, payload, { maxItems = null, queuedAt = nowIso() } = {}) {
+async function enqueue(kind, payload, { maxItems = null, maxBytes = null, queuedAt = nowIso() } = {}) {
   const normalizedKind = normalizeKind(kind);
   return withTransaction([MESSAGE_STORE], 'readwrite', async ({ messages }) => {
     const items = await requestToPromise(messages.getAll());
@@ -135,6 +137,10 @@ async function enqueue(kind, payload, { maxItems = null, queuedAt = nowIso() } =
       return { accepted: false, reason: 'queue-full', stats: statsFor(kindItems, normalizedKind, queuedAt) };
     }
     const row = normalizeLegacyItem(normalizedKind, { payload, queued_at: queuedAt });
+    const stats = statsFor(kindItems, normalizedKind, queuedAt);
+    if (maxBytes !== null && stats.serialized_bytes + row.serialized_bytes > Math.max(0, Number(maxBytes) || 0)) {
+      return { accepted: false, reason: 'queue-bytes-full', required_bytes: row.serialized_bytes, stats };
+    }
     const sequenceId = await requestToPromise(messages.add(row));
     row.sequence_id = sequenceId;
     return { accepted: true, item: row, stats: statsFor([...kindItems, row], normalizedKind, queuedAt) };
@@ -186,10 +192,11 @@ async function updateClaim(sequenceId, claimToken, patch = {}, now = nowIso()) {
   });
 }
 
-async function acknowledge(sequenceId, claimToken) {
-  return withTransaction([MESSAGE_STORE], 'readwrite', async ({ messages }) => {
+async function acknowledge(sequenceId, claimToken, now = nowIso()) {
+  return withTransaction([MESSAGE_STORE, META_STORE], 'readwrite', async ({ messages, meta }) => {
     const item = await requestToPromise(messages.get(sequenceId));
     if (!item || item.state !== 'claimed' || item.claim_token !== claimToken) return false;
+    await requestToPromise(meta.put({ key: `last-success-${item.kind}`, value: now }));
     await requestToPromise(messages.delete(sequenceId));
     return true;
   });
@@ -219,7 +226,11 @@ async function retry(sequenceId, claimToken, { error = '', nextAttemptAt = null,
 
 async function getStats(kind = null, now = nowIso()) {
   const normalizedKind = kind === null ? null : normalizeKind(kind);
-  return withTransaction([MESSAGE_STORE], 'readonly', async ({ messages }) => statsFor(await requestToPromise(messages.getAll()), normalizedKind, now));
+  return withTransaction([MESSAGE_STORE, META_STORE], 'readonly', async ({ messages, meta }) => {
+    const stats = statsFor(await requestToPromise(messages.getAll()), normalizedKind, now);
+    if (normalizedKind) stats.last_success_at = (await requestToPromise(meta.get(`last-success-${normalizedKind}`)))?.value || null;
+    return stats;
+  });
 }
 
 async function list(kind = null) {
@@ -279,6 +290,10 @@ class MemoryOutboxStore {
         return { accepted: false, reason: 'queue-full', stats: statsFor(kindItems, normalizedKind, options.queuedAt || nowIso()) };
       }
       const row = normalizeLegacyItem(normalizedKind, { payload, queued_at: options.queuedAt || nowIso() });
+      const stats = statsFor(kindItems, normalizedKind, options.queuedAt || nowIso());
+      if (options.maxBytes !== null && options.maxBytes !== undefined && stats.serialized_bytes + row.serialized_bytes > Math.max(0, Number(options.maxBytes) || 0)) {
+        return { accepted: false, reason: 'queue-bytes-full', required_bytes: row.serialized_bytes, stats };
+      }
       row.sequence_id = this.nextSequence++;
       this.items.set(row.sequence_id, row);
       return { accepted: true, item: { ...row }, stats: statsFor([...kindItems, row], normalizedKind, options.queuedAt || nowIso()) };
@@ -317,10 +332,11 @@ class MemoryOutboxStore {
       return { ...item };
     });
   }
-  async acknowledge(sequenceId, claimToken) {
+  async acknowledge(sequenceId, claimToken, now = nowIso()) {
     return this._exclusive(async () => {
       const item = this.items.get(sequenceId);
       if (!item || item.state !== 'claimed' || item.claim_token !== claimToken) return false;
+      this.meta.set(`last-success-${item.kind}`, now);
       this.items.delete(sequenceId);
       return true;
     });
@@ -346,7 +362,9 @@ class MemoryOutboxStore {
   async getStats(kind = null, now = nowIso()) {
     await this.writeChain;
     const normalizedKind = kind === null ? null : normalizeKind(kind);
-    return statsFor(Array.from(this.items.values()), normalizedKind, now);
+    const stats = statsFor(Array.from(this.items.values()), normalizedKind, now);
+    if (normalizedKind) stats.last_success_at = this.meta.get(`last-success-${normalizedKind}`) || null;
+    return stats;
   }
   async list(kind = null) {
     await this.writeChain;

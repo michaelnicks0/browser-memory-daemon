@@ -602,8 +602,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Browser capture, lifecycle, and media queues shall be transactional, restart-safe, quota-aware, and never silently truncate.</td>
 <td>Extension Durable Outboxes</td>
 <td><code>HRD-012</code></td>
-<td><code>extension/src/outbox.js</code><br><code>extension/src/service_worker.js</code><br><code>extension/src/media_queue.js</code></td>
-<td><code>extension/tests/unit/service_worker.test.js::service worker preserves queued captures while daemon is down and drains them after reload</code><br><code>extension/tests/unit/service_worker.test.js::service worker queue overflow preserves old captures and visibly rejects the new capture</code></td>
+<td><code>extension/src/outbox.js</code><br><code>extension/src/service_worker.js</code><br><code>extension/src/popup.js</code><br><code>extension/src/options.js</code><br><code>extension/src/media_queue.js</code></td>
+<td><code>extension/tests/unit/service_worker.test.js::service worker preserves queued captures while daemon is down and drains them after reload</code><br><code>extension/tests/unit/service_worker.test.js::service worker queue overflow preserves old captures and visibly rejects the new capture</code><br><code>extension/tests/unit/service_worker.test.js::service worker enforces byte quota and exposes redaction-safe outbox telemetry</code></td>
 </tr>
 <tr>
 <td>REQ-038</td>
