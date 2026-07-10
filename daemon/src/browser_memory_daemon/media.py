@@ -494,6 +494,11 @@ def record_media_references(
         priority = _metadata_priority({**metadata, "width": ref.width, "height": ref.height})
         metadata.setdefault("priority", priority)
         metadata["metadata_redaction_count"] = url_redactions + alt_redactions + title_redactions
+        initial_status_reason = (
+            "opaque-browser-blob"
+            if ref.media_type == "video" and ref.source_url.lower().startswith("blob:")
+            else None
+        )
         row = conn.execute("SELECT id FROM media_artifacts WHERE id = ?", (artifact_id,)).fetchone()
         if row:
             conn.execute(
@@ -501,10 +506,24 @@ def record_media_references(
                 UPDATE media_artifacts
                 SET visit_id = COALESCE(visit_id, ?), alt_text = ?, title = ?, width = COALESCE(width, ?),
                     height = COALESCE(height, ?), duration_seconds = COALESCE(duration_seconds, ?),
-                    metadata_json = ?
+                    metadata_json = ?,
+                    status_reason = CASE
+                      WHEN capture_status = 'referenced' THEN COALESCE(status_reason, ?)
+                      ELSE status_reason
+                    END
                 WHERE id = ?
                 """,
-                (visit_id, alt_text, title, ref.width, ref.height, ref.duration_seconds, json.dumps(metadata, sort_keys=True), artifact_id),
+                (
+                    visit_id,
+                    alt_text,
+                    title,
+                    ref.width,
+                    ref.height,
+                    ref.duration_seconds,
+                    json.dumps(metadata, sort_keys=True),
+                    initial_status_reason,
+                    artifact_id,
+                ),
             )
             if _media_fetch_supported(source_url):
                 ensure_media_fetch_task(conn, artifact_id, worker_kind="daemon-public", priority=priority)
@@ -515,7 +534,7 @@ def record_media_references(
               id, document_id, snapshot_id, visit_id, media_type, role, source_url,
               normalized_source_url, page_url, alt_text, title, mime_type, width, height,
               duration_seconds, capture_status, status_reason, metadata_json
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'referenced', NULL, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'referenced', ?, ?)
             """,
             (
                 artifact_id,
@@ -533,6 +552,7 @@ def record_media_references(
                 ref.width,
                 ref.height,
                 ref.duration_seconds,
+                initial_status_reason,
                 json.dumps(metadata, sort_keys=True),
             ),
         )

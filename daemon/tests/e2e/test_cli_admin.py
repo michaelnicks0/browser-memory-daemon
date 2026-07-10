@@ -123,6 +123,22 @@ def test_cli_migrate_check_is_read_only_then_execute_applies_pending_steps(tmp_p
     assert current["current_version"] == LATEST_SCHEMA_VERSION
 
 
+def test_cli_media_requeue_defaults_to_scoped_dry_run(tmp_path, capsys):
+    base = [
+        "--runtime-root",
+        str(tmp_path / "runtime"),
+        "--blob-root",
+        str(tmp_path / "blobs"),
+        "--token",
+        "test-token",
+    ]
+    assert main(base + ["media-cache", "requeue", "--reason", "all-budget", "--snapshot-id", "missing-snapshot"]) == 0
+    preview = _last_json(capsys)
+    assert preview["dry_run"] is True
+    assert preview["scope"] == {"snapshot_id": "missing-snapshot"}
+    assert preview["selected"] == preview["updated"] == 0
+
+
 def test_cli_snapshot_text_reconcile_defaults_to_dry_run(tmp_path, capsys):
     runtime_root = tmp_path / "runtime"
     base = [

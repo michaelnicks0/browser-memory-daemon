@@ -44,7 +44,7 @@ Coverage percentages are supporting evidence, not substitutes for scenario asser
 | Versioned migrations | 79.53% | 66.67% | Fresh/unversioned/repeat/concurrent/checksum/newer/failure/headroom/backup/restore/FTS/FK/integrity scenarios in `test_migrations.py`. |
 | Storage-path containment | 96.19% | **100.00%** | Direct grammar, traversal, symlink, outside-root, missing-file, and explicit-root tests in `test_storage_paths.py`, plus integration callers. |
 | Forget/deletion selection | 85.63% | 76.09% | Literal selector, policy-mode, scope, containment, and receipt cases in ingest/search/forget integration tests. Crash-recoverable tombstones remain Phase 3 work. |
-| Media core | 76.73% | 67.77% | Guarded fetch/HLS/path/cache/task tests cover the current module. Transactional admission/global resource budgets remain Phase 4 work. |
+| Media core | 76.73% | 67.77% | Guarded fetch/HLS/path/cache/task, migration, bounded reconciliation, and explicit requeue tests cover the decomposed media modules. Global in-flight resource budgets remain Phase 4 work. |
 | Media worker state transitions | 89.33% | 89.29% | Retry, lease, terminal, and convergence scenarios are executable. |
 
 ## Extension queue boundary

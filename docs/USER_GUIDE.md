@@ -278,6 +278,16 @@ PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   media-cache purge --domain linkedin.com --execute --rehydrate
 ```
 
+After intentionally raising a media budget, preview a scoped retry of rows that were terminally skipped under the old cap:
+
+```bash
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
+  --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
+  media-cache requeue --reason all-budget --domain linkedin.com --dry-run
+```
+
+Repeat with `--execute` only after reviewing the selected count and sample artifact IDs. The ordinary worker never revives budget skips automatically.
+
 Run one media worker pass manually:
 
 ```bash

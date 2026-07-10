@@ -53,6 +53,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0043](0043-isolate-media-cache-admission-and-eviction.md) | accepted | Isolate media cache accounting, admission, oldest-first eviction, and tombstone-backed deletion outcomes. |
 | [ADR-0044](0044-publish-media-through-artifact-store.md) | accepted | Publish, resolve, and purge media through the artifact store with unique candidates and failed-write compensation. |
 | [ADR-0045](0045-isolate-guarded-media-fetch-and-hls.md) | accepted | Isolate guarded media fetch and bounded HLS transport. |
+| [ADR-0046](0046-move-historical-media-correction-out-of-worker-loop.md) | accepted | Move historical media correction out of the worker loop. |
 
 ## Backfilled decision history
 

@@ -250,6 +250,7 @@ CLI wrappers:
 TOKEN="$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)"
 PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon --token "$TOKEN" media-cache purge --domain linkedin.com --dry-run
 PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon --token "$TOKEN" media-cache purge --domain linkedin.com --execute --rehydrate
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon --token "$TOKEN" media-cache requeue --reason all-budget --domain linkedin.com --dry-run
 PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon --token "$TOKEN" media-worker --once --limit 100
 ```
 

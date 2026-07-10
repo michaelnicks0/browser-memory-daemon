@@ -315,6 +315,11 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Pretty JSON worker summary.</td>
 </tr>
 <tr>
+<td><code>media-cache requeue --reason {snapshot-budget,storage-budget,all-budget} [--domain DOMAIN] [--document-id ID] [--snapshot-id ID] [--limit N] [--dry-run|--execute]</code></td>
+<td>Preview or execute a bounded retry of terminal budget skips after an operator policy/cap change. At least one scope is required.</td>
+<td>Pretty JSON selection/update summary; dry-run by default.</td>
+</tr>
+<tr>
 <td><code>blob-root migrate [--from-root PATH] [--execute] [--remove-source]</code></td>
 <td>Dry-run by default; copies DB-referenced clean-text/media blobs to the configured root and rewrites paths only with <code>--execute</code>.</td>
 <td>Pretty JSON migration summary. <code>--remove-source</code> remains an explicit post-copy action.</td>

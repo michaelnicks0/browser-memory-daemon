@@ -11,10 +11,11 @@ import time
 import urllib.error
 import urllib.request
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from .config import RuntimeConfig
 from .media_storage import media_root_readiness
@@ -175,7 +176,7 @@ def daily_driver_health_snapshot(
 
     return {
         "ok": not errors,
-        "generated_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+        "generated_at": datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
         "summary": {
             "status": "error" if errors else "warning" if warnings else "ok",
             "errors": errors,
@@ -539,7 +540,16 @@ def _latest_media_worker_run(conn: sqlite3.Connection) -> dict[str, Any] | None:
         "created_at": row["created_at"],
         "age_seconds": max(0, int(row["age_seconds"] or 0)),
     }
-    for key in ("worker_kind", "attempted", "stored", "failed", "skipped", "already_stored"):
+    for key in (
+        "worker_kind",
+        "attempted",
+        "stored",
+        "failed",
+        "skipped",
+        "already_stored",
+        "reconciled_stored_tasks",
+        "reconciled_cdp_blob_coverage",
+    ):
         if key in metadata:
             output[key] = metadata[key]
     return output
@@ -553,7 +563,16 @@ def _media_worker_throughput(conn: sqlite3.Connection) -> dict[str, dict[str, in
 
 
 def _media_worker_window(conn: sqlite3.Connection, sqlite_modifier: str) -> dict[str, int]:
-    totals = {"runs": 0, "attempted": 0, "stored": 0, "failed": 0, "skipped": 0, "already_stored": 0}
+    totals = {
+        "runs": 0,
+        "attempted": 0,
+        "stored": 0,
+        "failed": 0,
+        "skipped": 0,
+        "already_stored": 0,
+        "reconciled_stored_tasks": 0,
+        "reconciled_cdp_blob_coverage": 0,
+    }
     try:
         rows = conn.execute(
             """
@@ -569,7 +588,15 @@ def _media_worker_window(conn: sqlite3.Connection, sqlite_modifier: str) -> dict
     totals["runs"] = len(rows)
     for row in rows:
         metadata = _safe_json_dict(row["metadata_json"])
-        for key in ("attempted", "stored", "failed", "skipped", "already_stored"):
+        for key in (
+            "attempted",
+            "stored",
+            "failed",
+            "skipped",
+            "already_stored",
+            "reconciled_stored_tasks",
+            "reconciled_cdp_blob_coverage",
+        ):
             totals[key] += _safe_int(metadata.get(key)) or 0
     return totals
 
@@ -1061,7 +1088,7 @@ def _file_size(path: Path) -> int:
 
 
 def _realtime_us_to_iso(value: int) -> str:
-    return datetime.fromtimestamp(value / 1_000_000, tz=timezone.utc).isoformat(timespec="seconds")
+    return datetime.fromtimestamp(value / 1_000_000, tz=UTC).isoformat(timespec="seconds")
 
 
 def _select_keys(data: dict[str, Any], keys: tuple[str, ...]) -> dict[str, Any]:

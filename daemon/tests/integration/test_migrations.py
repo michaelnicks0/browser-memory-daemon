@@ -185,6 +185,100 @@ def test_unversioned_current_schema_is_stamped_then_historical_seed_runs_once(tm
         ).fetchone()[0] == 0
 
 
+def test_version_twelve_normalizes_historical_media_state_once(tmp_path):
+    cfg = _config(tmp_path)
+    init_db(cfg)
+    with connect(cfg.db_path) as conn:
+        conn.execute(
+            """
+            INSERT INTO documents(id, canonical_url, normalized_url, domain, first_seen_at, last_seen_at)
+            VALUES ('doc-media-v12', 'https://example.com/media-v12', 'https://example.com/media-v12',
+                    'example.com', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            """
+        )
+        conn.execute(
+            """
+            INSERT INTO snapshots(id, document_id, captured_at, content_type, extraction_method,
+                                  text_hash, privacy_class, redaction_count, cleaned_text)
+            VALUES ('snap-media-v12', 'doc-media-v12', CURRENT_TIMESTAMP, 'text/html', 'fixture',
+                    'hash-media-v12', 'normal', 0, 'fixture text')
+            """
+        )
+        artifacts = [
+            ("legacy-blob", "video", "blob:https://example.com/legacy", "skipped", "unsupported-media-url-scheme", "{}", None),
+            ("legacy-hls", "video", "https://cdn.example/master.m3u8", "skipped", "unsupported-media-url-scheme", "{}", None),
+            ("legacy-audio", "video", "https://cdn.example/mp4a/audio.m3u8", "referenced", "hls-audio-rendition", "{}", None),
+            ("failed-404", "image", "https://cdn.example/missing.png", "failed", "fetch-status-404", "{}", None),
+            ("failed-429", "image", "https://cdn.example/rate.png", "failed", "fetch-status-429", "{}", None),
+            ("video-html", "video", "https://cdn.example/player", "skipped", "non-media-content-type", "{}", None),
+            ("opaque-blob", "video", "blob:https://example.com/opaque", "referenced", None, "{}", None),
+            ("covered-blob", "video", "blob:https://example.com/covered", "referenced", None, "{}", None),
+            ("media_cdp_fixture", "video", "https://video.twimg.com/segment.ts", "stored", None, '{"cdp_recorder": true}', "media/cdp.bin"),
+        ]
+        conn.executemany(
+            """
+            INSERT INTO media_artifacts(
+              id, document_id, snapshot_id, media_type, role, source_url,
+              normalized_source_url, page_url, capture_status, status_reason,
+              metadata_json, blob_locator, byte_size
+            ) VALUES (?, 'doc-media-v12', 'snap-media-v12', ?, 'content', ?, ?,
+                      'https://example.com/media-v12', ?, ?, ?, ?, CASE WHEN ? IS NULL THEN 0 ELSE 4 END)
+            """,
+            [
+                (artifact_id, media_type, source_url, source_url, status, reason, metadata, locator, locator)
+                for artifact_id, media_type, source_url, status, reason, metadata, locator in artifacts
+            ],
+        )
+        task_rows = [
+            (f"task-{index}", artifact_id, "pending" if artifact_id == "media_cdp_fixture" else "failed")
+            for index, (artifact_id, *_rest) in enumerate(artifacts)
+            if artifact_id not in {"opaque-blob", "covered-blob"}
+        ]
+        conn.executemany(
+            """
+            INSERT INTO media_fetch_tasks(
+              id, artifact_id, worker_kind, status, priority, attempts, max_attempts, updated_at
+            ) VALUES (?, ?, 'daemon-public', ?, 50, 3, 5, CURRENT_TIMESTAMP)
+            """,
+            task_rows,
+        )
+        conn.execute("DELETE FROM schema_migrations WHERE version = 12")
+        conn.execute("PRAGMA user_version = 11")
+        conn.commit()
+
+    result = migrate_database(cfg, execute=True)
+    assert result["applied_versions"] == [12]
+    with connect(cfg.db_path) as conn:
+        statuses = {
+            row["id"]: (row["capture_status"], row["status_reason"])
+            for row in conn.execute(
+                "SELECT id, capture_status, status_reason FROM media_artifacts WHERE snapshot_id = 'snap-media-v12'"
+            )
+        }
+        assert statuses["legacy-blob"] == ("referenced", "covered-by-cdp-recorder")
+        assert statuses["legacy-hls"] == ("referenced", None)
+        assert statuses["legacy-audio"] == ("referenced", None)
+        assert statuses["failed-404"] == ("expired", "fetch-status-404")
+        assert statuses["failed-429"] == ("retrying", "fetch-status-429")
+        assert statuses["video-html"] == ("referenced", "non-media-content-type")
+        assert statuses["opaque-blob"] == ("referenced", "covered-by-cdp-recorder")
+        assert statuses["covered-blob"] == ("referenced", "covered-by-cdp-recorder")
+        task_statuses = {
+            row["artifact_id"]: (row["status"], row["attempts"])
+            for row in conn.execute(
+                "SELECT artifact_id, status, attempts FROM media_fetch_tasks WHERE artifact_id IN ('legacy-hls', 'legacy-audio', 'failed-404', 'failed-429', 'media_cdp_fixture')"
+            )
+        }
+        assert task_statuses["legacy-hls"] == ("pending", 0)
+        assert task_statuses["legacy-audio"] == ("pending", 0)
+        assert task_statuses["failed-404"] == ("skipped", 3)
+        assert task_statuses["failed-429"] == ("retrying", 3)
+        assert task_statuses["media_cdp_fixture"] == ("succeeded", 3)
+
+    repeated = migrate_database(cfg, execute=True)
+    assert repeated["applied_versions"] == []
+
+
 def test_capture_observation_and_url_claim_schema_enforces_expand_contract(tmp_path):
     cfg = _config(tmp_path)
     assert (
@@ -272,9 +366,9 @@ def test_version_three_fixture_upgrades_once_to_capture_model_expand_schema(tmp_
 
     before = migration_status(cfg)
     assert before["current_version"] == 3
-    assert before["pending_versions"] == [4, 5, 6, 7, 8, 9, 10, 11]
+    assert before["pending_versions"] == [4, 5, 6, 7, 8, 9, 10, 11, 12]
     result = migrate_database(cfg, execute=True)
-    assert result["applied_versions"] == [4, 5, 6, 7, 8, 9, 10, 11]
+    assert result["applied_versions"] == [4, 5, 6, 7, 8, 9, 10, 11, 12]
     with connect(cfg.db_path) as conn:
         tables = {
             row["name"]
@@ -287,7 +381,7 @@ def test_version_three_fixture_upgrades_once_to_capture_model_expand_schema(tmp_
             "document_url_claims",
             "media_artifact_observations",
         } <= tables
-        assert schema_fingerprint(conn) == MIGRATIONS[10].schema_fingerprint
+        assert schema_fingerprint(conn) == MIGRATIONS[-1].schema_fingerprint
 
 
 def test_version_five_backfills_only_evidence_supported_historical_relationships(tmp_path):
@@ -725,9 +819,9 @@ def test_version_eleven_adds_and_backfills_blob_lifecycle_records(tmp_path):
         conn.execute("PRAGMA user_version = 10")
 
     pending = migration_status(cfg)
-    assert pending["pending_versions"] == [11]
+    assert pending["pending_versions"] == [11, 12]
     result = migrate_database(cfg, execute=True)
-    assert result["applied_versions"] == [11]
+    assert result["applied_versions"] == [11, 12]
     with connect(cfg.db_path) as conn:
         rows = [
             dict(row)
@@ -754,7 +848,7 @@ def test_version_eleven_adds_and_backfills_blob_lifecycle_records(tmp_path):
                 "state": "committed",
             },
         ]
-        assert schema_fingerprint(conn) == MIGRATIONS[10].schema_fingerprint
+        assert schema_fingerprint(conn) == MIGRATIONS[-1].schema_fingerprint
         assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
 
 

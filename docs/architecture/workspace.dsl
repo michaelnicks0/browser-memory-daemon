@@ -27,7 +27,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
 
             wslLoopbackDaemon = container "WSL Loopback HTTP Daemon" "Authenticated loopback HTTP API that handles capture, visit events, media artifact upload/fetch/purge, exact search, recent/timeline/detail, policy rules, doctor, durable forget, and static UI serving." "Python 3.11, ThreadingHTTPServer" {
                 httpRouter = component "HTTP Request Router" "Routes loopback API requests, serves UI assets, enforces bearer auth for memory/admin APIs, and applies CORS for allowed origins." "Python http.server" "Current"
-                migrationKernel = component "Database Migration Kernel" "Serializes migrators; validates exact schema fingerprints, ordered names/checksums, and PRAGMA user_version; applies transactional steps, backup-gates destructive changes, and expands capture provenance, relative locators, SQLite text authority, media tiers, and blob lifecycle records through version 11." "Python + sqlite3" "Current"
+                migrationKernel = component "Database Migration Kernel" "Serializes migrators; validates exact schema fingerprints, ordered names/checksums, and PRAGMA user_version; applies transactional steps, backup-gates destructive changes, and expands capture provenance, storage state, plus one-time historical media correction through version 12." "Python + sqlite3" "Current"
                 policyEngine = component "Policy Engine" "Evaluates all/recall/balanced/strict capture mode decisions and redacts URL/title/body text outside all mode." "Python" "Current"
                 policyStore = component "Policy Store" "Persists and evaluates explicit local block-domain and URL-prefix rules for every policy mode." "Python + SQLite" "Current"
                 ingestPipeline = component "Ingest Pipeline" "Normalizes observed URLs, computes document/snapshot IDs, atomically stores complete cleaned text plus visits/observations/snapshots/chunks/FTS rows, records non-authoritative URL claims, and links media references without touching blob storage." "Python + sqlite3" "Current"
@@ -38,6 +38,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
                 mediaArtifactStore = component "Media Artifact Store" "Owns artifact rows, unique staged publication, failed-write compensation, contained reads, cache admission, oldest-first eviction, purge/rehydration, and lifecycle registration/tombstones." "Python + sqlite3 + BlobStore" "Current"
                 guardedMediaFetch = component "Guarded Media Fetch" "Owns HTTP/data transport, public-address validation, redirect revalidation, no-referrer requests, response-byte limits, and shared deadlines." "Python stdlib urllib + socket" "Current"
                 mediaHlsTransport = component "Bounded HLS Transport" "Parses bounded playlists, selects variants, expands init maps/segments through the guarded fetch boundary, and assembles bytes within depth/request/deadline limits." "Python" "Current"
+                mediaOps = component "Media Operator and Reconciliation Workflow" "Owns scoped dry-run-first budget requeue plus bounded current-state CDP/blob and stored-task reconciliation." "Python + sqlite3" "Current"
                 blobStore = component "Contained BlobStore" "Prefers root-relative locators with contained legacy fallback; streams unique stages with size/hash accounting; atomically commits; and contains blob read, stat, and delete operations." "Python filesystem boundary" "Current"
                 storageReconciler = component "Blob Lifecycle and Storage Reconciler" "Persists committed/tombstoned/missing/deleted/blocked/failed blob state; serializes deletion processors; retries tombstones; and dry-run detects missing refs, in-root orphans, and stale stages." "Python + sqlite3 + filesystem" "Current"
                 searchReadModel = component "Search and Read Model" "Provides exact FTS search plus SQLite-authoritative text detail and observation-first recent/timeline/document/snapshot/media views with explicit legacy fallbacks." "Python + SQLite FTS5" "Current"
@@ -90,6 +91,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
         cli -> wslLoopbackDaemon "Calls health, read, admin, capture-fixture, and forget APIs on" "HTTP/JSON"
         cli -> sqliteDatabase "Runs migration, media-worker, media-cache, media-spool, and storage-reconcile commands against" "sqlite3"
         cli -> storageReconciler "Previews or executes contained storage convergence through"
+        cli -> mediaOps "Previews or executes scoped budget requeue through"
         cli -> mediaBlobCache "Purges and rehydrates media blobs through" "Filesystem"
         cli -> mediaSpool "Reports and drains bounded outage bytes through" "Filesystem"
         cli -> localBackupBundles "Previews, creates, verifies, and restores text-first bundles through" "Filesystem"
@@ -101,6 +103,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
         mediaWorker -> sqliteDatabase "Leases and updates media tasks in" "sqlite3"
         mediaWorker -> mediaTaskRepository "Runs bounded lease/retry task workflow through"
         mediaWorker -> mediaManager "Fetches and stores claimed artifacts through"
+        mediaWorker -> mediaOps "Runs bounded current-state reconciliation through"
         mediaWorker -> webSites "Fetches public media and HLS from" "HTTP(S), data URLs"
         mediaWorker -> mediaBlobCache "Writes fetched media blobs to" "Filesystem"
         mediaWorker -> mediaSpool "Writes fetched media during guarded-root outages to" "Filesystem"
@@ -146,6 +149,8 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
         guardedMediaFetch -> mediaHlsTransport "Delegates detected playlists for bounded parsing and assembly to"
         guardedMediaFetch -> webSites "Validates and fetches public media from" "HTTP(S), no Referer or Chrome cookies"
         mediaHlsTransport -> guardedMediaFetch "Fetches every variant, init map, and segment through"
+        mediaOps -> mediaTaskRepository "Resets explicitly selected tasks and closes bounded stale stored work through"
+        mediaOps -> sqliteDatabase "Reads and updates scoped media artifact/task state in" "sqlite3"
         mediaManager -> blobStore "Checks current artifact presence during fetch orchestration and drains spool bytes through"
         searchReadModel -> sqliteDatabase "Reads metadata and FTS from" "SQLite FTS5"
         searchReadModel -> blobStore "Reads only legacy text sidecars and checks media files through"
@@ -297,6 +302,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
             include mediaArtifactStore
             include guardedMediaFetch
             include mediaHlsTransport
+            include mediaOps
             include storageReconciler
             include blobStore
             include sqliteDatabase
@@ -311,6 +317,15 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
             include mediaHlsTransport
             include mediaArtifactStore
             include webSites
+            autoLayout lr
+        }
+
+        component wslLoopbackDaemon "DaemonMediaOpsComponents" {
+            include mediaOps
+            include mediaTaskRepository
+            include sqliteDatabase
+            include cli
+            include mediaWorker
             autoLayout lr
         }
 

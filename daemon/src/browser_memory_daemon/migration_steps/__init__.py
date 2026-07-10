@@ -17,6 +17,7 @@ from . import (
     v0009_add_sqlite_snapshot_text_authority,
     v0010_split_media_root_and_add_spool,
     v0011_add_blob_lifecycle_records,
+    v0012_normalize_historical_media_state,
 )
 
 
@@ -147,6 +148,19 @@ MIGRATIONS = (
         apply=v0011_add_blob_lifecycle_records.apply,
         destructive=v0011_add_blob_lifecycle_records.DESTRUCTIVE,
         schema_fingerprint=v0011_add_blob_lifecycle_records.SCHEMA_FINGERPRINT,
+    ),
+    MigrationStep(
+        version=12,
+        name=v0012_normalize_historical_media_state.NAME,
+        checksum=migration_checksum(
+            12,
+            v0012_normalize_historical_media_state.NAME,
+            v0012_normalize_historical_media_state.CHECKSUM_PAYLOAD,
+        ),
+        sql=v0012_normalize_historical_media_state.SQL,
+        apply=v0012_normalize_historical_media_state.apply,
+        destructive=v0012_normalize_historical_media_state.DESTRUCTIVE,
+        schema_fingerprint=v0012_normalize_historical_media_state.SCHEMA_FINGERPRINT,
     ),
 )
 

@@ -1,0 +1,42 @@
+digraph {
+  compound=true
+  graph [fontname="Arial", rankdir=LR, ranksep=1.0, nodesep=1.0]
+  node [fontname="Arial", shape=box, margin="0.4,0.3"]
+  edge [fontname="Arial"]
+  label=<<br /><font point-size="34">Component View: Browser Memory Daemon - WSL Loopback HTTP Daemon</font>>
+
+  subgraph cluster_4 {
+    margin=25
+    label=<<font point-size="24"><br />Browser Memory Daemon</font><br /><font point-size="19">[Software System]</font>>
+    labelloc=b
+    color="#444444"
+    fontcolor="#444444"
+    fillcolor="#444444"
+
+    subgraph cluster_14 {
+      margin=25
+      label=<<font point-size="24"><br />WSL Loopback HTTP Daemon</font><br /><font point-size="19">[Container: Python 3.11, ThreadingHTTPServer]</font>>
+      labelloc=b
+      color="#444444"
+      fontcolor="#444444"
+      fillcolor="#444444"
+
+      23 [id=23,shape=rect, label=<<font point-size="34">Media Task Repository</font><br /><font point-size="19">[Component: Python + sqlite3]</font><br /><br /><font point-size="24">Creates deterministic tasks,<br />preserves terminal state,<br />atomically leases due work,<br />recovers stale leases, and<br />applies bounded retry/backoff<br />outcomes independently from<br />media transport.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
+      27 [id=27,shape=rect, label=<<font point-size="34">Media Operator and<br />Reconciliation<br />Workflow</font><br /><font point-size="19">[Component: Python + sqlite3]</font><br /><br /><font point-size="24">Owns scoped dry-run-first<br />budget requeue plus bounded<br />current-state CDP/blob and<br />stored-task reconciliation.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
+    }
+
+    33 [id=33,shape=rect, label=<<font point-size="34">WSL Media Worker</font><br /><font point-size="19">[Container: Python 3.11 CLI loop]</font><br /><br /><font point-size="24">Long-running systemd user<br />worker that leases<br />daemon-public media fetch<br />tasks, fetches public<br />media/HLS without Chrome<br />cookies, classifies terminal<br />states, and updates artifact<br />rows.</font>>, style=filled, color="#2e6295", fillcolor="#438dd5", fontcolor="#ffffff"]
+    35 [id=35,shape=rect, label=<<font point-size="34">CLI</font><br /><font point-size="19">[Container: Python argparse]</font><br /><br /><font point-size="24">Command-line interface for<br />serving the daemon, migration,<br />snapshot-text and storage<br />reconciliation,<br />manifest-backed<br />backup/restore, media-spool<br />status/drain,<br />health/doctor/search/recent/timeline/detail,<br />policy/forget, capture<br />fixtures, media worker, and<br />media cache operations.</font>>, style=filled, color="#2e6295", fillcolor="#438dd5", fontcolor="#ffffff"]
+    37 [id=37,shape=cylinder, label=<<font point-size="34">SQLite + FTS5<br />Database</font><br /><font point-size="19">[Container: SQLite with FTS5]</font><br /><br /><font point-size="24">Durable complete cleaned-text,<br />relational, and full-text<br />authority for migration<br />ledger, sources, documents,<br />visits, capture observations,<br />URL claims, visit events,<br />snapshots, chunks, chunks_fts,<br />media provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+  }
+
+  23 -> 37 [id=102, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Creates, leases, and<br />advances media tasks in</font><br /><font point-size="19">[sqlite3]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  27 -> 23 [id=112, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Resets explicitly selected<br />tasks and closes bounded<br />stale stored work through</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  27 -> 37 [id=113, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Reads and updates scoped<br />media artifact/task state<br />in</font><br /><font point-size="19">[sqlite3]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  35 -> 37 [id=53, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Runs migration,<br />media-worker, media-cache,<br />media-spool, and<br />storage-reconcile commands<br />against</font><br /><font point-size="19">[sqlite3]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  35 -> 27 [id=55, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Previews or executes<br />scoped budget requeue<br />through</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  33 -> 37 [id=63, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Leases and updates media<br />tasks in</font><br /><font point-size="19">[sqlite3]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  33 -> 23 [id=64, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Runs bounded lease/retry<br />task workflow through</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  33 -> 27 [id=67, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Runs bounded current-state<br />reconciliation through</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+
+}

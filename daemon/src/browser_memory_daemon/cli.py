@@ -13,6 +13,7 @@ from .config import load_config
 from .daily_driver_health import daily_driver_health_snapshot
 from .db import connect, init_db
 from .media import purge_media_cache
+from .media_ops import requeue_media_artifacts
 from .media_storage import drain_media_spool, media_spool_status
 from .media_worker import run_loop as run_media_worker_loop
 from .media_worker import run_once as run_media_worker_once
@@ -102,6 +103,15 @@ def main(argv: list[str] | None = None) -> int:
     rehydrate.add_argument("--document-id")
     rehydrate.add_argument("--snapshot-id")
     rehydrate.add_argument("--limit", type=int, default=100)
+    requeue = cache_sub.add_parser("requeue")
+    requeue.add_argument("--reason", required=True, choices=("snapshot-budget", "storage-budget", "all-budget"))
+    requeue.add_argument("--domain")
+    requeue.add_argument("--document-id")
+    requeue.add_argument("--snapshot-id")
+    requeue.add_argument("--limit", type=int, default=100)
+    requeue_mode = requeue.add_mutually_exclusive_group()
+    requeue_mode.add_argument("--dry-run", action="store_true")
+    requeue_mode.add_argument("--execute", action="store_true")
     blob = sub.add_parser("blob-root")
     blob_sub = blob.add_subparsers(dest="blob_command", required=True)
     migrate = blob_sub.add_parser("migrate")
@@ -267,6 +277,23 @@ def main(argv: list[str] | None = None) -> int:
             with connect(cfg.db_path) as conn:
                 purge_media_cache(conn, cfg, body)
                 print(json.dumps(run_media_worker_once(conn, cfg, limit=args.limit), indent=2))
+            return 0
+        if args.cache_command == "requeue":
+            with connect(cfg.db_path) as conn:
+                print(
+                    json.dumps(
+                        requeue_media_artifacts(
+                            conn,
+                            reason=args.reason,
+                            domain=args.domain,
+                            document_id=args.document_id,
+                            snapshot_id=args.snapshot_id,
+                            limit=args.limit,
+                            execute=args.execute,
+                        ),
+                        indent=2,
+                    )
+                )
             return 0
     if args.command == "blob-root":
         init_db(cfg)

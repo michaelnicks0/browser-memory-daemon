@@ -31,10 +31,10 @@ digraph {
 
   }
 
-  25 -> 26 [id=105, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Delegates detected<br />playlists for bounded<br />parsing and assembly to</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-  25 -> 3 [id=106, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Validates and fetches<br />public media from</font><br /><font point-size="19">[HTTP(S), no Referer or Chrome cookies]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-  26 -> 25 [id=108, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Fetches every variant,<br />init map, and segment<br />through</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-  21 -> 24 [id=95, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Publishes, resolves,<br />purges, and rehydrates<br />artifacts through</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-  21 -> 25 [id=96, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Delegates daemon-public<br />media transport to</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  25 -> 26 [id=108, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Delegates detected<br />playlists for bounded<br />parsing and assembly to</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  25 -> 3 [id=109, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Validates and fetches<br />public media from</font><br /><font point-size="19">[HTTP(S), no Referer or Chrome cookies]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  26 -> 25 [id=111, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Fetches every variant,<br />init map, and segment<br />through</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  21 -> 24 [id=98, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Publishes, resolves,<br />purges, and rehydrates<br />artifacts through</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  21 -> 25 [id=99, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Delegates daemon-public<br />media transport to</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
 
 }
