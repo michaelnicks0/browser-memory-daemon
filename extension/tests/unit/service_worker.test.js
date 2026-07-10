@@ -217,6 +217,34 @@ test('service worker preserves queued captures while daemon is down and drains t
   assert.equal(postCount, 2);
 });
 
+test('service worker queue overflow characterization preserves old captures but drops the new capture', async () => {
+  const existing = Array.from({ length: 100 }, (_, index) => ({
+    payload: capturePayload(`existing-${index}`),
+    queued_at: '2030-01-01T00:00:00.000Z'
+  }));
+  const storage = {
+    apiToken: 'token',
+    daemonUrl: 'http://127.0.0.1:8765',
+    policyMode: 'all',
+    captureQueue: existing
+  };
+  const worker = createServiceWorkerHarness({
+    storage,
+    fetchImpl: async () => { throw new Error('daemon offline'); }
+  });
+
+  const result = await worker.sendMessage({
+    type: 'BMD_CAPTURE',
+    payload: capturePayload('overflow-new')
+  });
+
+  assert.equal(result.result.ok, false);
+  assert.equal(result.result.remaining, 100);
+  assert.equal(storage.captureQueue.length, 100);
+  assert.equal(storage.captureQueue[0].payload.url, 'https://example.test/existing-0');
+  assert.equal(storage.captureQueue.some((item) => item.payload.url.endsWith('/overflow-new')), false);
+});
+
 test('service worker skips missing token and pause without mutating capture queue, then resumes', async () => {
   const storage = { daemonUrl: 'http://127.0.0.1:8765', policyMode: 'all', apiToken: '' };
   let postCount = 0;

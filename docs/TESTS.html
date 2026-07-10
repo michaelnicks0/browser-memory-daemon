@@ -132,7 +132,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </blockquote>
 <!-- BEGIN GENERATED:inventory-summary -->
 <blockquote>
-<p><strong>Current inventory:</strong> 147 static test functions across 25 files — 120 daemon pytest tests + 27 extension node:test tests.</p>
+<p><strong>Current inventory:</strong> 154 static test functions across 26 files — 125 daemon pytest tests + 29 extension node:test tests.</p>
 </blockquote>
 <!-- END GENERATED:inventory-summary -->
 
@@ -142,6 +142,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>venv<span style="color: #F8F8F2"> </span>.venv
 .<span style="color: #F8F8F2"> </span>.venv/bin/activate
 python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pip<span style="color: #F8F8F2"> </span>install<span style="color: #F8F8F2"> </span>-r<span style="color: #F8F8F2"> </span>requirements-dev.txt
+
+<span style="color: #959077"># Hermetic network-free pre-commit gate: Ruff, strict mypy, branch coverage,</span>
+<span style="color: #959077"># Python/Node tests, generated inventory, secret/diff checks, and XDG sentinel.</span>
+<span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-fast-gate.sh
 
 <span style="color: #959077"># Daemon tests — use Python 3.11+.</span>
 python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pytest<span style="color: #F8F8F2"> </span>-q
@@ -163,7 +167,8 @@ python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </spa
 git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span>--check<span style="color: #F8F8F2"> </span>--<span style="color: #F8F8F2"> </span>.
 </code></pre></div>
 
-<p><code>./scripts/run-e2e.sh</code> runs daemon tests, extension tests/build, the real Chrome e2e matrix unless <code>BMD_SKIP_REAL_CHROME_E2E=1</code>, secret scan, and whitespace check.</p>
+<p><code>./scripts/run-fast-gate.sh</code> is the short network-free authority. It redirects all default user roots into <code>/tmp</code>, runs targeted Ruff and strict mypy, measures full Python branch coverage against the 80% evidence-derived floor, runs all Python/Node tests, and fails if the redirected default-XDG roots receive a file. See <a href="coverage-baseline.html"><code>coverage-baseline.md</code></a>.</p>
+<p><code>./scripts/run-e2e.sh</code> remains the broad authority: daemon tests, extension tests/build, the real Chrome e2e matrix unless <code>BMD_SKIP_REAL_CHROME_E2E=1</code>, secret scan, and whitespace check.</p>
 <p><code>python3.11 scripts/generate_test_inventory.py --check</code> is a hard static gate over <code>requirements/catalog.toml</code>: it enforces unique stable IDs/aliases, explicit normative revisions, existing implementation/evidence paths, resolvable test node IDs, and validation evidence for active requirements. It also regenerates the catalog-owned requirement tables and volatile static test counts across the documentation set.</p>
 <p><code>./scripts/run-performance-benchmarks.sh --small --json</code> emits machine-readable synthetic benchmark evidence for ingest, search, recent/timeline/detail, read endpoint audit writes, media-worker task selection/run, and DB/WAL/blob sidecar growth. Budgets are advisory until a later ticket/ADR promotes measured thresholds to hard gates.</p>
 <hr />
@@ -185,7 +190,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <hr />
 <h2 id="generated-test-inventory">Generated test inventory</h2>
 <!-- BEGIN GENERATED:audit-run -->
-<p>Latest inventory: <strong>147 static test functions</strong> across <strong>25 files</strong> (120 daemon pytest; 27 extension node:test). Regenerate with <code>python3.11 scripts/generate_test_inventory.py --write</code>; enforce with <code>--check</code>. Counts are source-level test functions, not pytest parametrized case expansions.</p>
+<p>Latest inventory: <strong>154 static test functions</strong> across <strong>26 files</strong> (125 daemon pytest; 29 extension node:test). Regenerate with <code>python3.11 scripts/generate_test_inventory.py --write</code>; enforce with <code>--check</code>. Counts are source-level test functions, not pytest parametrized case expansions.</p>
 <!-- END GENERATED:audit-run -->
 
 <h2 id="requirements-traceability-gate">Requirements traceability gate</h2>
@@ -245,7 +250,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 </tr>
 <tr>
 <td>Static test inventory measured</td>
-<td>147 tests / 25 files</td>
+<td>154 tests / 26 files</td>
 </tr>
 </tbody>
 </table>
@@ -358,6 +363,11 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <td style="text-align: right;">4</td>
 </tr>
 <tr>
+<td><code>daemon/tests/unit/test_storage_paths.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">5</td>
+</tr>
+<tr>
 <td><code>extension/tests/unit/cdp_recorder.test.js</code></td>
 <td>node:test</td>
 <td style="text-align: right;">4</td>
@@ -370,7 +380,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <tr>
 <td><code>extension/tests/unit/media_queue.test.js</code></td>
 <td>node:test</td>
-<td style="text-align: right;">5</td>
+<td style="text-align: right;">6</td>
 </tr>
 <tr>
 <td><code>extension/tests/unit/queue.test.js</code></td>
@@ -380,7 +390,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <tr>
 <td><code>extension/tests/unit/service_worker.test.js</code></td>
 <td>node:test</td>
-<td style="text-align: right;">4</td>
+<td style="text-align: right;">5</td>
 </tr>
 <tr>
 <td><code>extension/tests/unit/shared.test.js</code></td>
@@ -390,7 +400,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <tr>
 <td><strong>Total</strong></td>
 <td></td>
-<td style="text-align: right;"><strong>147</strong></td>
+<td style="text-align: right;"><strong>154</strong></td>
 </tr>
 </tbody>
 </table>
@@ -522,6 +532,11 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 | `daemon/tests/unit/test_policy_store.py` | pytest | `(module)` | `test_url_prefix_rule_scopes_to_port_and_path` | 27 | Url prefix rule scopes to port and path. |
 | `daemon/tests/unit/test_policy_store.py` | pytest | `(module)` | `test_policy_rule_creation_is_semantically_idempotent_under_concurrency` | 49 | Policy rule creation is semantically idempotent under concurrency. |
 | `daemon/tests/unit/test_policy_store.py` | pytest | `(module)` | `test_init_db_rejects_schema_drift_instead_of_replaying_policy_dedupe` | 68 | Init db rejects schema drift instead of replaying policy dedupe. |
+| `daemon/tests/unit/test_storage_paths.py` | pytest | `(module)` | `test_storage_identifier_grammars_and_server_stems_are_stable` | 14 | Storage identifier grammars and server stems are stable. |
+| `daemon/tests/unit/test_storage_paths.py` | pytest | `(module)` | `test_contained_child_path_rejects_unsafe_parts_and_symlink_escape` | 27 | Contained child path rejects unsafe parts and symlink escape. |
+| `daemon/tests/unit/test_storage_paths.py` | pytest | `(module)` | `test_contained_child_path_create_root_is_explicit` | 42 | Contained child path create root is explicit. |
+| `daemon/tests/unit/test_storage_paths.py` | pytest | `(module)` | `test_resolve_db_path_reports_empty_invalid_outside_missing_and_ok` | 49 | Resolve db path reports empty invalid outside missing and ok. |
+| `daemon/tests/unit/test_storage_paths.py` | pytest | `(module)` | `test_resolve_db_path_rejects_symlinked_file_outside_root` | 70 | Resolve db path rejects symlinked file outside root. |
 | `extension/tests/unit/cdp_recorder.test.js` | node:test | `(module)` | `CDP recorder only attaches to configured X/Twitter page domains` | 10 | CDP recorder only attaches to configured X/Twitter page domains. |
 | `extension/tests/unit/cdp_recorder.test.js` | node:test | `(module)` | `CDP recorder recognizes X video segment and HLS manifest responses` | 17 | CDP recorder recognizes X video segment and HLS manifest responses. |
 | `extension/tests/unit/cdp_recorder.test.js` | node:test | `(module)` | `CDP recorder builds stable artifact metadata without cookies or headers` | 40 | CDP recorder builds stable artifact metadata without cookies or headers. |
@@ -542,11 +557,13 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 | `extension/tests/unit/media_queue.test.js` | node:test | `(module)` | `future retry is not due until next_attempt_at` | 25 | Future retry is not due until next attempt at. |
 | `extension/tests/unit/media_queue.test.js` | node:test | `(module)` | `stale fetching and uploading tasks become due after processing window` | 32 | Stale fetching and uploading tasks become due after processing window. |
 | `extension/tests/unit/media_queue.test.js` | node:test | `(module)` | `normalizeTask requires stable artifact id for queue callers` | 40 | NormalizeTask requires stable artifact id for queue callers. |
+| `extension/tests/unit/media_queue.test.js` | node:test | `(module)` | `media task due-state classifier rejects terminal and malformed processing states` | 46 | Media task due-state classifier rejects terminal and malformed processing states. |
 | `extension/tests/unit/queue.test.js` | node:test | `(module)` | `queue preserves FIFO order` | 4 | Queue preserves FIFO order. |
 | `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker preserves queued captures while daemon is down and drains them after reload` | 183 | Service worker preserves queued captures while daemon is down and drains them after reload. |
-| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker skips missing token and pause without mutating capture queue, then resumes` | 219 | Service worker skips missing token and pause without mutating capture queue, then resumes. |
-| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker injection respects stale token, pause, and strict URL controls` | 250 | Service worker injection respects stale token, pause, and strict URL controls. |
-| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker media upload retries keep fetched blob until successful upload` | 279 | Service worker media upload retries keep fetched blob until successful upload. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker queue overflow characterization preserves old captures but drops the new capture` | 219 | Service worker queue overflow characterization preserves old captures but drops the new capture. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker skips missing token and pause without mutating capture queue, then resumes` | 247 | Service worker skips missing token and pause without mutating capture queue, then resumes. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker injection respects stale token, pause, and strict URL controls` | 278 | Service worker injection respects stale token, pause, and strict URL controls. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker media upload retries keep fetched blob until successful upload` | 307 | Service worker media upload retries keep fetched blob until successful upload. |
 | `extension/tests/unit/shared.test.js` | node:test | `(module)` | `daemon URL normalization strips trailing slashes` | 4 | Daemon URL normalization strips trailing slashes. |
 | `extension/tests/unit/shared.test.js` | node:test | `(module)` | `auth headers include bearer token` | 9 | Auth headers include bearer token. |
 <!-- END GENERATED:test-case-inventory -->

@@ -204,7 +204,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pip<span style="color: #F8F8F2"> </span>install<span style="color: #F8F8F2"> </span>-r<span style="color: #F8F8F2"> </span>requirements-dev.txt
 </code></pre></div>
 
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #959077"># Run daemon tests</span>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #959077"># Run the hermetic network-free pre-commit gate</span>
+<span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-fast-gate.sh
+
+<span style="color: #959077"># Run daemon tests</span>
 python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pytest<span style="color: #F8F8F2"> </span>-q
 
 <span style="color: #959077"># Run extension unit tests and build</span>

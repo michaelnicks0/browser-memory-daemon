@@ -14,6 +14,33 @@ memory = "browser_memory_daemon.cli:main"
 where = ["daemon/src"]
 include = ["browser_memory_daemon*"]
 
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+follow_imports = "skip"
+files = [
+  "daemon/src/browser_memory_daemon/migrations.py",
+  "daemon/src/browser_memory_daemon/migration_steps",
+  "daemon/src/browser_memory_daemon/storage_paths.py",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["browser_memory_daemon"]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = true
+fail_under = 80
+
 [tool.pytest.ini_options]
 pythonpath = ["daemon/src"]
 testpaths = ["daemon/tests"]

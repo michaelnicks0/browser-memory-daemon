@@ -5,7 +5,7 @@
 > **Runtime:** Python **3.11+** (`pyproject.toml` requires `>=3.11`). Use `BMD_PYTHON=/path/to/python3.11` when the host `python3` is older.
 
 <!-- BEGIN GENERATED:inventory-summary -->
-> **Current inventory:** 147 static test functions across 25 files — 120 daemon pytest tests + 27 extension node:test tests.
+> **Current inventory:** 154 static test functions across 26 files — 125 daemon pytest tests + 29 extension node:test tests.
 <!-- END GENERATED:inventory-summary -->
 
 ---
@@ -17,6 +17,10 @@
 python3.11 -m venv .venv
 . .venv/bin/activate
 python -m pip install -r requirements-dev.txt
+
+# Hermetic network-free pre-commit gate: Ruff, strict mypy, branch coverage,
+# Python/Node tests, generated inventory, secret/diff checks, and XDG sentinel.
+BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-fast-gate.sh
 
 # Daemon tests — use Python 3.11+.
 python -m pytest -q
@@ -38,7 +42,9 @@ BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-e2e.sh
 git diff --check -- .
 ```
 
-`./scripts/run-e2e.sh` runs daemon tests, extension tests/build, the real Chrome e2e matrix unless `BMD_SKIP_REAL_CHROME_E2E=1`, secret scan, and whitespace check.
+`./scripts/run-fast-gate.sh` is the short network-free authority. It redirects all default user roots into `/tmp`, runs targeted Ruff and strict mypy, measures full Python branch coverage against the 80% evidence-derived floor, runs all Python/Node tests, and fails if the redirected default-XDG roots receive a file. See [`coverage-baseline.md`](coverage-baseline.md).
+
+`./scripts/run-e2e.sh` remains the broad authority: daemon tests, extension tests/build, the real Chrome e2e matrix unless `BMD_SKIP_REAL_CHROME_E2E=1`, secret scan, and whitespace check.
 
 `python3.11 scripts/generate_test_inventory.py --check` is a hard static gate over `requirements/catalog.toml`: it enforces unique stable IDs/aliases, explicit normative revisions, existing implementation/evidence paths, resolvable test node IDs, and validation evidence for active requirements. It also regenerates the catalog-owned requirement tables and volatile static test counts across the documentation set.
 
@@ -73,7 +79,7 @@ Use `--runtime-root PATH` only for explicit fixture roots; do not point the stre
 ## Generated test inventory
 
 <!-- BEGIN GENERATED:audit-run -->
-Latest inventory: **147 static test functions** across **25 files** (120 daemon pytest; 27 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
+Latest inventory: **154 static test functions** across **26 files** (125 daemon pytest; 29 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
 <!-- END GENERATED:audit-run -->
 
 ## Requirements traceability gate
@@ -94,7 +100,7 @@ Traceability gate: **✅ pass**.
 | Normative changes without revision increment | none |
 | Requirements removed without catalog disposition | none |
 | Catalog load errors | none |
-| Static test inventory measured | 147 tests / 25 files |
+| Static test inventory measured | 154 tests / 26 files |
 <!-- END GENERATED:traceability-gate -->
 
 ### Per-file counts
@@ -120,13 +126,14 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/unit/test_normalize.py` | pytest | 4 |
 | `daemon/tests/unit/test_policy.py` | pytest | 6 |
 | `daemon/tests/unit/test_policy_store.py` | pytest | 4 |
+| `daemon/tests/unit/test_storage_paths.py` | pytest | 5 |
 | `extension/tests/unit/cdp_recorder.test.js` | node:test | 4 |
 | `extension/tests/unit/extractor.test.js` | node:test | 11 |
-| `extension/tests/unit/media_queue.test.js` | node:test | 5 |
+| `extension/tests/unit/media_queue.test.js` | node:test | 6 |
 | `extension/tests/unit/queue.test.js` | node:test | 1 |
-| `extension/tests/unit/service_worker.test.js` | node:test | 4 |
+| `extension/tests/unit/service_worker.test.js` | node:test | 5 |
 | `extension/tests/unit/shared.test.js` | node:test | 2 |
-| **Total** |  | **147** |
+| **Total** |  | **154** |
 <!-- END GENERATED:per-file-counts -->
 
 <details>
@@ -255,6 +262,11 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/unit/test_policy_store.py` | pytest | `(module)` | `test_url_prefix_rule_scopes_to_port_and_path` | 27 | Url prefix rule scopes to port and path. |
 | `daemon/tests/unit/test_policy_store.py` | pytest | `(module)` | `test_policy_rule_creation_is_semantically_idempotent_under_concurrency` | 49 | Policy rule creation is semantically idempotent under concurrency. |
 | `daemon/tests/unit/test_policy_store.py` | pytest | `(module)` | `test_init_db_rejects_schema_drift_instead_of_replaying_policy_dedupe` | 68 | Init db rejects schema drift instead of replaying policy dedupe. |
+| `daemon/tests/unit/test_storage_paths.py` | pytest | `(module)` | `test_storage_identifier_grammars_and_server_stems_are_stable` | 14 | Storage identifier grammars and server stems are stable. |
+| `daemon/tests/unit/test_storage_paths.py` | pytest | `(module)` | `test_contained_child_path_rejects_unsafe_parts_and_symlink_escape` | 27 | Contained child path rejects unsafe parts and symlink escape. |
+| `daemon/tests/unit/test_storage_paths.py` | pytest | `(module)` | `test_contained_child_path_create_root_is_explicit` | 42 | Contained child path create root is explicit. |
+| `daemon/tests/unit/test_storage_paths.py` | pytest | `(module)` | `test_resolve_db_path_reports_empty_invalid_outside_missing_and_ok` | 49 | Resolve db path reports empty invalid outside missing and ok. |
+| `daemon/tests/unit/test_storage_paths.py` | pytest | `(module)` | `test_resolve_db_path_rejects_symlinked_file_outside_root` | 70 | Resolve db path rejects symlinked file outside root. |
 | `extension/tests/unit/cdp_recorder.test.js` | node:test | `(module)` | `CDP recorder only attaches to configured X/Twitter page domains` | 10 | CDP recorder only attaches to configured X/Twitter page domains. |
 | `extension/tests/unit/cdp_recorder.test.js` | node:test | `(module)` | `CDP recorder recognizes X video segment and HLS manifest responses` | 17 | CDP recorder recognizes X video segment and HLS manifest responses. |
 | `extension/tests/unit/cdp_recorder.test.js` | node:test | `(module)` | `CDP recorder builds stable artifact metadata without cookies or headers` | 40 | CDP recorder builds stable artifact metadata without cookies or headers. |
@@ -275,11 +287,13 @@ Traceability gate: **✅ pass**.
 | `extension/tests/unit/media_queue.test.js` | node:test | `(module)` | `future retry is not due until next_attempt_at` | 25 | Future retry is not due until next attempt at. |
 | `extension/tests/unit/media_queue.test.js` | node:test | `(module)` | `stale fetching and uploading tasks become due after processing window` | 32 | Stale fetching and uploading tasks become due after processing window. |
 | `extension/tests/unit/media_queue.test.js` | node:test | `(module)` | `normalizeTask requires stable artifact id for queue callers` | 40 | NormalizeTask requires stable artifact id for queue callers. |
+| `extension/tests/unit/media_queue.test.js` | node:test | `(module)` | `media task due-state classifier rejects terminal and malformed processing states` | 46 | Media task due-state classifier rejects terminal and malformed processing states. |
 | `extension/tests/unit/queue.test.js` | node:test | `(module)` | `queue preserves FIFO order` | 4 | Queue preserves FIFO order. |
 | `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker preserves queued captures while daemon is down and drains them after reload` | 183 | Service worker preserves queued captures while daemon is down and drains them after reload. |
-| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker skips missing token and pause without mutating capture queue, then resumes` | 219 | Service worker skips missing token and pause without mutating capture queue, then resumes. |
-| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker injection respects stale token, pause, and strict URL controls` | 250 | Service worker injection respects stale token, pause, and strict URL controls. |
-| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker media upload retries keep fetched blob until successful upload` | 279 | Service worker media upload retries keep fetched blob until successful upload. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker queue overflow characterization preserves old captures but drops the new capture` | 219 | Service worker queue overflow characterization preserves old captures but drops the new capture. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker skips missing token and pause without mutating capture queue, then resumes` | 247 | Service worker skips missing token and pause without mutating capture queue, then resumes. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker injection respects stale token, pause, and strict URL controls` | 278 | Service worker injection respects stale token, pause, and strict URL controls. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker media upload retries keep fetched blob until successful upload` | 307 | Service worker media upload retries keep fetched blob until successful upload. |
 | `extension/tests/unit/shared.test.js` | node:test | `(module)` | `daemon URL normalization strips trailing slashes` | 4 | Daemon URL normalization strips trailing slashes. |
 | `extension/tests/unit/shared.test.js` | node:test | `(module)` | `auth headers include bearer token` | 9 | Auth headers include bearer token. |
 <!-- END GENERATED:test-case-inventory -->

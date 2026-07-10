@@ -387,12 +387,12 @@ rationale = "Hermetic verification must not touch default XDG or operator storag
 owner = "Verification Harness"
 status = "active"
 aliases = ["HRD-001"]
-implementation = ["daemon/src/browser_memory_daemon/performance_benchmarks.py", "scripts/run-e2e.sh"]
-unit_evidence = []
+implementation = ["daemon/src/browser_memory_daemon/performance_benchmarks.py", "scripts/run-fast-gate.sh", "scripts/run-e2e.sh"]
+unit_evidence = ["daemon/tests/unit/test_storage_paths.py"]
 integration_evidence = ["daemon/tests/e2e/test_performance_benchmarks.py"]
-system_evidence = ["scripts/run-e2e.sh"]
+system_evidence = ["scripts/run-fast-gate.sh", "scripts/run-e2e.sh"]
 operational_evidence = ["docs/verification/phase-0-gate-2026-07-10.md"]
-validation_evidence = ["daemon/tests/e2e/test_performance_benchmarks.py::test_performance_benchmark_subprocess_does_not_write_default_home_blob_root"]
+validation_evidence = ["scripts/run-fast-gate.sh", "daemon/tests/e2e/test_performance_benchmarks.py::test_performance_benchmark_subprocess_does_not_write_default_home_blob_root"]
 
 [[requirements]]
 id = "REQ-027"

@@ -22,6 +22,7 @@
 | SPA/delayed capture | ✅ Delayed passes and History API hooks. | real Chrome SPA fixture. |
 | Dwell/lifecycle | ✅ Metadata-only visit events with idempotent dwell updates. | lifecycle tests + real e2e. |
 | Policy modes | ✅ `all`, `recall`, `balanced`, `strict`. | daemon + extension unit tests. |
+| Fast quality gate | ✅ Network-free Ruff/mypy/branch-coverage/Python/Node/catalog/secret/diff gate with a default-XDG write sentinel and measured 80% floor. | `scripts/run-fast-gate.sh`, `docs/coverage-baseline.md`, ADR-0029. |
 | Daily-driver install | ✅ systemd user daemon + media-worker services, Windows extension copy, non-mutating dry-run/check path, token/env/unit/process-arg health checks. | `scripts/install-daily-driver.sh`, `scripts/daily-driver-health.sh`, daily-driver tests. |
 
 ---

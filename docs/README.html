@@ -213,6 +213,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td><a href="TESTS.html"><code>TESTS.md</code></a>, <a href="test-plan.html"><code>test-plan.md</code></a></td>
 </tr>
 <tr>
+<td>Review the measured branch-coverage baseline and ratchet</td>
+<td><a href="coverage-baseline.html"><code>coverage-baseline.md</code></a></td>
+</tr>
+<tr>
 <td>Review Phase 0 gate evidence</td>
 <td><a href="verification/phase-0-gate-2026-07-10.html"><code>verification/phase-0-gate-2026-07-10.md</code></a></td>
 </tr>
@@ -239,6 +243,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td>Generated test inventory</td>
 <td><code>scripts/generate_test_inventory.py</code>, <code>docs/TESTS.md</code> generated regions</td>
+</tr>
+<tr>
+<td>Hermetic fast quality gate</td>
+<td><code>scripts/run-fast-gate.sh</code>, <code>pyproject.toml</code>, <code>docs/coverage-baseline.md</code></td>
 </tr>
 <tr>
 <td>Daemon runtime/config</td>
@@ -316,6 +324,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>venv<span style="color: #F8F8F2"> </span>.venv
 .<span style="color: #F8F8F2"> </span>.venv/bin/activate
 python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pip<span style="color: #F8F8F2"> </span>install<span style="color: #F8F8F2"> </span>-r<span style="color: #F8F8F2"> </span>requirements-dev.txt
+<span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-fast-gate.sh
 <span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-e2e.sh
 python<span style="color: #F8F8F2"> </span>scripts/generate_test_inventory.py<span style="color: #F8F8F2"> </span>--check
 python<span style="color: #F8F8F2"> </span>scripts/generate_showcase.py<span style="color: #F8F8F2"> </span>--spec<span style="color: #F8F8F2"> </span>scripts/showcase.spec.json<span style="color: #F8F8F2"> </span>--check

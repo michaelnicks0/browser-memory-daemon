@@ -28,6 +28,7 @@
 | Inspect or operate SQLite schema migrations | [`database-migrations.md`](database-migrations.md), [`architecture/adr/0028-use-versioned-restore-backed-sqlite-migrations.md`](architecture/adr/0028-use-versioned-restore-backed-sqlite-migrations.md) |
 | Understand durable lazy media sidecars | [`ARCHITECTURE.md`](ARCHITECTURE.md#durable-media-sidecar-architecture), [`media-artifacts.md`](media-artifacts.md) |
 | Run verification gates | [`TESTS.md`](TESTS.md), [`test-plan.md`](test-plan.md) |
+| Review the measured branch-coverage baseline and ratchet | [`coverage-baseline.md`](coverage-baseline.md) |
 | Review Phase 0 gate evidence | [`verification/phase-0-gate-2026-07-10.md`](verification/phase-0-gate-2026-07-10.md) |
 
 ---
@@ -39,6 +40,7 @@
 | Publish-ready front door | `browser-memory-daemon-high-level-doc.html`, `scripts/showcase.spec.json`, `scripts/generate_showcase.py` |
 | Markdown-to-HTML companions | `scripts/render_docs.py`, `scripts/mermaid-theme.json`, generated `*.html` siblings |
 | Generated test inventory | `scripts/generate_test_inventory.py`, `docs/TESTS.md` generated regions |
+| Hermetic fast quality gate | `scripts/run-fast-gate.sh`, `pyproject.toml`, `docs/coverage-baseline.md` |
 | Daemon runtime/config | `daemon/src/browser_memory_daemon/config.py`, `scripts/install-daily-driver.sh` |
 | HTTP API and UI serving | `daemon/src/browser_memory_daemon/app.py`, `ui/` |
 | Ingest/storage/search/forget | `ingest.py`, `schema.sql`, `search.py`, `forget.py` |
@@ -76,6 +78,7 @@ policy_mode = all
 python3.11 -m venv .venv
 . .venv/bin/activate
 python -m pip install -r requirements-dev.txt
+BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-fast-gate.sh
 BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-e2e.sh
 python scripts/generate_test_inventory.py --check
 python scripts/generate_showcase.py --spec scripts/showcase.spec.json --check

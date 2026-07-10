@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { MemoryMediaQueueStore, normalizeTask } = require('../../src/media_queue.js');
+const { MemoryMediaQueueStore, mediaTaskIsDue, normalizeTask } = require('../../src/media_queue.js');
 
 test('media task normalization and due ordering', async () => {
   const queue = new MemoryMediaQueueStore();
@@ -42,4 +42,13 @@ test('normalizeTask requires stable artifact id for queue callers', () => {
   const task = normalizeTask({ artifact_id: 'abc', source_url: 'data:image/png;base64,AA==' });
   assert.equal(task.artifact_id, 'abc');
   assert.equal(task.max_attempts, 5);
+});
+
+test('media task due-state classifier rejects terminal and malformed processing states', () => {
+  const now = '2030-01-01T00:10:00.000Z';
+  for (const status of ['succeeded', 'failed', 'skipped', 'expired', 'purged']) {
+    assert.equal(mediaTaskIsDue({ status, updated_at: '2029-01-01T00:00:00.000Z' }, now), false);
+  }
+  assert.equal(mediaTaskIsDue({ status: 'fetching', updated_at: 'not-a-date' }, now), false);
+  assert.equal(mediaTaskIsDue({ status: 'pending-fetch', next_attempt_at: null }, now), true);
 });

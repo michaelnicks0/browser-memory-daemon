@@ -348,11 +348,11 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>REQ-026 — Every test, benchmark, and fixture write shall be confined to an explicit temporary root.</td>
-<td>—</td>
+<td><code>daemon/tests/unit/test_storage_paths.py</code></td>
 <td><code>daemon/tests/e2e/test_performance_benchmarks.py</code></td>
-<td><code>scripts/run-e2e.sh</code></td>
+<td><code>scripts/run-fast-gate.sh</code><br><code>scripts/run-e2e.sh</code></td>
 <td><code>docs/verification/phase-0-gate-2026-07-10.md</code></td>
-<td><code>daemon/tests/e2e/test_performance_benchmarks.py::test_performance_benchmark_subprocess_does_not_write_default_home_blob_root</code></td>
+<td><code>scripts/run-fast-gate.sh</code><br><code>daemon/tests/e2e/test_performance_benchmarks.py::test_performance_benchmark_subprocess_does_not_write_default_home_blob_root</code></td>
 </tr>
 <tr>
 <td>REQ-027 — Daemon-public network fetches shall contact only approved destinations and shall revalidate every redirect and HLS-derived request.</td>
@@ -499,6 +499,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>venv<span style="color: #F8F8F2"> </span>.venv
 .<span style="color: #F8F8F2"> </span>.venv/bin/activate
 python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pip<span style="color: #F8F8F2"> </span>install<span style="color: #F8F8F2"> </span>-r<span style="color: #F8F8F2"> </span>requirements-dev.txt
+<span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-fast-gate.sh
 python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pytest<span style="color: #F8F8F2"> </span>-q
 <span style="color: #F8F8F2">cd </span>extension<span style="color: #F8F8F2"> </span><span style="color: #FF4689">&amp;&amp;</span><span style="color: #F8F8F2"> </span>npm<span style="color: #F8F8F2"> test </span><span style="color: #FF4689">&amp;&amp;</span><span style="color: #F8F8F2"> </span>npm<span style="color: #F8F8F2"> </span>run<span style="color: #F8F8F2"> </span>build
 <span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
@@ -508,6 +509,7 @@ python<span style="color: #F8F8F2"> </span>scripts/generate_showcase.py<span sty
 python<span style="color: #F8F8F2"> </span>scripts/render_docs.py<span style="color: #F8F8F2"> </span>--repo<span style="color: #F8F8F2"> </span>.<span style="color: #F8F8F2"> </span>--slug<span style="color: #F8F8F2"> </span>browser-memory-daemon<span style="color: #F8F8F2"> </span>--check
 </code></pre></div>
 
+<p>The fast gate is network-free. It runs targeted Ruff and strict mypy, full Python branch coverage against the measured 80% floor, all Python and Node tests, catalog/secret/diff checks, and a redirected default-XDG write sentinel. <a href="coverage-baseline.html"><code>coverage-baseline.md</code></a> records the measured evidence and known queue-overflow boundary.</p>
 <p>Advisory performance benchmark:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>./scripts/run-performance-benchmarks.sh<span style="color: #F8F8F2"> </span>--small<span style="color: #F8F8F2"> </span>--json<span style="color: #F8F8F2"> </span>&gt;/tmp/bmd_benchmark.json
 </code></pre></div>
@@ -517,7 +519,7 @@ python<span style="color: #F8F8F2"> </span>scripts/render_docs.py<span style="co
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>python3.11<span style="color: #F8F8F2"> </span>scripts/generate_test_inventory.py<span style="color: #F8F8F2"> </span>--check
 </code></pre></div>
 
-<p>This gate reads <code>requirements/catalog.toml</code> with Python's standard-library <code>tomllib</code>. It fails on duplicate stable IDs or aliases, malformed requirement records, missing implementation paths, unresolved evidence/test node IDs, active requirements without validation evidence, requirement removal without catalog disposition, or a normative statement change that does not increment its revision relative to <code>HEAD</code>. It also regenerates volatile requirement tables and static test counts; line/branch coverage thresholds remain deferred until Phase 1.3 measures a baseline.</p>
+<p>This gate reads <code>requirements/catalog.toml</code> with Python's standard-library <code>tomllib</code>. It fails on duplicate stable IDs or aliases, malformed requirement records, missing implementation paths, unresolved evidence/test node IDs, active requirements without validation evidence, requirement removal without catalog disposition, or a normative statement change that does not increment its revision relative to <code>HEAD</code>. It also regenerates volatile requirement tables and static test counts. Branch coverage is independently enforced by the fast gate.</p>
 <p><code>run-real-chrome-e2e.sh</code> uses Windows Chrome for Testing because branded Chrome 137+ no longer reliably honors command-line <code>--load-extension</code> automation. It honors <code>BMD_PYTHON</code> for the WSL daemon and DB probes. By default it runs the <code>all strict</code> matrix; set <code>BMD_REAL_CHROME_POLICY_MODE=&lt;mode&gt;</code> for a single debugging run or <code>BMD_REAL_CHROME_MATRIX_MODES="all strict balanced recall"</code> for an extended local matrix.</p>
 <hr />
 <h2 id="mode-specific-e2e">Mode-specific e2e</h2>

@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Sequence
-from datetime import datetime, timezone
 import hashlib
 import json
-from pathlib import Path
 import shutil
 import sqlite3
 import time
 import uuid
+from collections.abc import Callable, Iterable, Sequence
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any, Protocol
 
 from .config import RuntimeConfig
 from .db import connect
 from .migration_steps import MIGRATIONS, MigrationStep, migration_checksum
-
 
 LEDGER_TABLE = "schema_migrations"
 V1_SCHEMA_FINGERPRINT = str(MIGRATIONS[0].schema_fingerprint)
@@ -45,6 +45,15 @@ class MigrationExecutionError(MigrationError):
     def __init__(self, message: str, *, backup_path: Path | None = None):
         super().__init__(message)
         self.backup_path = backup_path
+
+
+class _DiskUsage(Protocol):
+    @property
+    def free(self) -> int: ...
+
+
+def _disk_usage(path: Path) -> _DiskUsage:
+    return shutil.disk_usage(path)
 
 
 def _validated_steps(steps: Sequence[MigrationStep]) -> tuple[MigrationStep, ...]:
@@ -94,7 +103,7 @@ def schema_fingerprint(conn: sqlite3.Connection) -> str:
 
 
 def _ledger_exists(conn: sqlite3.Connection) -> bool:
-    return (
+    return bool(
         conn.execute(
             "SELECT COUNT(*) FROM sqlite_schema WHERE type = 'table' AND name = ?",
             (LEDGER_TABLE,),
@@ -105,7 +114,7 @@ def _ledger_exists(conn: sqlite3.Connection) -> bool:
 
 def _status_from_connection(
     conn: sqlite3.Connection, *, steps: Sequence[MigrationStep]
-) -> dict:
+) -> dict[str, Any]:
     ordered = _validated_steps(steps)
     latest = ordered[-1].version
     expected_by_version = {step.version: step for step in ordered}
@@ -118,7 +127,7 @@ def _status_from_connection(
     rows = _schema_rows(conn)
     fingerprint = schema_fingerprint(conn) if rows else None
     ledger_exists = _ledger_exists(conn)
-    applied_rows: list[sqlite3.Row | tuple] = []
+    applied_rows: list[sqlite3.Row] = []
     applied_versions: list[int] = []
     if ledger_exists:
         try:
@@ -233,7 +242,7 @@ def _ensure_wal_mode(conn: sqlite3.Connection) -> None:
 
 def migration_status(
     config: RuntimeConfig, *, steps: Sequence[MigrationStep] = MIGRATIONS
-) -> dict:
+) -> dict[str, Any]:
     ordered = _validated_steps(steps)
     if not config.db_path.exists():
         return {
@@ -352,10 +361,10 @@ def _source_bytes(db_path: Path) -> int:
 def _preflight_backup_headroom(
     config: RuntimeConfig,
     *,
-    disk_usage_fn: Callable[[Path], object],
+    disk_usage_fn: Callable[[Path], _DiskUsage],
 ) -> None:
     required = max(MIN_BACKUP_HEADROOM_BYTES, _source_bytes(config.db_path) * 2)
-    free = int(getattr(disk_usage_fn(config.state_root), "free"))
+    free = int(disk_usage_fn(config.state_root).free)
     if free < required:
         raise MigrationPreflightError(
             f"insufficient disk headroom for migration backup: required {required} bytes, available {free}"
@@ -363,9 +372,9 @@ def _preflight_backup_headroom(
 
 
 def _online_backup(conn: sqlite3.Connection, config: RuntimeConfig) -> Path:
-    backup_dir = config.state_root / "migration-backups"
+    backup_dir = Path(config.state_root) / "migration-backups"
     backup_dir.mkdir(parents=True, exist_ok=True)
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     backup_path = backup_dir / f"memory-v{conn.execute('PRAGMA user_version').fetchone()[0]}-{stamp}-{uuid.uuid4().hex[:8]}.sqlite3"
     destination = sqlite3.connect(backup_path)
     try:
@@ -387,8 +396,8 @@ def migrate_database(
     execute: bool = False,
     allow_destructive: bool = False,
     steps: Sequence[MigrationStep] = MIGRATIONS,
-    disk_usage_fn: Callable[[Path], object] = shutil.disk_usage,
-) -> dict:
+    disk_usage_fn: Callable[[Path], _DiskUsage] = _disk_usage,
+) -> dict[str, Any]:
     ordered = _validated_steps(steps)
     if not execute:
         return migration_status(config, steps=ordered)
@@ -434,7 +443,7 @@ def migrate_database(
     return final
 
 
-def migrate(config: RuntimeConfig) -> dict:
+def migrate(config: RuntimeConfig) -> dict[str, Any]:
     """Compatibility wrapper for applying non-destructive startup migrations."""
     return migrate_database(config, execute=True)
 

@@ -1,9 +1,15 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from dataclasses import dataclass
 import hashlib
 import sqlite3
+from collections.abc import Callable
+from dataclasses import dataclass
+
+from . import (
+    v0001_baseline_schema,
+    v0002_deduplicate_privacy_rules,
+    v0003_seed_media_fetch_tasks,
+)
 
 
 @dataclass(frozen=True)
@@ -18,11 +24,8 @@ class MigrationStep:
 
 
 def migration_checksum(version: int, name: str, payload: str) -> str:
-    material = f"{version}:{name}\n{payload}".encode("utf-8")
+    material = f"{version}:{name}\n{payload}".encode()
     return hashlib.sha256(material).hexdigest()
-
-
-from . import v0001_baseline_schema, v0002_deduplicate_privacy_rules, v0003_seed_media_fetch_tasks
 
 
 MIGRATIONS = (

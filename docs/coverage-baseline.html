@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Status — browser-memory-daemon</title>
+<title>Coverage-Baseline — browser-memory-daemon</title>
 <style>
 :root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
@@ -121,244 +121,129 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <div class="wrap">
   <div class="docbar">
     <a class="home" href="../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
-    <span class="crumb">/ <b>docs/STATUS.md</b></span>
+    <span class="crumb">/ <b>docs/coverage-baseline.md</b></span>
   </div>
   <article class="md-body">
-<h1 id="browser-memory-daemon-status-implemented-pending-risks">Browser Memory Daemon Status — Implemented, Pending, Risks</h1>
-<blockquote>
-<p><strong>Audience:</strong> Operator and future maintainers.
-<strong>Current source:</strong> repository HEAD; release branch may vary.
-<strong>Policy default:</strong> <code>all</code>.</p>
-</blockquote>
 <hr />
-<h2 id="implemented">Implemented</h2>
-<table>
-<thead>
-<tr>
-<th>Area</th>
-<th>Status</th>
-<th>Evidence</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Windows Chrome extension</td>
-<td>✅ MV3 extension with service-worker-owned injection/transport.</td>
-<td><code>extension/src/</code>, extension unit tests, real Chrome e2e.</td>
-</tr>
-<tr>
-<td>WSL daemon</td>
-<td>✅ Loopback HTTP daemon with bearer auth.</td>
-<td><code>app.py</code>, HTTP e2e tests.</td>
-</tr>
-<tr>
-<td>SQLite/FTS/media storage</td>
-<td>✅ Documents/visits/snapshots/chunks/FTS/media/audit/deletion receipts plus exact schema fingerprint, ordered checksum ledger, and restore-backed migration gate.</td>
-<td><code>schema.sql</code>, <code>migrations.py</code>, <code>migration_steps/</code>, integration/e2e tests.</td>
-</tr>
-<tr>
-<td>Exact search</td>
-<td>✅ FTS5 exact search with snippets/source metadata and media artifact counts.</td>
-<td><code>search.py</code>, <code>/search</code>, tests.</td>
-</tr>
-<tr>
-<td>Forget/delete</td>
-<td>✅ URL/domain forget with receipts and text/media blob + FTS cleanup.</td>
-<td><code>forget.py</code>, tests.</td>
-</tr>
-<tr>
-<td>Media artifacts</td>
-<td>✅ Durable image/video refs and binaries: fast text/manifest capture, browser IndexedDB lazy queue, credentialed fetch, raw blob upload, enabled-by-default X/Twitter CDP recorder with disable control, HLS/audio sidecar handling, daemon public worker, rolling cache gates, purge/rehydrate controls; no OCR/media indexing.</td>
-<td><code>media.py</code>, <code>media_worker.py</code>, <code>media_queue.js</code>, <code>cdp_recorder.js</code>, <code>/media-artifacts/*</code>, real Chrome e2e.</td>
-</tr>
-<tr>
-<td>Local UI</td>
-<td>✅ Token-bootstrapped search/recent/timeline/detail/doctor/policy/delete panels; recent/today/doctor/policy auto-load on open.</td>
-<td><code>ui/</code>, admin API tests.</td>
-</tr>
-<tr>
-<td>CLI</td>
-<td>✅ serve/health/migrate/doctor/daily-driver-health/search/recent/timeline/detail/policy/forget/capture-fixture/media-worker/media-cache/blob-root migration.</td>
-<td><code>cli.py</code>, CLI e2e.</td>
-</tr>
-<tr>
-<td>Dedupe/versioning</td>
-<td>✅ URL normalization + text-hash snapshots.</td>
-<td>ingest tests.</td>
-</tr>
-<tr>
-<td>SPA/delayed capture</td>
-<td>✅ Delayed passes and History API hooks.</td>
-<td>real Chrome SPA fixture.</td>
-</tr>
-<tr>
-<td>Dwell/lifecycle</td>
-<td>✅ Metadata-only visit events with idempotent dwell updates.</td>
-<td>lifecycle tests + real e2e.</td>
-</tr>
-<tr>
-<td>Policy modes</td>
-<td>✅ <code>all</code>, <code>recall</code>, <code>balanced</code>, <code>strict</code>.</td>
-<td>daemon + extension unit tests.</td>
-</tr>
-<tr>
-<td>Fast quality gate</td>
-<td>✅ Network-free Ruff/mypy/branch-coverage/Python/Node/catalog/secret/diff gate with a default-XDG write sentinel and measured 80% floor.</td>
-<td><code>scripts/run-fast-gate.sh</code>, <code>docs/coverage-baseline.md</code>, ADR-0029.</td>
-</tr>
-<tr>
-<td>Daily-driver install</td>
-<td>✅ systemd user daemon + media-worker services, Windows extension copy, non-mutating dry-run/check path, token/env/unit/process-arg health checks.</td>
-<td><code>scripts/install-daily-driver.sh</code>, <code>scripts/daily-driver-health.sh</code>, daily-driver tests.</td>
-</tr>
-</tbody>
-</table>
+<p>title: "Coverage Baseline"
+description: "Measured Python branch-coverage baseline and critical-risk verification posture"
+audience: "maintainer"
+status: "current"
+version: "1.0.0"
+date: "2026-07-10"</p>
 <hr />
-<h2 id="requirement-posture">Requirement posture</h2>
-<!-- BEGIN GENERATED:requirement-posture -->
-<p>The canonical catalog contains <strong>43 stable requirements</strong>: <strong>32 active</strong> and <strong>11 planned</strong>. Normative statements, implementation links, V-model evidence, and legacy aliases are owned by <a href="../requirements/catalog.toml"><code>requirements/catalog.toml</code></a>; generated tables in this doc set must not be hand-edited.</p>
-<!-- END GENERATED:requirement-posture -->
-
-<hr />
-<h2 id="current-default-posture">Current default posture</h2>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>BMD_POLICY_MODE=all
+<h1 id="coverage-baseline">Coverage Baseline</h1>
+<h2 id="authority-and-command">Authority and command</h2>
+<p>The authoritative local measurement is the hermetic network-free gate:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span>/tmp/browser-memory-daemon-verify-venv/bin/python<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>./scripts/run-fast-gate.sh
 </code></pre></div>
 
-<p>This means:</p>
+<p>The gate redirects <code>HOME</code>, <code>TMPDIR</code>, and every XDG root into an explicit <code>/tmp</code> tree; keeps Ruff, mypy, and coverage caches outside the repository; rejects any file written beneath the redirected default-XDG sentinel; and deletes its temporary tree on exit.</p>
+<h2 id="phase-13-measurement">Phase 1.3 measurement</h2>
+<p>Measured with Coverage.py <code>7.15.0</code> and branch coverage enabled:</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th style="text-align: right;">Measured result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python tests</td>
+<td style="text-align: right;">125 passing</td>
+</tr>
+<tr>
+<td>Node tests</td>
+<td style="text-align: right;">29 passing</td>
+</tr>
+<tr>
+<td>Python statements covered</td>
+<td style="text-align: right;">3,543 / 4,232 (83.72%)</td>
+</tr>
+<tr>
+<td>Python branches covered</td>
+<td style="text-align: right;">929 / 1,338 (69.43%)</td>
+</tr>
+<tr>
+<td>Coverage.py combined line/branch result</td>
+<td style="text-align: right;"><strong>80.29%</strong></td>
+</tr>
+<tr>
+<td>Enforced overall floor</td>
+<td style="text-align: right;"><strong>80%</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The first measurement before the new direct storage-boundary tests was 79.95%. The final measured 80.29% result establishes the integer <code>fail_under = 80</code> ratchet. The floor may increase only after a new green measurement and must not be lowered merely to admit untested code.</p>
+<h2 id="critical-risk-posture">Critical-risk posture</h2>
+<p>Coverage percentages are supporting evidence, not substitutes for scenario assertions.</p>
+<table>
+<thead>
+<tr>
+<th>Boundary</th>
+<th style="text-align: right;">Combined</th>
+<th style="text-align: right;">Branch</th>
+<th>Executable evidence / interpretation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Versioned migrations</td>
+<td style="text-align: right;">79.53%</td>
+<td style="text-align: right;">66.67%</td>
+<td>Fresh/unversioned/repeat/concurrent/checksum/newer/failure/headroom/backup/restore/FTS/FK/integrity scenarios in <code>test_migrations.py</code>.</td>
+</tr>
+<tr>
+<td>Storage-path containment</td>
+<td style="text-align: right;">96.19%</td>
+<td style="text-align: right;"><strong>100.00%</strong></td>
+<td>Direct grammar, traversal, symlink, outside-root, missing-file, and explicit-root tests in <code>test_storage_paths.py</code>, plus integration callers.</td>
+</tr>
+<tr>
+<td>Forget/deletion selection</td>
+<td style="text-align: right;">85.63%</td>
+<td style="text-align: right;">76.09%</td>
+<td>Literal selector, policy-mode, scope, containment, and receipt cases in ingest/search/forget integration tests. Crash-recoverable tombstones remain Phase 3 work.</td>
+</tr>
+<tr>
+<td>Media core</td>
+<td style="text-align: right;">76.73%</td>
+<td style="text-align: right;">67.77%</td>
+<td>Guarded fetch/HLS/path/cache/task tests cover the current module. Transactional admission/global resource budgets remain Phase 4 work.</td>
+</tr>
+<tr>
+<td>Media worker state transitions</td>
+<td style="text-align: right;">89.33%</td>
+<td style="text-align: right;">89.29%</td>
+<td>Retry, lease, terminal, and convergence scenarios are executable.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="extension-queue-boundary">Extension queue boundary</h2>
+<p>Node tests are not included in the Python coverage percentage. They run in the same fast gate.</p>
+<p>The suite now explicitly characterizes capture-queue overflow: with 100 stored captures and an offline daemon, the existing queue preserves the 100 old entries but drops the newly submitted capture without visible backpressure. That passing test is <strong>defect evidence</strong>, not acceptance. <code>REQ-037</code> / <code>HRD-012</code> remains planned until Phase 5 delivers the transactional IndexedDB outbox, byte quotas, visible overflow, and restart-safe claims.</p>
+<p>Media queue due-state tests cover pending, deferred retry, stale processing, malformed processing timestamps, terminal states, fetched-blob retention, and delete cleanup.</p>
+<h2 id="static-analysis-scope">Static-analysis scope</h2>
+<p>Ruff and strict mypy are intentionally limited to:</p>
 <ul>
-<li>no static URL/domain/path/query filtering;</li>
-<li>no daemon redaction before storage/FTS;</li>
-<li>extension DOM extraction still skips hidden/form/editable/script/style/no-script text;</li>
-<li>explicit local block rules still apply;</li>
-<li>platform limits still apply when Chrome refuses extension injection.</li>
+<li><code>migrations.py</code>;</li>
+<li><code>migration_steps/</code>;</li>
+<li><code>storage_paths.py</code>.</li>
 </ul>
-<hr />
-<h2 id="pending-roadmap-lanes">Pending roadmap lanes</h2>
-<table>
-<thead>
-<tr>
-<th>Lane</th>
-<th style="text-align: right;">Priority</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Native messaging transport</td>
-<td style="text-align: right;">Later</td>
-<td>HTTP loopback is working; native messaging can reduce network-like surface later.</td>
-</tr>
-<tr>
-<td>Semantic/vector search</td>
-<td style="text-align: right;">Later, explicit approval required</td>
-<td>Exact FTS remains current source of truth.</td>
-</tr>
-<tr>
-<td>Retention policies/export/backup</td>
-<td style="text-align: right;">Medium</td>
-<td>Design posture accepted in <code>docs/retention-compaction-backup.md</code>; implementation split into deferred maintenance and backup/export tickets.</td>
-</tr>
-<tr>
-<td>MCP/Hermes integration</td>
-<td style="text-align: right;">Later</td>
-<td>Should treat captured text as untrusted evidence.</td>
-</tr>
-<tr>
-<td>Rich policy rules</td>
-<td style="text-align: right;">Medium</td>
-<td>Future allow/redact/metadata-only modes; current explicit rules are block-only and apply in every mode, including <code>all</code>.</td>
-</tr>
-<tr>
-<td>Reconciliation for orphan lifecycle events</td>
-<td style="text-align: right;">Low/medium</td>
-<td>Some media/dynamic pages can send lifecycle before capture attaches.</td>
-</tr>
-<tr>
-<td>Packaged extension distribution</td>
-<td style="text-align: right;">Later</td>
-<td>Daily driver currently uses manual Load unpacked due Chrome Secure Preferences.</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="known-limits-and-risks">Known limits and risks</h2>
-<table>
-<thead>
-<tr>
-<th>Risk/limit</th>
-<th>Current handling</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>all</code> stores secrets if visible/exposed in page DOM.</td>
-<td>Intentional operator choice. Use <code>recall</code>/<code>balanced</code>/<code>strict</code> later if desired.</td>
-</tr>
-<tr>
-<td>Chrome internal pages may not inject.</td>
-<td>Platform limit; e2e covers web pages.</td>
-</tr>
-<tr>
-<td>Branded Chrome automation ignores unpacked extension flags.</td>
-<td>E2E uses Chrome for Testing. Daily driver uses manual Load unpacked/reload.</td>
-</tr>
-<tr>
-<td>Extension token is copied into Windows-local unpacked extension artifact.</td>
-<td>Token is generated in WSL, never committed, and can rotate.</td>
-</tr>
-<tr>
-<td>SQLite can grow over time.</td>
-<td>Media blobs have size/cache gates plus purge/rehydrate controls; ADR-0019 keeps text durable by default and splits maintenance/backup/export implementation into follow-up tickets.</td>
-</tr>
-<tr>
-<td>Captured text may contain prompt injection.</td>
-<td>UI/CLI treat it as evidence; future agents must not follow page instructions.</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="source-inventory">Source inventory</h2>
-<table>
-<thead>
-<tr>
-<th>Path</th>
-<th>Role</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>daemon/src/browser_memory_daemon/</code></td>
-<td>Python daemon package.</td>
-</tr>
-<tr>
-<td><code>daemon/tests/</code></td>
-<td>Unit/integration/e2e tests.</td>
-</tr>
-<tr>
-<td><code>extension/src/</code></td>
-<td>MV3 extension source.</td>
-</tr>
-<tr>
-<td><code>extension/tests/</code></td>
-<td>Extension unit tests.</td>
-</tr>
-<tr>
-<td><code>ui/</code></td>
-<td>Local static dashboard.</td>
-</tr>
-<tr>
-<td><code>scripts/</code></td>
-<td>E2E, install, build, dev, secret-scan helpers.</td>
-</tr>
-<tr>
-<td><code>docs/</code></td>
-<td>Operator and architecture docs.</td>
-</tr>
-</tbody>
-</table>
+<p>This is a targeted quality ceiling for newly hardened boundary code, not a claim that the entire legacy daemon is strictly typed or Ruff-clean. New migration/storage/state-machine modules should enter this scope when added.</p>
+<h2 id="ratchet-rule">Ratchet rule</h2>
+<ol>
+<li>Run the fast gate from a clean checkout.</li>
+<li>Preserve the JSON/report output outside the repository when changing the floor.</li>
+<li>Add branch-specific tests for new critical behavior.</li>
+<li>Raise the floor only after a repeated green measurement.</li>
+<li>Never reduce the floor without a documented exceptional rationale and superseding ADR.</li>
+</ol>
   </article>
   <div class="md-footer">
-    Rendered from <code>docs/STATUS.md</code> — the Markdown file is the canonical,
+    Rendered from <code>docs/coverage-baseline.md</code> — the Markdown file is the canonical,
     version-controlled source. This HTML is generated (regenerate with
     <code>scripts/render_docs.py</code>); do not hand-edit.
   </div>

@@ -38,7 +38,7 @@
 | REQ-023 — The SQLite schema shall contain the documented authority tables, constraints, indexes, FTS structures, and audit records required by the current release. | — | `daemon/tests/integration/test_ingest_search_forget.py::test_schema_has_planned_core_tables` | `scripts/run-e2e.sh` | `docs/ARCHITECTURE.md` | `daemon/tests/integration/test_ingest_search_forget.py::test_schema_has_planned_core_tables` |
 | REQ-024 — Search and detail responses shall cite source URL, title, document identity, snapshot identity, and stored text or snippet as applicable. | — | `daemon/tests/integration/test_ingest_search_forget.py`<br>`daemon/tests/e2e/test_admin_api.py` | `scripts/run-real-chrome-e2e.sh` | `docs/api.md` | `daemon/tests/e2e/test_admin_api.py` |
 | REQ-025 — The extension shall provide pause, resume, policy selection, queue status, and bounded local operational controls without exposing captured content. | `extension/tests/unit/service_worker.test.js` | — | `scripts/run-real-chrome-e2e.sh` | `docs/USER_GUIDE.md` | `extension/tests/unit/service_worker.test.js` |
-| REQ-026 — Every test, benchmark, and fixture write shall be confined to an explicit temporary root. | — | `daemon/tests/e2e/test_performance_benchmarks.py` | `scripts/run-e2e.sh` | `docs/verification/phase-0-gate-2026-07-10.md` | `daemon/tests/e2e/test_performance_benchmarks.py::test_performance_benchmark_subprocess_does_not_write_default_home_blob_root` |
+| REQ-026 — Every test, benchmark, and fixture write shall be confined to an explicit temporary root. | `daemon/tests/unit/test_storage_paths.py` | `daemon/tests/e2e/test_performance_benchmarks.py` | `scripts/run-fast-gate.sh`<br>`scripts/run-e2e.sh` | `docs/verification/phase-0-gate-2026-07-10.md` | `scripts/run-fast-gate.sh`<br>`daemon/tests/e2e/test_performance_benchmarks.py::test_performance_benchmark_subprocess_does_not_write_default_home_blob_root` |
 | REQ-027 — Daemon-public network fetches shall contact only approved destinations and shall revalidate every redirect and HLS-derived request. | — | `daemon/tests/integration/test_media_worker.py` | `scripts/run-e2e.sh` | `docs/security-model.md` | `daemon/tests/integration/test_media_worker.py::test_guarded_public_fetch_revalidates_public_to_private_redirect` |
 | REQ-028 — The daemon shall not expose a durable API token through a remotely reachable unauthenticated UI. | — | `daemon/tests/e2e/test_ui_dashboard_smoke.py` | `scripts/run-e2e.sh` | `docs/security-model.md` | `daemon/tests/e2e/test_ui_dashboard_smoke.py::test_ui_dashboard_rejects_non_loopback_host_header` |
 | REQ-029 — Every blob read, write, move, and delete shall resolve under its configured root and resist traversal and symlink escape. | — | `daemon/tests/integration/test_ingest_search_forget.py`<br>`daemon/tests/integration/test_media_worker.py` | `scripts/run-e2e.sh` | `docs/security-model.md` | `daemon/tests/integration/test_ingest_search_forget.py::test_blob_path_consumers_reject_db_paths_outside_configured_roots` |
@@ -66,6 +66,7 @@
 python3.11 -m venv .venv
 . .venv/bin/activate
 python -m pip install -r requirements-dev.txt
+BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-fast-gate.sh
 python -m pytest -q
 cd extension && npm test && npm run build
 BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-real-chrome-e2e.sh
@@ -74,6 +75,8 @@ python scripts/generate_test_inventory.py --check
 python scripts/generate_showcase.py --spec scripts/showcase.spec.json --check
 python scripts/render_docs.py --repo . --slug browser-memory-daemon --check
 ```
+
+The fast gate is network-free. It runs targeted Ruff and strict mypy, full Python branch coverage against the measured 80% floor, all Python and Node tests, catalog/secret/diff checks, and a redirected default-XDG write sentinel. [`coverage-baseline.md`](coverage-baseline.md) records the measured evidence and known queue-overflow boundary.
 
 Advisory performance benchmark:
 
@@ -89,7 +92,7 @@ Traceability gate:
 python3.11 scripts/generate_test_inventory.py --check
 ```
 
-This gate reads `requirements/catalog.toml` with Python's standard-library `tomllib`. It fails on duplicate stable IDs or aliases, malformed requirement records, missing implementation paths, unresolved evidence/test node IDs, active requirements without validation evidence, requirement removal without catalog disposition, or a normative statement change that does not increment its revision relative to `HEAD`. It also regenerates volatile requirement tables and static test counts; line/branch coverage thresholds remain deferred until Phase 1.3 measures a baseline.
+This gate reads `requirements/catalog.toml` with Python's standard-library `tomllib`. It fails on duplicate stable IDs or aliases, malformed requirement records, missing implementation paths, unresolved evidence/test node IDs, active requirements without validation evidence, requirement removal without catalog disposition, or a normative statement change that does not increment its revision relative to `HEAD`. It also regenerates volatile requirement tables and static test counts. Branch coverage is independently enforced by the fast gate.
 
 `run-real-chrome-e2e.sh` uses Windows Chrome for Testing because branded Chrome 137+ no longer reliably honors command-line `--load-extension` automation. It honors `BMD_PYTHON` for the WSL daemon and DB probes. By default it runs the `all strict` matrix; set `BMD_REAL_CHROME_POLICY_MODE=<mode>` for a single debugging run or `BMD_REAL_CHROME_MATRIX_MODES="all strict balanced recall"` for an extended local matrix.
 

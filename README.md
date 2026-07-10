@@ -77,6 +77,9 @@ python -m pip install -r requirements-dev.txt
 ```
 
 ```bash
+# Run the hermetic network-free pre-commit gate
+BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-fast-gate.sh
+
 # Run daemon tests
 python -m pytest -q
 

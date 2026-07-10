@@ -36,6 +36,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0026](0026-harden-loopback-ui-and-required-blob-mounts.md) | accepted | Harden loopback UI and required blob mounts. |
 | [ADR-0027](0027-use-canonical-semantic-requirement-catalog.md) | accepted | Use one machine-readable semantic requirement catalog with explicit legacy aliases and generated V-model traceability. |
 | [ADR-0028](0028-use-versioned-restore-backed-sqlite-migrations.md) | accepted | Use versioned restore-backed SQLite migrations with exact schema fingerprints, ordered checksums, and backup-gated destructive steps. |
+| [ADR-0029](0029-use-hermetic-fast-quality-gate.md) | accepted | Add a network-free fast gate with targeted static analysis, branch coverage, an XDG write sentinel, and a measured coverage ratchet. |
 
 ## Backfilled decision history
 

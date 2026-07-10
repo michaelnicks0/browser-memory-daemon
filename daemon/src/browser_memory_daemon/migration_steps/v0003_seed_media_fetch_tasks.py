@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import hashlib
 import json
-from pathlib import Path
 import sqlite3
-
+from pathlib import Path
 
 NAME = "seed_daemon_public_media_fetch_tasks"
 SELECT_SQL = """
