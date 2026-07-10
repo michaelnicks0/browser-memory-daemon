@@ -159,7 +159,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Browser bridge</td>
-<td>Content scripts message service worker; service worker owns daemon fetch/auth/queues.</td>
+<td>Content scripts message the service worker; the worker owns daemon fetch/auth and drains transactional capture/lifecycle plus specialized media IndexedDB queues.</td>
 </tr>
 <tr>
 <td>Agent safety</td>
@@ -247,6 +247,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>API token required for <code>/capture</code>, <code>/visit-events</code>, <code>/media-artifacts/*</code>, <code>/search</code>, <code>/ready</code>, <code>/recent</code>, <code>/timeline</code>, <code>/documents/{id}</code>, <code>/snapshots/{id}</code>, <code>/policy/*</code>, <code>/doctor</code>, and <code>/forget</code>.</li>
 <li><code>/health</code> exposes minimal daemon status plus <code>policy_mode</code>.</li>
 <li>Daily-driver install stores the daemon API token in protected WSL config files and injects it into the Windows-local extension artifact; the token is never committed.</li>
+<li>Capture and lifecycle payloads are durable browser-profile data in a versioned IndexedDB outbox. Atomic token-checked claims recover after MV3 suspension; aggregate telemetry excludes payload text and URLs. Legacy <code>chrome.storage.local</code> queue arrays are imported before deletion and remain only as a one-version failure fallback.</li>
 <li>Token rotation is supported:</li>
 </ul>
 <p><code>bash

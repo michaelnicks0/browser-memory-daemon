@@ -30,10 +30,12 @@ flowchart LR
   Page["Chrome page DOM"] --> Extractor["extractor.js"]
   Extractor --> Content["content_script.js"]
   Content -->|"BMD_CAPTURE + inline blob messages"| ServiceWorker["service_worker.js"]
+  ServiceWorker --> Outbox[("IndexedDB capture/lifecycle outbox")]
+  Outbox -->|"atomic claim/checkpoint/ack/retry"| ServiceWorker
   ServiceWorker -->|"POST /capture<br/>Bearer JSON"| DaemonCapture["WSL daemon /capture"]
   ServiceWorker -->|"POST /visit-events<br/>metadata only"| DaemonVisit["WSL daemon /visit-events"]
   ServiceWorker -->|"PUT /media-artifacts/{id}/blob<br/>raw bytes"| DaemonMedia["WSL media blob upload"]
-  ServiceWorker --> IDB[("IndexedDB media task/blob queue")]
+  ServiceWorker --> MediaIDB[("Separate IndexedDB media task/blob queue")]
   Popup["popup.js"] -->|"runtime messages"| ServiceWorker
   Options["options.js"] --> Storage[("chrome.storage.local")]
   Storage --> Content
@@ -65,6 +67,8 @@ Operator posture: start at `all` for maximum recall; move upward only when filte
 flowchart TD
   Page["Chrome page DOM"] --> Extract["Content script extracts<br/>URL + title + text + media refs"]
   Extract -->|"BMD_CAPTURE"| SW["Service worker"]
+  SW --> Outbox[("Transactional IndexedDB outbox")]
+  Outbox -->|"claim due row"| SW
   SW -->|"POST /capture + bearer token"| API["WSL API"]
   API --> Policy["Policy engine<br/>mode + local rules"]
   Policy --> Decision{"policy_mode"}
@@ -75,7 +79,9 @@ flowchart TD
   Store --> SQLiteText["Commit complete cleaned text<br/>inside local SQLite transaction"]
   Store --> MediaRefs["Store media refs + observation links<br/>enqueue daemon-public tasks"]
   Store --> Response["Return observation/document/snapshot/chunk IDs<br/>+ media artifact IDs"]
-  Response --> Queue["Queue browser media work<br/>in IndexedDB"]
+  Response --> Checkpoint["Checkpoint capture result<br/>in claimed outbox row"]
+  Checkpoint --> Queue["Queue browser media work<br/>in separate IndexedDB"]
+  Queue --> Ack["Acknowledge outbox row"]
 ```
 
 Text/FTS recall completes before media bytes. Media sidecars are best-effort and asynchronous.

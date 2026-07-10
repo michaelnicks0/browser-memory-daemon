@@ -5,6 +5,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const { MemoryMediaQueueStore } = require('../../src/media_queue.js');
+const { MemoryOutboxStore } = require('../../src/outbox.js');
 const { normalizeDaemonUrl, authHeaders } = require('../../src/shared.js');
 const { shouldBlockUrl, normalizePolicyMode } = require('../../src/extractor.js');
 
@@ -116,7 +117,12 @@ function createChromeMock(storage, calls) {
   };
 }
 
-function createServiceWorkerHarness({ storage = {}, fetchImpl, mediaQueue = new MemoryMediaQueueStore() } = {}) {
+function createServiceWorkerHarness({
+  storage = {},
+  fetchImpl,
+  mediaQueue = new MemoryMediaQueueStore(),
+  outbox = new MemoryOutboxStore()
+} = {}) {
   const calls = { fetches: [], scripts: [], alarms: [], storageSets: [], createdTabs: [], timers: [] };
   const chrome = createChromeMock(storage, calls);
   const context = {
@@ -149,6 +155,7 @@ function createServiceWorkerHarness({ storage = {}, fetchImpl, mediaQueue = new 
     authHeaders,
     shouldBlockBrowserMemoryUrl: shouldBlockUrl,
     normalizeBrowserMemoryPolicyMode: normalizePolicyMode,
+    BrowserMemoryOutbox: outbox,
     BrowserMemoryMediaQueue: mediaQueue,
     BrowserMemoryCdpRecorder: null,
     chrome,
@@ -170,7 +177,7 @@ function createServiceWorkerHarness({ storage = {}, fetchImpl, mediaQueue = new 
     });
   }
 
-  return { calls, chrome, context, mediaQueue, sendMessage, storage };
+  return { calls, chrome, context, mediaQueue, outbox, sendMessage, storage };
 }
 
 function capturePayload(id = 'a') {
@@ -183,6 +190,7 @@ function capturePayload(id = 'a') {
 
 test('service worker preserves queued captures while daemon is down and drains them after reload', async () => {
   const storage = { apiToken: 'token', daemonUrl: 'http://127.0.0.1:8765', policyMode: 'all' };
+  const outbox = new MemoryOutboxStore();
   let offline = true;
   let postCount = 0;
   const fetchImpl = async (url) => {
@@ -194,7 +202,7 @@ test('service worker preserves queued captures while daemon is down and drains t
     throw new Error(`unexpected fetch ${url}`);
   };
 
-  const first = createServiceWorkerHarness({ storage, fetchImpl });
+  const first = createServiceWorkerHarness({ storage, fetchImpl, outbox });
   const failed = await first.sendMessage(
     { type: 'BMD_CAPTURE', payload: capturePayload('offline') },
     { tab: { id: 1, url: 'https://example.test/offline', active: true, incognito: false } }
@@ -203,24 +211,26 @@ test('service worker preserves queued captures while daemon is down and drains t
   assert.equal(failed.ok, true);
   assert.equal(failed.result.ok, false);
   assert.equal(failed.result.remaining, 1);
-  assert.equal(storage.captureQueue.length, 1);
-  assert.equal(storage.captureQueue[0].payload.url, 'https://example.test/offline');
-  assert.match(storage.captureQueue[0].payload.observation_id, /^observation_/);
-  assert.match(storage.captureQueue[0].payload.navigation_id, /^navigation_/);
-  const queuedObservationId = storage.captureQueue[0].payload.observation_id;
-  const queuedNavigationId = storage.captureQueue[0].payload.navigation_id;
+  const [queuedCapture] = await outbox.list('capture');
+  assert.equal(storage.captureQueue, undefined);
+  assert.equal(queuedCapture.payload.url, 'https://example.test/offline');
+  assert.match(queuedCapture.payload.observation_id, /^observation_/);
+  assert.match(queuedCapture.payload.navigation_id, /^navigation_/);
+  const queuedObservationId = queuedCapture.payload.observation_id;
+  const queuedNavigationId = queuedCapture.payload.navigation_id;
   const firstAttemptPayload = JSON.parse(first.calls.fetches[0].init.body);
   assert.equal(firstAttemptPayload.observation_id, queuedObservationId);
   assert.equal(firstAttemptPayload.navigation_id, queuedNavigationId);
 
   offline = false;
-  const restarted = createServiceWorkerHarness({ storage, fetchImpl });
+  for (const item of outbox.items.values()) item.next_attempt_at = null;
+  const restarted = createServiceWorkerHarness({ storage, fetchImpl, outbox });
   const drained = await restarted.context.drainAllQueues();
 
   assert.equal(drained.captures.ok, true);
   assert.equal(drained.captures.remaining, 0);
   assert.equal(drained.captures.delivered[0].document_id, 'doc-a');
-  assert.deepEqual(storage.captureQueue, []);
+  assert.deepEqual(await outbox.list('capture'), []);
   assert.equal(postCount, 2);
   const retryPayload = JSON.parse(restarted.calls.fetches[0].init.body);
   assert.equal(retryPayload.observation_id, queuedObservationId);
@@ -271,7 +281,7 @@ test('service worker keeps navigation identity stable per URL state and emits a 
   assert.notEqual(postedCaptures[2].observation_id, postedCaptures[1].observation_id);
 });
 
-test('service worker queue overflow characterization preserves old captures but drops the new capture', async () => {
+test('service worker queue overflow preserves old captures and visibly rejects the new capture', async () => {
   const existing = Array.from({ length: 100 }, (_, index) => ({
     payload: capturePayload(`existing-${index}`),
     queued_at: '2030-01-01T00:00:00.000Z'
@@ -292,11 +302,17 @@ test('service worker queue overflow characterization preserves old captures but 
     payload: capturePayload('overflow-new')
   });
 
+  assert.equal(result.ok, false);
   assert.equal(result.result.ok, false);
+  assert.equal(result.result.rejected, true);
+  assert.equal(result.result.reason, 'queue-full');
   assert.equal(result.result.remaining, 100);
-  assert.equal(storage.captureQueue.length, 100);
-  assert.equal(storage.captureQueue[0].payload.url, 'https://example.test/existing-0');
-  assert.equal(storage.captureQueue.some((item) => item.payload.url.endsWith('/overflow-new')), false);
+  const queued = await worker.outbox.list('capture');
+  assert.equal(storage.captureQueue, undefined);
+  assert.equal(queued.length, 100);
+  assert.equal(queued[0].payload.url, 'https://example.test/existing-0');
+  assert.equal(queued.some((item) => item.payload.url.endsWith('/overflow-new')), false);
+  assert.equal(storage.lastOutboxOverflow.kind, 'capture');
 });
 
 test('service worker skips missing token and pause without mutating capture queue, then resumes', async () => {
@@ -314,20 +330,107 @@ test('service worker skips missing token and pause without mutating capture queu
   const missingToken = await worker.sendMessage({ type: 'BMD_CAPTURE', payload: capturePayload('missing-token') });
   assert.equal(missingToken.result.skipped, true);
   assert.equal(missingToken.result.reason, 'missing-token');
-  assert.deepEqual(storage.captureQueue || [], []);
+  assert.deepEqual(await worker.outbox.list('capture'), []);
 
   await worker.chrome.storage.local.set({ apiToken: 'token', capturePaused: true });
   const paused = await worker.sendMessage({ type: 'BMD_CAPTURE', payload: capturePayload('paused') });
   assert.equal(paused.result.skipped, true);
   assert.equal(paused.result.reason, 'paused');
-  assert.deepEqual(storage.captureQueue || [], []);
+  assert.deepEqual(await worker.outbox.list('capture'), []);
 
   await worker.chrome.storage.local.set({ capturePaused: false });
   const resumed = await worker.sendMessage({ type: 'BMD_CAPTURE', payload: capturePayload('resumed') });
   assert.equal(resumed.result.ok, true);
   assert.equal(resumed.result.remaining, 0);
-  assert.deepEqual(storage.captureQueue, []);
+  assert.deepEqual(await worker.outbox.list('capture'), []);
   assert.equal(postCount, 1);
+});
+
+test('service worker transactionally imports and drains the legacy lifecycle queue before deleting it', async () => {
+  const storage = {
+    apiToken: 'token',
+    daemonUrl: 'http://127.0.0.1:8765',
+    policyMode: 'all',
+    visitEventQueue: [{
+      payload: {
+        event_id: 'legacy-event-1',
+        visit_id: 'visit-1',
+        url: 'https://example.test/legacy',
+        event_type: 'tab-deactivated'
+      },
+      queued_at: '2030-01-01T00:00:00.000Z'
+    }]
+  };
+  const posted = [];
+  const worker = createServiceWorkerHarness({
+    storage,
+    fetchImpl: async (url, init) => {
+      if (!url.endsWith('/visit-events')) throw new Error(`unexpected fetch ${url}`);
+      posted.push(JSON.parse(init.body));
+      return jsonResponse(201, { stored: true });
+    }
+  });
+
+  const drained = await worker.context.drainAllQueues();
+
+  assert.equal(drained.visitEvents.ok, true);
+  assert.equal(drained.visitEvents.remaining, 0);
+  assert.deepEqual(posted.map((payload) => payload.event_id), ['legacy-event-1']);
+  assert.equal(storage.visitEventQueue, undefined);
+  assert.deepEqual(await worker.outbox.list('lifecycle'), []);
+});
+
+test('capture result checkpoint survives suspension without reposting before media enqueue compensation', async () => {
+  class FlakyMediaQueue extends MemoryMediaQueueStore {
+    constructor() {
+      super();
+      this.fail = true;
+    }
+    async putMediaTask(task) {
+      if (this.fail) {
+        this.fail = false;
+        throw new Error('indexeddb-media-write-failed');
+      }
+      return super.putMediaTask(task);
+    }
+  }
+
+  const storage = { apiToken: 'token', daemonUrl: 'http://127.0.0.1:8765', policyMode: 'all' };
+  const outbox = new MemoryOutboxStore();
+  const mediaQueue = new FlakyMediaQueue();
+  let capturePosts = 0;
+  const fetchImpl = async (url) => {
+    if (!url.endsWith('/capture')) throw new Error(`unexpected fetch ${url}`);
+    capturePosts += 1;
+    return jsonResponse(201, {
+      stored: true,
+      document_id: 'doc-1',
+      snapshot_id: 'snap-1',
+      visit_id: 'visit-1',
+      media_artifacts: [{ artifact_id: 'artifact-1', source_url: 'https://example.test/image.png' }]
+    });
+  };
+  const payload = {
+    ...capturePayload('checkpoint'),
+    media_artifacts: [{ source_url: 'https://example.test/image.png', media_type: 'image' }]
+  };
+  const first = createServiceWorkerHarness({ storage, fetchImpl, mediaQueue, outbox });
+
+  const failed = await first.sendMessage({ type: 'BMD_CAPTURE', payload });
+  assert.equal(failed.result.ok, false);
+  const [checkpointed] = await outbox.list('capture');
+  assert.equal(checkpointed.capture_result.document_id, 'doc-1');
+  assert.equal(checkpointed.media_enqueued, false);
+
+  for (const item of outbox.items.values()) item.next_attempt_at = null;
+  const restarted = createServiceWorkerHarness({ storage, fetchImpl, mediaQueue, outbox });
+  const drained = await restarted.context.drainQueue();
+
+  assert.equal(drained.ok, true);
+  assert.equal(drained.remaining, 0);
+  assert.equal(capturePosts, 1);
+  const mediaCounts = await mediaQueue.countMediaTasksByStatus();
+  assert.equal((mediaCounts.fetching || 0) + (mediaCounts.retrying || 0), 1);
 });
 
 test('service worker injection respects stale token, pause, and strict URL controls', async () => {

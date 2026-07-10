@@ -18,7 +18,7 @@ The mental model:
 
 | Layer | Owns | Operator takeaway |
 |---|---|---|
-| Chrome extension | Capture, pause/block/forget UI, browser-side media queue. | Reload this after extension code or token/policy changes. |
+| Chrome extension | Capture, pause/block/forget UI, transactional capture/lifecycle outbox, browser-side media queue. | Reload this after extension code or token/policy changes. |
 | WSL daemon | Auth, policy, ingest, search, UI shell, delete receipts, media cache controls. | This is the durable memory service. |
 | WSL runtime paths | SQLite complete-text/FTS authority, media blobs, legacy text sidecars, token/env, audit log. | Runtime data never belongs in Git. New captures create no text sidecar. |
 
@@ -336,7 +336,7 @@ Popup controls:
 | Block current domain/prefix | Adds a daemon block rule. Localhost pages with explicit ports use URL-prefix rules so one local app does not block every loopback page. |
 | Forget current domain | Deletes stored memory for the current domain after confirmation. |
 
-Resilience behavior: if the daemon is temporarily unavailable, successfully queued captures stay in extension storage and are retried on the next queue drain/service-worker lifetime. Missing-token or paused states skip new capture queue mutation; resume capture after restoring the token or toggling pause off. Browser-side media uploads keep fetched blobs in IndexedDB until upload succeeds or the retry budget is exhausted.
+Resilience behavior: if the daemon is temporarily unavailable, successfully queued captures and lifecycle messages stay as independent IndexedDB outbox rows and are retried by startup/install/alarm drains after their due time. MV3 suspension claims recover after five minutes; capture acceptance is checkpointed before browser media compensation. At the current 100-capture or 200-lifecycle item limit, existing rows remain intact and the new message is visibly rejected instead of silently sliced. Missing-token or paused states skip new capture queue mutation; resume capture after restoring the token or toggling pause off. Browser-side media uploads remain a separate IndexedDB queue and keep fetched blobs until upload succeeds or the retry budget is exhausted. Enforced byte quotas and popup/options outbox counters remain follow-up Phase 5 work.
 
 Options page controls:
 

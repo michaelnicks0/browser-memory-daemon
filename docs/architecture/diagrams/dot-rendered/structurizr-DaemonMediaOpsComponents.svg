@@ -17,14 +17,14 @@
 <text text-anchor="start" x="1361.5" y="-72.8" font-family="Arial" font-size="19.00" fill="#444444">[Software System]</text>
 </g>
 <g id="clust2" class="cluster">
-<title>cluster_14</title>
+<title>cluster_15</title>
 <polygon fill="none" stroke="#444444" points="903,-408 903,-813 2129,-813 2129,-408 903,-408"/>
 <text text-anchor="start" x="1350.5" y="-436.8" font-family="Arial" font-size="24.00" fill="#444444">WSL Loopback HTTP Daemon</text>
 <text text-anchor="start" x="1314" y="-416.8" font-family="Arial" font-size="19.00" fill="#444444">[Container: Python 3.11, ThreadingHTTPServer]</text>
 </g>
-<!-- 23 -->
-<g id="23" class="node">
-<title>23</title>
+<!-- 24 -->
+<g id="24" class="node">
+<title>24</title>
 <polygon fill="#85bbf0" stroke="#1168bd" points="2104,-787.5 1701,-787.5 1701,-508.5 2104,-508.5 2104,-787.5"/>
 <text text-anchor="start" x="1730" y="-739.3" font-family="Arial" font-size="34.00" fill="#000000">Media Task Repository</text>
 <text text-anchor="start" x="1774.5" y="-717.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python + sqlite3]</text>
@@ -36,9 +36,9 @@
 <text text-anchor="start" x="1743" y="-560.3" font-family="Arial" font-size="24.00" fill="#000000">outcomes independently from</text>
 <text text-anchor="start" x="1814.5" y="-536.3" font-family="Arial" font-size="24.00" fill="#000000">media transport.</text>
 </g>
-<!-- 39 -->
-<g id="39" class="node">
-<title>39</title>
+<!-- 40 -->
+<g id="40" class="node">
+<title>40</title>
 <path fill="#2f95c8" stroke="#20688c" d="M2844,-776.22C2844,-804.44 2755.48,-827.38 2646.5,-827.38 2537.52,-827.38 2449,-804.44 2449,-776.22 2449,-776.22 2449,-315.78 2449,-315.78 2449,-287.56 2537.52,-264.62 2646.5,-264.62 2755.48,-264.62 2844,-287.56 2844,-315.78 2844,-315.78 2844,-776.22 2844,-776.22"/>
 <path fill="none" stroke="#20688c" d="M2844,-776.22C2844,-747.99 2755.48,-725.06 2646.5,-725.06 2537.52,-725.06 2449,-747.99 2449,-776.22"/>
 <text text-anchor="start" x="2533.5" y="-702.3" font-family="Arial" font-size="34.00" fill="#ffffff">SQLite + FTS5</text>
@@ -56,9 +56,9 @@
 <text text-anchor="start" x="2521" y="-393.3" font-family="Arial" font-size="24.00" fill="#ffffff">rules, audit events, and</text>
 <text text-anchor="start" x="2554.5" y="-369.3" font-family="Arial" font-size="24.00" fill="#ffffff">deletion receipts.</text>
 </g>
-<!-- 23&#45;&gt;39 -->
-<g id="106" class="edge">
-<title>23&#45;&gt;39</title>
+<!-- 24&#45;&gt;40 -->
+<g id="109" class="edge">
+<title>24&#45;&gt;40</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M2104.3,-620.4C2207.93,-606.15 2334.18,-588.8 2438.67,-574.43"/>
 <polygon fill="#444444" stroke="#444444" points="2439.29,-577.88 2448.72,-573.05 2438.33,-570.95 2439.29,-577.88"/>
 <polygon fill="white" stroke="transparent" points="2140,-615 2140,-690 2413,-690 2413,-615 2140,-615"/>
@@ -66,9 +66,9 @@
 <text text-anchor="start" x="2144.5" y="-643.3" font-family="Arial" font-size="24.00" fill="#444444">advances media tasks in</text>
 <text text-anchor="start" x="2243.5" y="-623.3" font-family="Arial" font-size="19.00" fill="#444444">[sqlite3]</text>
 </g>
-<!-- 28 -->
-<g id="28" class="node">
-<title>28</title>
+<!-- 29 -->
+<g id="29" class="node">
+<title>29</title>
 <polygon fill="#85bbf0" stroke="#1168bd" points="1309,-783.5 928,-783.5 928,-508.5 1309,-508.5 1309,-783.5"/>
 <text text-anchor="start" x="967.5" y="-735.3" font-family="Arial" font-size="34.00" fill="#000000">Media Operator and</text>
 <text text-anchor="start" x="1012.5" y="-701.3" font-family="Arial" font-size="34.00" fill="#000000">Reconciliation</text>
@@ -79,9 +79,9 @@
 <text text-anchor="start" x="971.5" y="-560.3" font-family="Arial" font-size="24.00" fill="#000000">current&#45;state CDP/blob and</text>
 <text text-anchor="start" x="981" y="-536.3" font-family="Arial" font-size="24.00" fill="#000000">stored&#45;task reconciliation.</text>
 </g>
-<!-- 28&#45;&gt;23 -->
-<g id="119" class="edge">
-<title>28&#45;&gt;23</title>
+<!-- 29&#45;&gt;24 -->
+<g id="122" class="edge">
+<title>29&#45;&gt;24</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1309.3,-646.49C1424.49,-646.78 1571.72,-647.16 1690.55,-647.46"/>
 <polygon fill="#444444" stroke="#444444" points="1690.86,-650.96 1700.87,-647.49 1690.88,-643.96 1690.86,-650.96"/>
 <polygon fill="white" stroke="transparent" points="1361,-647 1361,-733 1649,-733 1649,-647 1361,-647"/>
@@ -89,9 +89,9 @@
 <text text-anchor="start" x="1365" y="-683.8" font-family="Arial" font-size="24.00" fill="#444444">tasks and closes bounded</text>
 <text text-anchor="start" x="1368.5" y="-657.8" font-family="Arial" font-size="24.00" fill="#444444">stale stored work through</text>
 </g>
-<!-- 28&#45;&gt;39 -->
-<g id="120" class="edge">
-<title>28&#45;&gt;39</title>
+<!-- 29&#45;&gt;40 -->
+<g id="123" class="edge">
+<title>29&#45;&gt;40</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1309.25,-546.28C1446.95,-476.03 1622.33,-391.49 1701,-374 1886.69,-332.72 1941.23,-343.56 2129,-374 2233.85,-391 2346.19,-426.22 2439.23,-460.4"/>
 <polygon fill="#444444" stroke="#444444" points="2438.16,-463.73 2448.75,-463.91 2440.58,-457.16 2438.16,-463.73"/>
 <polygon fill="white" stroke="transparent" points="1751,-374 1751,-473 2054,-473 2054,-374 1751,-374"/>
@@ -100,9 +100,9 @@
 <text text-anchor="start" x="1893.5" y="-402.3" font-family="Arial" font-size="24.00" fill="#444444">in</text>
 <text text-anchor="start" x="1869.5" y="-382.3" font-family="Arial" font-size="19.00" fill="#444444">[sqlite3]</text>
 </g>
-<!-- 35 -->
-<g id="35" class="node">
-<title>35</title>
+<!-- 36 -->
+<g id="36" class="node">
+<title>36</title>
 <polygon fill="#438dd5" stroke="#2e6295" points="467,-1061.5 113,-1061.5 113,-758.5 467,-758.5 467,-1061.5"/>
 <text text-anchor="start" x="143" y="-1013.3" font-family="Arial" font-size="34.00" fill="#ffffff">WSL Media Worker</text>
 <text text-anchor="start" x="150" y="-991.3" font-family="Arial" font-size="19.00" fill="#ffffff">[Container: Python 3.11 CLI loop]</text>
@@ -115,27 +115,27 @@
 <text text-anchor="start" x="144" y="-810.3" font-family="Arial" font-size="24.00" fill="#ffffff">states, and updates artifact</text>
 <text text-anchor="start" x="261" y="-786.3" font-family="Arial" font-size="24.00" fill="#ffffff">rows.</text>
 </g>
-<!-- 35&#45;&gt;23 -->
-<g id="66" class="edge">
-<title>35&#45;&gt;23</title>
+<!-- 36&#45;&gt;24 -->
+<g id="67" class="edge">
+<title>36&#45;&gt;24</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M467.16,-910.27C732.8,-906.12 1249.05,-880.17 1665,-751 1673.64,-748.32 1682.38,-745.42 1691.17,-742.35"/>
 <polygon fill="#444444" stroke="#444444" points="1692.46,-745.61 1700.71,-738.96 1690.12,-739.01 1692.46,-745.61"/>
 <polygon fill="white" stroke="transparent" points="975.5,-887 975.5,-947 1261.5,-947 1261.5,-887 975.5,-887"/>
 <text text-anchor="start" x="979.5" y="-923.8" font-family="Arial" font-size="24.00" fill="#444444">Runs bounded lease/retry</text>
 <text text-anchor="start" x="1001" y="-897.8" font-family="Arial" font-size="24.00" fill="#444444">task workflow through</text>
 </g>
-<!-- 35&#45;&gt;28 -->
-<g id="69" class="edge">
-<title>35&#45;&gt;28</title>
+<!-- 36&#45;&gt;29 -->
+<g id="70" class="edge">
+<title>36&#45;&gt;29</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M467.04,-853.77C599.2,-811.55 780.31,-753.71 917.87,-709.77"/>
 <polygon fill="#444444" stroke="#444444" points="919.23,-713 927.69,-706.63 917.1,-706.34 919.23,-713"/>
 <polygon fill="white" stroke="transparent" points="583,-809 583,-869 892,-869 892,-809 583,-809"/>
 <text text-anchor="start" x="587.5" y="-845.8" font-family="Arial" font-size="24.00" fill="#444444">Runs bounded current&#45;state</text>
 <text text-anchor="start" x="622.5" y="-819.8" font-family="Arial" font-size="24.00" fill="#444444">reconciliation through</text>
 </g>
-<!-- 35&#45;&gt;39 -->
-<g id="65" class="edge">
-<title>35&#45;&gt;39</title>
+<!-- 36&#45;&gt;40 -->
+<g id="66" class="edge">
+<title>36&#45;&gt;40</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M467.14,-930.05C589.28,-942.91 755.8,-958.4 903,-965 1450.58,-989.56 1603.03,-985.29 2129,-831 2260.99,-792.28 2292.86,-774.99 2413,-708 2421.95,-703.01 2430.99,-697.75 2440.04,-692.32"/>
 <polygon fill="#444444" stroke="#444444" points="2441.98,-695.23 2448.71,-687.05 2438.35,-689.25 2441.98,-695.23"/>
 <polygon fill="white" stroke="transparent" points="1355,-975 1355,-1050 1655,-1050 1655,-975 1355,-975"/>
@@ -143,9 +143,9 @@
 <text text-anchor="start" x="1464" y="-1003.3" font-family="Arial" font-size="24.00" fill="#444444">tasks in</text>
 <text text-anchor="start" x="1471.5" y="-983.3" font-family="Arial" font-size="19.00" fill="#444444">[sqlite3]</text>
 </g>
-<!-- 37 -->
-<g id="37" class="node">
-<title>37</title>
+<!-- 38 -->
+<g id="38" class="node">
+<title>38</title>
 <polygon fill="#438dd5" stroke="#2e6295" points="547,-592.5 33,-592.5 33,-217.5 547,-217.5 547,-592.5"/>
 <text text-anchor="start" x="263" y="-544.3" font-family="Arial" font-size="34.00" fill="#ffffff">CLI</text>
 <text text-anchor="start" x="169" y="-522.3" font-family="Arial" font-size="19.00" fill="#ffffff">[Container: Python argparse]</text>
@@ -161,9 +161,9 @@
 <text text-anchor="start" x="145" y="-269.3" font-family="Arial" font-size="24.00" fill="#ffffff">fixtures, media worker, and</text>
 <text text-anchor="start" x="157.5" y="-245.3" font-family="Arial" font-size="24.00" fill="#ffffff">media cache operations.</text>
 </g>
-<!-- 37&#45;&gt;28 -->
-<g id="57" class="edge">
-<title>37&#45;&gt;28</title>
+<!-- 38&#45;&gt;29 -->
+<g id="58" class="edge">
+<title>38&#45;&gt;29</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M547.24,-428.58C655.98,-443.95 782.62,-469.1 892,-510 900.82,-513.3 909.68,-516.95 918.52,-520.86"/>
 <polygon fill="#444444" stroke="#444444" points="917.16,-524.09 927.71,-525.04 920.06,-517.72 917.16,-524.09"/>
 <polygon fill="white" stroke="transparent" points="605.5,-510 605.5,-596 869.5,-596 869.5,-510 605.5,-510"/>
@@ -171,9 +171,9 @@
 <text text-anchor="start" x="609.5" y="-546.8" font-family="Arial" font-size="24.00" fill="#444444">scoped budget requeue</text>
 <text text-anchor="start" x="696" y="-520.8" font-family="Arial" font-size="24.00" fill="#444444">through</text>
 </g>
-<!-- 37&#45;&gt;39 -->
-<g id="55" class="edge">
-<title>37&#45;&gt;39</title>
+<!-- 38&#45;&gt;40 -->
+<g id="56" class="edge">
+<title>38&#45;&gt;40</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M547.1,-344.91C822.6,-287.28 1273.87,-213.11 1665,-243 2000.37,-268.63 2105.37,-222 2413,-358 2422.08,-362.01 2431.1,-366.48 2440.02,-371.3"/>
 <polygon fill="#444444" stroke="#444444" points="2438.46,-374.44 2448.91,-376.24 2441.87,-368.32 2438.46,-374.44"/>
 <polygon fill="white" stroke="transparent" points="1345,-243 1345,-390 1665,-390 1665,-243 1345,-243"/>

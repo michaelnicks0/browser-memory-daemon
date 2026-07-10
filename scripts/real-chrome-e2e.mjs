@@ -550,7 +550,7 @@ async function configureExtensionStorage(cdp) {
       const injectionProbe = await evaluate(
         cdp,
         sessionId,
-        `JSON.stringify({hasScripting: Boolean(chrome.scripting && chrome.scripting.executeScript), hasTabs: Boolean(chrome.tabs && chrome.tabs.onUpdated), hasPolicy: Boolean(globalThis.shouldBlockBrowserMemoryUrl)})`
+        `JSON.stringify({hasScripting: Boolean(chrome.scripting && chrome.scripting.executeScript), hasTabs: Boolean(chrome.tabs && chrome.tabs.onUpdated), hasPolicy: Boolean(globalThis.shouldBlockBrowserMemoryUrl), hasOutbox: Boolean(globalThis.BrowserMemoryOutbox)})`
       );
       log(`extension injection capabilities ${injectionProbe}`);
       log(`configured extension ${extensionId} storage for ${daemonUrl} policyMode=${policyMode}`);
@@ -606,13 +606,24 @@ async function getQueueLengths(cdp, storageSessionId) {
   const stored = await evaluate(
     cdp,
     storageSessionId,
-    `chrome.storage.local.get({captureQueue: [], visitEventQueue: []}).then((value) => JSON.stringify({captureQueue: value.captureQueue || [], visitEventQueue: value.visitEventQueue || []}))`,
+    `Promise.all([
+      globalThis.BrowserMemoryOutbox ? BrowserMemoryOutbox.getStats('capture') : Promise.resolve({count: -1}),
+      globalThis.BrowserMemoryOutbox ? BrowserMemoryOutbox.getStats('lifecycle') : Promise.resolve({count: -1}),
+      chrome.storage.local.get({captureQueue: [], visitEventQueue: []})
+    ]).then(([captures, lifecycle, legacy]) => JSON.stringify({
+      captureQueue: captures.count,
+      visitEventQueue: lifecycle.count,
+      legacyCaptureQueue: (legacy.captureQueue || []).length,
+      legacyVisitEventQueue: (legacy.visitEventQueue || []).length
+    }))`,
     { awaitPromise: true }
   );
   const parsed = JSON.parse(stored || '{}');
   return {
-    captureQueue: (parsed.captureQueue || []).length,
-    visitEventQueue: (parsed.visitEventQueue || []).length
+    captureQueue: Number(parsed.captureQueue ?? -1),
+    visitEventQueue: Number(parsed.visitEventQueue ?? -1),
+    legacyCaptureQueue: Number(parsed.legacyCaptureQueue ?? -1),
+    legacyVisitEventQueue: Number(parsed.legacyVisitEventQueue ?? -1)
   };
 }
 
@@ -621,7 +632,7 @@ async function waitForQueuesEmpty(cdp, storageSessionId, timeoutMs = 15000) {
   let lengths = { captureQueue: -1, visitEventQueue: -1 };
   while (Date.now() - started < timeoutMs) {
     lengths = await getQueueLengths(cdp, storageSessionId);
-    if (lengths.captureQueue === 0 && lengths.visitEventQueue === 0) return lengths;
+    if (lengths.captureQueue === 0 && lengths.visitEventQueue === 0 && lengths.legacyCaptureQueue === 0 && lengths.legacyVisitEventQueue === 0) return lengths;
     await sleep(500);
   }
   return lengths;
@@ -654,7 +665,11 @@ async function getQueueDebug(cdp, storageSessionId) {
   const stored = await evaluate(
     cdp,
     storageSessionId,
-    `chrome.storage.local.get({captureQueue: [], visitEventQueue: [], lastVisitEventError: null}).then((value) => JSON.stringify({captureQueue: value.captureQueue || [], visitEventQueue: value.visitEventQueue || [], lastVisitEventError: value.lastVisitEventError || null}))`,
+    `Promise.all([
+      globalThis.BrowserMemoryOutbox ? BrowserMemoryOutbox.getStats('capture') : Promise.resolve({unavailable: true}),
+      globalThis.BrowserMemoryOutbox ? BrowserMemoryOutbox.getStats('lifecycle') : Promise.resolve({unavailable: true}),
+      chrome.storage.local.get({captureQueue: [], visitEventQueue: [], lastVisitEventError: null, lastCaptureOutboxError: null, lastOutboxError: null})
+    ]).then(([captures, lifecycle, legacy]) => JSON.stringify({captures, lifecycle, legacyCaptureQueue: (legacy.captureQueue || []).length, legacyVisitEventQueue: (legacy.visitEventQueue || []).length, lastVisitEventError: legacy.lastVisitEventError || null, lastCaptureOutboxError: legacy.lastCaptureOutboxError || null, lastOutboxError: legacy.lastOutboxError || null}))`,
     { awaitPromise: true }
   );
   return JSON.parse(stored || '{}');
@@ -866,7 +881,7 @@ async function runScenario() {
   const queueLengths = await waitForQueuesEmpty(browserCdp, storageSessionId);
   const mediaQueueCounts = await waitForMediaQueueEmpty(browserCdp, storageSessionId);
   const mediaQueueTotal = Object.values(mediaQueueCounts).reduce((sum, value) => sum + Number(value || 0), 0);
-  if (queueLengths.captureQueue !== 0 || queueLengths.visitEventQueue !== 0 || mediaQueueTotal !== 0) {
+  if (queueLengths.captureQueue !== 0 || queueLengths.visitEventQueue !== 0 || queueLengths.legacyCaptureQueue !== 0 || queueLengths.legacyVisitEventQueue !== 0 || mediaQueueTotal !== 0) {
     const queueDebug = await getQueueDebug(browserCdp, storageSessionId);
     fail(`extension queues not drained/empty: ${JSON.stringify({ ...queueLengths, mediaQueueCounts })} debug=${JSON.stringify(queueDebug).slice(0, 2000)}`);
   }

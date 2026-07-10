@@ -53,7 +53,7 @@ Node tests are not included in the Python coverage percentage. They run in the s
 
 The media-core row was remeasured after late Phase 4 transport-audit remediation on 2026-07-10. The Phase 1.3 repository baseline and 80% ratchet above remain the historical floor-setting measurement.
 
-The suite now explicitly characterizes capture-queue overflow: with 100 stored captures and an offline daemon, the existing queue preserves the 100 old entries but drops the newly submitted capture without visible backpressure. That passing test is **defect evidence**, not acceptance. `REQ-037` / `HRD-012` remains planned until Phase 5 delivers the transactional IndexedDB outbox, byte quotas, visible overflow, and restart-safe claims.
+The extension suite now verifies that the versioned IndexedDB capture/lifecycle outbox preserves existing rows at the 100-item capture limit and visibly rejects the new message, rather than silently slicing a whole-array `chrome.storage.local` queue. It also covers concurrent admission, token-checked claims, retry due times, stale-claim recovery, legacy-array import, serialized-byte accounting, daemon-outage restart, and capture-result checkpointing before media compensation. `REQ-037` / `HRD-012` remains planned until enforced byte quotas, operator-facing telemetry, and specialized media queue quota/cleanup behavior close.
 
 Media queue due-state tests cover pending, deferred retry, stale processing, malformed processing timestamps, terminal states, fetched-blob retention, and delete cleanup.
 

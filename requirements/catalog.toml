@@ -552,12 +552,12 @@ rationale = "MV3 suspension and quota exhaustion must not silently lose accepted
 owner = "Extension Durable Outboxes"
 status = "planned"
 aliases = ["HRD-012"]
-implementation = ["extension/src/service_worker.js", "extension/src/media_queue.js"]
-unit_evidence = []
-integration_evidence = []
+implementation = ["extension/src/outbox.js", "extension/src/service_worker.js", "extension/src/media_queue.js"]
+unit_evidence = ["extension/tests/unit/outbox.test.js::concurrent enqueue preserves existing captures and visibly rejects only new work at capacity", "extension/tests/unit/outbox.test.js::claim, retry, due time, and acknowledgement are token-checked atomic transitions", "extension/tests/unit/outbox.test.js::stale claims recover after service-worker suspension without becoming concurrently claimable", "extension/tests/unit/outbox.test.js::legacy queue import is marked atomically and is idempotent before chrome storage cleanup", "extension/tests/unit/outbox.test.js::serialized byte accounting uses UTF-8 payload bytes and survives claim metadata changes"]
+integration_evidence = ["extension/tests/unit/service_worker.test.js::service worker preserves queued captures while daemon is down and drains them after reload", "extension/tests/unit/service_worker.test.js::service worker queue overflow preserves old captures and visibly rejects the new capture", "extension/tests/unit/service_worker.test.js::service worker transactionally imports and drains the legacy lifecycle queue before deleting it", "extension/tests/unit/service_worker.test.js::capture result checkpoint survives suspension without reposting before media enqueue compensation"]
 system_evidence = []
-operational_evidence = []
-validation_evidence = []
+operational_evidence = ["docs/architecture/adr/0048-use-transactional-indexeddb-capture-lifecycle-outbox.md"]
+validation_evidence = ["extension/tests/unit/service_worker.test.js::service worker preserves queued captures while daemon is down and drains them after reload", "extension/tests/unit/service_worker.test.js::service worker queue overflow preserves old captures and visibly rejects the new capture"]
 
 [[requirements]]
 id = "REQ-038"

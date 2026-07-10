@@ -43,7 +43,7 @@ Windows Chrome MV3 extension
 
 The system boundary is **Browser Memory Daemon**, including the owned Chrome extension, WSL daemon, WSL media worker, local UI, CLI, database, and blob stores. Windows Chrome and web/media origins are modeled as external systems.
 
-Every component in `workspace.dsl` carries the `Current` tag. Planned target-state boundaries such as versioned migrations, capture observations, BlobStore, transactional capture/lifecycle outboxes, and the thin HTTP application layer remain `planned` requirements in [`../../requirements/catalog.toml`](../../requirements/catalog.toml) and are not presented as implemented C4 elements. When a target boundary is added for design review before implementation, it must carry the `Target` tag and remain visually distinct until cutover evidence exists.
+Every implemented component in `workspace.dsl` carries the `Current` tag. Versioned migrations, capture observations, BlobStore, media decomposition, and the transactional capture/lifecycle outbox are current; remaining planned boundaries such as the thin HTTP application layer stay `planned` in [`../../requirements/catalog.toml`](../../requirements/catalog.toml) and are not presented as implemented C4 elements. When a target boundary is added for design review before implementation, it must carry the `Target` tag and remain visually distinct from the current system.
 
 ## Diagram ownership
 
@@ -134,7 +134,7 @@ Primary source evidence used for this model:
 | Default policy mode is `all`; non-all modes add built-in filtering/redaction while explicit local block rules apply in every mode. | `README.md`, `docs/security-model.md`, `daemon/src/browser_memory_daemon/policy.py`, `daemon/src/browser_memory_daemon/policy_store.py`, `extension/src/extractor.js` |
 | Capture transport is extension service worker to authenticated loopback HTTP, using JSON for metadata/capture APIs and raw `PUT` for blob uploads. | `docs/api.md`, `daemon/src/browser_memory_daemon/app.py`, `extension/src/service_worker.js` |
 | Fast capture stores documents, visits, snapshots, chunks, FTS rows, and media refs. | `daemon/src/browser_memory_daemon/ingest.py`, `daemon/src/browser_memory_daemon/schema.sql` |
-| Extension browser storage keeps capture/visit queues in `chrome.storage.local` and durable media tasks/blobs in IndexedDB. | `extension/src/service_worker.js`, `extension/src/media_queue.js` |
+| Extension browser storage keeps transactional capture/lifecycle outbox rows and durable specialized media tasks/blobs in IndexedDB; `chrome.storage.local` retains configuration, lifecycle tab state, aggregate telemetry, and a one-version queue fallback. | `extension/src/outbox.js`, `extension/src/service_worker.js`, `extension/src/media_queue.js`, ADR-0048 |
 | Credentialed media fetch stays inside Chrome; raw blobs upload to WSL. | `docs/media-artifacts.md`, `extension/src/service_worker.js`, `daemon/src/browser_memory_daemon/media.py` |
 | Daemon media worker leases public media tasks and writes blob/status updates. | `daemon/src/browser_memory_daemon/media_worker.py`, `daemon/src/browser_memory_daemon/media.py` |
 | SQLite schema evolution uses an exact version-1 fingerprint, contiguous ledger checksums, and backup-gated destructive steps. | `daemon/src/browser_memory_daemon/migrations.py`, `daemon/src/browser_memory_daemon/migration_steps/`, `docs/database-migrations.md` |

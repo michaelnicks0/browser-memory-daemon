@@ -13,7 +13,7 @@ digraph {
     fontcolor="#444444"
     fillcolor="#444444"
 
-    subgraph cluster_14 {
+    subgraph cluster_15 {
       margin=25
       label=<<font point-size="24"><br />WSL Loopback HTTP Daemon</font><br /><font point-size="19">[Container: Python 3.11, ThreadingHTTPServer]</font>>
       labelloc=b
@@ -21,14 +21,14 @@ digraph {
       fontcolor="#444444"
       fillcolor="#444444"
 
-      15 [id=15,shape=rect, label=<<font point-size="34">HTTP Request Router</font><br /><font point-size="19">[Component: Python http.server]</font><br /><br /><font point-size="24">Routes loopback API requests,<br />serves UI assets, enforces<br />bearer auth for memory/admin<br />APIs, and applies CORS for<br />allowed origins.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
-      16 [id=16,shape=rect, label=<<font point-size="34">Database Migration<br />Kernel</font><br /><font point-size="19">[Component: Python + sqlite3]</font><br /><br /><font point-size="24">Serializes migrators;<br />validates exact schema<br />fingerprints, ordered<br />names/checksums, and PRAGMA<br />user_version; applies<br />transactional steps,<br />backup-gates destructive<br />changes, and expands capture<br />provenance, storage state,<br />one-time historical media<br />correction, plus durable cache<br />reservations through version<br />13.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
+      16 [id=16,shape=rect, label=<<font point-size="34">HTTP Request Router</font><br /><font point-size="19">[Component: Python http.server]</font><br /><br /><font point-size="24">Routes loopback API requests,<br />serves UI assets, enforces<br />bearer auth for memory/admin<br />APIs, and applies CORS for<br />allowed origins.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
+      17 [id=17,shape=rect, label=<<font point-size="34">Database Migration<br />Kernel</font><br /><font point-size="19">[Component: Python + sqlite3]</font><br /><br /><font point-size="24">Serializes migrators;<br />validates exact schema<br />fingerprints, ordered<br />names/checksums, and PRAGMA<br />user_version; applies<br />transactional steps,<br />backup-gates destructive<br />changes, and expands capture<br />provenance, storage state,<br />one-time historical media<br />correction, plus durable cache<br />reservations through version<br />13.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
     }
 
-    39 [id=39,shape=cylinder, label=<<font point-size="34">SQLite + FTS5<br />Database</font><br /><font point-size="19">[Container: SQLite with FTS5]</font><br /><br /><font point-size="24">Durable complete cleaned-text,<br />relational, and full-text<br />authority for migration<br />ledger, sources, documents,<br />visits, capture observations,<br />URL claims, visit events,<br />snapshots, chunks, chunks_fts,<br />media provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+    40 [id=40,shape=cylinder, label=<<font point-size="34">SQLite + FTS5<br />Database</font><br /><font point-size="19">[Container: SQLite with FTS5]</font><br /><br /><font point-size="24">Durable complete cleaned-text,<br />relational, and full-text<br />authority for migration<br />ledger, sources, documents,<br />visits, capture observations,<br />URL claims, visit events,<br />snapshots, chunks, chunks_fts,<br />media provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
   }
 
-  16 -> 39 [id=136, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Validates and advances<br />schema ledger/fingerprint<br />in</font><br /><font point-size="19">[sqlite3 online backup + transactions]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-  15 -> 16 [id=87, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Requires compatible<br />initialized schema through</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  17 -> 40 [id=139, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Validates and advances<br />schema ledger/fingerprint<br />in</font><br /><font point-size="19">[sqlite3 online backup + transactions]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
+  16 -> 17 [id=90, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Requires compatible<br />initialized schema through</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
 
 }

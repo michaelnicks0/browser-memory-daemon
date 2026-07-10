@@ -55,6 +55,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0045](0045-isolate-guarded-media-fetch-and-hls.md) | accepted | Isolate guarded media fetch and bounded HLS transport. |
 | [ADR-0046](0046-move-historical-media-correction-out-of-worker-loop.md) | accepted | Move historical media correction out of the worker loop. |
 | [ADR-0047](0047-stream-media-with-process-budgets-and-durable-cache-reservations.md) | accepted | Stream media with process budgets and durable cache reservations. |
+| [ADR-0048](0048-use-transactional-indexeddb-capture-lifecycle-outbox.md) | accepted | Use a transactional IndexedDB outbox for capture and lifecycle delivery. |
 
 ## Backfilled decision history
 

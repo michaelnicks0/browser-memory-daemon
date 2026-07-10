@@ -147,7 +147,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </code></pre></div>
 
 <p>The system boundary is <strong>Browser Memory Daemon</strong>, including the owned Chrome extension, WSL daemon, WSL media worker, local UI, CLI, database, and blob stores. Windows Chrome and web/media origins are modeled as external systems.</p>
-<p>Every component in <code>workspace.dsl</code> carries the <code>Current</code> tag. Planned target-state boundaries such as versioned migrations, capture observations, BlobStore, transactional capture/lifecycle outboxes, and the thin HTTP application layer remain <code>planned</code> requirements in <a href="../../requirements/catalog.toml"><code>../../requirements/catalog.toml</code></a> and are not presented as implemented C4 elements. When a target boundary is added for design review before implementation, it must carry the <code>Target</code> tag and remain visually distinct until cutover evidence exists.</p>
+<p>Every implemented component in <code>workspace.dsl</code> carries the <code>Current</code> tag. Versioned migrations, capture observations, BlobStore, media decomposition, and the transactional capture/lifecycle outbox are current; remaining planned boundaries such as the thin HTTP application layer stay <code>planned</code> in <a href="../../requirements/catalog.toml"><code>../../requirements/catalog.toml</code></a> and are not presented as implemented C4 elements. When a target boundary is added for design review before implementation, it must carry the <code>Target</code> tag and remain visually distinct from the current system.</p>
 <h2 id="diagram-ownership">Diagram ownership</h2>
 <ul>
 <li><code>workspace.dsl</code> is the canonical C4 source for systems, containers, components, deployment, and major scenario flows.</li>
@@ -341,8 +341,8 @@ python3<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;<
 <td><code>daemon/src/browser_memory_daemon/ingest.py</code>, <code>daemon/src/browser_memory_daemon/schema.sql</code></td>
 </tr>
 <tr>
-<td>Extension browser storage keeps capture/visit queues in <code>chrome.storage.local</code> and durable media tasks/blobs in IndexedDB.</td>
-<td><code>extension/src/service_worker.js</code>, <code>extension/src/media_queue.js</code></td>
+<td>Extension browser storage keeps transactional capture/lifecycle outbox rows and durable specialized media tasks/blobs in IndexedDB; <code>chrome.storage.local</code> retains configuration, lifecycle tab state, aggregate telemetry, and a one-version queue fallback.</td>
+<td><code>extension/src/outbox.js</code>, <code>extension/src/service_worker.js</code>, <code>extension/src/media_queue.js</code>, ADR-0048</td>
 </tr>
 <tr>
 <td>Credentialed media fetch stays inside Chrome; raw blobs upload to WSL.</td>

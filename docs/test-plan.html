@@ -436,11 +436,11 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>REQ-037 — Browser capture, lifecycle, and media queues shall be transactional, restart-safe, quota-aware, and never silently truncate.</td>
+<td><code>extension/tests/unit/outbox.test.js::concurrent enqueue preserves existing captures and visibly rejects only new work at capacity</code><br><code>extension/tests/unit/outbox.test.js::claim, retry, due time, and acknowledgement are token-checked atomic transitions</code><br><code>extension/tests/unit/outbox.test.js::stale claims recover after service-worker suspension without becoming concurrently claimable</code><br><code>extension/tests/unit/outbox.test.js::legacy queue import is marked atomically and is idempotent before chrome storage cleanup</code><br><code>extension/tests/unit/outbox.test.js::serialized byte accounting uses UTF-8 payload bytes and survives claim metadata changes</code></td>
+<td><code>extension/tests/unit/service_worker.test.js::service worker preserves queued captures while daemon is down and drains them after reload</code><br><code>extension/tests/unit/service_worker.test.js::service worker queue overflow preserves old captures and visibly rejects the new capture</code><br><code>extension/tests/unit/service_worker.test.js::service worker transactionally imports and drains the legacy lifecycle queue before deleting it</code><br><code>extension/tests/unit/service_worker.test.js::capture result checkpoint survives suspension without reposting before media enqueue compensation</code></td>
 <td>—</td>
-<td>—</td>
-<td>—</td>
-<td>—</td>
-<td>—</td>
+<td><code>docs/architecture/adr/0048-use-transactional-indexeddb-capture-lifecycle-outbox.md</code></td>
+<td><code>extension/tests/unit/service_worker.test.js::service worker preserves queued captures while daemon is down and drains them after reload</code><br><code>extension/tests/unit/service_worker.test.js::service worker queue overflow preserves old captures and visibly rejects the new capture</code></td>
 </tr>
 <tr>
 <td>REQ-038 — Dwell shall be derived from validated interval unions rather than additive overlapping reports.</td>

@@ -1,4 +1,4 @@
-try { importScripts('shared.js', 'extractor.js', 'media_queue.js', 'cdp_recorder.js'); } catch (_) {}
+try { importScripts('shared.js', 'extractor.js', 'outbox.js', 'media_queue.js', 'cdp_recorder.js'); } catch (_) {}
 
 const DEFAULTS = {
   daemonUrl: 'http://127.0.0.1:8765',
@@ -19,6 +19,8 @@ const MAX_CAPTURE_QUEUE = 100;
 const MAX_VISIT_EVENT_QUEUE = 200;
 const MAX_MEDIA_ARTIFACTS_PER_CAPTURE = 50;
 const MAX_MEDIA_ARTIFACT_BYTES = 250_000_000;
+const OUTBOX_STALE_CLAIM_MS = 5 * 60 * 1000;
+let outboxReadyPromise = null;
 
 function nowIso() {
   return new Date().toISOString();
@@ -101,11 +103,48 @@ async function getConfig() {
 }
 
 async function saveQueue(queue) {
-  await chrome.storage.local.set({ captureQueue: queue.slice(0, MAX_CAPTURE_QUEUE) });
+  if (queue.length > MAX_CAPTURE_QUEUE) throw new Error('capture queue full');
+  await chrome.storage.local.set({ captureQueue: queue });
 }
 
 async function saveVisitEventQueue(queue) {
-  await chrome.storage.local.set({ visitEventQueue: queue.slice(0, MAX_VISIT_EVENT_QUEUE) });
+  if (queue.length > MAX_VISIT_EVENT_QUEUE) throw new Error('lifecycle queue full');
+  await chrome.storage.local.set({ visitEventQueue: queue });
+}
+
+function outboxApi() {
+  return globalThis.BrowserMemoryOutbox || null;
+}
+
+async function ensureOutboxReady() {
+  const api = outboxApi();
+  if (!api) {
+    await chrome.storage.local.set({
+      lastOutboxError: { at: nowIso(), error: 'indexeddb-outbox-unavailable', fallback: 'chrome.storage.local' }
+    });
+    return null;
+  }
+  if (!outboxReadyPromise) {
+    outboxReadyPromise = (async () => {
+      const legacy = await chrome.storage.local.get({ captureQueue: [], visitEventQueue: [] });
+      await api.importLegacyQueues(legacy);
+      await chrome.storage.local.remove(['captureQueue', 'visitEventQueue']);
+      await chrome.storage.local.remove('lastOutboxError');
+      return api;
+    })().catch(async (error) => {
+      outboxReadyPromise = null;
+      await chrome.storage.local.set({
+        lastOutboxError: { at: nowIso(), error: String(error.message || error), fallback: 'chrome.storage.local' }
+      });
+      return null;
+    });
+  }
+  return outboxReadyPromise;
+}
+
+function nextOutboxAttemptAt(attempts) {
+  const delayMs = Math.min(5 * 60 * 1000, 5_000 * (2 ** Math.max(0, Number(attempts || 1) - 1)));
+  return new Date(Date.now() + delayMs).toISOString();
 }
 
 async function getTabVisitState() {
@@ -630,7 +669,7 @@ chrome.debugger?.onDetach?.addListener((source, reason) => {
   }
 });
 
-async function drainQueue() {
+async function drainLegacyCaptureQueue() {
   const config = await getConfig();
   if (config.capturePaused) return { skipped: true, reason: 'paused' };
   if (!config.apiToken) return { skipped: true, reason: 'missing-token' };
@@ -676,7 +715,7 @@ async function drainQueue() {
   return { ok: true, delivered, remaining: 0 };
 }
 
-async function drainVisitEventQueue() {
+async function drainLegacyVisitEventQueue() {
   const config = await getConfig();
   if (config.capturePaused) return { skipped: true, reason: 'paused' };
   if (!config.apiToken) return { skipped: true, reason: 'missing-token' };
@@ -697,6 +736,122 @@ async function drainVisitEventQueue() {
   return { ok: true, delivered, remaining: 0 };
 }
 
+async function enqueueLegacyCapture(payload) {
+  const config = await getConfig();
+  if (payload.is_incognito && !allowsIncognito(config.policyMode)) return { skipped: true, reason: 'incognito' };
+  if (config.capturePaused) return { skipped: true, reason: 'paused' };
+  if (!config.apiToken) return { skipped: true, reason: 'missing-token' };
+  const queue = Array.from(config.captureQueue || []);
+  queue.push({ payload: ensureCaptureIdentity(payload), queued_at: nowIso() });
+  await saveQueue(queue);
+  return drainLegacyCaptureQueue();
+}
+
+async function enqueueLegacyVisitEvent(payload) {
+  const config = await getConfig();
+  if (payload.is_incognito && !allowsIncognito(config.policyMode)) return { skipped: true, reason: 'incognito' };
+  if (config.capturePaused) return { skipped: true, reason: 'paused' };
+  if (!config.apiToken) return { skipped: true, reason: 'missing-token' };
+  if (!isTrackableUrl(payload.url, config.policyMode)) return { skipped: true, reason: 'blocked-url' };
+  try {
+    const delivered = await postVisitEvent(payload, config);
+    await chrome.storage.local.remove('lastVisitEventError');
+    await drainLegacyVisitEventQueue();
+    return { ok: true, delivered: [delivered], remaining: 0 };
+  } catch (error) {
+    const queue = Array.from((await getConfig()).visitEventQueue || []);
+    queue.push({ payload, queued_at: nowIso() });
+    await saveVisitEventQueue(queue);
+    await chrome.storage.local.set({ lastVisitEventError: { error: String(error.message || error), payload, at: nowIso() } });
+    return { ok: false, delivered: [], remaining: queue.length, error: String(error.message || error) };
+  }
+}
+
+async function drainCaptureOutbox(api, config) {
+  const delivered = [];
+  const claimToken = randomId('capture-claim');
+  for (let processed = 0; processed < 25; processed += 1) {
+    const [claimed] = await api.claim('capture', { claimToken, limit: 1, staleClaimMs: OUTBOX_STALE_CLAIM_MS });
+    if (!claimed) break;
+    let item = claimed;
+    try {
+      const identifiedPayload = ensureCaptureIdentity(item.payload);
+      if (identifiedPayload.observation_id !== item.payload?.observation_id || identifiedPayload.navigation_id !== item.payload?.navigation_id) {
+        item = await api.updateClaim(item.sequence_id, claimToken, { payload: identifiedPayload });
+      }
+      let captureResult = item.capture_result || null;
+      if (!captureResult) {
+        captureResult = await postOne(item.payload, config);
+        item = await api.updateClaim(item.sequence_id, claimToken, { capture_result: captureResult });
+      }
+      delivered.push(captureResult);
+      if (!item.media_enqueued) {
+        await queueMediaArtifacts(item.payload, captureResult);
+        item = await api.updateClaim(item.sequence_id, claimToken, { media_enqueued: true });
+      }
+      if (!await api.acknowledge(item.sequence_id, claimToken)) throw new Error('outbox acknowledgement lost claim');
+      scheduleMediaDrain();
+    } catch (error) {
+      await api.retry(item.sequence_id, claimToken, {
+        error: String(error.message || error),
+        nextAttemptAt: nextOutboxAttemptAt(item.attempts)
+      });
+      const stats = await api.getStats('capture');
+      await chrome.storage.local.set({
+        lastCaptureOutboxError: { at: nowIso(), error: String(error.message || error), attempts: item.attempts }
+      });
+      return { ok: false, delivered, remaining: stats.count, error: String(error.message || error) };
+    }
+  }
+  await chrome.storage.local.remove('lastCaptureOutboxError');
+  const stats = await api.getStats('capture');
+  return { ok: true, delivered, remaining: stats.count, serialized_bytes: stats.serialized_bytes };
+}
+
+async function drainLifecycleOutbox(api, config) {
+  const delivered = [];
+  const claimToken = randomId('lifecycle-claim');
+  for (let processed = 0; processed < 25; processed += 1) {
+    const [item] = await api.claim('lifecycle', { claimToken, limit: 1, staleClaimMs: OUTBOX_STALE_CLAIM_MS });
+    if (!item) break;
+    try {
+      delivered.push(await postVisitEvent(item.payload, config));
+      if (!await api.acknowledge(item.sequence_id, claimToken)) throw new Error('outbox acknowledgement lost claim');
+    } catch (error) {
+      await api.retry(item.sequence_id, claimToken, {
+        error: String(error.message || error),
+        nextAttemptAt: nextOutboxAttemptAt(item.attempts)
+      });
+      const stats = await api.getStats('lifecycle');
+      await chrome.storage.local.set({
+        lastVisitEventError: { at: nowIso(), error: String(error.message || error), attempts: item.attempts }
+      });
+      return { ok: false, delivered, remaining: stats.count, error: String(error.message || error) };
+    }
+  }
+  await chrome.storage.local.remove('lastVisitEventError');
+  const stats = await api.getStats('lifecycle');
+  return { ok: true, delivered, remaining: stats.count, serialized_bytes: stats.serialized_bytes };
+}
+
+async function drainQueue() {
+  const api = await ensureOutboxReady();
+  if (!api) return drainLegacyCaptureQueue();
+  const config = await getConfig();
+  if (config.capturePaused) return { skipped: true, reason: 'paused' };
+  if (!config.apiToken) return { skipped: true, reason: 'missing-token' };
+  return drainCaptureOutbox(api, config);
+}
+
+async function drainVisitEventQueue() {
+  const api = await ensureOutboxReady();
+  if (!api) return drainLegacyVisitEventQueue();
+  const config = await getConfig();
+  if (config.capturePaused) return { skipped: true, reason: 'paused' };
+  if (!config.apiToken) return { skipped: true, reason: 'missing-token' };
+  return drainLifecycleOutbox(api, config);
+}
+
 async function drainAllQueues() {
   const captures = await drainQueue();
   const visitEvents = await drainVisitEventQueue();
@@ -708,10 +863,17 @@ async function enqueueCapture(payload) {
   if (payload.is_incognito && !allowsIncognito(config.policyMode)) return { skipped: true, reason: 'incognito' };
   if (config.capturePaused) return { skipped: true, reason: 'paused' };
   if (!config.apiToken) return { skipped: true, reason: 'missing-token' };
-  const queue = Array.from(config.captureQueue || []);
-  queue.push({ payload: ensureCaptureIdentity(payload), queued_at: nowIso() });
-  await saveQueue(queue);
-  return drainQueue();
+  const api = await ensureOutboxReady();
+  if (!api) return enqueueLegacyCapture(payload);
+  const enqueued = await api.enqueue('capture', ensureCaptureIdentity(payload), { maxItems: MAX_CAPTURE_QUEUE });
+  if (!enqueued.accepted) {
+    await chrome.storage.local.set({
+      lastOutboxOverflow: { at: nowIso(), kind: 'capture', reason: enqueued.reason, count: enqueued.stats.count, serialized_bytes: enqueued.stats.serialized_bytes }
+    });
+    return { ok: false, rejected: true, reason: enqueued.reason, remaining: enqueued.stats.count };
+  }
+  await chrome.storage.local.remove('lastOutboxOverflow');
+  return drainCaptureOutbox(api, config);
 }
 
 async function enqueueVisitEvent(payload) {
@@ -720,18 +882,17 @@ async function enqueueVisitEvent(payload) {
   if (config.capturePaused) return { skipped: true, reason: 'paused' };
   if (!config.apiToken) return { skipped: true, reason: 'missing-token' };
   if (!isTrackableUrl(payload.url, config.policyMode)) return { skipped: true, reason: 'blocked-url' };
-  try {
-    const delivered = await postVisitEvent(payload, config);
-    await chrome.storage.local.remove('lastVisitEventError');
-    await drainVisitEventQueue();
-    return { ok: true, delivered: [delivered], remaining: 0 };
-  } catch (error) {
-    const queue = Array.from((await getConfig()).visitEventQueue || []);
-    queue.push({ payload, queued_at: nowIso() });
-    await saveVisitEventQueue(queue);
-    await chrome.storage.local.set({ lastVisitEventError: { error: String(error.message || error), payload, at: nowIso() } });
-    return { ok: false, delivered: [], remaining: queue.length, error: String(error.message || error) };
+  const api = await ensureOutboxReady();
+  if (!api) return enqueueLegacyVisitEvent(payload);
+  const enqueued = await api.enqueue('lifecycle', payload, { maxItems: MAX_VISIT_EVENT_QUEUE });
+  if (!enqueued.accepted) {
+    await chrome.storage.local.set({
+      lastOutboxOverflow: { at: nowIso(), kind: 'lifecycle', reason: enqueued.reason, count: enqueued.stats.count, serialized_bytes: enqueued.stats.serialized_bytes }
+    });
+    return { ok: false, rejected: true, reason: enqueued.reason, remaining: enqueued.stats.count };
   }
+  await chrome.storage.local.remove('lastOutboxOverflow');
+  return drainLifecycleOutbox(api, config);
 }
 
 async function emitVisitEventForState(state, eventType, endedAt = nowIso()) {
@@ -940,7 +1101,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       rememberCdpCaptureContext(sender, payload, result);
       return result;
     }))
-    .then((result) => sendResponse({ ok: true, result }))
+    .then((result) => sendResponse({ ok: !result?.rejected, result }))
     .catch((error) => sendResponse({ ok: false, error: String(error.message || error) }));
   return true;
 });
@@ -948,6 +1109,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 chrome.runtime.onStartup?.addListener(() => { drainAllQueues(); scheduleMediaDrain(); bootstrapActiveTabs(); });
 chrome.runtime.onInstalled?.addListener(() => { drainAllQueues(); scheduleMediaDrain(); bootstrapActiveTabs(); });
 chrome.alarms?.onAlarm?.addListener((alarm) => {
+  if (alarm && alarm.name === 'bmd-outbox-drain') drainAllQueues();
   if (alarm && alarm.name === 'bmd-media-drain') scheduleMediaDrain();
 });
+chrome.alarms?.create?.('bmd-outbox-drain', { periodInMinutes: 1 });
 chrome.alarms?.create?.('bmd-media-drain', { periodInMinutes: 1 });

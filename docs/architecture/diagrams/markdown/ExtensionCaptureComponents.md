@@ -29,30 +29,34 @@ graph LR
       subgraph 5 ["Chrome MV3 Extension"]
         style 5 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
-        12["<div style='font-weight: bold'>Popup and Options UI</div><div style='font-size: 70%; margin-top: 0px'>[Component: HTML/JavaScript]</div><div style='font-size: 80%; margin-top:10px'>Lets the operator view<br />status, pause/resume capture,<br />select policy mode, and<br />trigger local controls from<br />the extension.</div>"]
-        style 12 fill:#85bbf0,stroke:#1168bd,color:#000000
+        10["<div style='font-weight: bold'>Capture and Lifecycle Outbox</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Persists capture and<br />lifecycle messages as<br />independently sequenced<br />IndexedDB rows with atomic<br />enqueue/claim/checkpoint/ack/retry,<br />stale-claim recovery, legacy<br />queue import, item admission<br />limits, and serialized-byte<br />accounting.</div>"]
+        style 10 fill:#85bbf0,stroke:#1168bd,color:#000000
+        13["<div style='font-weight: bold'>Popup and Options UI</div><div style='font-size: 70%; margin-top: 0px'>[Component: HTML/JavaScript]</div><div style='font-size: 80%; margin-top:10px'>Lets the operator view<br />status, pause/resume capture,<br />select policy mode, and<br />trigger local controls from<br />the extension.</div>"]
+        style 13 fill:#85bbf0,stroke:#1168bd,color:#000000
         6["<div style='font-weight: bold'>Manifest and Permission Envelope</div><div style='font-size: 70%; margin-top: 0px'>[Component: manifest.json]</div><div style='font-size: 80%; margin-top:10px'>Declares MV3 permissions,<br />host permissions, service<br />worker, popup, and options<br />entrypoints.</div>"]
         style 6 fill:#85bbf0,stroke:#1168bd,color:#000000
         7["<div style='font-weight: bold'>Extractor</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript]</div><div style='font-size: 80%; margin-top:10px'>Traverses visible DOM text<br />and discovers image/video<br />references while applying the<br />selected policy mode.</div>"]
         style 7 fill:#85bbf0,stroke:#1168bd,color:#000000
         8["<div style='font-weight: bold'>Content Script</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript content script]</div><div style='font-size: 80%; margin-top:10px'>Schedules initial, delayed,<br />and SPA captures; tracks<br />scroll; sends capture and<br />inline blob upload messages<br />to the service worker.</div>"]
         style 8 fill:#85bbf0,stroke:#1168bd,color:#000000
-        9["<div style='font-weight: bold'>Service Worker</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript MV3 service worker]</div><div style='font-size: 80%; margin-top:10px'>Owns daemon transport, bearer<br />token use, capture and visit<br />queues, stable<br />observation/navigation<br />identity, lifecycle state,<br />media queue draining, and CDP<br />recorder orchestration.</div>"]
+        9["<div style='font-weight: bold'>Service Worker</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript MV3 service worker]</div><div style='font-size: 80%; margin-top:10px'>Orchestrates daemon<br />transport, bearer token use,<br />stable observation/navigation<br />identity, lifecycle state,<br />outbox and media drains,<br />alarms, and CDP recorder<br />integration.</div>"]
         style 9 fill:#85bbf0,stroke:#1168bd,color:#000000
       end
 
-      13[("<div style='font-weight: bold'>Extension Browser Storage</div><div style='font-size: 70%; margin-top: 0px'>[Container: chrome.storage.local + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Browser-side storage for<br />capture and visit queues in<br />chrome.storage.local plus<br />durable media tasks and<br />fetched blobs in IndexedDB.</div>")]
-      style 13 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      14["<div style='font-weight: bold'>WSL Loopback HTTP Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11, ThreadingHTTPServer]</div><div style='font-size: 80%; margin-top:10px'>Authenticated loopback HTTP<br />API that handles capture,<br />visit events, media artifact<br />upload/fetch/purge, exact<br />search,<br />recent/timeline/detail,<br />policy rules, doctor, durable<br />forget, and static UI<br />serving.</div>"]
-      style 14 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      14[("<div style='font-weight: bold'>Extension Browser Storage</div><div style='font-size: 70%; margin-top: 0px'>[Container: chrome.storage.local + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Browser-side IndexedDB<br />storage for transactional<br />capture/lifecycle outbox rows<br />plus specialized durable<br />media tasks/blobs;<br />chrome.storage.local retains<br />typed configuration,<br />lifecycle tab state,<br />aggregate telemetry, and<br />one-version queue fallback<br />only.</div>")]
+      style 14 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      15["<div style='font-weight: bold'>WSL Loopback HTTP Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11, ThreadingHTTPServer]</div><div style='font-size: 80%; margin-top:10px'>Authenticated loopback HTTP<br />API that handles capture,<br />visit events, media artifact<br />upload/fetch/purge, exact<br />search,<br />recent/timeline/detail,<br />policy rules, doctor, durable<br />forget, and static UI<br />serving.</div>"]
+      style 15 fill:#438dd5,stroke:#2e6295,color:#ffffff
     end
 
     8-. "<div>Builds capture payloads with</div><div style='font-size: 70%'></div>" .->7
     8-. "<div>Sends captures and inline<br />blobs to</div><div style='font-size: 70%'>[chrome.runtime.sendMessage]</div>" .->9
-    9-. "<div>Queues captures in<br />chrome.storage.local and<br />media tasks/blobs in<br />IndexedDB</div><div style='font-size: 70%'></div>" .->13
-    9-. "<div>Delivers /capture,<br />/visit-events, media<br />metadata, and raw blobs to</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT]</div>" .->14
-    12-. "<div>Updates pause, policy, token,<br />and controls through</div><div style='font-size: 70%'>[chrome.storage.local, runtime messages]</div>" .->9
-    12-. "<div>Checks health and triggers<br />forget/policy actions on</div><div style='font-size: 70%'>[HTTP/JSON]</div>" .->14
+    9-. "<div>Enqueues, drains,<br />checkpoints, retries, and<br />recovers capture/lifecycle<br />work through</div><div style='font-size: 70%'></div>" .->10
+    10-. "<div>Reads and writes sequenced<br />capture/lifecycle rows and<br />migration metadata in</div><div style='font-size: 70%'>[IndexedDB]</div>" .->14
+    9-. "<div>Persists typed configuration,<br />lifecycle tab state,<br />aggregate telemetry, and<br />one-version queue fallback in</div><div style='font-size: 70%'>[chrome.storage.local]</div>" .->14
+    9-. "<div>Delivers /capture,<br />/visit-events, media<br />metadata, and raw blobs to</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT]</div>" .->15
+    13-. "<div>Updates pause, policy, token,<br />and controls through</div><div style='font-size: 70%'>[chrome.storage.local, runtime messages]</div>" .->9
+    13-. "<div>Checks health and triggers<br />forget/policy actions on</div><div style='font-size: 70%'>[HTTP/JSON]</div>" .->15
 
   end
 ```

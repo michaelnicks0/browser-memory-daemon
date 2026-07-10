@@ -15,13 +15,14 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
                 manifestEnvelope = component "Manifest and Permission Envelope" "Declares MV3 permissions, host permissions, service worker, popup, and options entrypoints." "manifest.json" "Current"
                 extractor = component "Extractor" "Traverses visible DOM text and discovers image/video references while applying the selected policy mode." "JavaScript" "Current"
                 contentScript = component "Content Script" "Schedules initial, delayed, and SPA captures; tracks scroll; sends capture and inline blob upload messages to the service worker." "JavaScript content script" "Current"
-                serviceWorker = component "Service Worker" "Owns daemon transport, bearer token use, capture and visit queues, stable observation/navigation identity, lifecycle state, media queue draining, and CDP recorder orchestration." "JavaScript MV3 service worker" "Current"
+                serviceWorker = component "Service Worker" "Orchestrates daemon transport, bearer token use, stable observation/navigation identity, lifecycle state, outbox and media drains, alarms, and CDP recorder integration." "JavaScript MV3 service worker" "Current"
+                captureLifecycleOutbox = component "Capture and Lifecycle Outbox" "Persists capture and lifecycle messages as independently sequenced IndexedDB rows with atomic enqueue/claim/checkpoint/ack/retry, stale-claim recovery, legacy queue import, item admission limits, and serialized-byte accounting." "JavaScript + IndexedDB" "Current"
                 browserMediaQueue = component "Browser Media Queue Adapter" "Persists media tasks and fetched blobs in IndexedDB so browser-side media fetch/upload can survive MV3 worker suspension." "JavaScript + IndexedDB" "Current"
                 cdpRecorder = component "CDP Recorder" "Uses chrome.debugger on configured X/Twitter tabs to capture video.twimg.com HLS manifests and media segments before they become opaque blob player URLs." "Chrome DevTools Protocol" "Current"
                 popupOptions = component "Popup and Options UI" "Lets the operator view status, pause/resume capture, select policy mode, and trigger local controls from the extension." "HTML/JavaScript" "Current"
             }
 
-            extensionBrowserStorage = container "Extension Browser Storage" "Browser-side storage for capture and visit queues in chrome.storage.local plus durable media tasks and fetched blobs in IndexedDB." "chrome.storage.local + IndexedDB" {
+            extensionBrowserStorage = container "Extension Browser Storage" "Browser-side IndexedDB storage for transactional capture/lifecycle outbox rows plus specialized durable media tasks/blobs; chrome.storage.local retains typed configuration, lifecycle tab state, aggregate telemetry, and one-version queue fallback only." "chrome.storage.local + IndexedDB" {
                 tags "Data Store"
             }
 
@@ -86,7 +87,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
 
         chromeExtension -> windowsChrome "Uses tab, scripting, storage, alarms, debugger, and runtime APIs from" "Chrome extension APIs"
         chromeExtension -> webSites "Extracts DOM refs and fetches queued credentialed media from" "DOM; fetch(credentials: include)"
-        chromeExtension -> extensionBrowserStorage "Queues identity-decorated captures, lifecycle events, media tasks, and blobs in" "chrome.storage.local + IndexedDB"
+        chromeExtension -> extensionBrowserStorage "Persists configuration, lifecycle tab state, aggregate telemetry, capture/lifecycle outbox rows, media tasks, and blobs in" "chrome.storage.local + IndexedDB"
         chromeExtension -> wslLoopbackDaemon "Posts /capture, /visit-events, media metadata, and raw blob uploads to" "Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765"
 
         localWebUi -> wslLoopbackDaemon "Calls authenticated read, admin, media, and forget APIs on" "HTTP/JSON"
@@ -113,7 +114,9 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
 
         contentScript -> extractor "Builds capture payloads with"
         contentScript -> serviceWorker "Sends captures and inline blobs to" "chrome.runtime.sendMessage"
-        serviceWorker -> extensionBrowserStorage "Queues captures in chrome.storage.local and media tasks/blobs in IndexedDB"
+        serviceWorker -> captureLifecycleOutbox "Enqueues, drains, checkpoints, retries, and recovers capture/lifecycle work through"
+        captureLifecycleOutbox -> extensionBrowserStorage "Reads and writes sequenced capture/lifecycle rows and migration metadata in" "IndexedDB"
+        serviceWorker -> extensionBrowserStorage "Persists typed configuration, lifecycle tab state, aggregate telemetry, and one-version queue fallback in" "chrome.storage.local"
         serviceWorker -> wslLoopbackDaemon "Delivers /capture, /visit-events, media metadata, and raw blobs to" "Bearer HTTP/JSON; raw HTTP PUT"
         serviceWorker -> browserMediaQueue "Persists and drains media work through"
         browserMediaQueue -> extensionBrowserStorage "Reads and writes media tasks/blobs in" "IndexedDB"
@@ -263,7 +266,18 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
             include extractor
             include contentScript
             include serviceWorker
+            include captureLifecycleOutbox
             include popupOptions
+            include extensionBrowserStorage
+            include wslLoopbackDaemon
+            include windowsChrome
+            autoLayout lr
+        }
+
+        component chromeExtension "ExtensionOutboxComponents" {
+            include contentScript
+            include serviceWorker
+            include captureLifecycleOutbox
             include extensionBrowserStorage
             include wslLoopbackDaemon
             include windowsChrome

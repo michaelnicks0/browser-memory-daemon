@@ -16,7 +16,7 @@ The daemon is local-first and WSL-resident. It assumes captured page text may be
 | API auth | Bearer token required for memory/admin APIs. |
 | Health/UI shell | `/health` and `/ui` are public loopback only; `/ui` rejects non-loopback `Host` headers and includes a same-origin token bootstrap for operator UX, while static assets stay token-free. |
 | Durable storage | WSL XDG paths; repo and Chrome profile are not storage roots; DB blob paths are validated against configured roots before read/serve/delete operations; explicit external media roots require mount and identity-marker proof; an optional local spool is contained under the WSL data root and hard-capped; durable deletion intents preserve retry work across crashes. |
-| Browser bridge | Content scripts message service worker; service worker owns daemon fetch/auth/queues. |
+| Browser bridge | Content scripts message the service worker; the worker owns daemon fetch/auth and drains transactional capture/lifecycle plus specialized media IndexedDB queues. |
 | Agent safety | Captured page text is untrusted evidence, never instructions. |
 
 ---
@@ -73,6 +73,7 @@ In `recall`, `balanced`, and `strict`, redaction runs before DB/FTS/blob storage
 - API token required for `/capture`, `/visit-events`, `/media-artifacts/*`, `/search`, `/ready`, `/recent`, `/timeline`, `/documents/{id}`, `/snapshots/{id}`, `/policy/*`, `/doctor`, and `/forget`.
 - `/health` exposes minimal daemon status plus `policy_mode`.
 - Daily-driver install stores the daemon API token in protected WSL config files and injects it into the Windows-local extension artifact; the token is never committed.
+- Capture and lifecycle payloads are durable browser-profile data in a versioned IndexedDB outbox. Atomic token-checked claims recover after MV3 suspension; aggregate telemetry excludes payload text and URLs. Legacy `chrome.storage.local` queue arrays are imported before deletion and remain only as a one-version failure fallback.
 - Token rotation is supported:
 
   ```bash

@@ -148,7 +148,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tbody>
 <tr>
 <td>Chrome extension</td>
-<td>Capture, pause/block/forget UI, browser-side media queue.</td>
+<td>Capture, pause/block/forget UI, transactional capture/lifecycle outbox, browser-side media queue.</td>
 <td>Reload this after extension code or token/policy changes.</td>
 </tr>
 <tr>
@@ -469,7 +469,7 @@ systemctl<span style="color: #F8F8F2"> </span>--user<span style="color: #F8F8F2"
 </tr>
 </tbody>
 </table>
-<p>Resilience behavior: if the daemon is temporarily unavailable, successfully queued captures stay in extension storage and are retried on the next queue drain/service-worker lifetime. Missing-token or paused states skip new capture queue mutation; resume capture after restoring the token or toggling pause off. Browser-side media uploads keep fetched blobs in IndexedDB until upload succeeds or the retry budget is exhausted.</p>
+<p>Resilience behavior: if the daemon is temporarily unavailable, successfully queued captures and lifecycle messages stay as independent IndexedDB outbox rows and are retried by startup/install/alarm drains after their due time. MV3 suspension claims recover after five minutes; capture acceptance is checkpointed before browser media compensation. At the current 100-capture or 200-lifecycle item limit, existing rows remain intact and the new message is visibly rejected instead of silently sliced. Missing-token or paused states skip new capture queue mutation; resume capture after restoring the token or toggling pause off. Browser-side media uploads remain a separate IndexedDB queue and keep fetched blobs until upload succeeds or the retry budget is exhausted. Enforced byte quotas and popup/options outbox counters remain follow-up Phase 5 work.</p>
 <p>Options page controls:</p>
 <table>
 <thead>
