@@ -30,6 +30,7 @@
 | Run verification gates | [`TESTS.md`](TESTS.md), [`test-plan.md`](test-plan.md) |
 | Review the measured branch-coverage baseline and ratchet | [`coverage-baseline.md`](coverage-baseline.md) |
 | Review Phase 0 gate evidence | [`verification/phase-0-gate-2026-07-10.md`](verification/phase-0-gate-2026-07-10.md) |
+| Review Phase 2 gate evidence | [`verification/phase-2-gate-2026-07-10.md`](verification/phase-2-gate-2026-07-10.md) |
 
 ---
 

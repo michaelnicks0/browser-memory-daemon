@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Phase-2-Gate-2026-07-10 — browser-memory-daemon</title>
+<style>
+:root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;color:var(--text);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,ui-sans-serif,system-ui,sans-serif;background:radial-gradient(1100px 520px at 78% -8%,rgba(59,130,246,.22),transparent 60%),radial-gradient(820px 480px at 6% 4%,rgba(82,212,255,.12),transparent 55%),radial-gradient(700px 700px at 92% 96%,rgba(91,225,156,.08),transparent 55%),var(--bg);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:30px 22px 70px}
+a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
+code{font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:#08152b;border:1px solid var(--line);border-radius:6px;padding:.1em .42em;color:#d6e6ff}
+h1,h2,h3{letter-spacing:-.02em;margin:0}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;color:var(--cyan);font-weight:700;letter-spacing:.16em;text-transform:uppercase;font-size:.72rem}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--cyan);box-shadow:0 0 16px 2px rgba(82,212,255,.85);animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.7)}}
+.hero{position:relative;border:1px solid var(--line2);border-radius:26px;padding:38px 36px 30px;margin-bottom:18px;background:linear-gradient(165deg,rgba(31,52,92,.55),rgba(10,20,38,.7));box-shadow:0 30px 90px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.05);overflow:hidden}
+.hero h1{font-size:clamp(2.3rem,5.2vw,3.9rem);line-height:1.02;margin:14px 0 12px}
+.hero h1 .g{background:linear-gradient(92deg,var(--cyan),var(--blue) 55%,var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p.lead{color:#cfe0f7;font-size:1.12rem;max-width:62ch;margin:0 0 8px}
+.hero .sub{color:var(--muted);max-width:64ch}
+.pillbar{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.pill{display:inline-flex;align-items:center;gap:7px;font-size:.82rem;color:#dce8fb;background:rgba(11,22,42,.7);border:1px solid var(--line2);border-radius:999px;padding:7px 13px}
+.pill b{color:#fff}.pill .k{width:7px;height:7px;border-radius:50%}
+.k.live{background:var(--amber)}.k.local{background:var(--green)}.k.priv{background:var(--rose)}.k.blue{background:var(--blue)}
+.metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin:18px 0 6px}
+.metric{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015));border:1px solid var(--line);border-radius:16px;padding:15px 14px;text-align:center}
+.metric .n{font-size:1.85rem;font-weight:800;letter-spacing:-.03em;background:linear-gradient(180deg,#fff,#bcd2f2);-webkit-background-clip:text;background-clip:text;color:transparent}
+.metric .l{display:block;color:var(--dim);font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;margin-top:3px}
+@media(max-width:880px){.metrics{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:520px){.metrics{grid-template-columns:repeat(2,1fr)}}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0 26px}
+.toc a{font-size:.84rem;color:#cfe0f7;border:1px solid var(--line2);background:rgba(10,20,38,.6);border-radius:999px;padding:8px 14px}
+.toc a:hover{border-color:var(--cyan);text-decoration:none;color:#fff}
+section.block{margin:30px 0}
+.block>h2{font-size:1.5rem;margin-bottom:6px;display:flex;align-items:center;gap:11px}
+.block>h2 .num{font-size:.8rem;color:var(--ink);background:linear-gradient(180deg,var(--cyan),var(--blue));width:26px;height:26px;border-radius:8px;display:inline-grid;place-items:center;font-weight:800}
+.block>p.intro{color:var(--muted);max-width:74ch;margin:6px 0 16px}
+.card{background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.012));border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:0 18px 50px rgba(0,0,0,.3)}
+.figure{border:1px solid var(--line);border-radius:20px;background:radial-gradient(700px 300px at 50% 0,rgba(35,60,105,.4),rgba(8,17,33,.6));padding:24px;overflow:hidden}
+.figure svg{display:block;width:100%;height:auto}
+.cap{color:var(--dim);font-size:.82rem;text-align:center;margin-top:12px}
+.lanes{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:820px){.lanes{grid-template-columns:1fr}}
+.lane{position:relative;border:1px solid var(--line2);border-radius:18px;padding:20px;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.01));transition:transform .15s ease,border-color .15s ease}
+.lane:hover{transform:translateY(-3px);border-color:var(--cyan)}
+.lane .tag{font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;font-weight:700}
+.lane.exec .tag{color:var(--violet)}.lane.user .tag{color:var(--green)}.lane.maint .tag{color:var(--amber)}
+.lane h3{font-size:1.16rem;margin:8px 0 6px}.lane p{color:var(--muted);font-size:.9rem;margin:0 0 14px}
+.lane .go{font-size:.86rem;font-weight:600}
+.lane .ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;margin-bottom:6px;border:1px solid var(--line2);font-size:1.2rem}
+.lane.exec .ic{background:rgba(183,155,255,.13)}.lane.user .ic{background:rgba(91,225,156,.13)}.lane.maint .ic{background:rgba(255,180,84,.13)}
+table{width:100%;border-collapse:collapse;margin-top:6px;font-size:.9rem}
+th,td{text-align:left;padding:11px 13px;border-bottom:1px solid var(--line)}
+th{color:var(--dim);font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700}
+tr:last-child td{border-bottom:0}td b{color:#fff}
+.note{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line2);border-left:3px solid var(--cyan);border-radius:12px;padding:14px 16px;background:rgba(10,20,38,.5);color:#cfe0f7;font-size:.9rem;margin-top:14px}
+.note .i{font-size:1.1rem;line-height:1.2}
+footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);color:var(--dim);font-size:.82rem}
+.prov{margin-top:8px;color:#8aa0bd}.prov code{font-size:11.5px}
+.featgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px}
+.feat{background:linear-gradient(180deg,rgba(20,32,54,.7),rgba(12,21,38,.6));border:1px solid var(--line);border-radius:16px;padding:18px}
+.feat .fic{font-size:1.4rem;margin-bottom:8px}
+.feat h3{font-size:1.02rem;margin:0 0 6px;color:#eaf2ff}
+.feat p{margin:0;color:#b8c8e4;font-size:.9rem;line-height:1.55}
+ol.flow{list-style:none;margin:0;padding:0}
+ol.flow li{display:flex;gap:14px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line)}
+ol.flow li:last-child{border-bottom:0}
+ol.flow .fstep{flex:0 0 auto;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:.92rem;color:#06101f;background:linear-gradient(135deg,var(--cyan),var(--blue))}
+ol.flow .fwrap{display:flex;flex-direction:column;gap:2px}
+ol.flow .fwrap b{color:#eaf2ff;font-size:.98rem}
+ol.flow .fwrap span{color:#aebfdc;font-size:.88rem;line-height:1.5}
+table.cmdtable{width:100%;border-collapse:collapse;font-size:.86rem}
+table.cmdtable th,table.cmdtable td{text-align:left;padding:9px 12px;border:1px solid var(--line);vertical-align:top}
+table.cmdtable th{background:rgba(35,60,105,.4);color:#dbe8ff;font-weight:700}
+table.cmdtable tr:nth-child(even) td{background:rgba(255,255,255,.018)}
+table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:#08152b;border:1px solid var(--line);border-radius:5px;padding:.08em .38em;color:#d6e6ff;white-space:nowrap}
+@media(max-width:760px){.featgrid{grid-template-columns:1fr}}
+
+.docbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:14px;padding:12px 20px;margin:-30px -22px 24px;background:rgba(8,15,28,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line2)}
+.docbar a.home{display:inline-flex;align-items:center;gap:8px;font-weight:700;color:var(--cyan);font-size:.9rem}
+.docbar .crumb{color:var(--dim);font-size:.84rem}
+.docbar .crumb b{color:var(--text)}
+.md-body{max-width:none}
+.md-body h1{font-size:2.1rem;margin:6px 0 14px;letter-spacing:-.02em}
+.md-body h2{font-size:1.5rem;margin:30px 0 10px;padding-bottom:7px;border-bottom:1px solid var(--line);letter-spacing:-.02em}
+.md-body h3{font-size:1.2rem;margin:22px 0 8px}
+.md-body h4{font-size:1.02rem;margin:18px 0 6px;color:#cfe0f7}
+.md-body p{color:#cdd9ee;margin:10px 0}
+.md-body ul,.md-body ol{color:#cdd9ee;padding-left:24px}
+.md-body li{margin:5px 0}
+.md-body a{color:var(--cyan)}
+.md-body strong{color:#fff}
+.md-body blockquote{margin:14px 0;padding:10px 16px;border-left:3px solid var(--blue);background:rgba(10,20,38,.55);border-radius:0 10px 10px 0;color:#bcd0ec}
+.md-body code{font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:#08152b;border:1px solid var(--line);border-radius:6px;padding:.1em .42em;color:#d6e6ff}
+.md-body pre{background:#070f1f;border:1px solid var(--line);border-radius:12px;padding:16px 18px;overflow:auto;margin:14px 0}
+.md-body pre code{background:none;border:0;padding:0;color:#d6e6ff;font-size:12.5px;line-height:1.6}
+.md-body table{width:100%;border-collapse:collapse;margin:16px 0;font-size:.88rem}
+.md-body th,.md-body td{text-align:left;padding:9px 12px;border:1px solid var(--line)}
+.md-body th{background:rgba(35,60,105,.4);color:#dbe8ff;font-weight:700}
+.md-body tr:nth-child(even) td{background:rgba(255,255,255,.018)}
+.md-body hr{border:0;border-top:1px solid var(--line);margin:26px 0}
+.md-body .mmd{margin:18px 0;padding:16px;border:1px solid var(--line);border-radius:16px;background:radial-gradient(700px 280px at 50% 0,rgba(35,60,105,.32),rgba(8,17,33,.55))}
+.md-body .mmd-scroll{overflow-x:auto;overflow-y:hidden;text-align:center}
+.md-body .mmd:not(.wide) .mmd-scroll{text-align:center}
+.md-body .mmd.wide .mmd-scroll{text-align:left}
+.md-body .mmd svg{height:auto;display:inline-block}
+.md-body .mmd-hint{font:600 11px/1.4 ui-sans-serif,system-ui;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;opacity:.8}
+.md-body .mmd-scroll::-webkit-scrollbar{height:9px}
+.md-body .mmd-scroll::-webkit-scrollbar-thumb{background:var(--line2);border-radius:6px}
+.md-body .mmd-scroll::-webkit-scrollbar-track{background:transparent}
+.md-body .codehilite{background:#070f1f;border:1px solid var(--line);border-radius:12px;margin:14px 0}
+.md-body .codehilite pre{border:0;margin:0;background:none}
+.md-footer{margin-top:42px;padding-top:18px;border-top:1px solid var(--line);color:var(--dim);font-size:.82rem}
+.md-footer code{font-size:11.5px}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="docbar">
+    <a class="home" href="../../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
+    <span class="crumb">/ <b>docs/verification/phase-2-gate-2026-07-10.md</b></span>
+  </div>
+  <article class="md-body">
+<h1 id="phase-2-gate-verification-evidence-2026-07-10">Phase 2 Gate Verification Evidence — 2026-07-10</h1>
+<blockquote>
+<p><strong>Branch:</strong> <code>hardening/browser-memory-architectural-consolidation</code></p>
+<p><strong>Implementation HEAD at gate:</strong> <code>79e48eae1c002a789705696f6e7d81b8bf6efbe0</code></p>
+<p><strong>Recorded:</strong> <code>2026-07-10T08:35:29Z</code></p>
+<p><strong>Scope:</strong> Phase 2 capture-observation, URL-claim, lifecycle-identity, media-provenance, read-cutover, and extension-identity gate.</p>
+</blockquote>
+<hr />
+<h2 id="executive-result">Executive result</h2>
+<p><strong>PASS.</strong> Phase 2 is closed on repository fixtures and isolated Chrome for Testing evidence.</p>
+<ul>
+<li>New captures use the normalized observed browser URL as document identity; page canonical URLs are non-authoritative claims.</li>
+<li>Every accepted extraction has an explicit capture observation linked to its contemporaneous visit, document, and snapshot.</li>
+<li>Immutable snapshots remain deduplicated while repeated unchanged extractions remain distinct observations.</li>
+<li>Media references have explicit observation/artifact relationships rather than synthesized latest-snapshot provenance.</li>
+<li>Recent, timeline, document-detail, snapshot-detail, and media-detail reads are observation-first with a labeled ambiguous legacy fallback.</li>
+<li>Lifecycle events preserve claimed versus resolved visit identity, reconcile delayed capture without same-URL recency guesses, and derive dwell from validated interval unions.</li>
+<li>The MV3 service worker emits stable observation IDs per extraction and stable navigation IDs per tab/URL state, preserving them across queue retry/restart.</li>
+<li>No daily-driver install, live database migration, live blob/NAS mutation, operator Chrome profile access, push, or merge occurred.</li>
+</ul>
+<h2 id="phase-commits">Phase commits</h2>
+<table>
+<thead>
+<tr>
+<th>Commit</th>
+<th>Scope</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>e324ade</code></td>
+<td>Add version-4 <code>capture_observations</code> and <code>document_url_claims</code> expand schema.</td>
+</tr>
+<tr>
+<td><code>36524fa</code></td>
+<td>Dual-write observed-URL document identity, visit-preserving recapture, observation provenance, and version-5 evidence-bounded historical backfill.</td>
+</tr>
+<tr>
+<td><code>d27e9fb</code></td>
+<td>Add version-6 media-artifact/observation relationships with conservative backfill.</td>
+</tr>
+<tr>
+<td><code>3789625</code></td>
+<td>Cut recent/timeline/detail/media reads over to observations with explicit legacy fallback.</td>
+</tr>
+<tr>
+<td><code>387cd22</code></td>
+<td>Add version-7 claimed lifecycle identity, delayed reconciliation, interval validation, and union-derived dwell.</td>
+</tr>
+<tr>
+<td><code>79e48ea</code></td>
+<td>Emit and persist stable browser observation/navigation IDs; require them in real Chrome release evidence.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="requirement-and-validation-closure">Requirement and validation closure</h2>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Status</th>
+<th>Executable evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>REQ-033</code> / <code>HRD-008</code> — explicit visit/observation/snapshot/lifecycle/media temporal relationships</td>
+<td><strong>PASS / active</strong></td>
+<td><code>test_capture_observations.py</code>, <code>test_observation_reads.py</code>, delayed lifecycle reconciliation, migrations 4–7, admin/HTTP e2e, service-worker unit tests, real Chrome identity assertion.</td>
+</tr>
+<tr>
+<td><code>REQ-034</code> / <code>HRD-009</code> — observed URL authority; canonical/alternate claims only</td>
+<td><strong>PASS / active</strong></td>
+<td>Cross-origin canonical claim test; historical ambiguity backfill test; observation-first reads.</td>
+</tr>
+<tr>
+<td><code>REQ-038</code> / <code>HRD-013</code> — interval-union dwell</td>
+<td><strong>PASS / active</strong></td>
+<td>Partial overlap, containment, adjacency, bridge, out-of-order, duplicate, invalid range, duration mismatch, and timezone tests.</td>
+</tr>
+<tr>
+<td><code>VAL-003</code> — repeated/changed captures return contemporaneous observations and deduplicated snapshots</td>
+<td><strong>PASS</strong></td>
+<td>One visit with repeated unchanged and changed observations; multiple visits observing one snapshot; legacy fallback never substitutes the latest document snapshot.</td>
+</tr>
+</tbody>
+</table>
+<p><code>requirements/catalog.toml</code> is the semantic authority. Generated requirement and V-model tables were regenerated and validated after status/evidence changes.</p>
+<h2 id="migration-and-rollback-evidence">Migration and rollback evidence</h2>
+<table>
+<thead>
+<tr>
+<th>Version</th>
+<th>Migration</th>
+<th>Evidence and rollback posture</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>4</td>
+<td><code>add_capture_observations_and_url_claims</code></td>
+<td>Additive tables/constraints/indexes; exact schema fingerprint. Prior readers ignore them.</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>backfill_historical_capture_observations_and_url_claims</code></td>
+<td>One-time transactional DML. Visit/snapshot relationships become inferred; no-visit history is ambiguous; canonical-derived authority becomes a claim; no speculative split.</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>link_media_artifacts_to_capture_observations</code></td>
+<td>Additive relation. Only unique evidence-supported candidates are backfilled; multi-candidate history remains unresolved.</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>add_claimed_visit_identity</code></td>
+<td>Additive lifecycle columns/index. Existing resolved visit IDs are preserved as historical claims.</td>
+</tr>
+</tbody>
+</table>
+<p>Migration verification covered fresh install, representative prior-version fixtures, exact fingerprints, ordered checksum ledger, repeat no-op, foreign-key checks, FTS integrity, and restore-backed migration-kernel failure behavior. These migrations have no destructive down path; rollback is the prior application plus the pre-migration online SQLite backup.</p>
+<h2 id="verification-commands-and-outcomes">Verification commands and outcomes</h2>
+<h3 id="focused-modellifecyclemigration-tests">Focused model/lifecycle/migration tests</h3>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">$BMD_PYTHON </span>-m<span style="color: #F8F8F2"> </span>pytest<span style="color: #F8F8F2"> </span>-q<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>daemon/tests/integration/test_capture_observations.py<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>daemon/tests/integration/test_observation_reads.py<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>daemon/tests/integration/test_visit_lifecycle.py<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>daemon/tests/integration/test_migrations.py<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>daemon/tests/e2e/test_http_api.py<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>daemon/tests/e2e/test_admin_api.py
+</code></pre></div>
+
+<p><strong>PASS.</strong> Required cases included duplicate observation retry, changed and unchanged content, multiple visits per snapshot, cross-origin canonical claims, media provenance, delayed lifecycle capture, concurrent same-URL visit identity, and interval-union edge cases.</p>
+<h3 id="hermetic-fast-gate">Hermetic fast gate</h3>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2">$BMD_PYTHON</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-fast-gate.sh
+</code></pre></div>
+
+<p><strong>PASS.</strong> <code>141</code> pytest tests, <code>30</code> Node tests, targeted Ruff/mypy, branch coverage, requirement catalog, secret scan, diff checks, and default-XDG write sentinel. Measured aggregate branch coverage: <strong>81.09%</strong>.</p>
+<h3 id="broad-repository-gate">Broad repository gate</h3>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_SKIP_REAL_CHROME_E2E</span><span style="color: #FF4689">=</span><span style="color: #AE81FF">1</span><span style="color: #F8F8F2"> BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2">$BMD_PYTHON</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-e2e.sh
+</code></pre></div>
+
+<p><strong>PASS.</strong> Python suite, extension tests, extension build, generated inventory, and secret scan completed with exit <code>0</code>.</p>
+<h3 id="real-chrome-authority">Real Chrome authority</h3>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_REAL_CHROME_ALLOW_DOWNLOAD</span><span style="color: #FF4689">=</span><span style="color: #AE81FF">0</span><span style="color: #F8F8F2"> BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2">$BMD_PYTHON</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
+</code></pre></div>
+
+<p><strong>PASS.</strong> Cached Chrome for Testing and isolated profiles completed the capture/search/media/SPA/policy/lifecycle matrix. The gate additionally proved browser-authored <code>browser:</code> observation idempotency keys with non-empty navigation IDs. No download and no operator default Chrome profile were used.</p>
+<h3 id="concurrency-stress">Concurrency stress</h3>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>./scripts/run-concurrency-stress.sh
+</code></pre></div>
+
+<p><strong>PASS.</strong> <code>12/12</code> concurrent captures and <code>40/40</code> mixed lifecycle/reader/upload/worker operations succeeded with zero failures; SQLite integrity and FTS consistency were <code>ok</code>; all 12 media artifacts converged to stored/succeeded. Observed total duration: <code>713 ms</code>.</p>
+<h3 id="synthetic-performance">Synthetic performance</h3>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>./scripts/run-performance-benchmarks.sh<span style="color: #F8F8F2"> </span>--small<span style="color: #F8F8F2"> </span>--json
+</code></pre></div>
+
+<p><strong>PASS.</strong> Deterministic synthetic-small profile, 40 captures, no failed budgets, isolated <code>/tmp</code> runtime removed after completion. Representative observations:</p>
+<ul>
+<li>recent p95: <code>1.197 ms</code> against <code>150 ms</code> budget;</li>
+<li>timeline p95: <code>1.531 ms</code> against <code>200 ms</code> budget;</li>
+<li>search p95: <code>0.375 ms</code> against <code>150 ms</code> budget;</li>
+<li>snapshot detail p95: <code>0.340 ms</code> against <code>250 ms</code> budget;</li>
+<li>media worker selection: <code>0.824 ms</code> against <code>150 ms</code> budget.</li>
+</ul>
+<h3 id="generated-documentation-and-repository-hygiene">Generated documentation and repository hygiene</h3>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">$BMD_PYTHON </span>scripts/generate_test_inventory.py<span style="color: #F8F8F2"> </span>--check
+<span style="color: #F8F8F2">$BMD_PYTHON </span>scripts/render_docs.py<span style="color: #F8F8F2"> </span>--repo<span style="color: #F8F8F2"> </span>.<span style="color: #F8F8F2"> </span>--slug<span style="color: #F8F8F2"> </span>browser-memory-daemon<span style="color: #F8F8F2"> </span>--check
+<span style="color: #F8F8F2">$BMD_PYTHON </span>scripts/generate_showcase.py<span style="color: #F8F8F2"> </span>--spec<span style="color: #F8F8F2"> </span>scripts/showcase.spec.json<span style="color: #F8F8F2"> </span>--check
+./scripts/secret-scan.sh
+git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span>--check<span style="color: #F8F8F2"> </span>--<span style="color: #F8F8F2"> </span>.
+</code></pre></div>
+
+<p><strong>PASS.</strong> <code>171</code> tests across <code>28</code> files (<code>141</code> pytest, <code>30</code> Node), <code>43</code> canonical requirements, and <code>100</code> rendered docs matched source. Secret and whitespace scans passed.</p>
+<h2 id="documentation-reconciled">Documentation reconciled</h2>
+<ul>
+<li><code>requirements/catalog.toml</code></li>
+<li><code>docs/ARCHITECTURE.md</code></li>
+<li><code>docs/DIAGRAMS.md</code></li>
+<li><code>docs/EXECUTIVE_BRIEF.md</code></li>
+<li><code>docs/STATUS.md</code></li>
+<li><code>docs/TESTS.md</code></li>
+<li><code>docs/test-plan.md</code></li>
+<li><code>docs/api.md</code></li>
+<li><code>docs/database-migrations.md</code></li>
+<li><code>docs/architecture/workspace.dsl</code></li>
+<li>ADRs <code>0030</code> through <code>0035</code></li>
+<li>Generated HTML companions and high-level showcase checks</li>
+</ul>
+<h2 id="residual-risks-and-deferred-work">Residual risks and deferred work</h2>
+<ul>
+<li>The <code>chrome.storage.local</code> capture/lifecycle arrays are still non-transactional and count-capped; Phase 5 owns IndexedDB outboxes, byte quotas, visible backpressure, stale-claim recovery, and removal of silent slicing.</li>
+<li>Legacy no-ID lifecycle payloads retain an explicitly labeled latest-URL fallback for compatibility. Current extension payloads carry identity and do not use that path.</li>
+<li>Legacy capture columns and read fallback remain for at least one compatibility release; contraction is intentionally deferred.</li>
+<li>Authoritative snapshot text is not yet SQLite <code>TEXT</code>; BlobStore staging, tombstones, reconciliation, NAS split, and backup/restore remain Phase 3.</li>
+<li>Media state-machine decomposition, streaming budgets, and recurring-normalizer removal remain Phase 4.</li>
+</ul>
+<h2 id="live-actions-explicitly-not-performed">Live actions explicitly not performed</h2>
+<ul>
+<li>No daily-driver install or service restart.</li>
+<li>No live/user database migration.</li>
+<li>No mutation of configured blob roots or NAS storage.</li>
+<li>No cleanup of the 60 audit-created external synthetic files.</li>
+<li>No operator Chrome profile use or modification.</li>
+<li>No push, publish, or branch merge.</li>
+</ul>
+<h2 id="gate-state">Gate state</h2>
+<p>At implementation gate HEAD <code>79e48eae1c002a789705696f6e7d81b8bf6efbe0</code>, the branch was clean and all Phase 2 gates passed. This evidence record is a documentation-only follow-up commit.</p>
+  </article>
+  <div class="md-footer">
+    Rendered from <code>docs/verification/phase-2-gate-2026-07-10.md</code> — the Markdown file is the canonical,
+    version-controlled source. This HTML is generated (regenerate with
+    <code>scripts/render_docs.py</code>); do not hand-edit.
+  </div>
+</div>
+</body>
+</html>
