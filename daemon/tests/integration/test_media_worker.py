@@ -5,6 +5,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import base64
 import io
 import json
+from pathlib import Path
 import threading
 import time
 import urllib.request
@@ -333,7 +334,9 @@ def test_media_worker_marks_pending_task_succeeded_when_artifact_already_stored(
         final_media = conn.execute("SELECT file_path FROM media_artifacts WHERE id = ?", (stored_media["id"],)).fetchone()
         assert final_media["file_path"] == stored_path
         assert open(final_media["file_path"], "rb").read() == stored_bytes
-        assert len(list(cfg.media_root.glob(f"{stored_media['id']}*"))) == 1
+        assert Path(final_media["file_path"]).parent == cfg.media_root
+        assert Path(final_media["file_path"]).name != f"{stored_media['id']}.png"
+        assert len([path for path in cfg.media_root.iterdir() if path.is_file()]) == 1
 
 
 def test_fetch_pending_media_artifacts_respects_active_lease_and_recovers_stale_lease(tmp_path):
@@ -466,7 +469,9 @@ def test_concurrent_media_blob_writes_use_distinct_temp_files(tmp_path):
         row = conn.execute("SELECT file_path, capture_status FROM media_artifacts WHERE id = ?", (media["id"],)).fetchone()
     assert row["capture_status"] == "stored"
     assert open(row["file_path"], "rb").read() in {b"first-upload", b"second-upload"}
-    assert not list((cfg.media_root / ".tmp").glob(f"{media['id']}*"))
+    tmp_root = cfg.media_root / ".tmp"
+    if tmp_root.exists():
+        assert not list(tmp_root.iterdir())
 
 
 def test_media_worker_rehydrates_purged_cache_when_source_still_fetchable(tmp_path):
@@ -494,6 +499,39 @@ def test_media_worker_rehydrates_purged_cache_when_source_still_fetchable(tmp_pa
         media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
         assert media["capture_status"] == "stored"
         assert media["has_file"] is True
+
+
+def test_purge_media_cache_skips_db_paths_outside_media_root(tmp_path):
+    cfg = load_config(runtime_root=tmp_path / "runtime", test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    outside_root = tmp_path / "outside"
+    outside_root.mkdir()
+    outside_media = outside_root / "media.png"
+    outside_media.write_bytes(b"outside")
+    payload = CapturePayload.from_dict(
+        {
+            "url": "https://example.com/purge-outside",
+            "title": "Purge Outside",
+            "text": "Readable purge outside media body.",
+            "media_artifacts": [{"media_type": "image", "source_url": "data:image/png;base64,iVBORw0KGgo=", "mime_type": "image/png"}],
+        },
+        allow_any_url=True,
+    )
+    with connect(cfg.db_path) as conn:
+        result = ingest_capture(conn, cfg, payload)
+        assert run_once(conn, cfg, worker_id="test-worker", limit=10)["stored"] == 1
+        media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
+        conn.execute("UPDATE media_artifacts SET file_path = ?, byte_size = ? WHERE id = ?", (str(outside_media), outside_media.stat().st_size, media["id"]))
+
+        purged = purge_media_cache(conn, cfg, {"domain": "example.com", "dry_run": False})
+        row = conn.execute("SELECT capture_status, file_path FROM media_artifacts WHERE id = ?", (media["id"],)).fetchone()
+
+    assert purged["selected"] == 0
+    assert purged["purged"] == 0
+    assert purged["skipped_out_of_root"] == 1
+    assert row["capture_status"] == "stored"
+    assert row["file_path"] == str(outside_media)
+    assert outside_media.exists()
 
 
 def test_media_worker_normalizes_terminal_failed_artifacts(tmp_path):
@@ -900,11 +938,10 @@ def test_media_worker_requeues_cdp_hls_manifest_refs(tmp_path):
         )
         with connect(cfg.db_path) as conn:
             result = ingest_capture(conn, cfg, payload)
-            store_media_artifact(
+            posted = store_media_artifact(
                 conn,
                 cfg,
                 {
-                    "artifact_id": "media_cdp_manifest_ref",
                     "document_id": result["document_id"],
                     "snapshot_id": result["snapshot_id"],
                     "visit_id": result["visit_id"],
@@ -919,10 +956,10 @@ def test_media_worker_requeues_cdp_hls_manifest_refs(tmp_path):
             )
             conn.execute(
                 "UPDATE media_fetch_tasks SET status = 'skipped', last_error = 'skipped' WHERE artifact_id = ?",
-                ("media_cdp_manifest_ref",),
+                (posted["artifact_id"],),
             )
             assert normalize_cdp_hls_manifest_refs(conn) == 1
-            task = conn.execute("SELECT status FROM media_fetch_tasks WHERE artifact_id = ?", ("media_cdp_manifest_ref",)).fetchone()
+            task = conn.execute("SELECT status FROM media_fetch_tasks WHERE artifact_id = ?", (posted["artifact_id"],)).fetchone()
             assert task["status"] == "pending"
 
 
@@ -956,7 +993,6 @@ def test_media_worker_marks_blob_video_refs_covered_by_cdp_bytes(tmp_path):
             conn,
             cfg,
             {
-                "artifact_id": "media_cdp_test_segment",
                 "document_id": result["document_id"],
                 "snapshot_id": result2["snapshot_id"],
                 "visit_id": result["visit_id"],

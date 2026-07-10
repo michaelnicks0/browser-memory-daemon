@@ -300,7 +300,7 @@ def make_handler(config: RuntimeConfig):
                     document_id = unquote(parsed.path.removeprefix("/documents/"))
                     _ensure_db(config)
                     with connect(config.db_path) as conn:
-                        result = document_detail(conn, document_id)
+                        result = document_detail(conn, config, document_id)
                         audit(conn, "document.detail", {"document_id": document_id})
                         conn.commit()
                     _json_response(self, 200, result)
@@ -309,7 +309,7 @@ def make_handler(config: RuntimeConfig):
                     snapshot_id = unquote(parsed.path.removeprefix("/snapshots/"))
                     _ensure_db(config)
                     with connect(config.db_path) as conn:
-                        result = snapshot_detail(conn, snapshot_id)
+                        result = snapshot_detail(conn, config, snapshot_id)
                         audit(conn, "snapshot.detail", {"snapshot_id": snapshot_id})
                         conn.commit()
                     _json_response(self, 200, result)
@@ -326,10 +326,10 @@ def make_handler(config: RuntimeConfig):
                     artifact_id = unquote(parsed.path.removeprefix("/media-artifacts/"))
                     _ensure_db(config)
                     with connect(config.db_path) as conn:
-                        artifact = media_artifact(conn, artifact_id)
+                        artifact = media_artifact(conn, config, artifact_id)
                         audit(conn, "media.detail", {"artifact_id": artifact_id})
                         conn.commit()
-                    path = Path(artifact.get("file_path") or "")
+                    path = Path(artifact.pop("resolved_file_path", "") or "")
                     if not artifact.get("has_file") or not path.exists():
                         _json_response(self, 404, {"error": "media artifact file not stored", "artifact": {k: v for k, v in artifact.items() if k != "file_path"}})
                         return
@@ -556,7 +556,7 @@ def make_handler(config: RuntimeConfig):
                 try:
                     _ensure_db(config)
                     with connect(config.db_path) as conn:
-                        result = forget(conn, domain=data.get("domain"), url=data.get("url"))
+                        result = forget(conn, config, domain=data.get("domain"), url=data.get("url"))
                         audit(conn, "forget", {"receipt_id": result["receipt_id"], "scope_keys": sorted(result["scope"].keys())})
                         conn.commit()
                     _json_response(self, 200, result)

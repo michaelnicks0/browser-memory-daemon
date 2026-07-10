@@ -285,14 +285,14 @@ def _read_surface_metrics(conn, config: RuntimeConfig, options: BenchmarkOptions
         (
             "document_detail",
             "document.detail",
-            lambda: document_detail(conn, first_document_id),
+            lambda: document_detail(conn, config, first_document_id),
             lambda result: len(result.get("visits") or []) + len(result.get("snapshots") or []) + len(result.get("chunks") or []),
             lambda _result: {"document_id": first_document_id},
         ),
         (
             "snapshot_detail",
             "snapshot.detail",
-            lambda: snapshot_detail(conn, first_snapshot_id),
+            lambda: snapshot_detail(conn, config, first_snapshot_id),
             lambda result: len(result.get("chunks") or []) + len(result.get("text") or ""),
             lambda _result: {"snapshot_id": first_snapshot_id},
         ),

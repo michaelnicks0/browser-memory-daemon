@@ -10,6 +10,7 @@ from .models import CapturePayload
 from .media import media_artifact_id, parse_media_refs, record_media_references
 from .normalize import domain_from_url, normalize_url
 from .policy import POLICY_MODE_ALL, redact_text, redact_url
+from .storage_paths import contained_child_path, validate_snapshot_id
 
 
 def stable_id(prefix: str, value: str) -> str:
@@ -42,9 +43,14 @@ def chunk_text(text: str, *, max_chars: int = 1800) -> list[str]:
     return chunks
 
 
-def _write_clean_text_atomic(clean_path, text: str) -> None:
-    clean_path.parent.mkdir(parents=True, exist_ok=True)
-    tmp_path = clean_path.with_name(f".{clean_path.name}.{uuid.uuid4().hex}.tmp")
+def _clean_text_path(config: RuntimeConfig, snapshot_id: str):
+    snapshot_id = validate_snapshot_id(snapshot_id)
+    return contained_child_path(config.clean_text_root, f"{snapshot_id}.txt", create_root=True)
+
+
+def _write_clean_text_atomic(config: RuntimeConfig, snapshot_id: str, text: str) -> None:
+    clean_path = _clean_text_path(config, snapshot_id)
+    tmp_path = contained_child_path(config.clean_text_root, f".{snapshot_id}.{uuid.uuid4().hex}.txt.tmp", create_root=True)
     try:
         tmp_path.write_text(text, encoding="utf-8")
         tmp_path.replace(clean_path)
@@ -85,13 +91,13 @@ def ingest_capture(conn: sqlite3.Connection, config: RuntimeConfig, payload: Cap
     document_id = stable_id("doc", normalized)
     digest = text_hash(stored_text)
     snapshot_id = stable_id("snap", f"{document_id}:{digest}")
-    clean_path = config.clean_text_root / f"{snapshot_id}.txt"
+    clean_path = _clean_text_path(config, snapshot_id)
     chunks = chunk_text(stored_text)
     media_refs = parse_media_refs(payload.media_artifacts, max_refs=config.max_media_artifacts_per_capture)
 
     snapshot_exists_before = conn.execute("SELECT 1 FROM snapshots WHERE id = ?", (snapshot_id,)).fetchone() is not None
     if not snapshot_exists_before:
-        _write_clean_text_atomic(clean_path, stored_text)
+        _write_clean_text_atomic(config, snapshot_id, stored_text)
 
     with conn:
         conn.execute(

@@ -52,7 +52,7 @@ document → snapshot → media_artifacts
          ↘ visit ↗
 
 media_fetch_tasks → media_artifacts
-blobs/media/<artifact_id>.<ext>
+blobs/media/media_<hash-of-artifact-id>.<ext>
 ```
 
 Key fields:
@@ -69,7 +69,7 @@ Key fields:
 | `width`, `height`, `duration_seconds` | DOM metadata. |
 | `capture_status` | `referenced`, `metadata-only`, `queued`, `fetching`, `fetched`, `uploading`, `stored`, `retrying`, `failed`, `skipped`, `expired`, or `purged`. |
 | `status_reason` | Terminal or diagnostic reason, e.g. `media-too-large`, `fetch-status-403`, `cache-purged:domain:x.com`, `cache-evicted:domain-oldest`, `covered-by-cdp-recorder`, `opaque-browser-blob`. |
-| `file_path` | Local blob path when binary is currently stored. |
+| `file_path` | Local blob path when binary is currently stored. Consumers validate this path stays under the configured media root before reading, serving, purging, or deleting it. |
 | `content_sha256`, `byte_size` | Blob provenance retained even after cache purge. |
 
 Binary files live under:
@@ -79,6 +79,8 @@ ${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}/media/
 ```
 
 Daily-driver deployments can set `BMD_BLOB_ROOT` to a WSL-mounted NAS dataset while leaving SQLite, WAL, config, state, and service units on the WSL filesystem.
+
+Blob paths are treated as root-scoped evidence, not authority. Clean-text paths are constructed from validated snapshot IDs under `clean-text/`; media filenames are constructed from a hashed artifact-ID storage stem under `media/`, with writes going through `media/.tmp` before atomic rename. If a stale or tampered DB row points outside the configured clean-text/media root, read-model, media-serving, purge, and forget paths report the file as unavailable/out-of-root and do not follow or unlink it.
 
 ---
 
@@ -170,7 +172,7 @@ X-BMD-Document-ID: doc_...
 X-BMD-Snapshot-ID: snap_...
 ```
 
-The daemon size/MIME/cache gates the blob, writes through `${BMD_BLOB_ROOT}/media/.tmp`, then atomically renames to the final file.
+The daemon size/MIME/cache gates the blob, writes through `${BMD_BLOB_ROOT}/media/.tmp`, then atomically renames to the final contained hashed-stem file.
 
 ### Compatibility JSON artifact upload
 

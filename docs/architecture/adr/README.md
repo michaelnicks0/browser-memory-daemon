@@ -31,6 +31,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0021](0021-use-configurable-nas-blob-root-with-local-sqlite.md) | accepted | Use a configurable NAS-capable blob root while keeping SQLite/WAL local. |
 | [ADR-0022](0022-use-fast-doctor-and-media-queue-health-telemetry.md) | accepted | Use fast doctor and media-queue health telemetry. |
 | [ADR-0023](0023-guard-daemon-public-media-egress.md) | accepted | Guard daemon-public media egress. |
+| [ADR-0024](0024-contain-blob-and-media-artifact-paths.md) | accepted | Contain blob and media artifact paths. |
 
 ## Backfilled decision history
 

@@ -59,7 +59,7 @@ def test_visit_lifecycle_event_updates_dwell_and_is_idempotent(tmp_path):
         events = conn.execute("SELECT COUNT(*) AS n FROM visit_events").fetchone()
         assert events["n"] == 1
 
-        detail = document_detail(conn, stored["document_id"])
+        detail = document_detail(conn, cfg, stored["document_id"])
         assert detail["visits"][0]["dwell_seconds"] == 37
         assert detail["visit_events"][0]["max_scroll_percent"] == 83
 

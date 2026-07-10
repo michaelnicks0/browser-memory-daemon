@@ -266,6 +266,8 @@ GET /media-artifacts/<artifact_id>
 Authorization: Bearer ***
 ```
 
+The daemon validates the stored DB `file_path` against the configured media root before serving bytes. Missing, stale, invalid, or out-of-root paths return metadata/not-stored responses rather than reading arbitrary local files.
+
 Media metadata is not inserted into FTS; search results only expose `media_artifact_count`.
 
 ---
@@ -344,4 +346,4 @@ Forget one URL:
 {"url": "https://example.com/article"}
 ```
 
-The response includes `receipt_id`, `scope`, and deletion counts for documents, visits, lifecycle events, snapshots, chunks, FTS, clean-text blobs, media artifacts/blobs, embeddings, redactions, and feedback events.
+The response includes `receipt_id`, `scope`, and deletion counts for documents, visits, lifecycle events, snapshots, chunks, FTS, clean-text blobs, media artifacts/blobs, embeddings, redactions, and feedback events. Blob counters include out-of-root/failed unlink counts when stale or tampered DB paths are refused instead of followed.

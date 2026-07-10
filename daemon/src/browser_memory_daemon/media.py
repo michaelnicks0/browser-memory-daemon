@@ -7,7 +7,6 @@ import hashlib
 import ipaddress
 import json
 from pathlib import Path
-import re
 import socket
 import sqlite3
 import time
@@ -20,6 +19,7 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 from .config import RuntimeConfig
 from .normalize import normalize_url
 from .policy import POLICY_MODE_ALL, redact_text, redact_url
+from .storage_paths import contained_child_path, contained_existing_file, resolve_db_path_under, storage_stem, validate_media_artifact_id
 
 
 MEDIA_TYPES = {"image", "video"}
@@ -41,6 +41,23 @@ MEDIA_CAPTURE_STATUSES = {
 MEDIA_TASK_STATUSES = {"pending", "leased", "retrying", "succeeded", "failed", "skipped"}
 MAX_HTTP_MEDIA_SOURCE_URL_CHARS = 65_536
 MAX_DATA_MEDIA_SOURCE_URL_CHARS = 1_100_000
+SAFE_MEDIA_SUFFIX_MIME = {
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".webp": "image/webp",
+    ".gif": "image/gif",
+    ".svg": "image/svg+xml",
+    ".avif": "image/avif",
+    ".mp4": "video/mp4",
+    ".webm": "video/webm",
+    ".mov": "video/quicktime",
+    ".m4s": "video/mp4",
+    ".ts": "video/mp2t",
+    ".m4a": "audio/mp4",
+    ".aac": "audio/aac",
+    ".mp3": "audio/mpeg",
+}
 PERMANENT_SKIP_REASONS = {
     "unsupported-media-url-scheme",
     "invalid-data-url",
@@ -175,25 +192,8 @@ def _sanitize_mime(value: Any, *, media_type: str = "") -> str:
 
 def _infer_mime_from_url(source_url: str, media_type: str) -> str:
     suffix = Path(urlsplit(source_url or "").path).suffix.lower()
-    by_suffix = {
-        ".png": "image/png",
-        ".jpg": "image/jpeg",
-        ".jpeg": "image/jpeg",
-        ".webp": "image/webp",
-        ".gif": "image/gif",
-        ".svg": "image/svg+xml",
-        ".avif": "image/avif",
-        ".mp4": "video/mp4",
-        ".webm": "video/webm",
-        ".mov": "video/quicktime",
-        ".m4s": "video/mp4",
-        ".ts": "video/mp2t",
-        ".m4a": "audio/mp4",
-        ".aac": "audio/aac",
-        ".mp3": "audio/mpeg",
-    }
-    if suffix in by_suffix:
-        return _sanitize_mime(by_suffix[suffix], media_type=media_type)
+    if suffix in SAFE_MEDIA_SUFFIX_MIME:
+        return _sanitize_mime(SAFE_MEDIA_SUFFIX_MIME[suffix], media_type=media_type)
     return ""
 
 
@@ -201,7 +201,7 @@ def _file_extension(mime_type: str, source_url: str) -> str:
     if mime_type in EXT_BY_MIME:
         return EXT_BY_MIME[mime_type]
     suffix = Path(urlsplit(source_url).path).suffix.lower()
-    if suffix and re.fullmatch(r"\.[a-z0-9]{1,8}", suffix):
+    if suffix in SAFE_MEDIA_SUFFIX_MIME and _sanitize_mime(SAFE_MEDIA_SUFFIX_MIME[suffix], media_type=""):
         return suffix
     if mime_type.startswith("image/"):
         return ".img"
@@ -404,7 +404,6 @@ def _stored_media_bytes(conn: sqlite3.Connection, where_sql: str = "", params: t
 
 
 def _evict_oldest_media_rows(conn: sqlite3.Connection, config: RuntimeConfig, rows: list[sqlite3.Row], *, bytes_to_free: int, reason: str) -> dict[str, int]:
-    media_root = config.media_root.resolve()
     freed_bytes = 0
     evicted = 0
     missing_files = 0
@@ -417,15 +416,11 @@ def _evict_oldest_media_rows(conn: sqlite3.Connection, config: RuntimeConfig, ro
         raw_path = row["file_path"] or ""
         if not raw_path:
             continue
-        path = Path(raw_path)
-        try:
-            resolved = path.resolve()
-            if not resolved.is_relative_to(media_root):
-                skipped_paths += 1
-                continue
-        except Exception:
+        resolution = resolve_db_path_under(config.media_root, raw_path, require_file=False)
+        if resolution.status in {"outside-root", "invalid", "empty"} or resolution.path is None:
             skipped_paths += 1
             continue
+        resolved = resolution.path
         size = int(row["byte_size"] or 0)
         if resolved.exists():
             if size <= 0:
@@ -1543,12 +1538,13 @@ def _row_to_ref(data: dict[str, Any]) -> MediaRef:
 
 
 def _write_media_blob(config: RuntimeConfig, artifact_id: str, mime_type: str, source_url: str, content: bytes) -> str:
+    artifact_id = validate_media_artifact_id(artifact_id)
     extension = _file_extension(mime_type, source_url)
-    target = config.media_root / f"{artifact_id}{extension}"
-    tmp_root = config.media_root / ".tmp"
+    stem = storage_stem("media", artifact_id)
+    target = contained_child_path(config.media_root, f"{stem}{extension}", create_root=True)
+    tmp_root = contained_child_path(config.media_root, ".tmp", create_root=True)
     tmp_root.mkdir(parents=True, exist_ok=True)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    tmp = tmp_root / f"{artifact_id}.{uuid.uuid4().hex}{extension}.tmp"
+    tmp = contained_child_path(config.media_root, ".tmp", f"{stem}.{uuid.uuid4().hex}{extension}.tmp", create_root=True)
     tmp.write_bytes(content)
     tmp.replace(target)
     return str(target)
@@ -1579,7 +1575,8 @@ def store_media_artifact(conn: sqlite3.Connection, config: RuntimeConfig, data: 
         raise ValueError("document_id does not match snapshot")
 
     ref = _row_to_ref(data)
-    artifact_id = _bounded_text(data.get("artifact_id") or data.get("artifactId"), max_chars=128) or media_artifact_id(snapshot_id, ref)
+    generated_artifact_id = media_artifact_id(snapshot_id, ref)
+    provided_artifact_id = _bounded_text(data.get("artifact_id") or data.get("artifactId"), max_chars=128)
     source_url, normalized_source_url, url_redactions = _storage_url(config, ref.source_url)
     alt_text, alt_redactions = _storage_text(config, ref.alt_text)
     title, title_redactions = _storage_text(config, ref.title)
@@ -1587,6 +1584,16 @@ def store_media_artifact(conn: sqlite3.Connection, config: RuntimeConfig, data: 
     priority = _artifact_priority(data, ref)
     metadata.setdefault("priority", priority)
     metadata["metadata_redaction_count"] = url_redactions + alt_redactions + title_redactions
+
+    artifact_id = validate_media_artifact_id(provided_artifact_id) if provided_artifact_id else generated_artifact_id
+    existing = conn.execute("SELECT document_id, snapshot_id, source_url FROM media_artifacts WHERE id = ?", (artifact_id,)).fetchone()
+    if provided_artifact_id and not existing and artifact_id != generated_artifact_id:
+        raise ValueError("artifact_id does not match media reference")
+    if existing:
+        if existing["document_id"] != document_id or existing["snapshot_id"] != snapshot_id:
+            raise ValueError("artifact_id ownership mismatch")
+        if existing["source_url"] and existing["source_url"] != source_url:
+            raise ValueError("artifact_id source mismatch")
 
     content_base64 = data.get("content_base64") or data.get("contentBase64") or ""
     status = normalize_capture_status(data.get("capture_status") or data.get("captureStatus"), default="metadata-only")
@@ -1723,6 +1730,7 @@ def store_media_blob_stream(
     headers: dict[str, str] | None = None,
     content_length: int | None = None,
 ) -> dict[str, Any]:
+    artifact_id = validate_media_artifact_id(artifact_id)
     headers = {str(k).lower(): str(v) for k, v in (headers or {}).items()}
     row = conn.execute("SELECT * FROM media_artifacts WHERE id = ?", (artifact_id,)).fetchone()
     if not row:
@@ -1807,19 +1815,23 @@ def purge_media_cache(conn: sqlite3.Connection, config: RuntimeConfig, scope: di
     ).fetchall()
     selected = []
     selected_bytes = 0
-    media_root = config.media_root.resolve()
+    skipped_out_of_root = 0
+    skipped_out_of_root_ids: list[str] = []
     for row in rows:
-        file_path = Path(row["file_path"] or "")
         if rehydrate_only:
-            selected.append((row, file_path, 0))
+            selected.append((row, Path(""), 0))
             continue
+        resolution = resolve_db_path_under(config.media_root, row["file_path"] or "", require_file=False)
+        if resolution.status in {"outside-root", "invalid", "empty"} or resolution.path is None:
+            skipped_out_of_root += 1
+            if len(skipped_out_of_root_ids) < 20:
+                skipped_out_of_root_ids.append(row["id"])
+            continue
+        resolved = resolution.path
         try:
-            resolved = file_path.resolve()
-            if not resolved.is_relative_to(media_root):
-                continue
-        except Exception:
-            continue
-        size = int(row["byte_size"] or (resolved.stat().st_size if resolved.exists() else 0))
+            size = int(row["byte_size"] or (resolved.stat().st_size if resolved.exists() else 0))
+        except OSError:
+            size = int(row["byte_size"] or 0)
         if max_bytes_to_purge is not None and selected_bytes + size > max_bytes_to_purge:
             break
         selected.append((row, resolved, size))
@@ -1865,22 +1877,36 @@ def purge_media_cache(conn: sqlite3.Connection, config: RuntimeConfig, scope: di
         "selected": len(selected),
         "purged": purged,
         "missing_files": missing,
+        "skipped_out_of_root": skipped_out_of_root,
         "bytes": selected_bytes,
         "sample_artifact_ids": [row["id"] for row, _path, _size in selected[:20]],
+        "sample_out_of_root_artifact_ids": skipped_out_of_root_ids,
     }
 
 
-def media_artifact(conn: sqlite3.Connection, artifact_id: str) -> dict[str, Any]:
+def _media_file_resolution(config: RuntimeConfig | None, raw_path: str | None) -> tuple[Path | None, str]:
+    if not config:
+        path = Path(raw_path or "")
+        return (path if raw_path and path.exists() else None), "legacy-unchecked"
+    resolution = contained_existing_file(config.media_root, raw_path)
+    return resolution.path, resolution.status
+
+
+def media_artifact(conn: sqlite3.Connection, config: RuntimeConfig, artifact_id: str) -> dict[str, Any]:
+    artifact_id = validate_media_artifact_id(artifact_id)
     row = conn.execute("SELECT * FROM media_artifacts WHERE id = ?", (artifact_id,)).fetchone()
     if not row:
         raise KeyError("media artifact not found")
     value = dict(row)
-    path = value.get("file_path")
-    value["has_file"] = bool(path and Path(path).exists())
+    resolved, status = _media_file_resolution(config, value.get("file_path"))
+    value["has_file"] = resolved is not None
+    value["file_path_status"] = status
+    if resolved is not None:
+        value["resolved_file_path"] = str(resolved)
     return value
 
 
-def media_artifacts_for_snapshot(conn: sqlite3.Connection, snapshot_id: str) -> list[dict[str, Any]]:
+def media_artifacts_for_snapshot(conn: sqlite3.Connection, snapshot_id: str, config: RuntimeConfig | None = None) -> list[dict[str, Any]]:
     rows = conn.execute(
         """
         SELECT id, media_type, role, source_url, normalized_source_url, alt_text, title, mime_type,
@@ -1896,14 +1922,16 @@ def media_artifacts_for_snapshot(conn: sqlite3.Connection, snapshot_id: str) -> 
     for row in rows:
         item = dict(row)
         path = item.pop("file_path", None)
-        item["has_file"] = bool(path and Path(path).exists())
+        resolved, status = _media_file_resolution(config, path)
+        item["has_file"] = resolved is not None
+        item["file_path_status"] = status
         if item["has_file"]:
             item["content_url"] = f"/media-artifacts/{item['id']}"
         result.append(item)
     return result
 
 
-def media_artifacts_for_document(conn: sqlite3.Connection, document_id: str, *, limit: int = 100) -> list[dict[str, Any]]:
+def media_artifacts_for_document(conn: sqlite3.Connection, document_id: str, config: RuntimeConfig | None = None, *, limit: int = 100) -> list[dict[str, Any]]:
     rows = conn.execute(
         """
         SELECT id, snapshot_id, media_type, role, source_url, normalized_source_url, alt_text, title,
@@ -1920,7 +1948,9 @@ def media_artifacts_for_document(conn: sqlite3.Connection, document_id: str, *, 
     for row in rows:
         item = dict(row)
         path = item.pop("file_path", None)
-        item["has_file"] = bool(path and Path(path).exists())
+        resolved, status = _media_file_resolution(config, path)
+        item["has_file"] = resolved is not None
+        item["file_path_status"] = status
         if item["has_file"]:
             item["content_url"] = f"/media-artifacts/{item['id']}"
         result.append(item)

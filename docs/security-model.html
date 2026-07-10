@@ -155,7 +155,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Durable storage</td>
-<td>WSL XDG paths; repo and Chrome profile are not storage roots.</td>
+<td>WSL XDG paths; repo and Chrome profile are not storage roots; DB blob paths are validated against configured roots before read/serve/delete operations.</td>
 </tr>
 <tr>
 <td>Browser bridge</td>
@@ -254,6 +254,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <ul>
 <li>Local web UI is served from loopback at <code>/ui</code>; the HTML bootstrap embeds the current daemon token so the dashboard auto-loads without manual paste. Static JS/CSS assets remain token-free, and every memory/admin API call still requires the bearer token.</li>
 <li>Daemon-public media fetch uses a no-cookie, no-<code>Referer</code>, HTTP(S)-only egress guard. Every direct URL, redirect target, HLS variant playlist, init map, and segment is resolved and rejected by default if it maps to loopback, private, link-local, unspecified, multicast, reserved, or otherwise non-global address space. Private destinations require explicit <code>BMD_MEDIA_PUBLIC_FETCH_ALLOW_PRIVATE_HOSTS</code> configuration.</li>
+<li>Clean-text and media blob paths are root-scoped: writes construct contained paths under the configured blob root, media filenames use hashed storage stems, and read/serve/purge/forget flows refuse stale or tampered DB paths that resolve outside <code>clean-text/</code> or <code>media/</code>.</li>
 <li>Deletion UX requires explicit browser confirmation before UI/popup forget-domain calls, and the daemon returns deletion receipts.</li>
 </ul>
 <hr />

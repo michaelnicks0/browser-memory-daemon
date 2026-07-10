@@ -8,6 +8,7 @@ from typing import Any
 from . import __version__
 from .config import RuntimeConfig
 from .media import media_artifacts_for_document, media_artifacts_for_snapshot, media_queue_status
+from .storage_paths import contained_existing_file
 
 
 def _clamp_limit(limit: int | str | None, *, default: int = 25, maximum: int = 100) -> int:
@@ -131,7 +132,7 @@ def timeline(conn: sqlite3.Connection, *, day: str | None = None, after: str | N
     return {"items": items, "range": {"date": day, "after": start, "before": end}, "count": len(items)}
 
 
-def document_detail(conn: sqlite3.Connection, document_id: str) -> dict[str, Any]:
+def document_detail(conn: sqlite3.Connection, config: RuntimeConfig, document_id: str) -> dict[str, Any]:
     doc = conn.execute("SELECT * FROM documents WHERE id = ?", (document_id,)).fetchone()
     if not doc:
         raise KeyError("document not found")
@@ -182,8 +183,8 @@ def document_detail(conn: sqlite3.Connection, document_id: str) -> dict[str, Any
         "document": dict(doc),
         "visits": [dict(row) for row in visits],
         "visit_events": [dict(row) for row in visit_events],
-        "snapshots": [_snapshot_summary(row) for row in snapshots],
-        "media_artifacts": media_artifacts_for_document(conn, document_id),
+        "snapshots": [_snapshot_summary(row, config) for row in snapshots],
+        "media_artifacts": media_artifacts_for_document(conn, document_id, config),
         "chunks": [
             {
                 "id": row["id"],
@@ -198,7 +199,7 @@ def document_detail(conn: sqlite3.Connection, document_id: str) -> dict[str, Any
     }
 
 
-def snapshot_detail(conn: sqlite3.Connection, snapshot_id: str, *, max_text_chars: int = 50_000) -> dict[str, Any]:
+def snapshot_detail(conn: sqlite3.Connection, config: RuntimeConfig, snapshot_id: str, *, max_text_chars: int = 50_000) -> dict[str, Any]:
     snapshot = conn.execute("SELECT * FROM snapshots WHERE id = ?", (snapshot_id,)).fetchone()
     if not snapshot:
         raise KeyError("snapshot not found")
@@ -210,18 +211,19 @@ def snapshot_detail(conn: sqlite3.Connection, snapshot_id: str, *, max_text_char
     text = ""
     path = snapshot["cleaned_text_path"]
     if path:
-        clean_path = Path(path)
-        if clean_path.exists():
+        resolution = contained_existing_file(config.clean_text_root, path)
+        clean_path = resolution.path
+        if clean_path is not None:
             text = clean_path.read_text(encoding="utf-8", errors="replace")
     if not text:
         text = "\n\n".join(row["text"] for row in chunks)
     truncated = len(text) > max_text_chars
     return {
-        "snapshot": _snapshot_summary(snapshot),
+        "snapshot": _snapshot_summary(snapshot, config),
         "document": dict(document) if document else None,
         "text": text[:max_text_chars],
         "text_truncated": truncated,
-        "media_artifacts": media_artifacts_for_snapshot(conn, snapshot_id),
+        "media_artifacts": media_artifacts_for_snapshot(conn, snapshot_id, config),
         "chunks": [
             {"id": row["id"], "chunk_index": row["chunk_index"], "title": row["title"], "url": row["url"], "snippet": _snippet(row["text"])}
             for row in chunks
@@ -340,8 +342,14 @@ def _capture_row(row: sqlite3.Row) -> dict[str, Any]:
     }
 
 
-def _snapshot_summary(row: sqlite3.Row) -> dict[str, Any]:
+def _snapshot_summary(row: sqlite3.Row, config: RuntimeConfig | None = None) -> dict[str, Any]:
     value = dict(row)
     path = value.pop("cleaned_text_path", None)
-    value["has_clean_text"] = bool(path and Path(path).exists())
+    if config:
+        resolution = contained_existing_file(config.clean_text_root, path)
+        value["has_clean_text"] = resolution.path is not None
+        value["clean_text_path_status"] = resolution.status
+    else:
+        value["has_clean_text"] = bool(path and Path(path).exists())
+        value["clean_text_path_status"] = "legacy-unchecked"
     return value

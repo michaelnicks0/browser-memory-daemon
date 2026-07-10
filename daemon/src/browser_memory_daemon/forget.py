@@ -5,8 +5,10 @@ import sqlite3
 import uuid
 from pathlib import Path
 
+from .config import RuntimeConfig
 from .normalize import domain_from_url, normalize_url
 from .policy import redact_url
+from .storage_paths import resolve_db_path_under
 
 
 def _document_ids_for_url(conn: sqlite3.Connection, url: str) -> list[str]:
@@ -23,24 +25,32 @@ def _document_ids_for_url(conn: sqlite3.Connection, url: str) -> list[str]:
     return [row["id"] for row in rows if row["id"]]
 
 
-def _unlink_existing(paths: list[Path]) -> int:
+def _unlink_contained(paths: list[Path], *, root: Path) -> tuple[int, int, int]:
     unlinked = 0
+    skipped_out_of_root = 0
+    failed = 0
     seen: set[str] = set()
     for path in paths:
         key = str(path)
         if not key or key in seen:
             continue
         seen.add(key)
+        resolution = resolve_db_path_under(root, path, require_file=False)
+        if resolution.status in {"outside-root", "invalid", "empty"} or resolution.path is None:
+            skipped_out_of_root += 1
+            continue
+        resolved = resolution.path
         try:
-            if path.exists():
-                path.unlink()
+            if resolved.exists():
+                resolved.unlink()
                 unlinked += 1
         except OSError:
+            failed += 1
             continue
-    return unlinked
+    return unlinked, skipped_out_of_root, failed
 
 
-def forget(conn: sqlite3.Connection, *, domain: str | None = None, url: str | None = None) -> dict:
+def forget(conn: sqlite3.Connection, config: RuntimeConfig, *, domain: str | None = None, url: str | None = None) -> dict:
     if not domain and not url:
         raise ValueError("forget requires domain or url")
     normalized_domain = None
@@ -64,10 +74,14 @@ def forget(conn: sqlite3.Connection, *, domain: str | None = None, url: str | No
         "blobs": 0,
         "media_artifacts": 0,
         "media_blobs": 0,
+        "media_blobs_out_of_root": 0,
+        "media_blobs_failed": 0,
         "fts": 0,
         "embeddings": 0,
         "redactions": 0,
         "feedback_events": 0,
+        "blobs_out_of_root": 0,
+        "blobs_failed": 0,
     }
     media_paths: list[Path] = []
     clean_text_paths: list[Path] = []
@@ -106,8 +120,8 @@ def forget(conn: sqlite3.Connection, *, domain: str | None = None, url: str | No
                     counts["visit_events"] += conn.execute("DELETE FROM visit_events WHERE id = ?", (event["id"],)).rowcount
         else:
             counts["visit_events"] += conn.execute("DELETE FROM visit_events WHERE normalized_url = ?", (scope["url"],)).rowcount
-    counts["media_blobs"] = _unlink_existing(media_paths)
-    counts["blobs"] = _unlink_existing(clean_text_paths)
+    counts["media_blobs"], counts["media_blobs_out_of_root"], counts["media_blobs_failed"] = _unlink_contained(media_paths, root=config.media_root)
+    counts["blobs"], counts["blobs_out_of_root"], counts["blobs_failed"] = _unlink_contained(clean_text_paths, root=config.clean_text_root)
     receipt_id = str(uuid.uuid4())
     with conn:
         conn.execute(
