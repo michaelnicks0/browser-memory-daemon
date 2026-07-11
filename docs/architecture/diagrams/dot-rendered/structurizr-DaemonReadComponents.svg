@@ -18,24 +18,26 @@
 </g>
 <g id="clust2" class="cluster">
 <title>cluster_22</title>
-<polygon fill="none" stroke="#444444" points="33,-528 33,-957 2206,-957 2206,-528 33,-528"/>
-<text text-anchor="start" x="954" y="-556.8" font-family="Arial" font-size="24.00" fill="#444444">WSL Loopback HTTP Daemon</text>
-<text text-anchor="start" x="917.5" y="-536.8" font-family="Arial" font-size="19.00" fill="#444444">[Container: Python 3.11, ThreadingHTTPServer]</text>
+<polygon fill="none" stroke="#444444" points="33,-502 33,-979 2206,-979 2206,-502 33,-502"/>
+<text text-anchor="start" x="954" y="-530.8" font-family="Arial" font-size="24.00" fill="#444444">WSL Loopback HTTP Daemon</text>
+<text text-anchor="start" x="917.5" y="-510.8" font-family="Arial" font-size="19.00" fill="#444444">[Container: Python 3.11, ThreadingHTTPServer]</text>
 </g>
 <!-- 23 -->
 <g id="23" class="node">
 <title>23</title>
-<polygon fill="#85bbf0" stroke="#1168bd" points="552,-931.5 58,-931.5 58,-628.5 552,-628.5 552,-931.5"/>
-<text text-anchor="start" x="136.5" y="-883.3" font-family="Arial" font-size="34.00" fill="#000000">HTTP Request Router</text>
-<text text-anchor="start" x="87" y="-861.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python http.server + route descriptors]</text>
-<text text-anchor="start" x="129" y="-824.3" font-family="Arial" font-size="24.00" fill="#000000">Matches immutable method/path</text>
-<text text-anchor="start" x="189" y="-800.3" font-family="Arial" font-size="24.00" fill="#000000">descriptors with static</text>
-<text text-anchor="start" x="149" y="-776.3" font-family="Arial" font-size="24.00" fill="#000000">precedence, routes loopback</text>
-<text text-anchor="start" x="178" y="-752.3" font-family="Arial" font-size="24.00" fill="#000000">API requests, serves UI</text>
-<text text-anchor="start" x="151" y="-728.3" font-family="Arial" font-size="24.00" fill="#000000">assets, enforces bearer auth</text>
-<text text-anchor="start" x="152" y="-704.3" font-family="Arial" font-size="24.00" fill="#000000">for memory/admin APIs, and</text>
-<text text-anchor="start" x="166.5" y="-680.3" font-family="Arial" font-size="24.00" fill="#000000">applies CORS for allowed</text>
-<text text-anchor="start" x="265.5" y="-656.3" font-family="Arial" font-size="24.00" fill="#000000">origins.</text>
+<polygon fill="#85bbf0" stroke="#1168bd" points="552,-953.5 58,-953.5 58,-602.5 552,-602.5 552,-953.5"/>
+<text text-anchor="start" x="136.5" y="-905.3" font-family="Arial" font-size="34.00" fill="#000000">HTTP Request Router</text>
+<text text-anchor="start" x="87" y="-883.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python http.server + route descriptors]</text>
+<text text-anchor="start" x="129" y="-846.3" font-family="Arial" font-size="24.00" fill="#000000">Matches immutable method/path</text>
+<text text-anchor="start" x="189" y="-822.3" font-family="Arial" font-size="24.00" fill="#000000">descriptors with static</text>
+<text text-anchor="start" x="172" y="-798.3" font-family="Arial" font-size="24.00" fill="#000000">precedence, maps typed</text>
+<text text-anchor="start" x="169.5" y="-774.3" font-family="Arial" font-size="24.00" fill="#000000">compatible errors without</text>
+<text text-anchor="start" x="181.5" y="-750.3" font-family="Arial" font-size="24.00" fill="#000000">leaking internal details,</text>
+<text text-anchor="start" x="144" y="-726.3" font-family="Arial" font-size="24.00" fill="#000000">routes loopback API requests,</text>
+<text text-anchor="start" x="162" y="-702.3" font-family="Arial" font-size="24.00" fill="#000000">serves UI assets, enforces</text>
+<text text-anchor="start" x="141" y="-678.3" font-family="Arial" font-size="24.00" fill="#000000">bearer auth for memory/admin</text>
+<text text-anchor="start" x="155.5" y="-654.3" font-family="Arial" font-size="24.00" fill="#000000">APIs, and applies CORS for</text>
+<text text-anchor="start" x="221.5" y="-630.3" font-family="Arial" font-size="24.00" fill="#000000">allowed origins.</text>
 </g>
 <!-- 40 -->
 <g id="40" class="node">
@@ -53,10 +55,10 @@
 <!-- 23&#45;&gt;40 -->
 <g id="120" class="edge">
 <title>23&#45;&gt;40</title>
-<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M552.18,-780C655.5,-780 775.81,-780 880.83,-780"/>
-<polygon fill="#444444" stroke="#444444" points="880.94,-783.5 890.94,-780 880.94,-776.5 880.94,-783.5"/>
-<polygon fill="white" stroke="transparent" points="588,-780 588,-814 855,-814 855,-780 588,-780"/>
-<text text-anchor="start" x="592.5" y="-790.8" font-family="Arial" font-size="24.00" fill="#444444">Routes read requests to</text>
+<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M552.18,-778.59C655.5,-778.83 775.81,-779.12 880.83,-779.37"/>
+<polygon fill="#444444" stroke="#444444" points="880.93,-782.87 890.94,-779.4 880.95,-775.87 880.93,-782.87"/>
+<polygon fill="white" stroke="transparent" points="588,-779 588,-813 855,-813 855,-779 588,-779"/>
+<text text-anchor="start" x="592.5" y="-789.8" font-family="Arial" font-size="24.00" fill="#444444">Routes read requests to</text>
 </g>
 <!-- 38 -->
 <g id="38" class="node">

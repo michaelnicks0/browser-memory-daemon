@@ -8,6 +8,16 @@ from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 
 from . import __version__
+from .api_errors import (
+    APIError,
+    ForbiddenError,
+    NotFoundError,
+    ResourceUnavailableError,
+    UnauthorizedError,
+    UnsupportedMethodError,
+    ValidationError,
+    classify_exception,
+)
 from .config import RuntimeConfig
 from .db import audit, connect, init_db
 from .forget import forget
@@ -76,6 +86,11 @@ def _json_response(handler: BaseHTTPRequestHandler, status: int, payload: dict |
     handler.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
     handler.end_headers()
     handler.wfile.write(body)
+
+
+def _api_error_response(handler: BaseHTTPRequestHandler, error: Exception, *, extra: dict[str, object] | None = None) -> None:
+    api_error = classify_exception(error)
+    _json_response(handler, api_error.status, api_error.payload(extra))
 
 
 def _text_response(handler: BaseHTTPRequestHandler, status: int, body: bytes, *, content_type: str) -> None:
@@ -274,7 +289,10 @@ def make_handler(config: RuntimeConfig):
 
         def send_error(self, code: int, message: str | None = None, explain: str | None = None) -> None:
             default_message = self.responses.get(code, ("error", ""))[0]
-            _json_response(self, code, {"error": message or default_message})
+            if code == 501:
+                _api_error_response(self, UnsupportedMethodError(message or default_message))
+                return
+            _api_error_response(self, APIError(status=code, code="http_error", message=message or default_message))
 
         def do_OPTIONS(self) -> None:
             _json_response(self, 204, {})
@@ -303,12 +321,12 @@ def make_handler(config: RuntimeConfig):
             ui_file = _ui_file_for_path(parsed.path)
             if ui_file:
                 if not _loopback_ui_allowed(self, config):
-                    _json_response(self, 403, {"error": "ui is loopback-only"})
+                    _api_error_response(self, ForbiddenError("ui is loopback-only"))
                     return
                 _text_response(self, 200, _ui_file_body(ui_file, config), content_type=_content_type(ui_file))
                 return
             if not _authorized(self, config):
-                _json_response(self, 401, {"error": "unauthorized"})
+                _api_error_response(self, UnauthorizedError())
                 return
             params = parse_qs(parsed.query)
             try:
@@ -385,11 +403,10 @@ def make_handler(config: RuntimeConfig):
                     store, locator, tier_status = media_blob_store_and_locator(config, artifact)
                     resolution = store.resolve(locator, require_file=True) if store is not None else None
                     if not artifact.get("has_file") or resolution is None or resolution.path is None:
-                        _json_response(
+                        _api_error_response(
                             self,
-                            404,
-                            {
-                                "error": "media artifact file not stored",
+                            NotFoundError("media artifact file not stored"),
+                            extra={
                                 "storage_status": tier_status,
                                 "artifact": {
                                     k: v
@@ -418,7 +435,7 @@ def make_handler(config: RuntimeConfig):
                                     filename=resolution.path.name,
                                 )
                     except MediaResourceUnavailable as exc:
-                        _json_response(self, 503, {"error": str(exc)})
+                        _api_error_response(self, ResourceUnavailableError(str(exc)))
                     return
                 if route_match and route_match.route.name == "doctor":
                     _ensure_db(config)
@@ -457,16 +474,16 @@ def make_handler(config: RuntimeConfig):
                     )
                     return
             except KeyError as exc:
-                _json_response(self, 404, {"error": str(exc).strip("'")})
+                _api_error_response(self, exc)
                 return
             except Exception as exc:
-                _json_response(self, 400, {"error": str(exc)})
+                _api_error_response(self, exc)
                 return
-            _json_response(self, 404, {"error": "not found"})
+            _api_error_response(self, NotFoundError())
 
         def do_PUT(self) -> None:
             if not _authorized(self, config):
-                _json_response(self, 401, {"error": "unauthorized"})
+                _api_error_response(self, UnauthorizedError())
                 return
             parsed = urlparse(self.path)
             route_match = match_route("PUT", parsed.path)
@@ -475,10 +492,10 @@ def make_handler(config: RuntimeConfig):
                 try:
                     content_length = int(self.headers.get("Content-Length", "0") or 0)
                 except ValueError:
-                    _json_response(self, 400, {"error": "invalid content length"})
+                    _api_error_response(self, ValidationError("invalid content length"))
                     return
                 if content_length < 0:
-                    _json_response(self, 400, {"error": "invalid content length"})
+                    _api_error_response(self, ValidationError("invalid content length"))
                     return
                 try:
                     _ensure_db(config)
@@ -495,19 +512,19 @@ def make_handler(config: RuntimeConfig):
                     _json_response(self, 201 if result["stored"] else 200, result)
                     return
                 except MediaResourceUnavailable as exc:
-                    _json_response(self, 503, {"error": str(exc)})
+                    _api_error_response(self, ResourceUnavailableError(str(exc)))
                     return
                 except KeyError as exc:
-                    _json_response(self, 404, {"error": str(exc).strip("'")})
+                    _api_error_response(self, exc)
                     return
                 except Exception as exc:
-                    _json_response(self, 400, {"error": str(exc)})
+                    _api_error_response(self, exc)
                     return
-            _json_response(self, 404, {"error": "not found"})
+            _api_error_response(self, NotFoundError())
 
         def do_POST(self) -> None:
             if not _authorized(self, config):
-                _json_response(self, 401, {"error": "unauthorized"})
+                _api_error_response(self, UnauthorizedError())
                 return
             parsed = urlparse(self.path)
             route_match = match_route("POST", parsed.path)
@@ -522,12 +539,12 @@ def make_handler(config: RuntimeConfig):
                     )
                 data = _read_json(self, max_bytes)
             except MediaResourceUnavailable as exc:
-                _json_response(self, 503, {"error": str(exc)})
+                _api_error_response(self, ResourceUnavailableError(str(exc)))
                 return
             except Exception as exc:
                 if media_request_lease is not None:
                     media_request_lease.release()
-                _json_response(self, 400, {"error": str(exc)})
+                _api_error_response(self, exc)
                 return
             if route_match and route_match.route.name == "media-cache-purge":
                 try:
@@ -539,7 +556,7 @@ def make_handler(config: RuntimeConfig):
                     _json_response(self, 200, result)
                     return
                 except Exception as exc:
-                    _json_response(self, 400, {"error": str(exc)})
+                    _api_error_response(self, exc)
                     return
             if route_match and route_match.route.name == "media-fetch-pending":
                 try:
@@ -572,7 +589,7 @@ def make_handler(config: RuntimeConfig):
                     _json_response(self, 200, result)
                     return
                 except Exception as exc:
-                    _json_response(self, 400, {"error": str(exc)})
+                    _api_error_response(self, exc)
                     return
             if route_match and route_match.route.name == "media-artifact-store":
                 try:
@@ -595,58 +612,58 @@ def make_handler(config: RuntimeConfig):
                     _json_response(self, 201 if result["stored"] else 200, result)
                     return
                 except KeyError as exc:
-                    _json_response(self, 404, {"error": str(exc).strip("'")})
+                    _api_error_response(self, exc)
                     return
                 except Exception as exc:
-                    _json_response(self, 400, {"error": str(exc)})
+                    _api_error_response(self, exc)
                     return
                 finally:
                     if media_request_lease is not None:
                         media_request_lease.release()
             if route_match and route_match.route.name == "visit-event-store":
-                url = str(data.get("url") or "")
-                decision = evaluate_capture(
-                    url,
-                    is_incognito=bool(data.get("is_incognito") or data.get("incognito") or False),
-                    policy_mode=config.policy_mode,
-                )
-                _ensure_db(config)
-                with connect(config.db_path) as conn:
-                    if decision.allowed:
-                        rules_decision = evaluate_policy_rules(conn, url)
-                        if not rules_decision.allowed:
-                            decision = rules_decision
-                    if not decision.allowed:
-                        audit(conn, "visit_event.blocked", {"reason": decision.reason})
-                        conn.commit()
-                        _json_response(self, 200, {"stored": False, "blocked": True, "reason": decision.reason})
-                        return
-                    try:
+                try:
+                    url = str(data.get("url") or "")
+                    decision = evaluate_capture(
+                        url,
+                        is_incognito=bool(data.get("is_incognito") or data.get("incognito") or False),
+                        policy_mode=config.policy_mode,
+                    )
+                    _ensure_db(config)
+                    with connect(config.db_path) as conn:
+                        if decision.allowed:
+                            rules_decision = evaluate_policy_rules(conn, url)
+                            if not rules_decision.allowed:
+                                decision = rules_decision
+                        if not decision.allowed:
+                            audit(conn, "visit_event.blocked", {"reason": decision.reason})
+                            conn.commit()
+                            _json_response(self, 200, {"stored": False, "blocked": True, "reason": decision.reason})
+                            return
                         result = record_visit_event(conn, data, policy_mode=config.policy_mode)
                         _json_response(self, 201 if result["stored"] else 200, result)
                         return
-                    except Exception as exc:
-                        _json_response(self, 400, {"error": str(exc)})
-                        return
+                except Exception as exc:
+                    _api_error_response(self, exc)
+                    return
             if route_match and route_match.route.name == "capture-store":
-                url = str(data.get("url") or "")
-                decision = evaluate_capture(
-                    url,
-                    is_incognito=bool(data.get("is_incognito") or data.get("incognito") or False),
-                    policy_mode=config.policy_mode,
-                )
-                _ensure_db(config)
-                with connect(config.db_path) as conn:
-                    if decision.allowed:
-                        rules_decision = evaluate_policy_rules(conn, url)
-                        if not rules_decision.allowed:
-                            decision = rules_decision
-                    if not decision.allowed:
-                        audit(conn, "capture.blocked", {"reason": decision.reason})
-                        conn.commit()
-                        _json_response(self, 200, {"stored": False, "blocked": True, "reason": decision.reason})
-                        return
-                    try:
+                try:
+                    url = str(data.get("url") or "")
+                    decision = evaluate_capture(
+                        url,
+                        is_incognito=bool(data.get("is_incognito") or data.get("incognito") or False),
+                        policy_mode=config.policy_mode,
+                    )
+                    _ensure_db(config)
+                    with connect(config.db_path) as conn:
+                        if decision.allowed:
+                            rules_decision = evaluate_policy_rules(conn, url)
+                            if not rules_decision.allowed:
+                                decision = rules_decision
+                        if not decision.allowed:
+                            audit(conn, "capture.blocked", {"reason": decision.reason})
+                            conn.commit()
+                            _json_response(self, 200, {"stored": False, "blocked": True, "reason": decision.reason})
+                            return
                         payload = CapturePayload.from_dict(data, allow_any_url=config.policy_mode == POLICY_MODE_ALL)
                         result = ingest_capture(conn, config, payload)
                         _start_background_fetch_pending_media(
@@ -656,9 +673,9 @@ def make_handler(config: RuntimeConfig):
                         )
                         _json_response(self, 201, result)
                         return
-                    except Exception as exc:
-                        _json_response(self, 400, {"error": str(exc)})
-                        return
+                except Exception as exc:
+                    _api_error_response(self, exc)
+                    return
             if route_match and route_match.route.name == "forget":
                 try:
                     _ensure_db(config)
@@ -669,7 +686,7 @@ def make_handler(config: RuntimeConfig):
                     _json_response(self, 200, result)
                     return
                 except Exception as exc:
-                    _json_response(self, 400, {"error": str(exc)})
+                    _api_error_response(self, exc)
                     return
             if route_match and route_match.route.name == "policy-rule-create":
                 try:
@@ -684,13 +701,13 @@ def make_handler(config: RuntimeConfig):
                     _json_response(self, 201, {"rule": rule})
                     return
                 except Exception as exc:
-                    _json_response(self, 400, {"error": str(exc)})
+                    _api_error_response(self, exc)
                     return
-            _json_response(self, 404, {"error": "not found"})
+            _api_error_response(self, NotFoundError())
 
         def do_DELETE(self) -> None:
             if not _authorized(self, config):
-                _json_response(self, 401, {"error": "unauthorized"})
+                _api_error_response(self, UnauthorizedError())
                 return
             parsed = urlparse(self.path)
             route_match = match_route("DELETE", parsed.path)
@@ -703,9 +720,9 @@ def make_handler(config: RuntimeConfig):
                     _json_response(self, 200, result)
                     return
                 except Exception as exc:
-                    _json_response(self, 400, {"error": str(exc)})
+                    _api_error_response(self, exc)
                     return
-            _json_response(self, 404, {"error": "not found"})
+            _api_error_response(self, NotFoundError())
 
     return MemoryHandler
 

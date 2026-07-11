@@ -25,17 +25,19 @@
 <!-- 23 -->
 <g id="23" class="node">
 <title>23</title>
-<polygon fill="#85bbf0" stroke="#1168bd" points="552,-644.5 58,-644.5 58,-341.5 552,-341.5 552,-644.5"/>
-<text text-anchor="start" x="136.5" y="-596.3" font-family="Arial" font-size="34.00" fill="#000000">HTTP Request Router</text>
-<text text-anchor="start" x="87" y="-574.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python http.server + route descriptors]</text>
-<text text-anchor="start" x="129" y="-537.3" font-family="Arial" font-size="24.00" fill="#000000">Matches immutable method/path</text>
-<text text-anchor="start" x="189" y="-513.3" font-family="Arial" font-size="24.00" fill="#000000">descriptors with static</text>
-<text text-anchor="start" x="149" y="-489.3" font-family="Arial" font-size="24.00" fill="#000000">precedence, routes loopback</text>
-<text text-anchor="start" x="178" y="-465.3" font-family="Arial" font-size="24.00" fill="#000000">API requests, serves UI</text>
-<text text-anchor="start" x="151" y="-441.3" font-family="Arial" font-size="24.00" fill="#000000">assets, enforces bearer auth</text>
-<text text-anchor="start" x="152" y="-417.3" font-family="Arial" font-size="24.00" fill="#000000">for memory/admin APIs, and</text>
-<text text-anchor="start" x="166.5" y="-393.3" font-family="Arial" font-size="24.00" fill="#000000">applies CORS for allowed</text>
-<text text-anchor="start" x="265.5" y="-369.3" font-family="Arial" font-size="24.00" fill="#000000">origins.</text>
+<polygon fill="#85bbf0" stroke="#1168bd" points="552,-668.5 58,-668.5 58,-317.5 552,-317.5 552,-668.5"/>
+<text text-anchor="start" x="136.5" y="-620.3" font-family="Arial" font-size="34.00" fill="#000000">HTTP Request Router</text>
+<text text-anchor="start" x="87" y="-598.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python http.server + route descriptors]</text>
+<text text-anchor="start" x="129" y="-561.3" font-family="Arial" font-size="24.00" fill="#000000">Matches immutable method/path</text>
+<text text-anchor="start" x="189" y="-537.3" font-family="Arial" font-size="24.00" fill="#000000">descriptors with static</text>
+<text text-anchor="start" x="172" y="-513.3" font-family="Arial" font-size="24.00" fill="#000000">precedence, maps typed</text>
+<text text-anchor="start" x="169.5" y="-489.3" font-family="Arial" font-size="24.00" fill="#000000">compatible errors without</text>
+<text text-anchor="start" x="181.5" y="-465.3" font-family="Arial" font-size="24.00" fill="#000000">leaking internal details,</text>
+<text text-anchor="start" x="144" y="-441.3" font-family="Arial" font-size="24.00" fill="#000000">routes loopback API requests,</text>
+<text text-anchor="start" x="162" y="-417.3" font-family="Arial" font-size="24.00" fill="#000000">serves UI assets, enforces</text>
+<text text-anchor="start" x="141" y="-393.3" font-family="Arial" font-size="24.00" fill="#000000">bearer auth for memory/admin</text>
+<text text-anchor="start" x="155.5" y="-369.3" font-family="Arial" font-size="24.00" fill="#000000">APIs, and applies CORS for</text>
+<text text-anchor="start" x="221.5" y="-345.3" font-family="Arial" font-size="24.00" fill="#000000">allowed origins.</text>
 </g>
 <!-- 24 -->
 <g id="24" class="node">

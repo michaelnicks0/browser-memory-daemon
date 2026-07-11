@@ -61,6 +61,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0051](0051-extract-mv3-restart-state-controllers.md) | accepted | Extract MV3 restart-state controllers from the service worker. |
 | [ADR-0052](0052-complete-mv3-service-worker-orchestration-split.md) | accepted | Complete the MV3 service-worker orchestration split. |
 | [ADR-0053](0053-introduce-compatible-http-route-descriptors.md) | accepted | Introduce explicit HTTP route descriptors behind compatible endpoint contracts. |
+| [ADR-0054](0054-use-typed-compatible-http-errors.md) | accepted | Use typed compatible HTTP errors and sanitize internal failures. |
 
 ## Backfilled decision history
 

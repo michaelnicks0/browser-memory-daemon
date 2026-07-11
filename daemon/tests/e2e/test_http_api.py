@@ -1,4 +1,5 @@
 import json
+import sqlite3
 import threading
 import urllib.error
 import urllib.parse
@@ -285,6 +286,7 @@ def test_http_raw_media_upload_returns_503_when_global_byte_budget_cannot_admit_
         )
         assert status == 503
         assert body["error"] == "media resource request exceeds configured budget"
+        assert body["error_code"] == "resource_unavailable"
         query = urllib.parse.urlencode({"q": "Text remains committed", "limit": "3"})
         status, search = request("GET", f"{base}/search?{query}")
         assert status == 200
@@ -433,9 +435,17 @@ def test_http_api_contract_errors_methods_and_limits_are_json(tmp_path):
             error_request("PATCH", f"{base}/health", raw_body=b"{}"),
         ]
         assert [case[0] for case in error_cases] == [401, 401, 400, 400, 404, 501]
+        assert [case[2]["error_code"] for case in error_cases] == [
+            "unauthorized",
+            "unauthorized",
+            "invalid_request",
+            "invalid_request",
+            "not_found",
+            "unsupported_method",
+        ]
         for _status, headers, payload in error_cases:
             assert "application/json" in headers.get("Content-Type", "")
-            assert set(payload) == {"error"}
+            assert set(payload) == {"error", "error_code"}
             assert isinstance(payload["error"], str) and payload["error"]
 
         status, recent = request("GET", f"{base}/recent?limit=9999")
@@ -479,20 +489,82 @@ def test_http_route_catalog_preserves_auth_unknown_route_and_ready_contracts(tmp
                 continue
             status, headers, payload = error_request(route.method, f"{base}{concrete_path(route.path)}", token=None)
             assert status == 401, route.name
-            assert payload == {"error": "unauthorized"}, route.name
+            assert payload == {"error": "unauthorized", "error_code": "unauthorized"}, route.name
             assert "application/json" in headers.get("Content-Type", ""), route.name
             assert headers.get("X-Content-Type-Options") == "nosniff", route.name
 
         for method in ["GET", "POST", "PUT", "DELETE"]:
             status, headers, payload = error_request(method, f"{base}/does-not-exist", raw_body=b"{}" if method in {"POST", "PUT"} else None)
             assert status == 404
-            assert payload == {"error": "not found"}
+            assert payload == {"error": "not found", "error_code": "not_found"}
             assert "application/json" in headers.get("Content-Type", "")
 
         status, headers, payload = error_request("PATCH", f"{base}/health", raw_body=b"{}")
         assert status == 501
-        assert payload == {"error": "Unsupported method ('PATCH')"}
+        assert payload == {"error": "Unsupported method ('PATCH')", "error_code": "unsupported_method"}
         assert "application/json" in headers.get("Content-Type", "")
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+
+
+def test_http_maps_capture_identity_conflicts_to_stable_conflict_error(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", host="127.0.0.1", port=0, policy_mode="all")
+    server = make_server(cfg)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        first = {
+            "observation_id": "obs-http-conflict",
+            "visit_id": "visit-http-conflict",
+            "url": "https://example.org/conflict",
+            "title": "Original",
+            "text": "Original capture text.",
+        }
+        status, _stored = request("POST", f"{base}/capture", body=first)
+        assert status == 201
+
+        status, _headers, conflict = error_request(
+            "POST",
+            f"{base}/capture",
+            body={**first, "title": "Changed", "text": "Changed capture text."},
+        )
+        assert status == 409
+        assert conflict == {
+            "error": "observation_id conflicts with an existing capture",
+            "error_code": "conflict",
+        }
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+
+
+def test_http_maps_database_busy_and_unexpected_failures_without_leaking_internal_details(tmp_path, monkeypatch):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", host="127.0.0.1", port=0, policy_mode="all")
+    server = make_server(cfg)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base = f"http://127.0.0.1:{server.server_address[1]}"
+
+    def database_busy(*_args, **_kwargs):
+        raise sqlite3.OperationalError(f"database is locked at {tmp_path}/private.sqlite3")
+
+    def unexpected_failure(*_args, **_kwargs):
+        raise RuntimeError(f"token=private-value path={tmp_path}/private.sqlite3")
+
+    try:
+        monkeypatch.setattr(app_module, "search_memory", database_busy)
+        status, _headers, busy = error_request("GET", f"{base}/search?q=test")
+        assert status == 503
+        assert busy == {"error": "database temporarily unavailable", "error_code": "database_busy"}
+
+        monkeypatch.setattr(app_module, "search_memory", unexpected_failure)
+        status, _headers, internal = error_request("GET", f"{base}/search?q=test")
+        assert status == 500
+        assert internal == {"error": "internal server error", "error_code": "internal_error"}
+        assert "private-value" not in json.dumps(internal)
+        assert str(tmp_path) not in json.dumps(internal)
     finally:
         server.shutdown()
         thread.join(timeout=5)

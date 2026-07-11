@@ -18,45 +18,47 @@
 </g>
 <g id="clust2" class="cluster">
 <title>cluster_22</title>
-<polygon fill="none" stroke="#444444" points="33,-528 33,-967 3083,-967 3083,-528 33,-528"/>
-<text text-anchor="start" x="1392.5" y="-556.8" font-family="Arial" font-size="24.00" fill="#444444">WSL Loopback HTTP Daemon</text>
-<text text-anchor="start" x="1356" y="-536.8" font-family="Arial" font-size="19.00" fill="#444444">[Container: Python 3.11, ThreadingHTTPServer]</text>
+<polygon fill="none" stroke="#444444" points="33,-502 33,-979 3083,-979 3083,-502 33,-502"/>
+<text text-anchor="start" x="1392.5" y="-530.8" font-family="Arial" font-size="24.00" fill="#444444">WSL Loopback HTTP Daemon</text>
+<text text-anchor="start" x="1356" y="-510.8" font-family="Arial" font-size="19.00" fill="#444444">[Container: Python 3.11, ThreadingHTTPServer]</text>
 </g>
 <!-- 23 -->
 <g id="23" class="node">
 <title>23</title>
-<polygon fill="#85bbf0" stroke="#1168bd" points="552,-939.5 58,-939.5 58,-636.5 552,-636.5 552,-939.5"/>
-<text text-anchor="start" x="136.5" y="-891.3" font-family="Arial" font-size="34.00" fill="#000000">HTTP Request Router</text>
-<text text-anchor="start" x="87" y="-869.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python http.server + route descriptors]</text>
-<text text-anchor="start" x="129" y="-832.3" font-family="Arial" font-size="24.00" fill="#000000">Matches immutable method/path</text>
-<text text-anchor="start" x="189" y="-808.3" font-family="Arial" font-size="24.00" fill="#000000">descriptors with static</text>
-<text text-anchor="start" x="149" y="-784.3" font-family="Arial" font-size="24.00" fill="#000000">precedence, routes loopback</text>
-<text text-anchor="start" x="178" y="-760.3" font-family="Arial" font-size="24.00" fill="#000000">API requests, serves UI</text>
-<text text-anchor="start" x="151" y="-736.3" font-family="Arial" font-size="24.00" fill="#000000">assets, enforces bearer auth</text>
-<text text-anchor="start" x="152" y="-712.3" font-family="Arial" font-size="24.00" fill="#000000">for memory/admin APIs, and</text>
-<text text-anchor="start" x="166.5" y="-688.3" font-family="Arial" font-size="24.00" fill="#000000">applies CORS for allowed</text>
-<text text-anchor="start" x="265.5" y="-664.3" font-family="Arial" font-size="24.00" fill="#000000">origins.</text>
+<polygon fill="#85bbf0" stroke="#1168bd" points="552,-953.5 58,-953.5 58,-602.5 552,-602.5 552,-953.5"/>
+<text text-anchor="start" x="136.5" y="-905.3" font-family="Arial" font-size="34.00" fill="#000000">HTTP Request Router</text>
+<text text-anchor="start" x="87" y="-883.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python http.server + route descriptors]</text>
+<text text-anchor="start" x="129" y="-846.3" font-family="Arial" font-size="24.00" fill="#000000">Matches immutable method/path</text>
+<text text-anchor="start" x="189" y="-822.3" font-family="Arial" font-size="24.00" fill="#000000">descriptors with static</text>
+<text text-anchor="start" x="172" y="-798.3" font-family="Arial" font-size="24.00" fill="#000000">precedence, maps typed</text>
+<text text-anchor="start" x="169.5" y="-774.3" font-family="Arial" font-size="24.00" fill="#000000">compatible errors without</text>
+<text text-anchor="start" x="181.5" y="-750.3" font-family="Arial" font-size="24.00" fill="#000000">leaking internal details,</text>
+<text text-anchor="start" x="144" y="-726.3" font-family="Arial" font-size="24.00" fill="#000000">routes loopback API requests,</text>
+<text text-anchor="start" x="162" y="-702.3" font-family="Arial" font-size="24.00" fill="#000000">serves UI assets, enforces</text>
+<text text-anchor="start" x="141" y="-678.3" font-family="Arial" font-size="24.00" fill="#000000">bearer auth for memory/admin</text>
+<text text-anchor="start" x="155.5" y="-654.3" font-family="Arial" font-size="24.00" fill="#000000">APIs, and applies CORS for</text>
+<text text-anchor="start" x="221.5" y="-630.3" font-family="Arial" font-size="24.00" fill="#000000">allowed origins.</text>
 </g>
 <!-- 41 -->
 <g id="41" class="node">
 <title>41</title>
-<polygon fill="#85bbf0" stroke="#1168bd" points="1286,-915.5 905,-915.5 905,-660.5 1286,-660.5 1286,-915.5"/>
-<text text-anchor="start" x="981" y="-867.3" font-family="Arial" font-size="34.00" fill="#000000">Forget Pipeline</text>
-<text text-anchor="start" x="967.5" y="-845.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python + sqlite3]</text>
-<text text-anchor="start" x="934" y="-808.3" font-family="Arial" font-size="24.00" fill="#000000">Commits URL/domain&#45;scoped</text>
-<text text-anchor="start" x="939" y="-784.3" font-family="Arial" font-size="24.00" fill="#000000">relational deletion, minimized</text>
-<text text-anchor="start" x="939.5" y="-760.3" font-family="Arial" font-size="24.00" fill="#000000">receipt, and blob tombstones</text>
-<text text-anchor="start" x="955" y="-736.3" font-family="Arial" font-size="24.00" fill="#000000">in one transaction; reports</text>
-<text text-anchor="start" x="945" y="-712.3" font-family="Arial" font-size="24.00" fill="#000000">complete only after required</text>
-<text text-anchor="start" x="1009.5" y="-688.3" font-family="Arial" font-size="24.00" fill="#000000">bytes converge.</text>
+<polygon fill="#85bbf0" stroke="#1168bd" points="1286,-919.5 905,-919.5 905,-664.5 1286,-664.5 1286,-919.5"/>
+<text text-anchor="start" x="981" y="-871.3" font-family="Arial" font-size="34.00" fill="#000000">Forget Pipeline</text>
+<text text-anchor="start" x="967.5" y="-849.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python + sqlite3]</text>
+<text text-anchor="start" x="934" y="-812.3" font-family="Arial" font-size="24.00" fill="#000000">Commits URL/domain&#45;scoped</text>
+<text text-anchor="start" x="939" y="-788.3" font-family="Arial" font-size="24.00" fill="#000000">relational deletion, minimized</text>
+<text text-anchor="start" x="939.5" y="-764.3" font-family="Arial" font-size="24.00" fill="#000000">receipt, and blob tombstones</text>
+<text text-anchor="start" x="955" y="-740.3" font-family="Arial" font-size="24.00" fill="#000000">in one transaction; reports</text>
+<text text-anchor="start" x="945" y="-716.3" font-family="Arial" font-size="24.00" fill="#000000">complete only after required</text>
+<text text-anchor="start" x="1009.5" y="-692.3" font-family="Arial" font-size="24.00" fill="#000000">bytes converge.</text>
 </g>
 <!-- 23&#45;&gt;41 -->
 <g id="121" class="edge">
 <title>23&#45;&gt;41</title>
-<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M552.24,-788C662.33,-788 790.44,-788 894.48,-788"/>
-<polygon fill="#444444" stroke="#444444" points="894.79,-791.5 904.79,-788 894.79,-784.5 894.79,-791.5"/>
-<polygon fill="white" stroke="transparent" points="588,-788 588,-822 869,-822 869,-788 588,-788"/>
-<text text-anchor="start" x="592.5" y="-798.8" font-family="Arial" font-size="24.00" fill="#444444">Routes forget requests to</text>
+<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M552.24,-782.37C662.33,-784.33 790.44,-786.6 894.48,-788.45"/>
+<polygon fill="#444444" stroke="#444444" points="894.73,-791.95 904.79,-788.63 894.86,-784.95 894.73,-791.95"/>
+<polygon fill="white" stroke="transparent" points="588,-787 588,-821 869,-821 869,-787 588,-787"/>
+<text text-anchor="start" x="592.5" y="-797.8" font-family="Arial" font-size="24.00" fill="#444444">Routes forget requests to</text>
 </g>
 <!-- 38 -->
 <g id="38" class="node">
@@ -156,27 +158,27 @@
 <!-- 39 -->
 <g id="39" class="node">
 <title>39</title>
-<polygon fill="#85bbf0" stroke="#1168bd" points="2251,-941.5 1618,-941.5 1618,-628.5 2251,-628.5 2251,-941.5"/>
-<text text-anchor="start" x="1796" y="-893.3" font-family="Arial" font-size="34.00" fill="#000000">Blob Lifecycle and</text>
-<text text-anchor="start" x="1790" y="-859.3" font-family="Arial" font-size="34.00" fill="#000000">Storage Reconciler</text>
-<text text-anchor="start" x="1753" y="-837.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python + sqlite3 + filesystem]</text>
-<text text-anchor="start" x="1891.5" y="-800.3" font-family="Arial" font-size="24.00" fill="#000000">Persists</text>
-<text text-anchor="start" x="1647" y="-776.3" font-family="Arial" font-size="24.00" fill="#000000">committed/tombstoned/missing/deleted/blocked/failed</text>
-<text text-anchor="start" x="1824.5" y="-752.3" font-family="Arial" font-size="24.00" fill="#000000">blob state; serializes</text>
-<text text-anchor="start" x="1788.5" y="-728.3" font-family="Arial" font-size="24.00" fill="#000000">deletion processors; retries</text>
-<text text-anchor="start" x="1802.5" y="-704.3" font-family="Arial" font-size="24.00" fill="#000000">tombstones; and dry&#45;run</text>
-<text text-anchor="start" x="1786" y="-680.3" font-family="Arial" font-size="24.00" fill="#000000">detects missing refs, in&#45;root</text>
-<text text-anchor="start" x="1792" y="-656.3" font-family="Arial" font-size="24.00" fill="#000000">orphans, and stale stages.</text>
+<polygon fill="#85bbf0" stroke="#1168bd" points="2251,-948.5 1618,-948.5 1618,-635.5 2251,-635.5 2251,-948.5"/>
+<text text-anchor="start" x="1796" y="-900.3" font-family="Arial" font-size="34.00" fill="#000000">Blob Lifecycle and</text>
+<text text-anchor="start" x="1790" y="-866.3" font-family="Arial" font-size="34.00" fill="#000000">Storage Reconciler</text>
+<text text-anchor="start" x="1753" y="-844.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python + sqlite3 + filesystem]</text>
+<text text-anchor="start" x="1891.5" y="-807.3" font-family="Arial" font-size="24.00" fill="#000000">Persists</text>
+<text text-anchor="start" x="1647" y="-783.3" font-family="Arial" font-size="24.00" fill="#000000">committed/tombstoned/missing/deleted/blocked/failed</text>
+<text text-anchor="start" x="1824.5" y="-759.3" font-family="Arial" font-size="24.00" fill="#000000">blob state; serializes</text>
+<text text-anchor="start" x="1788.5" y="-735.3" font-family="Arial" font-size="24.00" fill="#000000">deletion processors; retries</text>
+<text text-anchor="start" x="1802.5" y="-711.3" font-family="Arial" font-size="24.00" fill="#000000">tombstones; and dry&#45;run</text>
+<text text-anchor="start" x="1786" y="-687.3" font-family="Arial" font-size="24.00" fill="#000000">detects missing refs, in&#45;root</text>
+<text text-anchor="start" x="1792" y="-663.3" font-family="Arial" font-size="24.00" fill="#000000">orphans, and stale stages.</text>
 </g>
 <!-- 39&#45;&gt;38 -->
 <g id="154" class="edge">
 <title>39&#45;&gt;38</title>
-<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M2251.11,-710.61C2263.19,-708.86 2275.19,-707.31 2287,-706 2430.12,-690.11 2468.6,-684.59 2611,-706 2619.55,-707.29 2628.22,-708.82 2636.94,-710.54"/>
-<polygon fill="#444444" stroke="#444444" points="2636.29,-713.98 2646.79,-712.58 2637.71,-707.13 2636.29,-713.98"/>
-<polygon fill="white" stroke="transparent" points="2322.5,-706 2322.5,-792 2575.5,-792 2575.5,-706 2322.5,-706"/>
-<text text-anchor="start" x="2327" y="-768.8" font-family="Arial" font-size="24.00" fill="#444444">Resolves, deletes, and</text>
-<text text-anchor="start" x="2335" y="-742.8" font-family="Arial" font-size="24.00" fill="#444444">inventories contained</text>
-<text text-anchor="start" x="2375.5" y="-716.8" font-family="Arial" font-size="24.00" fill="#444444">bytes through</text>
+<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M2251.04,-712.91C2263.14,-711.05 2275.16,-709.4 2287,-708 2430.01,-691.15 2468.52,-687.13 2611,-708 2619.54,-709.25 2628.19,-710.74 2636.9,-712.42"/>
+<polygon fill="#444444" stroke="#444444" points="2636.25,-715.86 2646.74,-714.4 2637.63,-709 2636.25,-715.86"/>
+<polygon fill="white" stroke="transparent" points="2322.5,-708 2322.5,-794 2575.5,-794 2575.5,-708 2322.5,-708"/>
+<text text-anchor="start" x="2327" y="-770.8" font-family="Arial" font-size="24.00" fill="#444444">Resolves, deletes, and</text>
+<text text-anchor="start" x="2335" y="-744.8" font-family="Arial" font-size="24.00" fill="#444444">inventories contained</text>
+<text text-anchor="start" x="2375.5" y="-718.8" font-family="Arial" font-size="24.00" fill="#444444">bytes through</text>
 </g>
 <!-- 47 -->
 <g id="47" class="node">
@@ -201,33 +203,33 @@
 <!-- 39&#45;&gt;47 -->
 <g id="153" class="edge">
 <title>39&#45;&gt;47</title>
-<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M2251.23,-908.28C2367.65,-958.8 2498.5,-1021.71 2611,-1091 2622.76,-1098.24 2634.59,-1105.99 2646.35,-1114.07"/>
-<polygon fill="#444444" stroke="#444444" points="2644.7,-1117.18 2654.91,-1120.01 2648.69,-1111.44 2644.7,-1117.18"/>
-<polygon fill="white" stroke="transparent" points="2287,-1091 2287,-1166 2611,-1166 2611,-1091 2287,-1091"/>
-<text text-anchor="start" x="2291" y="-1143.3" font-family="Arial" font-size="24.00" fill="#444444">Reads and advances durable</text>
-<text text-anchor="start" x="2323" y="-1119.3" font-family="Arial" font-size="24.00" fill="#444444">blob lifecycle records in</text>
-<text text-anchor="start" x="2415.5" y="-1099.3" font-family="Arial" font-size="19.00" fill="#444444">[sqlite3]</text>
+<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M2251.06,-918.81C2367.15,-969.97 2497.83,-1033 2611,-1101 2622.69,-1108.03 2634.49,-1115.52 2646.24,-1123.31"/>
+<polygon fill="#444444" stroke="#444444" points="2644.54,-1126.38 2654.79,-1129.04 2648.43,-1120.56 2644.54,-1126.38"/>
+<polygon fill="white" stroke="transparent" points="2287,-1101 2287,-1176 2611,-1176 2611,-1101 2287,-1101"/>
+<text text-anchor="start" x="2291" y="-1153.3" font-family="Arial" font-size="24.00" fill="#444444">Reads and advances durable</text>
+<text text-anchor="start" x="2323" y="-1129.3" font-family="Arial" font-size="24.00" fill="#444444">blob lifecycle records in</text>
+<text text-anchor="start" x="2415.5" y="-1109.3" font-family="Arial" font-size="19.00" fill="#444444">[sqlite3]</text>
 </g>
 <!-- 41&#45;&gt;39 -->
 <g id="152" class="edge">
 <title>41&#45;&gt;39</title>
-<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1286.03,-717.47C1298.1,-714.53 1310.15,-711.99 1322,-710 1414.36,-694.48 1515.07,-698.35 1607.62,-710.16"/>
-<polygon fill="#444444" stroke="#444444" points="1607.34,-713.65 1617.71,-711.48 1608.25,-706.71 1607.34,-713.65"/>
-<polygon fill="white" stroke="transparent" points="1322,-710 1322,-796 1582,-796 1582,-710 1322,-710"/>
-<text text-anchor="start" x="1326" y="-772.8" font-family="Arial" font-size="24.00" fill="#444444">Processes post&#45;commit</text>
-<text text-anchor="start" x="1327" y="-746.8" font-family="Arial" font-size="24.00" fill="#444444">contained blob deletion</text>
-<text text-anchor="start" x="1410.5" y="-720.8" font-family="Arial" font-size="24.00" fill="#444444">through</text>
+<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1286.09,-723.28C1298.14,-720.41 1310.18,-717.94 1322,-716 1414.44,-700.84 1515.18,-704.94 1607.73,-716.9"/>
+<polygon fill="#444444" stroke="#444444" points="1607.44,-720.4 1617.81,-718.24 1608.36,-713.46 1607.44,-720.4"/>
+<polygon fill="white" stroke="transparent" points="1322,-716 1322,-802 1582,-802 1582,-716 1322,-716"/>
+<text text-anchor="start" x="1326" y="-778.8" font-family="Arial" font-size="24.00" fill="#444444">Processes post&#45;commit</text>
+<text text-anchor="start" x="1327" y="-752.8" font-family="Arial" font-size="24.00" fill="#444444">contained blob deletion</text>
+<text text-anchor="start" x="1410.5" y="-726.8" font-family="Arial" font-size="24.00" fill="#444444">through</text>
 </g>
 <!-- 41&#45;&gt;47 -->
 <g id="151" class="edge">
 <title>41&#45;&gt;47</title>
-<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1286.02,-859.95C1384.56,-896.63 1507.26,-941.14 1618,-978 1912.7,-1076.09 1985.21,-1106.6 2287,-1180 2404.53,-1208.58 2537.46,-1233.66 2644.79,-1252.13"/>
-<polygon fill="#444444" stroke="#444444" points="2644.32,-1255.6 2654.77,-1253.84 2645.5,-1248.7 2644.32,-1255.6"/>
-<polygon fill="white" stroke="transparent" points="1804,-1170 1804,-1269 2065,-1269 2065,-1170 1804,-1170"/>
-<text text-anchor="start" x="1808.5" y="-1246.3" font-family="Arial" font-size="24.00" fill="#444444">Atomically deletes rows</text>
-<text text-anchor="start" x="1870.5" y="-1222.3" font-family="Arial" font-size="24.00" fill="#444444">and records</text>
-<text text-anchor="start" x="1813.5" y="-1198.3" font-family="Arial" font-size="24.00" fill="#444444">receipts/tombstones in</text>
-<text text-anchor="start" x="1901.5" y="-1178.3" font-family="Arial" font-size="19.00" fill="#444444">[sqlite3]</text>
+<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1286.29,-865.21C1384.78,-902.44 1507.34,-947.6 1618,-985 1912.61,-1084.56 1984.35,-1118.49 2287,-1190 2404.47,-1217.76 2537.54,-1240.56 2644.97,-1256.86"/>
+<polygon fill="#444444" stroke="#444444" points="2644.55,-1260.34 2654.96,-1258.37 2645.59,-1253.42 2644.55,-1260.34"/>
+<polygon fill="white" stroke="transparent" points="1804,-1180 1804,-1279 2065,-1279 2065,-1180 1804,-1180"/>
+<text text-anchor="start" x="1808.5" y="-1256.3" font-family="Arial" font-size="24.00" fill="#444444">Atomically deletes rows</text>
+<text text-anchor="start" x="1870.5" y="-1232.3" font-family="Arial" font-size="24.00" fill="#444444">and records</text>
+<text text-anchor="start" x="1813.5" y="-1208.3" font-family="Arial" font-size="24.00" fill="#444444">receipts/tombstones in</text>
+<text text-anchor="start" x="1901.5" y="-1188.3" font-family="Arial" font-size="19.00" fill="#444444">[sqlite3]</text>
 </g>
 </g>
 </svg>

@@ -18,13 +18,13 @@ Authorization: Bearer ***
 
 Captured page text is untrusted evidence. API clients must not treat retrieved page text as executable instructions.
 
-Error responses are JSON with a stable top-level `error` string:
+Error responses are JSON with a compatible top-level `error` string and a stable machine-readable `error_code`:
 
 ```json
-{"error": "unauthorized"}
+{"error": "unauthorized", "error_code": "unauthorized"}
 ```
 
-Missing or invalid bearer tokens return `401`; malformed JSON and invalid payloads return `400`; unknown routes return `404`; unsupported HTTP methods return `501`. Limit parameters are bounded server-side (`recent` max 100, `timeline` max 250, media queue max 200); invalid integer limits return `400` on endpoints that parse limits directly.
+Missing or invalid bearer tokens return `401`; malformed JSON and invalid payloads return `400`; identity/integrity conflicts return `409`; unknown routes return `404`; database/resource availability failures return `503`; unexpected internal failures return a sanitized `500`; unsupported HTTP methods return `501`. Limit parameters are bounded server-side (`recent` max 100, `timeline` max 250, media queue max 200); invalid integer limits return `400` on endpoints that parse limits directly. Current stable codes are `invalid_request`, `unauthorized`, `forbidden`, `not_found`, `conflict`, `resource_unavailable`, `database_busy`, `database_unavailable`, `internal_error`, and `unsupported_method`.
 
 ---
 
