@@ -20,6 +20,7 @@
 | Call or extend the HTTP API | [`api.md`](api.md) |
 | Understand CLI commands and flags | [`CLI_UX_CONTRACT.md`](CLI_UX_CONTRACT.md) |
 | Install/refresh daily Chrome | [`daily-driver-deployment.md`](daily-driver-deployment.md) |
+| BMD v1 staged deployment readiness | [`operator/BMD_DEPLOYMENT_READINESS.md`](operator/BMD_DEPLOYMENT_READINESS.md) |
 | Understand policy/security tradeoffs | [`security-model.md`](security-model.md) |
 | Check what is implemented vs pending | [`STATUS.md`](STATUS.md) |
 | Model storage growth | [`storage-growth-model.md`](storage-growth-model.md) |

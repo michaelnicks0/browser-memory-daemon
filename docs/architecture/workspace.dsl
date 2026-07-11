@@ -10,7 +10,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
             tags "External"
         }
 
-        browserMemoryDaemon = softwareSystem "Browser Memory Daemon" "Local-first personal recall system that captures Windows Chrome page text and media references, stores them in WSL, and exposes exact search, timeline, detail, deletion, diagnostics, and media cache operations." {
+        browserMemoryDaemon = softwareSystem "Browser Memory Daemon" "Local-first personal recall system that captures Windows Chrome page text/media and exports versioned body-safe X observations." {
             chromeExtension = container "Chrome MV3 Extension" "Captures visible page text, media references, tab lifecycle events, and browser-side media bytes from Windows Chrome; queues work durably and posts to the WSL daemon." "JavaScript, Chrome Manifest V3" {
                 manifestEnvelope = component "Manifest and Permission Envelope" "Declares MV3 permissions, host permissions, service worker, popup, and options entrypoints." "manifest.json" "Current"
                 extractor = component "Extractor" "Traverses rendered light-DOM text with computed-style and ancestor visibility checks, discovers image/video references, and applies the selected policy mode." "JavaScript" "Current"
@@ -33,10 +33,10 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
                 tags "Data Store"
             }
 
-            wslLoopbackDaemon = container "WSL Loopback HTTP Daemon" "Authenticated loopback HTTP API that handles capture, visit events, media artifact upload/fetch/purge, exact search, recent/timeline/detail, policy rules, doctor, durable forget, and static UI serving." "Python 3.11, ThreadingHTTPServer" {
+            wslLoopbackDaemon = container "WSL Loopback HTTP Daemon" "Authenticated loopback API for capture, read/admin/media operations, and query-only bmd.x-observations v1 export." "Python 3.11, ThreadingHTTPServer" {
                 httpRouter = component "HTTP Request Router" "Adapts BaseHTTPRequestHandler requests through immutable method/path descriptors with static precedence; owns auth, parsing, compatible status/error responses, request IDs, common security headers, redaction-safe telemetry, bounded response streaming, disconnect cleanup, CORS, and finite UI assets." "Python http.server + route descriptors" "Current"
                 applicationUseCases = component "Application Use Cases" "Provides request-independent capture, lifecycle, read, forget, policy, doctor, and media use cases; owns database-ready checks, transaction/audit boundaries, asynchronous media kickoff, and upload/download resource leases without importing HTTP request or response types." "Python" "Current"
-                migrationKernel = component "Database Migration Kernel" "Serializes migrators; validates exact schema fingerprints, ordered names/checksums, and PRAGMA user_version; applies transactional steps, backup-gates destructive changes, and expands capture provenance, storage state, one-time historical media correction, plus durable cache reservations through version 13." "Python + sqlite3" "Current"
+                migrationKernel = component "Database Migration Kernel" "Validates exact ledgers/fingerprints and applies transactional steps through version 14, including immutable observation ingest sequences." "Python + sqlite3" "Current"
                 policyEngine = component "Policy Engine" "Evaluates all/recall/balanced/strict capture mode decisions and redacts URL/title/body text outside all mode." "Python" "Current"
                 policyStore = component "Policy Store" "Persists and evaluates explicit local block-domain and URL-prefix rules for every policy mode." "Python + SQLite" "Current"
                 ingestPipeline = component "Ingest Pipeline" "Normalizes observed URLs, computes document/snapshot IDs, atomically stores complete cleaned text plus visits/observations/snapshots/chunks/FTS rows, records non-authoritative URL claims, and links media references without touching blob storage." "Python + sqlite3" "Current"
@@ -53,6 +53,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
                 blobStore = component "Contained BlobStore" "Prefers root-relative locators with contained legacy fallback; streams unique stages with size/hash accounting; atomically commits; and contains blob read, stat, and delete operations." "Python filesystem boundary" "Current"
                 storageReconciler = component "Blob Lifecycle and Storage Reconciler" "Persists committed/tombstoned/missing/deleted/blocked/failed blob state; serializes deletion processors; retries tombstones; and dry-run detects missing refs, in-root orphans, and stale stages." "Python + sqlite3 + filesystem" "Current"
                 searchReadModel = component "Search and Read Model" "Provides exact FTS search plus SQLite-authoritative text detail and observation-first recent/timeline/document/snapshot/media views with explicit legacy fallbacks." "Python + SQLite FTS5" "Current"
+                xObservationExport = component "X Observation Export" "Opens existing SQLite mode=ro/query_only, denies write opcodes, validates schema/ledger, and emits body-safe cursor pages without audit writes." "Python + sqlite3" "Current"
                 forgetPipeline = component "Forget Pipeline" "Plans literal policy-aware URL/domain scope with non-mutating cross-authority counts and a selected-record guard; bounded execution commits relational deletion, minimized receipt, and blob tombstones, then reports complete only after required bytes converge." "Python + sqlite3" "Current"
                 opsDoctor = component "Ops Doctor and Audit" "Reports health, DB integrity, FTS consistency, blob lifecycle/pending deletion state, runtime paths, storage counts, media queue status, and writes metadata-only audit events to SQLite." "Python + sqlite3" "Current"
             }
@@ -61,11 +62,11 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
 
             localWebUi = container "Local Web UI" "Static browser UI for exact search, recent/timeline views, document/snapshot detail, media artifact opening, policy rules, doctor, and forget-domain operations." "HTML/CSS/JavaScript served by daemon"
 
-            cli = container "CLI" "Command-line interface for serving the daemon, migration, snapshot-text and storage reconciliation, manifest-backed backup/restore, media-spool status/drain, health/doctor/search/recent/timeline/detail, policy/forget, capture fixtures, media worker, and media cache operations." "Python argparse" {
+            cli = container "CLI" "Command-line interface for serving/admin operations plus standalone mutation-free X observation export." "Python argparse" {
                 backupRestore = component "Backup and Restore Operator" "Creates dry-run-first SQLite online backup bundles with redaction-safe SHA-256 manifests and verifies them into absent runtime roots; optionally carries referenced derivatives and excludes media/spool/secrets." "Python sqlite3 + filesystem" "Current"
             }
 
-            sqliteDatabase = container "SQLite + FTS5 Database" "Durable complete cleaned-text, relational, and full-text authority for migration ledger, sources, documents, visits, capture observations, URL claims, visit events, snapshots, chunks, chunks_fts, media provenance/tasks, blob lifecycle records, policy rules, audit events, and deletion receipts." "SQLite with FTS5" {
+            sqliteDatabase = container "SQLite + FTS5 Database" "Durable text/metadata authority including migration ledger, capture observations, and immutable observation ingest sequences." "SQLite with FTS5" {
                 tags "Database", "Data Store"
             }
 
@@ -162,6 +163,8 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
         applicationUseCases -> mediaManager "Coordinates media requests through"
         applicationUseCases -> mediaResourceBudget "Leases bounded media upload and response capacity through"
         applicationUseCases -> searchReadModel "Executes read requests through"
+        httpRouter -> xObservationExport "Serves authenticated GET /exports/x-observations through"
+        cli -> xObservationExport "Runs standalone export without readiness initialization or migration through"
         applicationUseCases -> forgetPipeline "Executes forget requests through"
         applicationUseCases -> opsDoctor "Executes health and audit work through"
         policyEngine -> policyStore "Combines static mode with rules from"
@@ -190,6 +193,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
         mediaOps -> sqliteDatabase "Reads and updates scoped media artifact/task state in" "sqlite3"
         mediaManager -> blobStore "Checks current artifact presence during fetch orchestration and drains spool bytes through"
         searchReadModel -> sqliteDatabase "Reads metadata and FTS from" "SQLite FTS5"
+        xObservationExport -> sqliteDatabase "Reads validated observation/evidence pages without writes or audit" "SQLite mode=ro + query_only"
         searchReadModel -> blobStore "Reads only legacy text sidecars and checks media files through"
         forgetPipeline -> sqliteDatabase "Atomically deletes rows and records receipts/tombstones in" "sqlite3"
         forgetPipeline -> storageReconciler "Processes post-commit contained blob deletion through"
@@ -419,6 +423,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
             include httpRouter
             include applicationUseCases
             include searchReadModel
+            include xObservationExport
             include blobStore
             include sqliteDatabase
             include cleanTextBlobStore

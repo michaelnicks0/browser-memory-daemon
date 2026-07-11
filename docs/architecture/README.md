@@ -43,7 +43,7 @@ Windows Chrome MV3 extension
 
 The system boundary is **Browser Memory Daemon**, including the owned Chrome extension, WSL daemon, WSL media worker, local UI, CLI, database, and blob stores. Windows Chrome and web/media origins are modeled as external systems.
 
-Every implemented component in `workspace.dsl` carries the `Current` tag. Versioned migrations, capture observations, BlobStore, media decomposition, transactional capture/lifecycle outbox, thin HTTP application layer, backup/restore, and staged installer rollback are current. Any future design-review boundary added before implementation must carry the `Target` tag and remain visually distinct from the current system; requirement status is canonical in [`../../requirements/catalog.toml`](../../requirements/catalog.toml).
+Every implemented component in `workspace.dsl` carries the `Current` tag. Versioned migrations through schema 14, immutable observation ingest sequence, query-only X observation export, capture observations, BlobStore, media decomposition, transactional capture/lifecycle outbox, thin HTTP application layer, backup/restore, and staged installer rollback are current. Any future design-review boundary added before implementation must carry the `Target` tag and remain visually distinct from the current system; requirement status is canonical in [`../../requirements/catalog.toml`](../../requirements/catalog.toml).
 
 ## Diagram ownership
 
