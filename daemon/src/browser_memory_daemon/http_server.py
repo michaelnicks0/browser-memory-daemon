@@ -310,11 +310,25 @@ def _binary_stream_response(
     stream_response_body(handler, stream, status=status, expected_bytes=content_length)
 
 
+def _content_length(handler: BaseHTTPRequestHandler, *, required: bool = False) -> int:
+    values = handler.headers.get_all("Content-Length", [])
+    if not values:
+        if required:
+            raise ValidationError("content length is required")
+        return 0
+    raw = values[0]
+    if len(values) != 1 or len(raw) > 20 or not raw.isascii() or not raw.isdigit():
+        raise ValidationError("invalid content length")
+    return int(raw)
+
+
 def _read_json(handler: BaseHTTPRequestHandler, max_bytes: int) -> dict[str, Any]:
-    length = int(handler.headers.get("Content-Length", "0") or 0)
+    length = _content_length(handler)
     if length > max_bytes:
-        raise ValueError("payload too large")
+        raise ValidationError("payload too large")
     raw = handler.rfile.read(length)
+    if len(raw) != length:
+        raise ValidationError("request body shorter than content length")
     if not raw:
         return {}
     return cast(dict[str, Any], json.loads(raw.decode("utf-8")))
@@ -499,17 +513,10 @@ def make_handler(config: RuntimeConfig, application: MemoryApplication) -> type[
             if not route_match or route_match.route.name != "media-blob-put":
                 _api_error_response(self, NotFoundError())
                 return
-            raw_content_length = self.headers.get("Content-Length")
-            if raw_content_length is None:
-                _api_error_response(self, ValidationError("content length is required"))
-                return
             try:
-                content_length = int(raw_content_length or 0)
-            except ValueError:
-                _api_error_response(self, ValidationError("invalid content length"))
-                return
-            if content_length < 0:
-                _api_error_response(self, ValidationError("invalid content length"))
+                content_length = _content_length(self, required=True)
+            except ValidationError as exc:
+                _api_error_response(self, exc)
                 return
             try:
                 headers = {

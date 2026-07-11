@@ -281,7 +281,7 @@ def test_http_media_fetch_raw_upload_and_purge_rehydrate_controls(tmp_path):
         thread.join(timeout=5)
 
 
-def test_http_raw_media_upload_requires_explicit_nonnegative_content_length(tmp_path):
+def test_http_raw_media_upload_requires_explicit_decimal_content_length(tmp_path):
     cfg = load_config(
         runtime_root=tmp_path,
         test_mode=True,
@@ -294,7 +294,11 @@ def test_http_raw_media_upload_requires_explicit_nonnegative_content_length(tmp_
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
-        for content_length, expected_error in [(None, "content length is required"), ("-1", "invalid content length")]:
+        for content_length, expected_error in [
+            (None, "content length is required"),
+            ("-1", "invalid content length"),
+            ("+1", "invalid content length"),
+        ]:
             sock = socket.create_connection(server.server_address, timeout=5)
             length_header = "" if content_length is None else f"Content-Length: {content_length}\r\n"
             sock.sendall(
@@ -316,6 +320,55 @@ def test_http_raw_media_upload_requires_explicit_nonnegative_content_length(tmp_
             head, body = response.split(b"\r\n\r\n", 1)
             assert b"HTTP/1.0 400 Bad Request" in head
             payload = json.loads(body)
+            assert payload["error"] == expected_error
+            assert payload["error_code"] == "invalid_request"
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+
+
+def test_http_json_body_rejects_ambiguous_invalid_and_truncated_content_lengths(tmp_path):
+    cfg = load_config(
+        runtime_root=tmp_path,
+        test_mode=True,
+        token="test-token",
+        host="127.0.0.1",
+        port=0,
+        policy_mode="all",
+    )
+    server = make_server(cfg)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    cases = [
+        (["Content-Length: -1"], b"", "invalid content length"),
+        (["Content-Length: +2"], b"{}", "invalid content length"),
+        (["Content-Length: 2", "Content-Length: 2"], b"{}", "invalid content length"),
+        (["Content-Length: 3"], b"{}", "request body shorter than content length"),
+    ]
+    try:
+        for length_headers, body, expected_error in cases:
+            sock = socket.create_connection(server.server_address, timeout=5)
+            request_head = [
+                "POST /media-cache/purge HTTP/1.0",
+                "Host: 127.0.0.1",
+                f"Authorization: Bearer {cfg.api_token}",
+                "Content-Type: application/json",
+                *length_headers,
+                "",
+                "",
+            ]
+            sock.sendall("\r\n".join(request_head).encode("ascii") + body)
+            sock.shutdown(socket.SHUT_WR)
+            response = b""
+            while True:
+                chunk = sock.recv(64 * 1024)
+                if not chunk:
+                    break
+                response += chunk
+            sock.close()
+            head, response_body = response.split(b"\r\n\r\n", 1)
+            assert b"HTTP/1.0 400 Bad Request" in head
+            payload = json.loads(response_body)
             assert payload["error"] == expected_error
             assert payload["error_code"] == "invalid_request"
     finally:

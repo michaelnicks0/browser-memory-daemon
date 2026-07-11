@@ -26,6 +26,8 @@ Every response carries a server-generated `X-Request-ID`. Error responses repeat
 
 Missing or invalid bearer tokens return `401`; malformed JSON and invalid payloads return `400`; identity/integrity conflicts return `409`; unknown routes return `404`; database/resource availability failures return `503`; unexpected internal failures return a sanitized `500`; unsupported HTTP methods return `501`. Limit parameters are bounded server-side (`recent` max 100, `timeline` max 250, media queue max 200); invalid integer limits return `400` on endpoints that parse limits directly. Current stable codes are `invalid_request`, `unauthorized`, `forbidden`, `not_found`, `conflict`, `resource_unavailable`, `database_busy`, `database_unavailable`, `internal_error`, and `unsupported_method`.
 
+JSON requests accept at most one unsigned-decimal `Content-Length` and reject duplicate, signed, malformed, oversized, or truncated lengths before invoking an application use case. JSON body limits are 2 MiB for ordinary capture/lifecycle/policy/admin requests and 16 MiB for the compatibility base64 media artifact route. Raw media uploads require one explicit unsigned-decimal length and stream separately under artifact and process budgets.
+
 JSON, UI/static, binary, error, and OPTIONS responses share a no-store security envelope with content-type, frame, referrer, permissions, and content-security protections. Ordinary request telemetry is one compact journald JSON event containing only request ID, method, descriptor route name, status, integer latency, and safe error code; paths, queries, URLs, headers, tokens, bodies, and exception prose are excluded.
 
 ---
