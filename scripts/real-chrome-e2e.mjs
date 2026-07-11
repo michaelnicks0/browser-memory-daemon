@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 import { spawn, spawnSync } from 'node:child_process';
 import { createServer } from 'node:http';
-import { mkdir, rm, access, cp } from 'node:fs/promises';
+import { mkdir, rm, access, cp, readFile } from 'node:fs/promises';
 import { constants as fsConstants } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ensurePinnedChromeForTesting } from './chrome-for-testing.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const ROOT = path.resolve(path.dirname(__filename), '..');
@@ -100,33 +101,13 @@ async function findChrome() {
 async function ensureChromeForTesting() {
   const windowsUser = process.env.BMD_WINDOWS_USER || process.env.USERNAME || process.env.USER || 'Default';
   const cacheRoot = process.env.BMD_CHROME_FOR_TESTING_CACHE || `/mnt/c/Users/${windowsUser}/AppData/Local/browser-memory-daemon/chrome-for-testing`;
-  const metaUrl = 'https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json';
-  await mkdir(cacheRoot, { recursive: true });
-  const metadataResponse = await fetch(metaUrl);
-  if (!metadataResponse.ok) fail(`failed to fetch Chrome for Testing metadata: ${metadataResponse.status}`);
-  const metadata = await metadataResponse.json();
-  const stable = metadata.channels?.Stable;
-  const win64 = stable?.downloads?.chrome?.find((item) => item.platform === 'win64');
-  if (!stable?.version || !win64?.url) fail(`Chrome for Testing metadata missing Stable win64 download: ${JSON.stringify(stable)}`);
-  const versionRoot = path.join(cacheRoot, stable.version);
-  const exe = path.join(versionRoot, 'chrome-win64', 'chrome.exe');
-  if (await pathExists(exe)) {
-    log(`using cached Chrome for Testing ${stable.version}: ${exe}`);
-    return exe;
-  }
-  if (process.env.BMD_REAL_CHROME_ALLOW_DOWNLOAD === '0') {
-    fail(`Chrome for Testing ${stable.version} is not cached at ${exe}; set BMD_REAL_CHROME_ALLOW_DOWNLOAD=1 or BMD_CHROME_EXE`);
-  }
-  await mkdir(versionRoot, { recursive: true });
-  const zipPath = path.join(versionRoot, 'chrome-win64.zip');
-  log(`downloading Chrome for Testing ${stable.version} win64`);
-  let result = spawnSync('curl', ['-L', '--fail', '--retry', '3', '-o', zipPath, win64.url], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-  if (result.status !== 0) fail(`curl Chrome for Testing failed: ${result.stderr || result.stdout}`);
-  result = spawnSync('unzip', ['-q', '-o', zipPath, '-d', versionRoot], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-  if (result.status !== 0) fail(`unzip Chrome for Testing failed: ${result.stderr || result.stdout}`);
-  if (!(await pathExists(exe))) fail(`Chrome for Testing unzip did not create ${exe}`);
-  log(`installed Chrome for Testing ${stable.version}: ${exe}`);
-  return exe;
+  const lock = JSON.parse(await readFile(path.join(ROOT, 'scripts', 'chrome-for-testing-lock.json'), 'utf8'));
+  return ensurePinnedChromeForTesting({
+    lock,
+    cacheRoot,
+    allowDownload: process.env.BMD_REAL_CHROME_ALLOW_DOWNLOAD === '1',
+    logger: log
+  });
 }
 
 function wslpathWin(wslPath) {

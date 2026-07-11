@@ -132,7 +132,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </blockquote>
 <!-- BEGIN GENERATED:inventory-summary -->
 <blockquote>
-<p><strong>Current inventory:</strong> 321 static test functions across 56 files — 251 daemon pytest tests + 70 extension node:test tests.</p>
+<p><strong>Current inventory:</strong> 324 static test functions across 57 files — 251 daemon pytest tests + 73 extension node:test tests.</p>
 </blockquote>
 <!-- END GENERATED:inventory-summary -->
 
@@ -154,7 +154,7 @@ python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </spa
 <span style="color: #F8F8F2">cd </span>extension<span style="color: #F8F8F2"> </span><span style="color: #FF4689">&amp;&amp;</span><span style="color: #F8F8F2"> </span>npm<span style="color: #F8F8F2"> test </span><span style="color: #FF4689">&amp;&amp;</span><span style="color: #F8F8F2"> </span>npm<span style="color: #F8F8F2"> </span>run<span style="color: #F8F8F2"> </span>build
 
 <span style="color: #959077"># Real Windows Chrome-family e2e. Default matrix runs `all` and `strict`.</span>
-<span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
+<span style="color: #F8F8F2">BMD_REAL_CHROME_ALLOW_DOWNLOAD</span><span style="color: #FF4689">=</span><span style="color: #AE81FF">0</span><span style="color: #F8F8F2"> BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
 
 <span style="color: #959077"># Synthetic advisory performance benchmark.</span>
 ./scripts/run-performance-benchmarks.sh<span style="color: #F8F8F2"> </span>--small<span style="color: #F8F8F2"> </span>--json<span style="color: #F8F8F2"> </span>&gt;/tmp/bmd_benchmark.json
@@ -190,7 +190,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <hr />
 <h2 id="generated-test-inventory">Generated test inventory</h2>
 <!-- BEGIN GENERATED:audit-run -->
-<p>Latest inventory: <strong>321 static test functions</strong> across <strong>56 files</strong> (251 daemon pytest; 70 extension node:test). Regenerate with <code>python3.11 scripts/generate_test_inventory.py --write</code>; enforce with <code>--check</code>. Counts are source-level test functions, not pytest parametrized case expansions.</p>
+<p>Latest inventory: <strong>324 static test functions</strong> across <strong>57 files</strong> (251 daemon pytest; 73 extension node:test). Regenerate with <code>python3.11 scripts/generate_test_inventory.py --write</code>; enforce with <code>--check</code>. Counts are source-level test functions, not pytest parametrized case expansions.</p>
 <!-- END GENERATED:audit-run -->
 
 <h2 id="requirements-traceability-gate">Requirements traceability gate</h2>
@@ -250,7 +250,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 </tr>
 <tr>
 <td>Static test inventory measured</td>
-<td>321 tests / 56 files</td>
+<td>324 tests / 57 files</td>
 </tr>
 </tbody>
 </table>
@@ -488,6 +488,11 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <td style="text-align: right;">5</td>
 </tr>
 <tr>
+<td><code>extension/tests/unit/chrome_for_testing.test.js</code></td>
+<td>node:test</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr>
 <td><code>extension/tests/unit/config_store.test.js</code></td>
 <td>node:test</td>
 <td style="text-align: right;">2</td>
@@ -550,7 +555,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <tr>
 <td><strong>Total</strong></td>
 <td></td>
-<td style="text-align: right;"><strong>321</strong></td>
+<td style="text-align: right;"><strong>324</strong></td>
 </tr>
 </tbody>
 </table>
@@ -829,6 +834,9 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 | `extension/tests/unit/cdp_session.test.js` | node:test | `(module)` | `CDP session does not hide an attach failure without matching attached target evidence` | 51 | CDP session does not hide an attach failure without matching attached target evidence. |
 | `extension/tests/unit/cdp_session.test.js` | node:test | `(module)` | `CDP capture-context writes serialize so tab close cannot be overwritten by a slower capture write` | 56 | CDP capture-context writes serialize so tab close cannot be overwritten by a slower capture write. |
 | `extension/tests/unit/cdp_session.test.js` | node:test | `(module)` | `CDP recorder controller owns response correlation and media-body delivery outside the service worker` | 75 | CDP recorder controller owns response correlation and media-body delivery outside the service worker. |
+| `extension/tests/unit/chrome_for_testing.test.js` | node:test | `(module)` | `release Chrome for Testing lock is pinned and checksum-complete` | 27 | Release Chrome for Testing lock is pinned and checksum-complete. |
+| `extension/tests/unit/chrome_for_testing.test.js` | node:test | `(module)` | `cached pinned Chrome is verified without network or download permission` | 35 | Cached pinned Chrome is verified without network or download permission. |
+| `extension/tests/unit/chrome_for_testing.test.js` | node:test | `(module)` | `missing or corrupt pinned Chrome fails closed when download is not explicitly allowed` | 52 | Missing or corrupt pinned Chrome fails closed when download is not explicitly allowed. |
 | `extension/tests/unit/config_store.test.js` | node:test | `(module)` | `config store applies the CDP default-on migration once and normalizes typed values` | 21 | Config store applies the CDP default-on migration once and normalizes typed values. |
 | `extension/tests/unit/config_store.test.js` | node:test | `(module)` | `config store persists visit and CDP capture context maps independently` | 39 | Config store persists visit and CDP capture context maps independently. |
 | `extension/tests/unit/content_script.test.js` | node:test | `(module)` | `content capture retries the same full digest until admission succeeds and then suppresses duplicates` | 20 | Content capture retries the same full digest until admission succeeds and then suppresses duplicates. |
@@ -926,15 +934,16 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 </tbody>
 </table>
 <p>Run the default all+strict real-browser matrix:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_REAL_CHROME_ALLOW_DOWNLOAD</span><span style="color: #FF4689">=</span><span style="color: #AE81FF">0</span><span style="color: #F8F8F2"> BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
 </code></pre></div>
 
+<p><code>scripts/chrome-for-testing-lock.json</code> is release authority for the Windows x64 browser version, canonical archive URL, archive size/SHA-256, and extracted executable size/SHA-256. Cached execution verifies the executable before launch and makes no metadata request. Missing or corrupt bytes fail closed unless <code>BMD_REAL_CHROME_ALLOW_DOWNLOAD=1</code> is explicitly supplied; any permitted download is staged and checksum-verified before extraction. <code>BMD_CHROME_EXE</code> is an explicit operator-managed override outside this lock.</p>
 <p>Run one mode while debugging:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> BMD_REAL_CHROME_POLICY_MODE</span><span style="color: #FF4689">=</span>strict<span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_REAL_CHROME_ALLOW_DOWNLOAD</span><span style="color: #FF4689">=</span><span style="color: #AE81FF">0</span><span style="color: #F8F8F2"> BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> BMD_REAL_CHROME_POLICY_MODE</span><span style="color: #FF4689">=</span>strict<span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
 </code></pre></div>
 
 <p>Run a custom matrix:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> BMD_REAL_CHROME_MATRIX_MODES</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;all strict balanced recall&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_REAL_CHROME_ALLOW_DOWNLOAD</span><span style="color: #FF4689">=</span><span style="color: #AE81FF">0</span><span style="color: #F8F8F2"> BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> BMD_REAL_CHROME_MATRIX_MODES</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;all strict balanced recall&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
 </code></pre></div>
 
 <hr />

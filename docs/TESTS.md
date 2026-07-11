@@ -5,7 +5,7 @@
 > **Runtime:** Python **3.11+** (`pyproject.toml` requires `>=3.11`). Use `BMD_PYTHON=/path/to/python3.11` when the host `python3` is older.
 
 <!-- BEGIN GENERATED:inventory-summary -->
-> **Current inventory:** 321 static test functions across 56 files — 251 daemon pytest tests + 70 extension node:test tests.
+> **Current inventory:** 324 static test functions across 57 files — 251 daemon pytest tests + 73 extension node:test tests.
 <!-- END GENERATED:inventory-summary -->
 
 ---
@@ -29,7 +29,7 @@ python -m pytest -q
 cd extension && npm test && npm run build
 
 # Real Windows Chrome-family e2e. Default matrix runs `all` and `strict`.
-BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-real-chrome-e2e.sh
+BMD_REAL_CHROME_ALLOW_DOWNLOAD=0 BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-real-chrome-e2e.sh
 
 # Synthetic advisory performance benchmark.
 ./scripts/run-performance-benchmarks.sh --small --json >/tmp/bmd_benchmark.json
@@ -79,7 +79,7 @@ Use `--runtime-root PATH` only for explicit fixture roots; do not point the stre
 ## Generated test inventory
 
 <!-- BEGIN GENERATED:audit-run -->
-Latest inventory: **321 static test functions** across **56 files** (251 daemon pytest; 70 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
+Latest inventory: **324 static test functions** across **57 files** (251 daemon pytest; 73 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
 <!-- END GENERATED:audit-run -->
 
 ## Requirements traceability gate
@@ -100,7 +100,7 @@ Traceability gate: **✅ pass**.
 | Normative changes without revision increment | none |
 | Requirements removed without catalog disposition | none |
 | Catalog load errors | none |
-| Static test inventory measured | 321 tests / 56 files |
+| Static test inventory measured | 324 tests / 57 files |
 <!-- END GENERATED:traceability-gate -->
 
 ### Per-file counts
@@ -151,6 +151,7 @@ Traceability gate: **✅ pass**.
 | `extension/tests/unit/capture_digest.test.js` | node:test | 3 |
 | `extension/tests/unit/cdp_recorder.test.js` | node:test | 4 |
 | `extension/tests/unit/cdp_session.test.js` | node:test | 5 |
+| `extension/tests/unit/chrome_for_testing.test.js` | node:test | 3 |
 | `extension/tests/unit/config_store.test.js` | node:test | 2 |
 | `extension/tests/unit/content_script.test.js` | node:test | 1 |
 | `extension/tests/unit/extractor.test.js` | node:test | 13 |
@@ -163,7 +164,7 @@ Traceability gate: **✅ pass**.
 | `extension/tests/unit/service_worker.test.js` | node:test | 10 |
 | `extension/tests/unit/shared.test.js` | node:test | 2 |
 | `extension/tests/unit/visit_tracker.test.js` | node:test | 2 |
-| **Total** |  | **321** |
+| **Total** |  | **324** |
 <!-- END GENERATED:per-file-counts -->
 
 <details>
@@ -439,6 +440,9 @@ Traceability gate: **✅ pass**.
 | `extension/tests/unit/cdp_session.test.js` | node:test | `(module)` | `CDP session does not hide an attach failure without matching attached target evidence` | 51 | CDP session does not hide an attach failure without matching attached target evidence. |
 | `extension/tests/unit/cdp_session.test.js` | node:test | `(module)` | `CDP capture-context writes serialize so tab close cannot be overwritten by a slower capture write` | 56 | CDP capture-context writes serialize so tab close cannot be overwritten by a slower capture write. |
 | `extension/tests/unit/cdp_session.test.js` | node:test | `(module)` | `CDP recorder controller owns response correlation and media-body delivery outside the service worker` | 75 | CDP recorder controller owns response correlation and media-body delivery outside the service worker. |
+| `extension/tests/unit/chrome_for_testing.test.js` | node:test | `(module)` | `release Chrome for Testing lock is pinned and checksum-complete` | 27 | Release Chrome for Testing lock is pinned and checksum-complete. |
+| `extension/tests/unit/chrome_for_testing.test.js` | node:test | `(module)` | `cached pinned Chrome is verified without network or download permission` | 35 | Cached pinned Chrome is verified without network or download permission. |
+| `extension/tests/unit/chrome_for_testing.test.js` | node:test | `(module)` | `missing or corrupt pinned Chrome fails closed when download is not explicitly allowed` | 52 | Missing or corrupt pinned Chrome fails closed when download is not explicitly allowed. |
 | `extension/tests/unit/config_store.test.js` | node:test | `(module)` | `config store applies the CDP default-on migration once and normalizes typed values` | 21 | Config store applies the CDP default-on migration once and normalizes typed values. |
 | `extension/tests/unit/config_store.test.js` | node:test | `(module)` | `config store persists visit and CDP capture context maps independently` | 39 | Config store persists visit and CDP capture context maps independently. |
 | `extension/tests/unit/content_script.test.js` | node:test | `(module)` | `content capture retries the same full digest until admission succeeds and then suppresses duplicates` | 20 | Content capture retries the same full digest until admission succeeds and then suppresses duplicates. |
@@ -511,19 +515,21 @@ Traceability gate: **✅ pass**.
 Run the default all+strict real-browser matrix:
 
 ```bash
-BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-real-chrome-e2e.sh
+BMD_REAL_CHROME_ALLOW_DOWNLOAD=0 BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-real-chrome-e2e.sh
 ```
+
+`scripts/chrome-for-testing-lock.json` is release authority for the Windows x64 browser version, canonical archive URL, archive size/SHA-256, and extracted executable size/SHA-256. Cached execution verifies the executable before launch and makes no metadata request. Missing or corrupt bytes fail closed unless `BMD_REAL_CHROME_ALLOW_DOWNLOAD=1` is explicitly supplied; any permitted download is staged and checksum-verified before extraction. `BMD_CHROME_EXE` is an explicit operator-managed override outside this lock.
 
 Run one mode while debugging:
 
 ```bash
-BMD_PYTHON="${BMD_PYTHON:-python}" BMD_REAL_CHROME_POLICY_MODE=strict ./scripts/run-real-chrome-e2e.sh
+BMD_REAL_CHROME_ALLOW_DOWNLOAD=0 BMD_PYTHON="${BMD_PYTHON:-python}" BMD_REAL_CHROME_POLICY_MODE=strict ./scripts/run-real-chrome-e2e.sh
 ```
 
 Run a custom matrix:
 
 ```bash
-BMD_PYTHON="${BMD_PYTHON:-python}" BMD_REAL_CHROME_MATRIX_MODES="all strict balanced recall" ./scripts/run-real-chrome-e2e.sh
+BMD_REAL_CHROME_ALLOW_DOWNLOAD=0 BMD_PYTHON="${BMD_PYTHON:-python}" BMD_REAL_CHROME_MATRIX_MODES="all strict balanced recall" ./scripts/run-real-chrome-e2e.sh
 ```
 
 ---

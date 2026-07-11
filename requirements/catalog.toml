@@ -312,12 +312,12 @@ rationale = "Real branded-browser behavior is the authority for extension and se
 owner = "Real Chrome E2E Harness"
 status = "active"
 aliases = []
-implementation = ["scripts/run-real-chrome-e2e.sh", "scripts/real-chrome-e2e.mjs"]
-unit_evidence = []
+implementation = ["scripts/run-real-chrome-e2e.sh", "scripts/real-chrome-e2e.mjs", "scripts/chrome-for-testing.mjs", "scripts/chrome-for-testing-lock.json"]
+unit_evidence = ["extension/tests/unit/chrome_for_testing.test.js"]
 integration_evidence = []
 system_evidence = ["scripts/run-real-chrome-e2e.sh"]
-operational_evidence = ["docs/test-plan.md"]
-validation_evidence = ["scripts/run-real-chrome-e2e.sh"]
+operational_evidence = ["docs/test-plan.md", "docs/TESTS.md", "docs/architecture/adr/0059-pin-and-verify-chrome-for-testing-release.md"]
+validation_evidence = ["extension/tests/unit/chrome_for_testing.test.js", "scripts/run-real-chrome-e2e.sh"]
 
 [[requirements]]
 id = "REQ-022"
