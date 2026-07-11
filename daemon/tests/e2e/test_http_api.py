@@ -1,4 +1,5 @@
 import json
+import re
 import sqlite3
 import threading
 import urllib.error
@@ -40,15 +41,29 @@ def error_request(method, url, token: str | None = "test-token", body=None, raw_
         return exc.code, dict(exc.headers), json.loads(text or "{}")
 
 
-def raw_request(method, url, token="test-token", body=None):
+def raw_request(method, url, token: str | None = "test-token", body=None, headers=None):
     data = None if body is None else json.dumps(body).encode()
     req = urllib.request.Request(url, data=data, method=method)
     if token:
         req.add_header("Authorization", f"Bearer {token}")
     if body is not None:
         req.add_header("Content-Type", "application/json")
+    for key, value in (headers or {}).items():
+        req.add_header(key, value)
     with urllib.request.urlopen(req, timeout=10) as response:
         return response.status, response.headers, response.read()
+
+
+def assert_common_security_headers(headers):
+    assert headers.get("Cache-Control") == "no-store"
+    assert headers.get("Referrer-Policy") == "no-referrer"
+    assert headers.get("X-Content-Type-Options") == "nosniff"
+    assert headers.get("X-Frame-Options") == "DENY"
+    assert headers.get("Permissions-Policy") == "camera=(), microphone=(), geolocation=()"
+    assert headers.get("Content-Security-Policy")
+    request_id = headers.get("X-Request-ID", "")
+    assert re.fullmatch(r"req_[0-9a-f]{32}", request_id)
+    return request_id
 
 
 def binary_request(method, url, token="test-token", body=b"", content_type="application/octet-stream", headers=None):
@@ -205,6 +220,7 @@ def test_http_media_fetch_raw_upload_and_purge_rehydrate_controls(tmp_path):
         status, headers, binary = raw_request("GET", f"{base}/media-artifacts/{artifact_id}")
         assert status == 200
         assert headers.get_content_type() == "image/png"
+        assert_common_security_headers(headers)
         assert binary == b"\x89PNG\r\n\x1a\n"
 
         status, queue_status = request("GET", f"{base}/media-artifacts/queue-status")
@@ -345,6 +361,7 @@ def test_http_capture_search_forget_round_trip(tmp_path):
         status, headers, binary = raw_request("GET", f"{base}/media-artifacts/{media['artifact_id']}")
         assert status == 200
         assert headers.get_content_type() == "image/png"
+        assert_common_security_headers(headers)
         assert binary == b"\x89PNG\r\n\x1a\n"
 
         q = urllib.parse.urlencode({"q": "Stirling", "limit": "3"})
@@ -445,8 +462,9 @@ def test_http_api_contract_errors_methods_and_limits_are_json(tmp_path):
         ]
         for _status, headers, payload in error_cases:
             assert "application/json" in headers.get("Content-Type", "")
-            assert set(payload) == {"error", "error_code"}
+            assert set(payload) == {"error", "error_code", "request_id"}
             assert isinstance(payload["error"], str) and payload["error"]
+            assert payload["request_id"] == headers["X-Request-ID"]
 
         status, recent = request("GET", f"{base}/recent?limit=9999")
         assert status == 200
@@ -489,23 +507,119 @@ def test_http_route_catalog_preserves_auth_unknown_route_and_ready_contracts(tmp
                 continue
             status, headers, payload = error_request(route.method, f"{base}{concrete_path(route.path)}", token=None)
             assert status == 401, route.name
-            assert payload == {"error": "unauthorized", "error_code": "unauthorized"}, route.name
+            assert payload == {
+                "error": "unauthorized",
+                "error_code": "unauthorized",
+                "request_id": headers["X-Request-ID"],
+            }, route.name
             assert "application/json" in headers.get("Content-Type", ""), route.name
             assert headers.get("X-Content-Type-Options") == "nosniff", route.name
 
         for method in ["GET", "POST", "PUT", "DELETE"]:
             status, headers, payload = error_request(method, f"{base}/does-not-exist", raw_body=b"{}" if method in {"POST", "PUT"} else None)
             assert status == 404
-            assert payload == {"error": "not found", "error_code": "not_found"}
+            assert payload == {
+                "error": "not found",
+                "error_code": "not_found",
+                "request_id": headers["X-Request-ID"],
+            }
             assert "application/json" in headers.get("Content-Type", "")
 
         status, headers, payload = error_request("PATCH", f"{base}/health", raw_body=b"{}")
         assert status == 501
-        assert payload == {"error": "Unsupported method ('PATCH')", "error_code": "unsupported_method"}
+        assert payload == {
+            "error": "Unsupported method ('PATCH')",
+            "error_code": "unsupported_method",
+            "request_id": headers["X-Request-ID"],
+        }
         assert "application/json" in headers.get("Content-Type", "")
     finally:
         server.shutdown()
         thread.join(timeout=5)
+
+
+def test_http_request_envelope_adds_unique_ids_and_security_headers_to_every_response_kind(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", host="127.0.0.1", port=0, policy_mode="all")
+    server = make_server(cfg)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        status, headers, body = raw_request(
+            "GET",
+            f"{base}/health",
+            token=None,
+            headers={"X-Request-ID": "caller-controlled"},
+        )
+        assert status == 200
+        payload = json.loads(body)
+        assert payload["ok"] is True
+        health_id = assert_common_security_headers(headers)
+        assert health_id != "caller-controlled"
+
+        status, headers, payload = error_request("GET", f"{base}/recent", token=None)
+        assert status == 401
+        error_id = assert_common_security_headers(headers)
+        assert payload["request_id"] == error_id
+        assert payload["error_code"] == "unauthorized"
+
+        status, headers, payload = error_request("OPTIONS", f"{base}/capture", token=None)
+        assert status == 204
+        assert payload == {}
+        options_id = assert_common_security_headers(headers)
+
+        status, headers, body = raw_request("GET", f"{base}/ui", token=None)
+        assert status == 200
+        assert b"Browser Memory" in body
+        ui_id = assert_common_security_headers(headers)
+        assert "script-src 'self' 'unsafe-inline'" in headers["Content-Security-Policy"]
+
+        assert len({health_id, error_id, options_id, ui_id}) == 4
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+
+
+def test_http_structured_request_telemetry_contains_only_redaction_safe_fields(tmp_path, capsys):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", host="127.0.0.1", port=0, policy_mode="all")
+    server = make_server(cfg)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        secret_query = "https://private.example/path?token=do-not-log"
+        status, _headers, _payload = error_request(
+            "GET",
+            f"{base}/search?{urllib.parse.urlencode({'q': secret_query})}",
+        )
+        assert status == 200
+        status, _headers, _payload = error_request(
+            "GET",
+            f"{base}/recent?private=do-not-log",
+            token=None,
+        )
+        assert status == 401
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+
+    stderr = capsys.readouterr().err
+    events = [json.loads(line) for line in stderr.splitlines() if line.startswith("{")]
+    assert len(events) == 2
+    assert events[0]["event"] == "http.request"
+    assert events[0]["method"] == "GET"
+    assert events[0]["route"] == "search"
+    assert events[0]["status"] == 200
+    assert events[0]["error_code"] is None
+    assert re.fullmatch(r"req_[0-9a-f]{32}", events[0]["request_id"])
+    assert isinstance(events[0]["latency_ms"], int) and events[0]["latency_ms"] >= 0
+    assert events[1]["route"] == "recent"
+    assert events[1]["status"] == 401
+    assert events[1]["error_code"] == "unauthorized"
+    assert set(events[0]) == {"event", "request_id", "method", "route", "status", "latency_ms", "error_code"}
+    assert "do-not-log" not in stderr
+    assert "private.example" not in stderr
+    assert "test-token" not in stderr
 
 
 def test_http_maps_capture_identity_conflicts_to_stable_conflict_error(tmp_path):
@@ -525,7 +639,7 @@ def test_http_maps_capture_identity_conflicts_to_stable_conflict_error(tmp_path)
         status, _stored = request("POST", f"{base}/capture", body=first)
         assert status == 201
 
-        status, _headers, conflict = error_request(
+        status, headers, conflict = error_request(
             "POST",
             f"{base}/capture",
             body={**first, "title": "Changed", "text": "Changed capture text."},
@@ -534,6 +648,7 @@ def test_http_maps_capture_identity_conflicts_to_stable_conflict_error(tmp_path)
         assert conflict == {
             "error": "observation_id conflicts with an existing capture",
             "error_code": "conflict",
+            "request_id": headers["X-Request-ID"],
         }
     finally:
         server.shutdown()
@@ -555,14 +670,22 @@ def test_http_maps_database_busy_and_unexpected_failures_without_leaking_interna
 
     try:
         monkeypatch.setattr(app_module, "search_memory", database_busy)
-        status, _headers, busy = error_request("GET", f"{base}/search?q=test")
+        status, headers, busy = error_request("GET", f"{base}/search?q=test")
         assert status == 503
-        assert busy == {"error": "database temporarily unavailable", "error_code": "database_busy"}
+        assert busy == {
+            "error": "database temporarily unavailable",
+            "error_code": "database_busy",
+            "request_id": headers["X-Request-ID"],
+        }
 
         monkeypatch.setattr(app_module, "search_memory", unexpected_failure)
-        status, _headers, internal = error_request("GET", f"{base}/search?q=test")
+        status, headers, internal = error_request("GET", f"{base}/search?q=test")
         assert status == 500
-        assert internal == {"error": "internal server error", "error_code": "internal_error"}
+        assert internal == {
+            "error": "internal server error",
+            "error_code": "internal_error",
+            "request_id": headers["X-Request-ID"],
+        }
         assert "private-value" not in json.dumps(internal)
         assert str(tmp_path) not in json.dumps(internal)
     finally:

@@ -21,6 +21,7 @@ from .api_errors import (
 from .config import RuntimeConfig
 from .db import audit, connect, init_db
 from .forget import forget
+from .http_server import begin_request, complete_request, request_id, send_security_headers, set_request_route
 from .ingest import ingest_capture
 from .lifecycle import record_visit_event
 from .media import (
@@ -78,28 +79,38 @@ def _json_response(handler: BaseHTTPRequestHandler, status: int, payload: dict |
     handler.send_response(status)
     handler.send_header("Content-Type", "application/json")
     handler.send_header("Content-Length", str(len(body)))
-    handler.send_header("X-Content-Type-Options", "nosniff")
+    send_security_headers(handler)
     if _origin_allowed(origin):
         handler.send_header("Access-Control-Allow-Origin", origin)
         handler.send_header("Vary", "Origin")
     handler.send_header("Access-Control-Allow-Headers", "authorization, content-type, x-bmd-document-id, x-bmd-snapshot-id, x-bmd-source-url")
     handler.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+    handler.send_header("Access-Control-Expose-Headers", "X-Request-ID")
     handler.end_headers()
-    handler.wfile.write(body)
+    error_code = payload.get("error_code") if isinstance(payload, dict) else None
+    try:
+        handler.wfile.write(body)
+    finally:
+        complete_request(handler, status=status, error_code=error_code if isinstance(error_code, str) else None)
 
 
 def _api_error_response(handler: BaseHTTPRequestHandler, error: Exception, *, extra: dict[str, object] | None = None) -> None:
     api_error = classify_exception(error)
-    _json_response(handler, api_error.status, api_error.payload(extra))
+    payload = api_error.payload(extra)
+    payload["request_id"] = request_id(handler)
+    _json_response(handler, api_error.status, payload)
 
 
 def _text_response(handler: BaseHTTPRequestHandler, status: int, body: bytes, *, content_type: str) -> None:
     handler.send_response(status)
     handler.send_header("Content-Type", content_type)
     handler.send_header("Content-Length", str(len(body)))
-    handler.send_header("X-Content-Type-Options", "nosniff")
+    send_security_headers(handler, ui=True)
     handler.end_headers()
-    handler.wfile.write(body)
+    try:
+        handler.wfile.write(body)
+    finally:
+        complete_request(handler, status=status)
 
 
 def _ui_bootstrap_script(config: RuntimeConfig) -> str:
@@ -140,15 +151,18 @@ def _binary_stream_response(
     handler.send_response(status)
     handler.send_header("Content-Type", content_type or "application/octet-stream")
     handler.send_header("Content-Length", str(content_length))
-    handler.send_header("X-Content-Type-Options", "nosniff")
+    send_security_headers(handler)
     if filename:
         handler.send_header("Content-Disposition", f'inline; filename="{filename}"')
     handler.end_headers()
-    while True:
-        chunk = stream.read(64 * 1024)
-        if not chunk:
-            break
-        handler.wfile.write(chunk)
+    try:
+        while True:
+            chunk = stream.read(64 * 1024)
+            if not chunk:
+                break
+            handler.wfile.write(chunk)
+    finally:
+        complete_request(handler, status=status)
 
 
 def _read_json(handler: BaseHTTPRequestHandler, max_bytes: int) -> dict:
@@ -284,6 +298,10 @@ def make_handler(config: RuntimeConfig):
     class MemoryHandler(BaseHTTPRequestHandler):
         server_version = "BrowserMemoryDaemon/0.1"
 
+        def handle_one_request(self) -> None:
+            begin_request(self)
+            super().handle_one_request()
+
         def log_message(self, format: str, *args) -> None:
             return
 
@@ -295,11 +313,13 @@ def make_handler(config: RuntimeConfig):
             _api_error_response(self, APIError(status=code, code="http_error", message=message or default_message))
 
         def do_OPTIONS(self) -> None:
+            set_request_route(self, "options")
             _json_response(self, 204, {})
 
         def do_GET(self) -> None:
             parsed = urlparse(self.path)
             route_match = match_route("GET", parsed.path)
+            set_request_route(self, route_match.route.name if route_match else "unknown")
             if route_match and route_match.route.name == "health":
                 _json_response(
                     self,
@@ -320,6 +340,7 @@ def make_handler(config: RuntimeConfig):
                 return
             ui_file = _ui_file_for_path(parsed.path)
             if ui_file:
+                set_request_route(self, "ui")
                 if not _loopback_ui_allowed(self, config):
                     _api_error_response(self, ForbiddenError("ui is loopback-only"))
                     return
@@ -482,11 +503,12 @@ def make_handler(config: RuntimeConfig):
             _api_error_response(self, NotFoundError())
 
         def do_PUT(self) -> None:
+            parsed = urlparse(self.path)
+            route_match = match_route("PUT", parsed.path)
+            set_request_route(self, route_match.route.name if route_match else "unknown")
             if not _authorized(self, config):
                 _api_error_response(self, UnauthorizedError())
                 return
-            parsed = urlparse(self.path)
-            route_match = match_route("PUT", parsed.path)
             if route_match and route_match.route.name == "media-blob-put":
                 artifact_id = unquote(parsed.path.removeprefix("/media-artifacts/").removesuffix("/blob").strip("/"))
                 try:
@@ -523,11 +545,12 @@ def make_handler(config: RuntimeConfig):
             _api_error_response(self, NotFoundError())
 
         def do_POST(self) -> None:
+            parsed = urlparse(self.path)
+            route_match = match_route("POST", parsed.path)
+            set_request_route(self, route_match.route.name if route_match else "unknown")
             if not _authorized(self, config):
                 _api_error_response(self, UnauthorizedError())
                 return
-            parsed = urlparse(self.path)
-            route_match = match_route("POST", parsed.path)
             media_request_lease = None
             try:
                 max_bytes = config.max_media_payload_bytes if route_match and route_match.route.name == "media-artifact-store" else config.max_payload_bytes
@@ -706,11 +729,12 @@ def make_handler(config: RuntimeConfig):
             _api_error_response(self, NotFoundError())
 
         def do_DELETE(self) -> None:
+            parsed = urlparse(self.path)
+            route_match = match_route("DELETE", parsed.path)
+            set_request_route(self, route_match.route.name if route_match else "unknown")
             if not _authorized(self, config):
                 _api_error_response(self, UnauthorizedError())
                 return
-            parsed = urlparse(self.path)
-            route_match = match_route("DELETE", parsed.path)
             if route_match and route_match.route.name == "policy-rule-delete":
                 rule_id = route_match.parameters["rule_id"]
                 try:

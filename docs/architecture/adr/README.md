@@ -62,6 +62,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0052](0052-complete-mv3-service-worker-orchestration-split.md) | accepted | Complete the MV3 service-worker orchestration split. |
 | [ADR-0053](0053-introduce-compatible-http-route-descriptors.md) | accepted | Introduce explicit HTTP route descriptors behind compatible endpoint contracts. |
 | [ADR-0054](0054-use-typed-compatible-http-errors.md) | accepted | Use typed compatible HTTP errors and sanitize internal failures. |
+| [ADR-0055](0055-add-redaction-safe-http-request-envelope.md) | accepted | Add opaque request IDs, common security headers, and redaction-safe request telemetry. |
 
 ## Backfilled decision history
 

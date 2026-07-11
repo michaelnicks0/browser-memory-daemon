@@ -18,47 +18,49 @@
 </g>
 <g id="clust2" class="cluster">
 <title>cluster_22</title>
-<polygon fill="none" stroke="#444444" points="33,-169 33,-646 1288,-646 1288,-169 33,-169"/>
-<text text-anchor="start" x="495" y="-197.8" font-family="Arial" font-size="24.00" fill="#444444">WSL Loopback HTTP Daemon</text>
-<text text-anchor="start" x="458.5" y="-177.8" font-family="Arial" font-size="19.00" fill="#444444">[Container: Python 3.11, ThreadingHTTPServer]</text>
+<polygon fill="none" stroke="#444444" points="33,-164 33,-688 1288,-688 1288,-164 33,-164"/>
+<text text-anchor="start" x="495" y="-192.8" font-family="Arial" font-size="24.00" fill="#444444">WSL Loopback HTTP Daemon</text>
+<text text-anchor="start" x="458.5" y="-172.8" font-family="Arial" font-size="19.00" fill="#444444">[Container: Python 3.11, ThreadingHTTPServer]</text>
 </g>
 <!-- 23 -->
 <g id="23" class="node">
 <title>23</title>
-<polygon fill="#85bbf0" stroke="#1168bd" points="552,-620.5 58,-620.5 58,-269.5 552,-269.5 552,-620.5"/>
-<text text-anchor="start" x="136.5" y="-572.3" font-family="Arial" font-size="34.00" fill="#000000">HTTP Request Router</text>
-<text text-anchor="start" x="87" y="-550.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python http.server + route descriptors]</text>
-<text text-anchor="start" x="129" y="-513.3" font-family="Arial" font-size="24.00" fill="#000000">Matches immutable method/path</text>
-<text text-anchor="start" x="189" y="-489.3" font-family="Arial" font-size="24.00" fill="#000000">descriptors with static</text>
-<text text-anchor="start" x="172" y="-465.3" font-family="Arial" font-size="24.00" fill="#000000">precedence, maps typed</text>
-<text text-anchor="start" x="169.5" y="-441.3" font-family="Arial" font-size="24.00" fill="#000000">compatible errors without</text>
-<text text-anchor="start" x="181.5" y="-417.3" font-family="Arial" font-size="24.00" fill="#000000">leaking internal details,</text>
-<text text-anchor="start" x="144" y="-393.3" font-family="Arial" font-size="24.00" fill="#000000">routes loopback API requests,</text>
-<text text-anchor="start" x="162" y="-369.3" font-family="Arial" font-size="24.00" fill="#000000">serves UI assets, enforces</text>
-<text text-anchor="start" x="141" y="-345.3" font-family="Arial" font-size="24.00" fill="#000000">bearer auth for memory/admin</text>
-<text text-anchor="start" x="155.5" y="-321.3" font-family="Arial" font-size="24.00" fill="#000000">APIs, and applies CORS for</text>
-<text text-anchor="start" x="221.5" y="-297.3" font-family="Arial" font-size="24.00" fill="#000000">allowed origins.</text>
+<polygon fill="#85bbf0" stroke="#1168bd" points="552,-663.5 58,-663.5 58,-264.5 552,-264.5 552,-663.5"/>
+<text text-anchor="start" x="136.5" y="-615.3" font-family="Arial" font-size="34.00" fill="#000000">HTTP Request Router</text>
+<text text-anchor="start" x="87" y="-593.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python http.server + route descriptors]</text>
+<text text-anchor="start" x="129" y="-556.3" font-family="Arial" font-size="24.00" fill="#000000">Matches immutable method/path</text>
+<text text-anchor="start" x="189" y="-532.3" font-family="Arial" font-size="24.00" fill="#000000">descriptors with static</text>
+<text text-anchor="start" x="172" y="-508.3" font-family="Arial" font-size="24.00" fill="#000000">precedence, maps typed</text>
+<text text-anchor="start" x="166" y="-484.3" font-family="Arial" font-size="24.00" fill="#000000">compatible errors, applies</text>
+<text text-anchor="start" x="125.5" y="-460.3" font-family="Arial" font-size="24.00" fill="#000000">opaque request IDs and common</text>
+<text text-anchor="start" x="180" y="-436.3" font-family="Arial" font-size="24.00" fill="#000000">security headers, emits</text>
+<text text-anchor="start" x="228" y="-412.3" font-family="Arial" font-size="24.00" fill="#000000">redaction&#45;safe</text>
+<text text-anchor="start" x="199.5" y="-388.3" font-family="Arial" font-size="24.00" fill="#000000">route/status/latency</text>
+<text text-anchor="start" x="156" y="-364.3" font-family="Arial" font-size="24.00" fill="#000000">telemetry, serves UI assets,</text>
+<text text-anchor="start" x="175" y="-340.3" font-family="Arial" font-size="24.00" fill="#000000">enforces bearer auth for</text>
+<text text-anchor="start" x="128" y="-316.3" font-family="Arial" font-size="24.00" fill="#000000">memory/admin APIs, and applies</text>
+<text text-anchor="start" x="166" y="-292.3" font-family="Arial" font-size="24.00" fill="#000000">CORS for allowed origins.</text>
 </g>
 <!-- 28 -->
 <g id="28" class="node">
 <title>28</title>
-<polygon fill="#85bbf0" stroke="#1168bd" points="1263,-572.5 906,-572.5 906,-317.5 1263,-317.5 1263,-572.5"/>
-<text text-anchor="start" x="953" y="-524.3" font-family="Arial" font-size="34.00" fill="#000000">Lifecycle Pipeline</text>
-<text text-anchor="start" x="956.5" y="-502.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python + sqlite3]</text>
-<text text-anchor="start" x="935" y="-465.3" font-family="Arial" font-size="24.00" fill="#000000">Stores claimed/resolved tab</text>
-<text text-anchor="start" x="939.5" y="-441.3" font-family="Arial" font-size="24.00" fill="#000000">lifecycle identity, reconciles</text>
-<text text-anchor="start" x="937.5" y="-417.3" font-family="Arial" font-size="24.00" fill="#000000">delayed captures, validates</text>
-<text text-anchor="start" x="935" y="-393.3" font-family="Arial" font-size="24.00" fill="#000000">active intervals, and derives</text>
-<text text-anchor="start" x="962.5" y="-369.3" font-family="Arial" font-size="24.00" fill="#000000">visit dwell from interval</text>
-<text text-anchor="start" x="1045" y="-345.3" font-family="Arial" font-size="24.00" fill="#000000">unions.</text>
+<polygon fill="#85bbf0" stroke="#1168bd" points="1263,-586.5 906,-586.5 906,-331.5 1263,-331.5 1263,-586.5"/>
+<text text-anchor="start" x="953" y="-538.3" font-family="Arial" font-size="34.00" fill="#000000">Lifecycle Pipeline</text>
+<text text-anchor="start" x="956.5" y="-516.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python + sqlite3]</text>
+<text text-anchor="start" x="935" y="-479.3" font-family="Arial" font-size="24.00" fill="#000000">Stores claimed/resolved tab</text>
+<text text-anchor="start" x="939.5" y="-455.3" font-family="Arial" font-size="24.00" fill="#000000">lifecycle identity, reconciles</text>
+<text text-anchor="start" x="937.5" y="-431.3" font-family="Arial" font-size="24.00" fill="#000000">delayed captures, validates</text>
+<text text-anchor="start" x="935" y="-407.3" font-family="Arial" font-size="24.00" fill="#000000">active intervals, and derives</text>
+<text text-anchor="start" x="962.5" y="-383.3" font-family="Arial" font-size="24.00" fill="#000000">visit dwell from interval</text>
+<text text-anchor="start" x="1045" y="-359.3" font-family="Arial" font-size="24.00" fill="#000000">unions.</text>
 </g>
 <!-- 23&#45;&gt;28 -->
 <g id="117" class="edge">
 <title>23&#45;&gt;28</title>
-<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M552.01,-445C663.2,-445 792.48,-445 895.69,-445"/>
-<polygon fill="#444444" stroke="#444444" points="895.92,-448.5 905.92,-445 895.92,-441.5 895.92,-448.5"/>
-<polygon fill="white" stroke="transparent" points="588,-445 588,-479 870,-479 870,-445 588,-445"/>
-<text text-anchor="start" x="592" y="-455.8" font-family="Arial" font-size="24.00" fill="#444444">Routes lifecycle events to</text>
+<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M552.01,-462.42C663.2,-461.7 792.48,-460.87 895.69,-460.21"/>
+<polygon fill="#444444" stroke="#444444" points="895.94,-463.71 905.92,-460.14 895.9,-456.71 895.94,-463.71"/>
+<polygon fill="white" stroke="transparent" points="588,-462 588,-496 870,-496 870,-462 588,-462"/>
+<text text-anchor="start" x="592" y="-472.8" font-family="Arial" font-size="24.00" fill="#444444">Routes lifecycle events to</text>
 </g>
 <!-- 47 -->
 <g id="47" class="node">
@@ -83,13 +85,13 @@
 <!-- 28&#45;&gt;47 -->
 <g id="126" class="edge">
 <title>28&#45;&gt;47</title>
-<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1263.04,-445C1361.58,-445 1484.67,-445 1587.56,-445"/>
-<polygon fill="#444444" stroke="#444444" points="1587.77,-448.5 1597.77,-445 1587.77,-441.5 1587.77,-448.5"/>
-<polygon fill="white" stroke="transparent" points="1299,-445 1299,-544 1562,-544 1562,-445 1299,-445"/>
-<text text-anchor="start" x="1309" y="-521.3" font-family="Arial" font-size="24.00" fill="#444444">Writes lifecycle identity</text>
-<text text-anchor="start" x="1303.5" y="-497.3" font-family="Arial" font-size="24.00" fill="#444444">and interval&#45;union dwell</text>
-<text text-anchor="start" x="1420.5" y="-473.3" font-family="Arial" font-size="24.00" fill="#444444">to</text>
-<text text-anchor="start" x="1397.5" y="-453.3" font-family="Arial" font-size="19.00" fill="#444444">[sqlite3]</text>
+<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1263.04,-455.49C1361.58,-453.55 1484.67,-451.12 1587.56,-449.09"/>
+<polygon fill="#444444" stroke="#444444" points="1587.84,-452.58 1597.77,-448.88 1587.7,-445.58 1587.84,-452.58"/>
+<polygon fill="white" stroke="transparent" points="1299,-454 1299,-553 1562,-553 1562,-454 1299,-454"/>
+<text text-anchor="start" x="1309" y="-530.3" font-family="Arial" font-size="24.00" fill="#444444">Writes lifecycle identity</text>
+<text text-anchor="start" x="1303.5" y="-506.3" font-family="Arial" font-size="24.00" fill="#444444">and interval&#45;union dwell</text>
+<text text-anchor="start" x="1420.5" y="-482.3" font-family="Arial" font-size="24.00" fill="#444444">to</text>
+<text text-anchor="start" x="1397.5" y="-462.3" font-family="Arial" font-size="19.00" fill="#444444">[sqlite3]</text>
 </g>
 </g>
 </svg>

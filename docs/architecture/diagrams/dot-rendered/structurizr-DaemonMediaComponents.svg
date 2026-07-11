@@ -25,19 +25,21 @@
 <!-- 23 -->
 <g id="23" class="node">
 <title>23</title>
-<polygon fill="#85bbf0" stroke="#1168bd" points="552,-1140.5 58,-1140.5 58,-789.5 552,-789.5 552,-1140.5"/>
-<text text-anchor="start" x="136.5" y="-1092.3" font-family="Arial" font-size="34.00" fill="#000000">HTTP Request Router</text>
-<text text-anchor="start" x="87" y="-1070.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python http.server + route descriptors]</text>
-<text text-anchor="start" x="129" y="-1033.3" font-family="Arial" font-size="24.00" fill="#000000">Matches immutable method/path</text>
-<text text-anchor="start" x="189" y="-1009.3" font-family="Arial" font-size="24.00" fill="#000000">descriptors with static</text>
-<text text-anchor="start" x="172" y="-985.3" font-family="Arial" font-size="24.00" fill="#000000">precedence, maps typed</text>
-<text text-anchor="start" x="169.5" y="-961.3" font-family="Arial" font-size="24.00" fill="#000000">compatible errors without</text>
-<text text-anchor="start" x="181.5" y="-937.3" font-family="Arial" font-size="24.00" fill="#000000">leaking internal details,</text>
-<text text-anchor="start" x="144" y="-913.3" font-family="Arial" font-size="24.00" fill="#000000">routes loopback API requests,</text>
-<text text-anchor="start" x="162" y="-889.3" font-family="Arial" font-size="24.00" fill="#000000">serves UI assets, enforces</text>
-<text text-anchor="start" x="141" y="-865.3" font-family="Arial" font-size="24.00" fill="#000000">bearer auth for memory/admin</text>
-<text text-anchor="start" x="155.5" y="-841.3" font-family="Arial" font-size="24.00" fill="#000000">APIs, and applies CORS for</text>
-<text text-anchor="start" x="221.5" y="-817.3" font-family="Arial" font-size="24.00" fill="#000000">allowed origins.</text>
+<polygon fill="#85bbf0" stroke="#1168bd" points="552,-1176.5 58,-1176.5 58,-777.5 552,-777.5 552,-1176.5"/>
+<text text-anchor="start" x="136.5" y="-1128.3" font-family="Arial" font-size="34.00" fill="#000000">HTTP Request Router</text>
+<text text-anchor="start" x="87" y="-1106.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python http.server + route descriptors]</text>
+<text text-anchor="start" x="129" y="-1069.3" font-family="Arial" font-size="24.00" fill="#000000">Matches immutable method/path</text>
+<text text-anchor="start" x="189" y="-1045.3" font-family="Arial" font-size="24.00" fill="#000000">descriptors with static</text>
+<text text-anchor="start" x="172" y="-1021.3" font-family="Arial" font-size="24.00" fill="#000000">precedence, maps typed</text>
+<text text-anchor="start" x="166" y="-997.3" font-family="Arial" font-size="24.00" fill="#000000">compatible errors, applies</text>
+<text text-anchor="start" x="125.5" y="-973.3" font-family="Arial" font-size="24.00" fill="#000000">opaque request IDs and common</text>
+<text text-anchor="start" x="180" y="-949.3" font-family="Arial" font-size="24.00" fill="#000000">security headers, emits</text>
+<text text-anchor="start" x="228" y="-925.3" font-family="Arial" font-size="24.00" fill="#000000">redaction&#45;safe</text>
+<text text-anchor="start" x="199.5" y="-901.3" font-family="Arial" font-size="24.00" fill="#000000">route/status/latency</text>
+<text text-anchor="start" x="156" y="-877.3" font-family="Arial" font-size="24.00" fill="#000000">telemetry, serves UI assets,</text>
+<text text-anchor="start" x="175" y="-853.3" font-family="Arial" font-size="24.00" fill="#000000">enforces bearer auth for</text>
+<text text-anchor="start" x="128" y="-829.3" font-family="Arial" font-size="24.00" fill="#000000">memory/admin APIs, and applies</text>
+<text text-anchor="start" x="166" y="-805.3" font-family="Arial" font-size="24.00" fill="#000000">CORS for allowed origins.</text>
 </g>
 <!-- 29 -->
 <g id="29" class="node">
@@ -58,10 +60,10 @@
 <!-- 23&#45;&gt;29 -->
 <g id="118" class="edge">
 <title>23&#45;&gt;29</title>
-<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M552.26,-1124.12C663.09,-1195.74 792.84,-1279.57 900.15,-1348.91"/>
-<polygon fill="#444444" stroke="#444444" points="898.52,-1352.02 908.82,-1354.51 902.32,-1346.15 898.52,-1352.02"/>
-<polygon fill="white" stroke="transparent" points="588,-1320 588,-1354 873,-1354 873,-1320 588,-1320"/>
-<text text-anchor="start" x="592.5" y="-1330.8" font-family="Arial" font-size="24.00" fill="#444444">Routes media requests to</text>
+<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M552.26,-1132.48C663.09,-1202.46 792.84,-1284.38 900.15,-1352.14"/>
+<polygon fill="#444444" stroke="#444444" points="898.49,-1355.23 908.82,-1357.61 902.23,-1349.31 898.49,-1355.23"/>
+<polygon fill="white" stroke="transparent" points="588,-1324 588,-1358 873,-1358 873,-1324 588,-1324"/>
+<text text-anchor="start" x="592.5" y="-1334.8" font-family="Arial" font-size="24.00" fill="#444444">Routes media requests to</text>
 </g>
 <!-- 37 -->
 <g id="37" class="node">
@@ -81,7 +83,7 @@
 <!-- 23&#45;&gt;37 -->
 <g id="119" class="edge">
 <title>23&#45;&gt;37</title>
-<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M552.32,-859.05C899.68,-714.11 1556.32,-456.36 2140,-319 2712.62,-184.24 2874.83,-268.32 3463,-279 3807.28,-285.25 3898.47,-262.9 4236,-331 4266.96,-337.25 4299.32,-345.16 4330.92,-353.69"/>
+<path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M552.09,-868.92C899.19,-721.1 1555.52,-458.35 2140,-319 2712.23,-182.57 2874.83,-268.32 3463,-279 3807.28,-285.25 3898.47,-262.9 4236,-331 4266.96,-337.25 4299.32,-345.16 4330.92,-353.69"/>
 <polygon fill="#444444" stroke="#444444" points="4330.13,-357.1 4340.7,-356.36 4331.97,-350.35 4330.13,-357.1"/>
 <polygon fill="white" stroke="transparent" points="2156.5,-319 2156.5,-405 2417.5,-405 2417.5,-319 2156.5,-319"/>
 <text text-anchor="start" x="2161" y="-381.8" font-family="Arial" font-size="24.00" fill="#444444">Leases bounded media</text>
