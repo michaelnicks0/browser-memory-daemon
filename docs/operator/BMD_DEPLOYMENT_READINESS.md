@@ -63,7 +63,7 @@ BMD_PYTHON=/tmp/browser-memory-daemon-verify-venv/bin/python \
 BMD_PYTHON=/tmp/browser-memory-daemon-verify-venv/bin/python \
   ./scripts/run-concurrency-stress.sh
 BMD_PYTHON=/tmp/browser-memory-daemon-verify-venv/bin/python \
-  ./scripts/run-performance-gate.sh
+  ./scripts/run-performance-benchmarks.sh
 BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh --dry-run
 BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh --check
 ```
