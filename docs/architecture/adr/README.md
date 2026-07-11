@@ -65,6 +65,9 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0055](0055-add-redaction-safe-http-request-envelope.md) | accepted | Add opaque request IDs, common security headers, and redaction-safe request telemetry. |
 | [ADR-0056](0056-separate-http-transport-from-application-use-cases.md) | accepted | Separate the standard-library HTTP adapter from explicit request-independent application use cases. |
 | [ADR-0057](0057-preview-and-bound-forget-selection.md) | accepted | Preview exact forget scope and bound destructive execution. |
+| [ADR-0058](0058-stage-daily-driver-install-and-rollback-failed-readiness.md) | accepted | Stage daily-driver artifacts and restore the prior generation after failed forward readiness. |
+| [ADR-0059](0059-pin-and-verify-chrome-for-testing-release.md) | accepted | Pin and checksum-verify Chrome for Testing as isolated release authority. |
+| [ADR-0060](0060-export-versioned-body-safe-x-observations.md) | accepted | Export versioned body-safe X observations through a mutation-free producer contract. |
 
 ## Backfilled decision history
 

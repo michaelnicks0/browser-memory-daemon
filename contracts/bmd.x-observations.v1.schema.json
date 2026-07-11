@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.browser-memory-daemon.invalid/contracts/bmd.x-observations.v1.schema.json",
+  "title": "Browser Memory Daemon X observation export v1",
+  "type": "object",
+  "required": [
+    "contract",
+    "contract_version",
+    "producer",
+    "generated_at",
+    "order",
+    "records",
+    "next_cursor",
+    "exhausted",
+    "holds"
+  ],
+  "properties": {
+    "contract": {"const": "bmd.x-observations"},
+    "contract_version": {"const": 1},
+    "producer": {
+      "type": "object",
+      "required": ["name", "version", "schema_version"],
+      "properties": {
+        "name": {"const": "browser-memory-daemon"},
+        "version": {"type": "string", "minLength": 1},
+        "schema_version": {"type": "integer", "minimum": 1},
+        "build_revision": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "generated_at": {"type": "string", "format": "date-time"},
+    "order": {
+      "type": "object",
+      "required": ["direction", "fields", "boundary"],
+      "properties": {
+        "direction": {"const": "ascending"},
+        "fields": {"const": ["ingest_sequence", "observation_id"]},
+        "boundary": {"const": "exclusive"}
+      },
+      "additionalProperties": false
+    },
+    "records": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/observation"}
+    },
+    "next_cursor": {"type": ["string", "null"]},
+    "exhausted": {"type": "boolean"},
+    "holds": {
+      "type": "object",
+      "required": ["legacy_without_observation_identity", "without_discovered_x_url"],
+      "properties": {
+        "legacy_without_observation_identity": {"type": "integer", "minimum": 0},
+        "without_discovered_x_url": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": {"type": "integer", "minimum": 0}
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "nullableId": {"type": ["string", "null"], "minLength": 1},
+    "discoveredUrl": {
+      "type": "object",
+      "required": [
+        "url",
+        "kind",
+        "status_id",
+        "handle_hint",
+        "discovery_source",
+        "provenance_quality"
+      ],
+      "properties": {
+        "url": {"type": "string", "pattern": "^https://x\\.com/"},
+        "kind": {"enum": ["status", "profile", "bookmarks", "likes", "timeline", "other_x"]},
+        "status_id": {"type": ["string", "null"], "pattern": "^[0-9]+$"},
+        "handle_hint": {"type": ["string", "null"], "pattern": "^[A-Za-z0-9_]{1,15}$"},
+        "discovery_source": {"enum": ["observed_url", "url_claim", "body"]},
+        "provenance_quality": {"enum": ["observed", "inferred", "ambiguous"]}
+      },
+      "additionalProperties": true
+    },
+    "observation": {
+      "type": "object",
+      "required": [
+        "observation_id",
+        "ingest_sequence",
+        "navigation_id",
+        "visit_id",
+        "document_id",
+        "snapshot_id",
+        "captured_at",
+        "observed_url",
+        "normalized_observed_url",
+        "observed_surface",
+        "discovered_x_urls",
+        "capture",
+        "text",
+        "title",
+        "collection_evidence",
+        "identity_hints"
+      ],
+      "properties": {
+        "observation_id": {"type": "string", "minLength": 1},
+        "ingest_sequence": {"type": "integer", "minimum": 1},
+        "navigation_id": {"$ref": "#/$defs/nullableId"},
+        "visit_id": {"$ref": "#/$defs/nullableId"},
+        "document_id": {"type": "string", "minLength": 1},
+        "snapshot_id": {"$ref": "#/$defs/nullableId"},
+        "captured_at": {"type": "string", "format": "date-time"},
+        "observed_url": {"type": "string", "minLength": 1},
+        "normalized_observed_url": {"type": "string", "minLength": 1},
+        "observed_surface": {"enum": ["status", "profile", "bookmarks", "likes", "timeline", "other_x", "non_x_container"]},
+        "discovered_x_urls": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/discoveredUrl"}
+        },
+        "capture": {
+          "type": "object",
+          "required": [
+            "reason",
+            "method",
+            "extraction_version",
+            "disposition",
+            "provenance_quality",
+            "source_id",
+            "media_relationship_count"
+          ],
+          "properties": {
+            "reason": {"type": "string"},
+            "method": {"type": "string"},
+            "extraction_version": {"type": "string"},
+            "disposition": {"enum": ["accepted", "duplicate", "rejected", "historical-inferred", "historical-ambiguous"]},
+            "provenance_quality": {"enum": ["observed", "inferred", "ambiguous"]},
+            "source_id": {"type": "string", "minLength": 1},
+            "media_relationship_count": {"type": "integer", "minimum": 0}
+          },
+          "additionalProperties": true
+        },
+        "text": {
+          "type": "object",
+          "required": ["sha256", "char_count", "completeness", "authority_source", "body_included", "body_owner"],
+          "properties": {
+            "sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+            "char_count": {"type": "integer", "minimum": 0},
+            "completeness": {"enum": ["complete", "unknown", "absent"]},
+            "authority_source": {"enum": ["capture", "chunks-hash-verified", "sidecar-hash-verified", "legacy-fallback", "absent"]},
+            "body_included": {"const": false},
+            "body_owner": {"const": "browser_memory_daemon"}
+          },
+          "additionalProperties": true
+        },
+        "title": {
+          "type": "object",
+          "required": ["sha256", "char_count", "body_included"],
+          "properties": {
+            "sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+            "char_count": {"type": "integer", "minimum": 0},
+            "body_included": {"const": false}
+          },
+          "additionalProperties": true
+        },
+        "collection_evidence": {
+          "type": "object",
+          "required": ["classification", "kind", "proof_type", "source_surface"],
+          "properties": {
+            "classification": {"enum": ["none", "direct"]},
+            "kind": {"type": ["string", "null"], "enum": ["bookmarks", "likes", null]},
+            "proof_type": {"type": ["string", "null"]},
+            "source_surface": {"type": ["string", "null"]}
+          },
+          "additionalProperties": true
+        },
+        "identity_hints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["kind", "value", "quality", "source_url"],
+            "properties": {
+              "kind": {"const": "handle"},
+              "value": {"type": "string", "pattern": "^[A-Za-z0-9_]{1,15}$"},
+              "quality": {"const": "alias_only"},
+              "source_url": {"type": "string", "pattern": "^https://x\\.com/"}
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}
