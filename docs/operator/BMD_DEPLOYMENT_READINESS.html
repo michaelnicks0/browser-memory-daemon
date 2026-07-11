@@ -125,7 +125,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
   </div>
   <article class="md-body">
 <h1 id="packet-a-bmd-deployment-readiness">Packet A — BMD Deployment Readiness</h1>
-<p><strong>Status:</strong> source ready; live deployment held at <code>APPROVAL-BMD-STAGED-DEPLOYMENT</code></p>
+<p><strong>Status:</strong> approved deployment completed; schema/export/service/extension checks pass</p>
 <p><strong>Source branch:</strong> <code>integration/x-observation-export</code></p>
 <p><strong>Contract:</strong> <code>bmd.x-observations</code> v1</p>
 <h2 id="preflight-runtime-truth">Preflight runtime truth</h2>
@@ -164,7 +164,64 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 </tbody>
 </table>
-<p>Do not describe the live runtime as schema 14 or contract-v1 capable until this packet completes.</p>
+<p>That table is the preserved pre-deployment baseline. The current live runtime is now schema 14 and contract-v1 capable, as recorded below.</p>
+<h2 id="approved-execution-result-2026-07-11">Approved execution result — 2026-07-11</h2>
+<p>Michael approved <code>APPROVAL-BMD-STAGED-DEPLOYMENT</code> and one bounded read-only consumer pilot. The deployment used private evidence under <code>~/.local/state/browser-memory-daemon/deployments/20260711T134008Z/</code> and a pre-migration rollback bundle under <code>~/backups/browser-memory-daemon/</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Signal</th>
+<th>Verified result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pre-migration backup</td>
+<td>SQLite online backup, private manifest, SHA-256, <code>integrity_check=ok</code>, and exact metadata-count match</td>
+</tr>
+<tr>
+<td>Migration</td>
+<td>explicit stopped-writer migration from compatible pre-ledger schema to <code>user_version=14</code></td>
+</tr>
+<tr>
+<td>Migration ledger</td>
+<td>exactly versions 1–14 with source names/checksums</td>
+</tr>
+<tr>
+<td>Observation sequence</td>
+<td>8,120 observations and 8,120 ingest-sequence rows</td>
+</tr>
+<tr>
+<td>Services</td>
+<td>daemon and worker active from the pinned repository and Python 3.11 environment</td>
+</tr>
+<tr>
+<td>Storage guard</td>
+<td>SSHFS root visible in the user-service mount namespace; <code>bmd-media-prod</code> identity and mount guard ready</td>
+</tr>
+<tr>
+<td>Extension files</td>
+<td>installed manifest, <code>service_worker.js</code>, and <code>cdp_session.js</code> byte-match source; ordinary Chrome owns the extension setting and HermesXCDP does not</td>
+</tr>
+<tr>
+<td>Extension reload</td>
+<td>ordinary-profile BMD card reloaded through Chrome UI Automation; enabled service worker, no card error control</td>
+</tr>
+<tr>
+<td>Query-only CLI export</td>
+<td>exact DB/WAL/SHM hashes and logical snapshot unchanged</td>
+</tr>
+<tr>
+<td>Query-only HTTP export</td>
+<td>bearer-authenticated v1 response; unauthenticated request returned 401; logical snapshot unchanged</td>
+</tr>
+<tr>
+<td>Daily-driver check</td>
+<td>pass with zero errors and zero warnings in the production service mount namespace</td>
+</tr>
+</tbody>
+</table>
+<p>The extension reload targeted the unique reload control spatially associated with the ordinary-profile <strong>Browser Memory Daemon</strong> card. Post-reload health initially observed 12 due media tasks; the active worker drained them to zero with zero stale leases, after which daily-driver health passed with zero errors and zero warnings.</p>
 <h2 id="source-pins">Source pins</h2>
 <table>
 <thead>
@@ -215,7 +272,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <ol>
 <li>Stop if Michael has not explicitly approved <code>APPROVAL-BMD-STAGED-DEPLOYMENT</code>.</li>
 <li>Record body-safe service state and installed-source hashes. Do not print tokens, environment contents, URLs, page titles, or database rows.</li>
-<li>Create and verify a manifest-backed SQLite backup bundle with the repository CLI before migration.</li>
+<li>Create and verify a manifest-backed SQLite backup bundle before migration. Use the repository CLI for a current migration-ledger schema. For a migration-compatible pre-ledger database, which the current backup CLI intentionally rejects, stop writers and use SQLite's online-backup API with a private manifest, checksum, integrity check, schema fingerprint, and exact metadata-count comparison.</li>
 <li>Record:
    - SQLite file/WAL-aware backup checksum;
    - <code>pragma integrity_check</code> result;
@@ -231,7 +288,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_POLICY_MODE</span><span style="color: #FF4689">=</span>all<span style="color: #F8F8F2"> </span>./scripts/install-daily-driver.sh
 </code></pre></div>
 
-<p>The installer must stage and swap source atomically, migrate through schema 14, restart daemon then worker, and pass its readiness checks. If any step fails, treat rollback as incomplete until all prior artifacts are restored <strong>and prior daemon/worker service state is verified</strong>, not merely until files copy back.</p>
+<p>The installer intentionally refuses pending migrations. Stop the daemon and worker, run <code>memory migrate --execute</code> explicitly against the verified backup point, and only then run the installer. The installer must stage and swap source atomically, restart daemon then worker, and pass readiness checks. If any step fails, treat rollback as incomplete until all prior artifacts are restored <strong>and prior daemon/worker service state is verified</strong>, not merely until files copy back.</p>
 <h2 id="extension-loadreload-checklist">Extension load/reload checklist</h2>
 <ol>
 <li>Confirm the intended ordinary BMD Chrome profile—not the dedicated HermesXCDP backfill profile—is selected.</li>
@@ -274,7 +331,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </ul>
 <p>Rollback restores the verified pre-deploy SQLite backup and prior extension/token/env/unit artifacts. Verify prior daemon and worker state after restoration. If prior service restart fails, leave the system stopped, preserve diagnostics, and report an incomplete rollback—do not continue forward.</p>
 <h2 id="approval-boundary">Approval boundary</h2>
-<p>Approval for this packet authorizes staged BMD deployment/readiness verification only. It does not authorize live X backfill capture or Birdclaw apply. After Packet A passes, the next bounded action is one read-only 25-row <code>bmd-pull</code> pilot under Packet B.</p>
+<p>The approved scope was consumed without live X capture or Birdclaw apply. Packet B's one-page read-only pull and real-database dry-run also completed. Any Birdclaw <code>--apply</code>, live X capture, recurring pull schedule, or extension installation into HermesXCDP remains outside this approval.</p>
   </article>
   <div class="md-footer">
     Rendered from <code>docs/operator/BMD_DEPLOYMENT_READINESS.md</code> — the Markdown file is the canonical,
