@@ -24,7 +24,7 @@ Every response carries a server-generated `X-Request-ID`. Error responses repeat
 {"error": "unauthorized", "error_code": "unauthorized", "request_id": "req_<opaque>"}
 ```
 
-Missing or invalid bearer tokens return `401`; malformed JSON and invalid payloads return `400`; identity/integrity conflicts return `409`; unknown routes return `404`; database/resource availability failures return `503`; unexpected internal failures return a sanitized `500`; unsupported HTTP methods return `501`. Limit parameters are bounded server-side (`recent` max 100, `timeline` max 250, media queue max 200); invalid integer limits return `400` on endpoints that parse limits directly. Current stable codes are `invalid_request`, `unauthorized`, `forbidden`, `not_found`, `conflict`, `resource_unavailable`, `database_busy`, `database_unavailable`, `internal_error`, and `unsupported_method`.
+Missing or invalid bearer tokens return `401`; malformed JSON and invalid payloads return `400`; identity/integrity conflicts return `409`; unknown routes return `404`; database/resource availability failures return `503`; unexpected internal failures return a sanitized `500`; unsupported HTTP methods return `501`. Limit parameters are bounded server-side (`recent` max 100, `timeline` max 250, X-observation export max 1000, media queue max 200); invalid integer limits return `400` on endpoints that parse limits directly. Current stable codes are `invalid_request`, `unauthorized`, `forbidden`, `not_found`, `conflict`, `resource_unavailable`, `database_busy`, `database_unavailable`, `internal_error`, and `unsupported_method`.
 
 JSON requests accept at most one unsigned-decimal `Content-Length` and reject duplicate, signed, malformed, oversized, or truncated lengths before invoking an application use case. JSON body limits are 2 MiB for ordinary capture/lifecycle/policy/admin requests and 16 MiB for the compatibility base64 media artifact route. Raw media uploads require one explicit unsigned-decimal length and stream separately under artifact and process budgets.
 
@@ -54,6 +54,7 @@ The method/path entries below are matched through immutable route descriptors in
 | `/recent?limit=...` | `GET` | Recent capture metadata and first snippets. | Yes |
 | `/timeline?date=YYYY-MM-DD` | `GET` | Capture timeline for a day. | Yes |
 | `/timeline?after=...&before=...` | `GET` | Capture timeline for an explicit ISO range. | Yes |
+| `/exports/x-observations?cursor=...&limit=...` | `GET` | Versioned, body-safe, query-only X observation producer contract. | Yes |
 | `/documents/{document_id}` | `GET` | Document metadata, visits, lifecycle events, snapshots, chunks. | Yes |
 | `/snapshots/{snapshot_id}` | `GET` | Snapshot text, chunk snippets, and related media artifacts. | Yes |
 | `/media-artifacts/{artifact_id}` | `GET` | Retrieve stored media blob if present. | Yes |
@@ -234,6 +235,31 @@ Historical visits without any observation row remain visible as `record_source: 
 `GET /timeline` also includes an additive `summary` for the bounded returned items: distinct visits, observation count, capture count, dwell summed once per visit, maximum lifecycle scroll, and media relationship count.
 
 Document detail includes ordered `observations` and `url_claims`; snapshot detail includes only observations referencing that exact snapshot. Existing `visits`, `snapshots`, and endpoint paths remain available for compatibility.
+
+---
+
+## Query-only X observation export
+
+`GET /exports/x-observations` returns `bmd.x-observations` major version `1`. It is the producer-owned passive Birdclaw integration contract; `/recent`, `/timeline`, document detail, and snapshot detail are not substitute integration feeds.
+
+The route requires the bearer token. `cursor` is an opaque exclusive continuation token and `limit` is `1..1000`. Records are ordered by immutable `(ingest_sequence, observation_id)`, so a delayed MV3 delivery with an older `captured_at` remains visible after an earlier checkpoint. A deleted observation may leave a harmless sequence gap. Consumers must persist the returned cursor only after durably publishing the artifacts derived from that page.
+
+The query opens the existing SQLite database with URI `mode=ro`, enables `PRAGMA query_only=ON`, installs a deny-write SQLite authorizer, validates the complete migration ledger and schema fingerprint, and writes no audit row. Older, newer, missing, or drifted schemas fail closed. The default contract excludes page bodies, excerpts, raw titles, HTML, credentials, local paths, idempotency keys, and request data; it emits hashes, lengths, completeness/authority, observed/discovered X URLs, alias-only handle hints, capture provenance, and explicit collection evidence.
+
+Current BMD captures set collection evidence to `none`. A viewed status, URL mention, profile-path handle, caller-selected collection kind, or ordinary browsing surface does not prove bookmark/like membership or external X identity.
+
+The same pure query is available without starting the daemon or requiring an API token:
+
+```bash
+memory --runtime-root ~/.local/share/browser-memory-daemon \
+  export x-observations --limit 100
+```
+
+Use `--database /path/to/browser-memory.sqlite3` to select an explicit existing database and `--cursor '<opaque>'` to continue. The standalone export command does not call readiness initialization or migration and does not create runtime directories. Contract schema and invented producer fixture are canonical at:
+
+- `contracts/bmd.x-observations.v1.schema.json`
+- `daemon/tests/fixtures/x_observations/v1-page.json`
+- `docs/architecture/adr/0060-export-versioned-body-safe-x-observations.md`
 
 ---
 

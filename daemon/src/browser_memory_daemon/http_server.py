@@ -29,6 +29,7 @@ from .application import MemoryApplication
 from .config import RuntimeConfig
 from .media_resources import MediaResourceUnavailable, media_resource_budget
 from .routes import match_route
+from .x_observation_export import XObservationCompatibilityError, export_x_observations
 
 _API_CONTENT_SECURITY_POLICY = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
 _UI_CONTENT_SECURITY_POLICY = (
@@ -463,6 +464,17 @@ def make_handler(config: RuntimeConfig, application: MemoryApplication) -> type[
                         before=params.get("before", [None])[0],
                         limit=params.get("limit", ["100"])[0],
                     )
+                    _json_response(self, 200, result)
+                    return
+                if route_match and route_match.route.name == "x-observation-export":
+                    try:
+                        result = export_x_observations(
+                            config.db_path,
+                            cursor=params.get("cursor", [None])[0],
+                            limit=int(params.get("limit", ["100"])[0]),
+                        )
+                    except XObservationCompatibilityError as exc:
+                        raise ResourceUnavailableError(str(exc)) from exc
                     _json_response(self, 200, result)
                     return
                 if route_match and route_match.route.name == "document-detail":

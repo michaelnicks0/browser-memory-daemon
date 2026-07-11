@@ -65,6 +65,10 @@ def _drop_media_storage_tiers(conn: sqlite3.Connection) -> None:
     conn.execute("ALTER TABLE media_artifacts DROP COLUMN storage_tier")
 
 
+def _drop_observation_ingest_sequences(conn: sqlite3.Connection) -> None:
+    conn.execute("DROP TABLE IF EXISTS observation_ingest_sequences")
+
+
 def _create_unversioned_current_db(cfg, *, with_media_ref: bool = False) -> None:
     cfg.ensure_dirs()
     with sqlite3.connect(cfg.db_path) as conn:
@@ -244,12 +248,13 @@ def test_version_twelve_normalizes_historical_media_state_once(tmp_path):
             task_rows,
         )
         conn.execute("DROP TABLE media_cache_reservations")
+        _drop_observation_ingest_sequences(conn)
         conn.execute("DELETE FROM schema_migrations WHERE version >= 12")
         conn.execute("PRAGMA user_version = 11")
         conn.commit()
 
     result = migrate_database(cfg, execute=True)
-    assert result["applied_versions"] == [12, 13]
+    assert result["applied_versions"] == [12, 13, 14]
     with connect(cfg.db_path) as conn:
         statuses = {
             row["id"]: (row["capture_status"], row["status_reason"])
@@ -286,15 +291,16 @@ def test_version_thirteen_adds_cache_reservations_from_exact_prior_schema(tmp_pa
     init_db(cfg)
     with connect(cfg.db_path) as conn:
         conn.execute("DROP TABLE media_cache_reservations")
-        conn.execute("DELETE FROM schema_migrations WHERE version = 13")
+        _drop_observation_ingest_sequences(conn)
+        conn.execute("DELETE FROM schema_migrations WHERE version >= 13")
         conn.execute("PRAGMA user_version = 12")
         conn.commit()
 
     before = migration_status(cfg)
     assert before["current_version"] == 12
-    assert before["pending_versions"] == [13]
+    assert before["pending_versions"] == [13, 14]
     result = migrate_database(cfg, execute=True)
-    assert result["applied_versions"] == [13]
+    assert result["applied_versions"] == [13, 14]
     with connect(cfg.db_path) as conn:
         columns = {
             row["name"] for row in conn.execute("PRAGMA table_info(media_cache_reservations)").fetchall()
@@ -403,15 +409,16 @@ def test_version_three_fixture_upgrades_once_to_capture_model_expand_schema(tmp_
         conn.execute("DROP TABLE media_artifact_observations")
         conn.execute("DROP TABLE document_url_claims")
         conn.execute("DROP TABLE capture_observations")
+        _drop_observation_ingest_sequences(conn)
         conn.execute("DELETE FROM schema_migrations WHERE version >= 4")
         conn.execute("PRAGMA user_version = 3")
         conn.commit()
 
     before = migration_status(cfg)
     assert before["current_version"] == 3
-    assert before["pending_versions"] == [4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+    assert before["pending_versions"] == [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
     result = migrate_database(cfg, execute=True)
-    assert result["applied_versions"] == [4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+    assert result["applied_versions"] == [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
     with connect(cfg.db_path) as conn:
         tables = {
             row["name"]
@@ -438,6 +445,7 @@ def test_version_five_backfills_only_evidence_supported_historical_relationships
         conn.execute("DELETE FROM document_url_claims")
         conn.execute("DELETE FROM capture_observations")
         conn.execute("DROP TABLE media_artifact_observations")
+        _drop_observation_ingest_sequences(conn)
         conn.execute("DELETE FROM schema_migrations WHERE version >= 5")
         conn.execute("PRAGMA user_version = 4")
         conn.execute(
@@ -594,6 +602,7 @@ def test_version_six_backfills_only_unambiguous_media_observation_links(tmp_path
         _drop_relative_blob_locators(conn)
         _drop_claimed_visit_identity(conn)
         conn.execute("DROP TABLE media_artifact_observations")
+        _drop_observation_ingest_sequences(conn)
         conn.execute("DELETE FROM schema_migrations WHERE version >= 6")
         conn.execute("PRAGMA user_version = 5")
 
@@ -671,6 +680,7 @@ def test_version_seven_preserves_claimed_visit_identity_for_historical_events(tm
         _drop_snapshot_text_authority(conn)
         _drop_relative_blob_locators(conn)
         _drop_claimed_visit_identity(conn)
+        _drop_observation_ingest_sequences(conn)
         conn.execute("DELETE FROM schema_migrations WHERE version >= 7")
         conn.execute("PRAGMA user_version = 6")
 
@@ -704,6 +714,7 @@ def test_version_eight_adds_nullable_relative_locators(tmp_path):
         _drop_media_storage_tiers(conn)
         _drop_snapshot_text_authority(conn)
         _drop_relative_blob_locators(conn)
+        _drop_observation_ingest_sequences(conn)
         conn.execute("DELETE FROM schema_migrations WHERE version >= 8")
         conn.execute("PRAGMA user_version = 7")
 
@@ -737,6 +748,7 @@ def test_version_nine_backfills_hash_verified_chunks_and_new_ingest_uses_sqlite_
         legacy = _capture(conn, cfg)
         _drop_media_storage_tiers(conn)
         _drop_snapshot_text_authority(conn)
+        _drop_observation_ingest_sequences(conn)
         conn.execute("DELETE FROM schema_migrations WHERE version >= 9")
         conn.execute("PRAGMA user_version = 8")
 
@@ -745,6 +757,8 @@ def test_version_nine_backfills_hash_verified_chunks_and_new_ingest_uses_sqlite_
     assert pending["pending_versions"] == [9]
     result = migrate_database(cfg, execute=True, steps=MIGRATIONS[:9])
     assert result["applied_versions"] == [9]
+    current = migrate_database(cfg, execute=True)
+    assert current["applied_versions"] == [10, 11, 12, 13, 14]
 
     with connect(cfg.db_path) as conn:
         legacy_row = conn.execute(
@@ -781,7 +795,7 @@ def test_version_nine_backfills_hash_verified_chunks_and_new_ingest_uses_sqlite_
             "cleaned_text_path": None,
             "cleaned_text_locator": None,
         }
-        assert schema_fingerprint(conn) == MIGRATIONS[8].schema_fingerprint
+        assert schema_fingerprint(conn) == MIGRATIONS[-1].schema_fingerprint
         assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
 
 
@@ -802,6 +816,7 @@ def test_version_ten_adds_media_storage_tiers_and_spool_reservations(tmp_path):
             (capture["document_id"], capture["snapshot_id"]),
         )
         _drop_media_storage_tiers(conn)
+        _drop_observation_ingest_sequences(conn)
         conn.execute("DELETE FROM schema_migrations WHERE version >= 10")
         conn.execute("PRAGMA user_version = 9")
 
@@ -859,13 +874,14 @@ def test_version_eleven_adds_and_backfills_blob_lifecycle_records(tmp_path):
         )
         conn.execute("DROP TABLE blob_storage_records")
         conn.execute("DROP TABLE media_cache_reservations")
+        _drop_observation_ingest_sequences(conn)
         conn.execute("DELETE FROM schema_migrations WHERE version >= 11")
         conn.execute("PRAGMA user_version = 10")
 
     pending = migration_status(cfg)
-    assert pending["pending_versions"] == [11, 12, 13]
+    assert pending["pending_versions"] == [11, 12, 13, 14]
     result = migrate_database(cfg, execute=True)
-    assert result["applied_versions"] == [11, 12, 13]
+    assert result["applied_versions"] == [11, 12, 13, 14]
     with connect(cfg.db_path) as conn:
         rows = [
             dict(row)

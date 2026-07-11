@@ -10,6 +10,7 @@ from browser_memory_daemon.routes import ROUTES, match_route
         ("GET", "/search", "search", {}, True),
         ("GET", "/recent", "recent", {}, True),
         ("GET", "/timeline", "timeline", {}, True),
+        ("GET", "/exports/x-observations", "x-observation-export", {}, True),
         ("GET", "/documents/doc%2Fencoded", "document-detail", {"document_id": "doc/encoded"}, True),
         ("GET", "/snapshots/snap-1", "snapshot-detail", {"snapshot_id": "snap-1"}, True),
         ("GET", "/media-artifacts/queue-status", "media-queue-status", {}, True),

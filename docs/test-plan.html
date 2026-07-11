@@ -490,6 +490,14 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td><code>AGENTS.md</code><br><code>docs/security-model.md</code></td>
 <td><code>daemon/tests/e2e/test_admin_api.py::test_policy_rule_blocks_future_capture_and_can_be_deleted</code></td>
 </tr>
+<tr>
+<td>REQ-044 — Passive X observation export shall be versioned, body-safe, losslessly cursorable, and unable to mutate or migrate its source database.</td>
+<td><code>daemon/tests/unit/test_routes.py::test_route_descriptors_characterize_every_current_api_endpoint</code></td>
+<td><code>daemon/tests/integration/test_observation_ingest_sequence.py</code><br><code>daemon/tests/integration/test_x_observation_export.py</code></td>
+<td><code>daemon/tests/e2e/test_x_observation_export_cli.py</code><br><code>daemon/tests/e2e/test_http_api.py::test_authenticated_x_observation_export_uses_query_only_contract_without_audit_write</code></td>
+<td><code>docs/api.md</code><br><code>docs/architecture/adr/0060-export-versioned-body-safe-x-observations.md</code></td>
+<td><code>daemon/tests/integration/test_x_observation_export.py::test_export_is_query_only_body_safe_and_losslessly_pages_late_delivery</code><br><code>daemon/tests/integration/test_x_observation_export.py::test_export_cursor_survives_deleted_sequence_gap_and_replay_is_stable</code><br><code>daemon/tests/integration/test_x_observation_export.py::test_export_fails_closed_for_malformed_cursor_and_schema_drift</code><br><code>daemon/tests/integration/test_x_observation_export.py::test_producer_golden_fixture_matches_current_contract_output</code><br><code>daemon/tests/e2e/test_x_observation_export_cli.py::test_cli_export_queries_existing_database_without_init_migration_or_token</code><br><code>daemon/tests/e2e/test_http_api.py::test_authenticated_x_observation_export_uses_query_only_contract_without_audit_write</code></td>
+</tr>
 </tbody>
 </table>
 <!-- END GENERATED:requirement-coverage -->

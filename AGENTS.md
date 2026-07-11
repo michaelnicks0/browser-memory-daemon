@@ -44,6 +44,8 @@ python scripts/generate_test_inventory.py --check
 python scripts/generate_showcase.py --spec scripts/showcase.spec.json --check
 python scripts/render_docs.py --repo . --slug browser-memory-daemon --check
 python -m pytest -q
+PYTHONPATH=daemon/src python -m pytest -q daemon/tests/integration/test_x_observation_export.py daemon/tests/e2e/test_x_observation_export_cli.py
+PYTHONPATH=daemon/src python -m browser_memory_daemon export x-observations --help
 cd extension && npm test && npm run build
 ./scripts/secret-scan.sh
 git diff --check -- .

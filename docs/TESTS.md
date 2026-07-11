@@ -5,7 +5,7 @@
 > **Runtime:** Python **3.11+** (`pyproject.toml` requires `>=3.11`). Use `BMD_PYTHON=/path/to/python3.11` when the host `python3` is older.
 
 <!-- BEGIN GENERATED:inventory-summary -->
-> **Current inventory:** 324 static test functions across 57 files — 251 daemon pytest tests + 73 extension node:test tests.
+> **Current inventory:** 332 static test functions across 60 files — 259 daemon pytest tests + 73 extension node:test tests.
 <!-- END GENERATED:inventory-summary -->
 
 ---
@@ -79,7 +79,7 @@ Use `--runtime-root PATH` only for explicit fixture roots; do not point the stre
 ## Generated test inventory
 
 <!-- BEGIN GENERATED:audit-run -->
-Latest inventory: **324 static test functions** across **57 files** (251 daemon pytest; 73 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
+Latest inventory: **332 static test functions** across **60 files** (259 daemon pytest; 73 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
 <!-- END GENERATED:audit-run -->
 
 ## Requirements traceability gate
@@ -89,7 +89,7 @@ Traceability gate: **✅ pass**.
 
 | Check | Result |
 |---|---|
-| Catalog requirements | 43 (43 active; 0 planned) |
+| Catalog requirements | 44 (44 active; 0 planned) |
 | Duplicate stable IDs | none |
 | Invalid requirement definitions | none |
 | Duplicate plan/local aliases | none |
@@ -100,7 +100,7 @@ Traceability gate: **✅ pass**.
 | Normative changes without revision increment | none |
 | Requirements removed without catalog disposition | none |
 | Catalog load errors | none |
-| Static test inventory measured | 324 tests / 57 files |
+| Static test inventory measured | 332 tests / 60 files |
 <!-- END GENERATED:traceability-gate -->
 
 ### Per-file counts
@@ -112,11 +112,12 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/e2e/test_concurrency_stress.py` | pytest | 2 |
 | `daemon/tests/e2e/test_daily_driver_install.py` | pytest | 2 |
 | `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | 4 |
-| `daemon/tests/e2e/test_http_api.py` | pytest | 16 |
+| `daemon/tests/e2e/test_http_api.py` | pytest | 17 |
 | `daemon/tests/e2e/test_install_daily_driver.py` | pytest | 5 |
 | `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | 5 |
 | `daemon/tests/e2e/test_read_model_indexes.py` | pytest | 1 |
 | `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | 4 |
+| `daemon/tests/e2e/test_x_observation_export_cli.py` | pytest | 1 |
 | `daemon/tests/integration/test_backup_restore.py` | pytest | 18 |
 | `daemon/tests/integration/test_capture_observations.py` | pytest | 8 |
 | `daemon/tests/integration/test_ingest_search_forget.py` | pytest | 29 |
@@ -125,10 +126,12 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/integration/test_media_tasks.py` | pytest | 2 |
 | `daemon/tests/integration/test_media_worker.py` | pytest | 26 |
 | `daemon/tests/integration/test_migrations.py` | pytest | 20 |
+| `daemon/tests/integration/test_observation_ingest_sequence.py` | pytest | 2 |
 | `daemon/tests/integration/test_observation_reads.py` | pytest | 2 |
 | `daemon/tests/integration/test_storage_reconcile.py` | pytest | 4 |
 | `daemon/tests/integration/test_text_authority.py` | pytest | 2 |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | 6 |
+| `daemon/tests/integration/test_x_observation_export.py` | pytest | 4 |
 | `daemon/tests/unit/test_api_errors.py` | pytest | 3 |
 | `daemon/tests/unit/test_application.py` | pytest | 4 |
 | `daemon/tests/unit/test_blob_store.py` | pytest | 5 |
@@ -164,7 +167,7 @@ Traceability gate: **✅ pass**.
 | `extension/tests/unit/service_worker.test.js` | node:test | 10 |
 | `extension/tests/unit/shared.test.js` | node:test | 2 |
 | `extension/tests/unit/visit_tracker.test.js` | node:test | 2 |
-| **Total** |  | **324** |
+| **Total** |  | **332** |
 <!-- END GENERATED:per-file-counts -->
 
 <details>
@@ -192,21 +195,22 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_catalog_rejects_duplicate_ids` | 188 | Catalog rejects duplicate ids. |
 | `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_catalog_statement_change_requires_revision_increment` | 202 | Catalog statement change requires revision increment. |
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_skips_request_time_db_initialization_after_startup` | 101 | Http capture skips request time db initialization after startup. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_upload_get_and_purge_use_bounded_spool_during_media_root_outage` | 133 | Http upload get and purge use bounded spool during media root outage. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_media_fetch_raw_upload_and_purge_rehydrate_controls` | 208 | Http media fetch raw upload and purge rehydrate controls. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_raw_media_upload_requires_explicit_decimal_content_length` | 284 | Http raw media upload requires explicit decimal content length. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_json_body_rejects_ambiguous_invalid_and_truncated_content_lengths` | 330 | Http json body rejects ambiguous invalid and truncated content lengths. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_raw_media_upload_disconnect_cleans_staging_reservations_and_process_budget` | 379 | Http raw media upload disconnect cleans staging reservations and process budget. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_media_download_disconnect_stops_stream_and_releases_process_budget` | 489 | Http media download disconnect stops stream and releases process budget. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_raw_media_upload_returns_503_when_global_byte_budget_cannot_admit_body` | 609 | Http raw media upload returns 503 when global byte budget cannot admit body. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_search_forget_round_trip` | 661 | Http capture search forget round trip. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_api_contract_errors_methods_and_limits_are_json` | 805 | Http api contract errors methods and limits are json. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_route_catalog_preserves_auth_unknown_route_and_ready_contracts` | 858 | Http route catalog preserves auth unknown route and ready contracts. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_request_envelope_adds_unique_ids_and_security_headers_to_every_response_kind` | 915 | Http request envelope adds unique ids and security headers to every response kind. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_structured_request_telemetry_contains_only_redaction_safe_fields` | 957 | Http structured request telemetry contains only redaction safe fields. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_maps_capture_identity_conflicts_to_stable_conflict_error` | 999 | Http maps capture identity conflicts to stable conflict error. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_maps_database_busy_and_unexpected_failures_without_leaking_internal_details` | 1032 | Http maps database busy and unexpected failures without leaking internal details. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_policy_rule_duplicate_creation_returns_existing_semantic_rule` | 1070 | Http policy rule duplicate creation returns existing semantic rule. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_authenticated_x_observation_export_uses_query_only_contract_without_audit_write` | 133 | Authenticated x observation export uses query only contract without audit write. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_upload_get_and_purge_use_bounded_spool_during_media_root_outage` | 182 | Http upload get and purge use bounded spool during media root outage. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_media_fetch_raw_upload_and_purge_rehydrate_controls` | 257 | Http media fetch raw upload and purge rehydrate controls. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_raw_media_upload_requires_explicit_decimal_content_length` | 333 | Http raw media upload requires explicit decimal content length. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_json_body_rejects_ambiguous_invalid_and_truncated_content_lengths` | 379 | Http json body rejects ambiguous invalid and truncated content lengths. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_raw_media_upload_disconnect_cleans_staging_reservations_and_process_budget` | 428 | Http raw media upload disconnect cleans staging reservations and process budget. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_media_download_disconnect_stops_stream_and_releases_process_budget` | 538 | Http media download disconnect stops stream and releases process budget. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_raw_media_upload_returns_503_when_global_byte_budget_cannot_admit_body` | 658 | Http raw media upload returns 503 when global byte budget cannot admit body. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_search_forget_round_trip` | 710 | Http capture search forget round trip. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_api_contract_errors_methods_and_limits_are_json` | 854 | Http api contract errors methods and limits are json. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_route_catalog_preserves_auth_unknown_route_and_ready_contracts` | 907 | Http route catalog preserves auth unknown route and ready contracts. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_request_envelope_adds_unique_ids_and_security_headers_to_every_response_kind` | 964 | Http request envelope adds unique ids and security headers to every response kind. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_structured_request_telemetry_contains_only_redaction_safe_fields` | 1006 | Http structured request telemetry contains only redaction safe fields. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_maps_capture_identity_conflicts_to_stable_conflict_error` | 1048 | Http maps capture identity conflicts to stable conflict error. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_maps_database_busy_and_unexpected_failures_without_leaking_internal_details` | 1081 | Http maps database busy and unexpected failures without leaking internal details. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_policy_rule_duplicate_creation_returns_existing_semantic_rule` | 1119 | Http policy rule duplicate creation returns existing semantic rule. |
 | `daemon/tests/e2e/test_install_daily_driver.py` | pytest | `(module)` | `test_installer_stages_validates_swaps_and_restarts_services_in_order` | 158 | Installer stages validates swaps and restarts services in order. |
 | `daemon/tests/e2e/test_install_daily_driver.py` | pytest | `(module)` | `test_installer_readiness_failure_restores_prior_artifacts_and_service_state` | 196 | Installer readiness failure restores prior artifacts and service state. |
 | `daemon/tests/e2e/test_install_daily_driver.py` | pytest | `(module)` | `test_installer_blocks_incompatible_database_before_publication` | 217 | Installer blocks incompatible database before publication. |
@@ -222,6 +226,7 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | `(module)` | `test_ui_dashboard_static_asset_path_traversal_is_rejected` | 73 | Ui dashboard static asset path traversal is rejected. |
 | `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | `(module)` | `test_ui_dashboard_rejects_non_loopback_host_header` | 83 | Ui dashboard rejects non loopback host header. |
 | `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | `(module)` | `test_ui_dashboard_smoke_runner_executes_bootstrap_empty_and_error_states` | 94 | Ui dashboard smoke runner executes bootstrap empty and error states. |
+| `daemon/tests/e2e/test_x_observation_export_cli.py` | pytest | `(module)` | `test_cli_export_queries_existing_database_without_init_migration_or_token` | 12 | Cli export queries existing database without init migration or token. |
 | `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_backup_create_is_dry_run_first_and_manifest_excludes_media_and_secrets` | 83 | Backup create is dry run first and manifest excludes media and secrets. |
 | `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_backup_restore_recreates_search_detail_and_forget_without_media_cache` | 127 | Backup restore recreates search detail and forget without media cache. |
 | `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_restore_rejects_tampered_bundle_and_existing_destination_without_mutation` | 154 | Restore rejects tampered bundle and existing destination without mutation. |
@@ -322,26 +327,28 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_stores_hls_audio_rendition_sidecar` | 914 | Media worker stores hls audio rendition sidecar. |
 | `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_marks_blob_video_refs_covered_by_cdp_bytes` | 948 | Media worker marks blob video refs covered by cdp bytes. |
 | `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_classifies_uncovered_blob_video_refs_as_opaque` | 998 | Media worker classifies uncovered blob video refs as opaque. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_fresh_database_migrates_to_ordered_versioned_ledger_and_preserves_fts` | 118 | Fresh database migrates to ordered versioned ledger and preserves fts. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_unversioned_current_schema_is_stamped_then_historical_seed_runs_once` | 159 | Unversioned current schema is stamped then historical seed runs once. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_twelve_normalizes_historical_media_state_once` | 189 | Version twelve normalizes historical media state once. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_thirteen_adds_cache_reservations_from_exact_prior_schema` | 284 | Version thirteen adds cache reservations from exact prior schema. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_capture_observation_and_url_claim_schema_enforces_expand_contract` | 325 | Capture observation and url claim schema enforces expand contract. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_three_fixture_upgrades_once_to_capture_model_expand_schema` | 395 | Version three fixture upgrades once to capture model expand schema. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_five_backfills_only_evidence_supported_historical_relationships` | 430 | Version five backfills only evidence supported historical relationships. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_six_backfills_only_unambiguous_media_observation_links` | 535 | Version six backfills only unambiguous media observation links. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_seven_preserves_claimed_visit_identity_for_historical_events` | 637 | Version seven preserves claimed visit identity for historical events. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_eight_adds_nullable_relative_locators` | 699 | Version eight adds nullable relative locators. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_nine_backfills_hash_verified_chunks_and_new_ingest_uses_sqlite_authority` | 733 | Version nine backfills hash verified chunks and new ingest uses sqlite authority. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_ten_adds_media_storage_tiers_and_spool_reservations` | 788 | Version ten adds media storage tiers and spool reservations. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_eleven_adds_and_backfills_blob_lifecycle_records` | 834 | Version eleven adds and backfills blob lifecycle records. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_repeated_migration_is_a_noop_and_schema_has_no_recurring_repair_dml` | 899 | Repeated migration is a noop and schema has no recurring repair dml. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_concurrent_fresh_migration_applies_each_ledger_step_once` | 920 | Concurrent fresh migration applies each ledger step once. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_checksum_mismatch_and_unknown_newer_version_fail_closed` | 941 | Checksum mismatch and unknown newer version fail closed. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_unknown_unversioned_schema_is_not_stamped` | 959 | Unknown unversioned schema is not stamped. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_injected_migration_failure_rolls_back_step_and_ledger` | 973 | Injected migration failure rolls back step and ledger. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_destructive_migration_creates_online_backup_that_restores_search` | 1002 | Destructive migration creates online backup that restores search. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_destructive_migration_refuses_insufficient_backup_headroom_before_writes` | 1040 | Destructive migration refuses insufficient backup headroom before writes. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_fresh_database_migrates_to_ordered_versioned_ledger_and_preserves_fts` | 122 | Fresh database migrates to ordered versioned ledger and preserves fts. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_unversioned_current_schema_is_stamped_then_historical_seed_runs_once` | 163 | Unversioned current schema is stamped then historical seed runs once. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_twelve_normalizes_historical_media_state_once` | 193 | Version twelve normalizes historical media state once. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_thirteen_adds_cache_reservations_from_exact_prior_schema` | 289 | Version thirteen adds cache reservations from exact prior schema. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_capture_observation_and_url_claim_schema_enforces_expand_contract` | 331 | Capture observation and url claim schema enforces expand contract. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_three_fixture_upgrades_once_to_capture_model_expand_schema` | 401 | Version three fixture upgrades once to capture model expand schema. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_five_backfills_only_evidence_supported_historical_relationships` | 437 | Version five backfills only evidence supported historical relationships. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_six_backfills_only_unambiguous_media_observation_links` | 543 | Version six backfills only unambiguous media observation links. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_seven_preserves_claimed_visit_identity_for_historical_events` | 646 | Version seven preserves claimed visit identity for historical events. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_eight_adds_nullable_relative_locators` | 709 | Version eight adds nullable relative locators. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_nine_backfills_hash_verified_chunks_and_new_ingest_uses_sqlite_authority` | 744 | Version nine backfills hash verified chunks and new ingest uses sqlite authority. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_ten_adds_media_storage_tiers_and_spool_reservations` | 802 | Version ten adds media storage tiers and spool reservations. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_eleven_adds_and_backfills_blob_lifecycle_records` | 849 | Version eleven adds and backfills blob lifecycle records. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_repeated_migration_is_a_noop_and_schema_has_no_recurring_repair_dml` | 915 | Repeated migration is a noop and schema has no recurring repair dml. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_concurrent_fresh_migration_applies_each_ledger_step_once` | 936 | Concurrent fresh migration applies each ledger step once. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_checksum_mismatch_and_unknown_newer_version_fail_closed` | 957 | Checksum mismatch and unknown newer version fail closed. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_unknown_unversioned_schema_is_not_stamped` | 975 | Unknown unversioned schema is not stamped. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_injected_migration_failure_rolls_back_step_and_ledger` | 989 | Injected migration failure rolls back step and ledger. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_destructive_migration_creates_online_backup_that_restores_search` | 1018 | Destructive migration creates online backup that restores search. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_destructive_migration_refuses_insufficient_backup_headroom_before_writes` | 1056 | Destructive migration refuses insufficient backup headroom before writes. |
+| `daemon/tests/integration/test_observation_ingest_sequence.py` | pytest | `(module)` | `test_ingest_sequence_is_monotonic_idempotent_and_independent_of_capture_time` | 35 | Ingest sequence is monotonic idempotent and independent of capture time. |
+| `daemon/tests/integration/test_observation_ingest_sequence.py` | pytest | `(module)` | `test_migration_backfills_existing_observations_deterministically` | 59 | Migration backfills existing observations deterministically. |
 | `daemon/tests/integration/test_observation_reads.py` | pytest | `(module)` | `test_observation_first_reads_preserve_contemporaneous_snapshots_and_unique_visit_summary` | 40 | Observation first reads preserve contemporaneous snapshots and unique visit summary. |
 | `daemon/tests/integration/test_observation_reads.py` | pytest | `(module)` | `test_legacy_visit_fallback_is_explicit_and_uses_its_linked_snapshot_not_latest_document_snapshot` | 146 | Legacy visit fallback is explicit and uses its linked snapshot not latest document snapshot. |
 | `daemon/tests/integration/test_storage_reconcile.py` | pytest | `(module)` | `test_forget_persists_retryable_tombstone_before_database_cascade` | 67 | Forget persists retryable tombstone before database cascade. |
@@ -356,6 +363,10 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_without_matching_visit_stores_metadata_only` | 151 | Visit lifecycle event without matching visit stores metadata only. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_claimed_visit_identity_does_not_fall_back_by_url_and_reconciles_after_delayed_capture` | 173 | Claimed visit identity does not fall back by url and reconciles after delayed capture. |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_validates_ranges` | 271 | Visit lifecycle event validates ranges. |
+| `daemon/tests/integration/test_x_observation_export.py` | pytest | `(module)` | `test_export_is_query_only_body_safe_and_losslessly_pages_late_delivery` | 72 | Export is query only body safe and losslessly pages late delivery. |
+| `daemon/tests/integration/test_x_observation_export.py` | pytest | `(module)` | `test_export_cursor_survives_deleted_sequence_gap_and_replay_is_stable` | 143 | Export cursor survives deleted sequence gap and replay is stable. |
+| `daemon/tests/integration/test_x_observation_export.py` | pytest | `(module)` | `test_export_fails_closed_for_malformed_cursor_and_schema_drift` | 182 | Export fails closed for malformed cursor and schema drift. |
+| `daemon/tests/integration/test_x_observation_export.py` | pytest | `(module)` | `test_producer_golden_fixture_matches_current_contract_output` | 201 | Producer golden fixture matches current contract output. |
 | `daemon/tests/unit/test_api_errors.py` | pytest | `(module)` | `test_typed_api_errors_have_stable_status_code_and_compatible_message` | 27 | Typed api errors have stable status code and compatible message. |
 | `daemon/tests/unit/test_api_errors.py` | pytest | `(module)` | `test_exception_classification_preserves_safe_client_errors_and_sanitizes_internal_failures` | 34 | Exception classification preserves safe client errors and sanitizes internal failures. |
 | `daemon/tests/unit/test_api_errors.py` | pytest | `(module)` | `test_exception_classification_retains_existing_typed_errors` | 50 | Exception classification retains existing typed errors. |
@@ -416,9 +427,9 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/unit/test_policy_store.py` | pytest | `(module)` | `test_url_prefix_rule_scopes_to_port_and_path` | 27 | Url prefix rule scopes to port and path. |
 | `daemon/tests/unit/test_policy_store.py` | pytest | `(module)` | `test_policy_rule_creation_is_semantically_idempotent_under_concurrency` | 49 | Policy rule creation is semantically idempotent under concurrency. |
 | `daemon/tests/unit/test_policy_store.py` | pytest | `(module)` | `test_init_db_rejects_schema_drift_instead_of_replaying_policy_dedupe` | 68 | Init db rejects schema drift instead of replaying policy dedupe. |
-| `daemon/tests/unit/test_routes.py` | pytest | `(module)` | `test_route_descriptors_characterize_every_current_api_endpoint` | 31 | Route descriptors characterize every current api endpoint. |
-| `daemon/tests/unit/test_routes.py` | pytest | `(module)` | `test_route_matching_preserves_static_precedence_and_method_boundaries` | 39 | Route matching preserves static precedence and method boundaries. |
-| `daemon/tests/unit/test_routes.py` | pytest | `(module)` | `test_route_catalog_names_and_method_path_pairs_are_unique` | 51 | Route catalog names and method path pairs are unique. |
+| `daemon/tests/unit/test_routes.py` | pytest | `(module)` | `test_route_descriptors_characterize_every_current_api_endpoint` | 32 | Route descriptors characterize every current api endpoint. |
+| `daemon/tests/unit/test_routes.py` | pytest | `(module)` | `test_route_matching_preserves_static_precedence_and_method_boundaries` | 40 | Route matching preserves static precedence and method boundaries. |
+| `daemon/tests/unit/test_routes.py` | pytest | `(module)` | `test_route_catalog_names_and_method_path_pairs_are_unique` | 52 | Route catalog names and method path pairs are unique. |
 | `daemon/tests/unit/test_storage_paths.py` | pytest | `(module)` | `test_storage_identifier_grammars_and_server_stems_are_stable` | 14 | Storage identifier grammars and server stems are stable. |
 | `daemon/tests/unit/test_storage_paths.py` | pytest | `(module)` | `test_contained_child_path_rejects_unsafe_parts_and_symlink_escape` | 27 | Contained child path rejects unsafe parts and symlink escape. |
 | `daemon/tests/unit/test_storage_paths.py` | pytest | `(module)` | `test_contained_child_path_create_root_is_explicit` | 42 | Contained child path create root is explicit. |

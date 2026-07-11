@@ -41,6 +41,7 @@ ROUTES: tuple[Route, ...] = (
     Route("GET", "search", "/search"),
     Route("GET", "recent", "/recent"),
     Route("GET", "timeline", "/timeline"),
+    Route("GET", "x-observation-export", "/exports/x-observations"),
     Route("GET", "document-detail", "/documents/{document_id}", parameter_names=("document_id",), pattern=compile_pattern(r"/documents/(.*)")),
     Route("GET", "snapshot-detail", "/snapshots/{snapshot_id}", parameter_names=("snapshot_id",), pattern=compile_pattern(r"/snapshots/(.*)")),
     Route("GET", "media-queue-status", "/media-artifacts/queue-status"),

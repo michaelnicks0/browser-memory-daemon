@@ -356,3 +356,9 @@ CREATE TABLE IF NOT EXISTS media_artifact_observations (
 
 CREATE INDEX IF NOT EXISTS idx_media_artifact_observations_observation
   ON media_artifact_observations(observation_id, observed_at DESC);
+
+CREATE TABLE IF NOT EXISTS observation_ingest_sequences (
+  sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+  observation_id TEXT NOT NULL UNIQUE REFERENCES capture_observations(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
