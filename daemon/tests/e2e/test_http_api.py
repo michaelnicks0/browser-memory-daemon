@@ -10,6 +10,7 @@ import browser_memory_daemon.media_storage as media_storage_module
 from browser_memory_daemon.app import make_server
 from browser_memory_daemon.blob_store import BlobStore
 from browser_memory_daemon.config import load_config
+from browser_memory_daemon.routes import ROUTES
 
 
 def request(method, url, token="test-token", body=None):
@@ -23,7 +24,7 @@ def request(method, url, token="test-token", body=None):
         return response.status, json.loads(response.read().decode() or "{}")
 
 
-def error_request(method, url, token="test-token", body=None, raw_body=None, content_type="application/json"):
+def error_request(method, url, token: str | None = "test-token", body=None, raw_body=None, content_type="application/json"):
     data = raw_body if raw_body is not None else (None if body is None else json.dumps(body).encode())
     req = urllib.request.Request(url, data=data, method=method)
     if token:
@@ -447,6 +448,51 @@ def test_http_api_contract_errors_methods_and_limits_are_json(tmp_path):
         assert status == 200
         assert len(queue["recent_nonstored"] or []) <= 200
         assert stored["stored"] is True
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+
+
+def test_http_route_catalog_preserves_auth_unknown_route_and_ready_contracts(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", host="127.0.0.1", port=0, policy_mode="all")
+    server = make_server(cfg)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base = f"http://127.0.0.1:{server.server_address[1]}"
+
+    def concrete_path(template: str) -> str:
+        return (
+            template
+            .replace("{document_id}", "doc-contract")
+            .replace("{snapshot_id}", "snap-contract")
+            .replace("{artifact_id}", "media-contract")
+            .replace("{rule_id}", "rule-contract")
+        )
+
+    try:
+        status, ready = request("GET", f"{base}/ready")
+        assert status == 200
+        assert ready == {"ready": True, "db_path": str(cfg.db_path)}
+
+        for route in ROUTES:
+            if not route.auth_required:
+                continue
+            status, headers, payload = error_request(route.method, f"{base}{concrete_path(route.path)}", token=None)
+            assert status == 401, route.name
+            assert payload == {"error": "unauthorized"}, route.name
+            assert "application/json" in headers.get("Content-Type", ""), route.name
+            assert headers.get("X-Content-Type-Options") == "nosniff", route.name
+
+        for method in ["GET", "POST", "PUT", "DELETE"]:
+            status, headers, payload = error_request(method, f"{base}/does-not-exist", raw_body=b"{}" if method in {"POST", "PUT"} else None)
+            assert status == 404
+            assert payload == {"error": "not found"}
+            assert "application/json" in headers.get("Content-Type", "")
+
+        status, headers, payload = error_request("PATCH", f"{base}/health", raw_body=b"{}")
+        assert status == 501
+        assert payload == {"error": "Unsupported method ('PATCH')"}
+        assert "application/json" in headers.get("Content-Type", "")
     finally:
         server.shutdown()
         thread.join(timeout=5)

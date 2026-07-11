@@ -26,7 +26,7 @@ graph LR
       subgraph 22 ["WSL Loopback HTTP Daemon"]
         style 22 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
-        23["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server]</div><div style='font-size: 80%; margin-top:10px'>Routes loopback API requests,<br />serves UI assets, enforces<br />bearer auth for memory/admin<br />APIs, and applies CORS for<br />allowed origins.</div>"]
+        23["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server + route descriptors]</div><div style='font-size: 80%; margin-top:10px'>Matches immutable method/path<br />descriptors with static<br />precedence, routes loopback<br />API requests, serves UI<br />assets, enforces bearer auth<br />for memory/admin APIs, and<br />applies CORS for allowed<br />origins.</div>"]
         style 23 fill:#85bbf0,stroke:#1168bd,color:#000000
         39["<div style='font-weight: bold'>Blob Lifecycle and Storage Reconciler</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + filesystem]</div><div style='font-size: 80%; margin-top:10px'>Persists<br />committed/tombstoned/missing/deleted/blocked/failed<br />blob state; serializes<br />deletion processors; retries<br />tombstones; and dry-run<br />detects missing refs, in-root<br />orphans, and stale stages.</div>"]
         style 39 fill:#85bbf0,stroke:#1168bd,color:#000000

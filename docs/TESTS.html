@@ -132,7 +132,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </blockquote>
 <!-- BEGIN GENERATED:inventory-summary -->
 <blockquote>
-<p><strong>Current inventory:</strong> 288 static test functions across 50 files — 219 daemon pytest tests + 69 extension node:test tests.</p>
+<p><strong>Current inventory:</strong> 292 static test functions across 51 files — 223 daemon pytest tests + 69 extension node:test tests.</p>
 </blockquote>
 <!-- END GENERATED:inventory-summary -->
 
@@ -190,7 +190,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <hr />
 <h2 id="generated-test-inventory">Generated test inventory</h2>
 <!-- BEGIN GENERATED:audit-run -->
-<p>Latest inventory: <strong>288 static test functions</strong> across <strong>50 files</strong> (219 daemon pytest; 69 extension node:test). Regenerate with <code>python3.11 scripts/generate_test_inventory.py --write</code>; enforce with <code>--check</code>. Counts are source-level test functions, not pytest parametrized case expansions.</p>
+<p>Latest inventory: <strong>292 static test functions</strong> across <strong>51 files</strong> (223 daemon pytest; 69 extension node:test). Regenerate with <code>python3.11 scripts/generate_test_inventory.py --write</code>; enforce with <code>--check</code>. Counts are source-level test functions, not pytest parametrized case expansions.</p>
 <!-- END GENERATED:audit-run -->
 
 <h2 id="requirements-traceability-gate">Requirements traceability gate</h2>
@@ -250,7 +250,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 </tr>
 <tr>
 <td>Static test inventory measured</td>
-<td>288 tests / 50 files</td>
+<td>292 tests / 51 files</td>
 </tr>
 </tbody>
 </table>
@@ -295,7 +295,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <tr>
 <td><code>daemon/tests/e2e/test_http_api.py</code></td>
 <td>pytest</td>
-<td style="text-align: right;">7</td>
+<td style="text-align: right;">8</td>
 </tr>
 <tr>
 <td><code>daemon/tests/e2e/test_performance_benchmarks.py</code></td>
@@ -438,6 +438,11 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <td style="text-align: right;">4</td>
 </tr>
 <tr>
+<td><code>daemon/tests/unit/test_routes.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr>
 <td><code>daemon/tests/unit/test_storage_paths.py</code></td>
 <td>pytest</td>
 <td style="text-align: right;">5</td>
@@ -520,7 +525,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <tr>
 <td><strong>Total</strong></td>
 <td></td>
-<td style="text-align: right;"><strong>288</strong></td>
+<td style="text-align: right;"><strong>292</strong></td>
 </tr>
 </tbody>
 </table>
@@ -550,13 +555,14 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 | `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_generate_test_inventory_check_fails_for_catalog_gaps` | 162 | Generate test inventory check fails for catalog gaps. |
 | `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_catalog_rejects_duplicate_ids` | 188 | Catalog rejects duplicate ids. |
 | `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_catalog_statement_change_requires_revision_increment` | 202 | Catalog statement change requires revision increment. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_skips_request_time_db_initialization_after_startup` | 63 | Http capture skips request time db initialization after startup. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_upload_get_and_purge_use_bounded_spool_during_media_root_outage` | 95 | Http upload get and purge use bounded spool during media root outage. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_media_fetch_raw_upload_and_purge_rehydrate_controls` | 170 | Http media fetch raw upload and purge rehydrate controls. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_raw_media_upload_returns_503_when_global_byte_budget_cannot_admit_body` | 245 | Http raw media upload returns 503 when global byte budget cannot admit body. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_search_forget_round_trip` | 296 | Http capture search forget round trip. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_api_contract_errors_methods_and_limits_are_json` | 411 | Http api contract errors methods and limits are json. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_policy_rule_duplicate_creation_returns_existing_semantic_rule` | 455 | Http policy rule duplicate creation returns existing semantic rule. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_skips_request_time_db_initialization_after_startup` | 64 | Http capture skips request time db initialization after startup. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_upload_get_and_purge_use_bounded_spool_during_media_root_outage` | 96 | Http upload get and purge use bounded spool during media root outage. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_media_fetch_raw_upload_and_purge_rehydrate_controls` | 171 | Http media fetch raw upload and purge rehydrate controls. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_raw_media_upload_returns_503_when_global_byte_budget_cannot_admit_body` | 246 | Http raw media upload returns 503 when global byte budget cannot admit body. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_search_forget_round_trip` | 297 | Http capture search forget round trip. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_api_contract_errors_methods_and_limits_are_json` | 412 | Http api contract errors methods and limits are json. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_route_catalog_preserves_auth_unknown_route_and_ready_contracts` | 456 | Http route catalog preserves auth unknown route and ready contracts. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_policy_rule_duplicate_creation_returns_existing_semantic_rule` | 501 | Http policy rule duplicate creation returns existing semantic rule. |
 | `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_path_invariant_rejects_blob_escape` | 47 | Performance benchmark path invariant rejects blob escape. |
 | `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_subprocess_does_not_write_default_home_blob_root` | 64 | Performance benchmark subprocess does not write default home blob root. |
 | `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_temp_runtime_cleanup_stays_inside_tmp_home` | 100 | Performance benchmark temp runtime cleanup stays inside tmp home. |
@@ -746,6 +752,9 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 | `daemon/tests/unit/test_policy_store.py` | pytest | `(module)` | `test_url_prefix_rule_scopes_to_port_and_path` | 27 | Url prefix rule scopes to port and path. |
 | `daemon/tests/unit/test_policy_store.py` | pytest | `(module)` | `test_policy_rule_creation_is_semantically_idempotent_under_concurrency` | 49 | Policy rule creation is semantically idempotent under concurrency. |
 | `daemon/tests/unit/test_policy_store.py` | pytest | `(module)` | `test_init_db_rejects_schema_drift_instead_of_replaying_policy_dedupe` | 68 | Init db rejects schema drift instead of replaying policy dedupe. |
+| `daemon/tests/unit/test_routes.py` | pytest | `(module)` | `test_route_descriptors_characterize_every_current_api_endpoint` | 31 | Route descriptors characterize every current api endpoint. |
+| `daemon/tests/unit/test_routes.py` | pytest | `(module)` | `test_route_matching_preserves_static_precedence_and_method_boundaries` | 39 | Route matching preserves static precedence and method boundaries. |
+| `daemon/tests/unit/test_routes.py` | pytest | `(module)` | `test_route_catalog_names_and_method_path_pairs_are_unique` | 51 | Route catalog names and method path pairs are unique. |
 | `daemon/tests/unit/test_storage_paths.py` | pytest | `(module)` | `test_storage_identifier_grammars_and_server_stems_are_stable` | 14 | Storage identifier grammars and server stems are stable. |
 | `daemon/tests/unit/test_storage_paths.py` | pytest | `(module)` | `test_contained_child_path_rejects_unsafe_parts_and_symlink_escape` | 27 | Contained child path rejects unsafe parts and symlink escape. |
 | `daemon/tests/unit/test_storage_paths.py` | pytest | `(module)` | `test_contained_child_path_create_root_is_explicit` | 42 | Contained child path create root is explicit. |

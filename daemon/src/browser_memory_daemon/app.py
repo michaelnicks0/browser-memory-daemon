@@ -27,6 +27,7 @@ from .models import CapturePayload
 from .ops import doctor, document_detail, recent_captures, snapshot_detail, timeline
 from .policy import POLICY_MODE_ALL, evaluate_capture
 from .policy_store import create_policy_rule, delete_policy_rule, evaluate_policy_rules, list_policy_rules
+from .routes import match_route
 from .search import search_memory
 
 UI_ROOT = Path(__file__).resolve().parents[3] / "ui"
@@ -280,7 +281,8 @@ def make_handler(config: RuntimeConfig):
 
         def do_GET(self) -> None:
             parsed = urlparse(self.path)
-            if parsed.path == "/health":
+            route_match = match_route("GET", parsed.path)
+            if route_match and route_match.route.name == "health":
                 _json_response(
                     self,
                     200,
@@ -310,11 +312,11 @@ def make_handler(config: RuntimeConfig):
                 return
             params = parse_qs(parsed.query)
             try:
-                if parsed.path == "/ready":
+                if route_match and route_match.route.name == "ready":
                     _ensure_db(config)
                     _json_response(self, 200, {"ready": True, "db_path": str(config.db_path)})
                     return
-                if parsed.path == "/search":
+                if route_match and route_match.route.name == "search":
                     query = params.get("q", [""])[0]
                     limit = int(params.get("limit", ["10"])[0])
                     _ensure_db(config)
@@ -324,7 +326,7 @@ def make_handler(config: RuntimeConfig):
                         conn.commit()
                     _json_response(self, 200, {"results": results})
                     return
-                if parsed.path == "/recent":
+                if route_match and route_match.route.name == "recent":
                     _ensure_db(config)
                     with connect(config.db_path) as conn:
                         results = recent_captures(conn, limit=params.get("limit", ["25"])[0])
@@ -332,7 +334,7 @@ def make_handler(config: RuntimeConfig):
                         conn.commit()
                     _json_response(self, 200, {"results": results})
                     return
-                if parsed.path == "/timeline":
+                if route_match and route_match.route.name == "timeline":
                     _ensure_db(config)
                     with connect(config.db_path) as conn:
                         results = timeline(
@@ -346,8 +348,8 @@ def make_handler(config: RuntimeConfig):
                         conn.commit()
                     _json_response(self, 200, results)
                     return
-                if parsed.path.startswith("/documents/"):
-                    document_id = unquote(parsed.path.removeprefix("/documents/"))
+                if route_match and route_match.route.name == "document-detail":
+                    document_id = route_match.parameters["document_id"]
                     _ensure_db(config)
                     with connect(config.db_path) as conn:
                         result = document_detail(conn, config, document_id)
@@ -355,8 +357,8 @@ def make_handler(config: RuntimeConfig):
                         conn.commit()
                     _json_response(self, 200, result)
                     return
-                if parsed.path.startswith("/snapshots/"):
-                    snapshot_id = unquote(parsed.path.removeprefix("/snapshots/"))
+                if route_match and route_match.route.name == "snapshot-detail":
+                    snapshot_id = route_match.parameters["snapshot_id"]
                     _ensure_db(config)
                     with connect(config.db_path) as conn:
                         result = snapshot_detail(conn, config, snapshot_id)
@@ -364,7 +366,7 @@ def make_handler(config: RuntimeConfig):
                         conn.commit()
                     _json_response(self, 200, result)
                     return
-                if parsed.path == "/media-artifacts/queue-status":
+                if route_match and route_match.route.name == "media-queue-status":
                     _ensure_db(config)
                     with connect(config.db_path) as conn:
                         result = media_queue_status(conn, config, limit=_coerce_limit(params.get("limit", ["50"])[0], 50, 200))
@@ -372,8 +374,8 @@ def make_handler(config: RuntimeConfig):
                         conn.commit()
                     _json_response(self, 200, result)
                     return
-                if parsed.path.startswith("/media-artifacts/"):
-                    artifact_id = unquote(parsed.path.removeprefix("/media-artifacts/"))
+                if route_match and route_match.route.name == "media-detail":
+                    artifact_id = route_match.parameters["artifact_id"]
                     _ensure_db(config)
                     with connect(config.db_path) as conn:
                         artifact = media_artifact(conn, config, artifact_id)
@@ -418,7 +420,7 @@ def make_handler(config: RuntimeConfig):
                     except MediaResourceUnavailable as exc:
                         _json_response(self, 503, {"error": str(exc)})
                     return
-                if parsed.path == "/doctor":
+                if route_match and route_match.route.name == "doctor":
                     _ensure_db(config)
                     storage_census = _truthy_query_value(params.get("storage_census", [None])[0])
                     with connect(config.db_path) as conn:
@@ -427,12 +429,12 @@ def make_handler(config: RuntimeConfig):
                         conn.commit()
                     _json_response(self, 200, result)
                     return
-                if parsed.path == "/policy/rules":
+                if route_match and route_match.route.name == "policy-rules-list":
                     _ensure_db(config)
                     with connect(config.db_path) as conn:
                         _json_response(self, 200, {"rules": list_policy_rules(conn)})
                     return
-                if parsed.path == "/policy/evaluate":
+                if route_match and route_match.route.name == "policy-evaluate":
                     url = params.get("url", [""])[0]
                     static_decision = evaluate_capture(url, policy_mode=config.policy_mode)
                     persistent_decision = static_decision
@@ -467,7 +469,8 @@ def make_handler(config: RuntimeConfig):
                 _json_response(self, 401, {"error": "unauthorized"})
                 return
             parsed = urlparse(self.path)
-            if parsed.path.startswith("/media-artifacts/") and parsed.path.endswith("/blob"):
+            route_match = match_route("PUT", parsed.path)
+            if route_match and route_match.route.name == "media-blob-put":
                 artifact_id = unquote(parsed.path.removeprefix("/media-artifacts/").removesuffix("/blob").strip("/"))
                 try:
                     content_length = int(self.headers.get("Content-Length", "0") or 0)
@@ -507,10 +510,11 @@ def make_handler(config: RuntimeConfig):
                 _json_response(self, 401, {"error": "unauthorized"})
                 return
             parsed = urlparse(self.path)
+            route_match = match_route("POST", parsed.path)
             media_request_lease = None
             try:
-                max_bytes = config.max_media_payload_bytes if parsed.path == "/media-artifacts" else config.max_payload_bytes
-                if parsed.path == "/media-artifacts":
+                max_bytes = config.max_media_payload_bytes if route_match and route_match.route.name == "media-artifact-store" else config.max_payload_bytes
+                if route_match and route_match.route.name == "media-artifact-store":
                     media_request_lease = media_resource_budget(config).acquire(
                         byte_count=int(self.headers.get("Content-Length", "0") or 0),
                         request_count=1,
@@ -525,7 +529,7 @@ def make_handler(config: RuntimeConfig):
                     media_request_lease.release()
                 _json_response(self, 400, {"error": str(exc)})
                 return
-            if parsed.path == "/media-artifacts/purge-cache":
+            if route_match and route_match.route.name == "media-cache-purge":
                 try:
                     _ensure_db(config)
                     with connect(config.db_path) as conn:
@@ -537,7 +541,7 @@ def make_handler(config: RuntimeConfig):
                 except Exception as exc:
                     _json_response(self, 400, {"error": str(exc)})
                     return
-            if parsed.path == "/media-artifacts/fetch-pending":
+            if route_match and route_match.route.name == "media-fetch-pending":
                 try:
                     _ensure_db(config)
                     with connect(config.db_path) as conn:
@@ -570,7 +574,7 @@ def make_handler(config: RuntimeConfig):
                 except Exception as exc:
                     _json_response(self, 400, {"error": str(exc)})
                     return
-            if parsed.path == "/media-artifacts":
+            if route_match and route_match.route.name == "media-artifact-store":
                 try:
                     _ensure_db(config)
                     with connect(config.db_path) as conn:
@@ -599,7 +603,7 @@ def make_handler(config: RuntimeConfig):
                 finally:
                     if media_request_lease is not None:
                         media_request_lease.release()
-            if parsed.path == "/visit-events":
+            if route_match and route_match.route.name == "visit-event-store":
                 url = str(data.get("url") or "")
                 decision = evaluate_capture(
                     url,
@@ -624,7 +628,7 @@ def make_handler(config: RuntimeConfig):
                     except Exception as exc:
                         _json_response(self, 400, {"error": str(exc)})
                         return
-            if parsed.path == "/capture":
+            if route_match and route_match.route.name == "capture-store":
                 url = str(data.get("url") or "")
                 decision = evaluate_capture(
                     url,
@@ -655,7 +659,7 @@ def make_handler(config: RuntimeConfig):
                     except Exception as exc:
                         _json_response(self, 400, {"error": str(exc)})
                         return
-            if parsed.path == "/forget":
+            if route_match and route_match.route.name == "forget":
                 try:
                     _ensure_db(config)
                     with connect(config.db_path) as conn:
@@ -667,7 +671,7 @@ def make_handler(config: RuntimeConfig):
                 except Exception as exc:
                     _json_response(self, 400, {"error": str(exc)})
                     return
-            if parsed.path == "/policy/rules":
+            if route_match and route_match.route.name == "policy-rule-create":
                 try:
                     _ensure_db(config)
                     with connect(config.db_path) as conn:
@@ -689,8 +693,9 @@ def make_handler(config: RuntimeConfig):
                 _json_response(self, 401, {"error": "unauthorized"})
                 return
             parsed = urlparse(self.path)
-            if parsed.path.startswith("/policy/rules/"):
-                rule_id = unquote(parsed.path.removeprefix("/policy/rules/"))
+            route_match = match_route("DELETE", parsed.path)
+            if route_match and route_match.route.name == "policy-rule-delete":
+                rule_id = route_match.parameters["rule_id"]
                 try:
                     _ensure_db(config)
                     with connect(config.db_path) as conn:

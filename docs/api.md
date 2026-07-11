@@ -30,6 +30,8 @@ Missing or invalid bearer tokens return `401`; malformed JSON and invalid payloa
 
 ## Endpoint index
 
+The method/path entries below are matched through immutable route descriptors in `routes.py`; UI assets remain a separate finite static-file boundary. Descriptor precedence keeps exact routes such as queue status ahead of parameterized artifact routes without changing endpoint behavior.
+
 | Endpoint | Method | Purpose | Auth |
 |---|---:|---|---|
 | `/health` | `GET` | Minimal daemon status and current policy mode. | No |

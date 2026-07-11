@@ -632,7 +632,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>HTTP behavior shall provide stable typed errors, request IDs, secure headers, and bounded streaming.</td>
 <td>WSL HTTP Transport</td>
 <td><code>HRD-015</code></td>
-<td><code>daemon/src/browser_memory_daemon/app.py</code></td>
+<td><code>daemon/src/browser_memory_daemon/app.py</code><br><code>daemon/src/browser_memory_daemon/routes.py</code></td>
 <td>—</td>
 </tr>
 <tr>
@@ -843,8 +843,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Daemon API</td>
-<td>Auth, CORS, routing, UI serving, token bootstrap, raw media blob upload, cache controls.</td>
-<td><code>/health</code> public loopback; <code>/ui</code> HTML gets same-origin token bootstrap; memory APIs tokened.</td>
+<td>Standard-library HTTP adapter plus immutable method/path route descriptors, auth, CORS, UI serving, token bootstrap, raw media blob upload, and cache controls.</td>
+<td><code>/health</code> public loopback; <code>/ui</code> HTML gets same-origin token bootstrap; memory APIs tokened; descriptor matching preserves static-before-parameter precedence and existing response contracts.</td>
 </tr>
 <tr>
 <td>Migration kernel</td>

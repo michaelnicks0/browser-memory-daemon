@@ -21,7 +21,7 @@ digraph {
       fontcolor="#444444"
       fillcolor="#444444"
 
-      23 [id=23,shape=rect, label=<<font point-size="34">HTTP Request Router</font><br /><font point-size="19">[Component: Python http.server]</font><br /><br /><font point-size="24">Routes loopback API requests,<br />serves UI assets, enforces<br />bearer auth for memory/admin<br />APIs, and applies CORS for<br />allowed origins.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
+      23 [id=23,shape=rect, label=<<font point-size="34">HTTP Request Router</font><br /><font point-size="19">[Component: Python http.server + route descriptors]</font><br /><br /><font point-size="24">Matches immutable method/path<br />descriptors with static<br />precedence, routes loopback<br />API requests, serves UI<br />assets, enforces bearer auth<br />for memory/admin APIs, and<br />applies CORS for allowed<br />origins.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
       25 [id=25,shape=rect, label=<<font point-size="34">Policy Engine</font><br /><font point-size="19">[Component: Python]</font><br /><br /><font point-size="24">Evaluates<br />all/recall/balanced/strict<br />capture mode decisions and<br />redacts URL/title/body text<br />outside all mode.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
       26 [id=26,shape=rect, label=<<font point-size="34">Policy Store</font><br /><font point-size="19">[Component: Python + SQLite]</font><br /><br /><font point-size="24">Persists and evaluates<br />explicit local block-domain<br />and URL-prefix rules for every<br />policy mode.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
     }

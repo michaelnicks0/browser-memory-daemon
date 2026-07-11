@@ -597,11 +597,11 @@ rationale = "Transport failures must remain compatible, diagnosable, secure, and
 owner = "WSL HTTP Transport"
 status = "planned"
 aliases = ["HRD-015"]
-implementation = ["daemon/src/browser_memory_daemon/app.py"]
-unit_evidence = []
-integration_evidence = []
+implementation = ["daemon/src/browser_memory_daemon/app.py", "daemon/src/browser_memory_daemon/routes.py"]
+unit_evidence = ["daemon/tests/unit/test_routes.py::test_route_descriptors_characterize_every_current_api_endpoint", "daemon/tests/unit/test_routes.py::test_route_matching_preserves_static_precedence_and_method_boundaries"]
+integration_evidence = ["daemon/tests/e2e/test_http_api.py::test_http_route_catalog_preserves_auth_unknown_route_and_ready_contracts"]
 system_evidence = []
-operational_evidence = []
+operational_evidence = ["docs/architecture/adr/0053-introduce-compatible-http-route-descriptors.md"]
 validation_evidence = []
 
 [[requirements]]
