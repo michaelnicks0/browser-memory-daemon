@@ -34,7 +34,8 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
             }
 
             wslLoopbackDaemon = container "WSL Loopback HTTP Daemon" "Authenticated loopback HTTP API that handles capture, visit events, media artifact upload/fetch/purge, exact search, recent/timeline/detail, policy rules, doctor, durable forget, and static UI serving." "Python 3.11, ThreadingHTTPServer" {
-                httpRouter = component "HTTP Request Router" "Matches immutable method/path descriptors with static precedence, maps typed compatible errors, applies opaque request IDs and common security headers, emits redaction-safe route/status/latency telemetry, streams media in bounded chunks with disconnect cleanup, serves UI assets, enforces bearer auth for memory/admin APIs, and applies CORS for allowed origins." "Python http.server + route descriptors" "Current"
+                httpRouter = component "HTTP Request Router" "Adapts BaseHTTPRequestHandler requests through immutable method/path descriptors with static precedence; owns auth, parsing, compatible status/error responses, request IDs, common security headers, redaction-safe telemetry, bounded response streaming, disconnect cleanup, CORS, and finite UI assets." "Python http.server + route descriptors" "Current"
+                applicationUseCases = component "Application Use Cases" "Provides request-independent capture, lifecycle, read, forget, policy, doctor, and media use cases; owns database-ready checks, transaction/audit boundaries, asynchronous media kickoff, and upload/download resource leases without importing HTTP request or response types." "Python" "Current"
                 migrationKernel = component "Database Migration Kernel" "Serializes migrators; validates exact schema fingerprints, ordered names/checksums, and PRAGMA user_version; applies transactional steps, backup-gates destructive changes, and expands capture provenance, storage state, one-time historical media correction, plus durable cache reservations through version 13." "Python + sqlite3" "Current"
                 policyEngine = component "Policy Engine" "Evaluates all/recall/balanced/strict capture mode decisions and redacts URL/title/body text outside all mode." "Python" "Current"
                 policyStore = component "Policy Store" "Persists and evaluates explicit local block-domain and URL-prefix rules for every policy mode." "Python + SQLite" "Current"
@@ -151,16 +152,18 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
         popupOptions -> serviceWorker "Updates pause, policy, token, and controls through" "chrome.storage.local, runtime messages"
         popupOptions -> wslLoopbackDaemon "Checks health and triggers forget/policy actions on" "HTTP/JSON"
 
-        httpRouter -> policyEngine "Gets capture decisions from"
-        httpRouter -> migrationKernel "Requires compatible initialized schema through"
-        httpRouter -> policyStore "Manages policy rules through"
-        httpRouter -> ingestPipeline "Routes accepted captures to"
-        httpRouter -> lifecyclePipeline "Routes lifecycle events to"
-        httpRouter -> mediaManager "Routes media requests to"
-        httpRouter -> mediaResourceBudget "Leases bounded media upload and response capacity through"
-        httpRouter -> searchReadModel "Routes read requests to"
-        httpRouter -> forgetPipeline "Routes forget requests to"
-        httpRouter -> opsDoctor "Routes health and audit work to"
+        httpRouter -> applicationUseCases "Invokes explicit request-independent use cases through"
+        httpRouter -> mediaResourceBudget "Leases bounded JSON media request admission through"
+        applicationUseCases -> policyEngine "Gets capture decisions from"
+        applicationUseCases -> migrationKernel "Requires compatible initialized schema through"
+        applicationUseCases -> policyStore "Manages policy rules through"
+        applicationUseCases -> ingestPipeline "Commits accepted captures through"
+        applicationUseCases -> lifecyclePipeline "Records lifecycle events through"
+        applicationUseCases -> mediaManager "Coordinates media requests through"
+        applicationUseCases -> mediaResourceBudget "Leases bounded media upload and response capacity through"
+        applicationUseCases -> searchReadModel "Executes read requests through"
+        applicationUseCases -> forgetPipeline "Executes forget requests through"
+        applicationUseCases -> opsDoctor "Executes health and audit work through"
         policyEngine -> policyStore "Combines static mode with rules from"
         ingestPipeline -> sqliteDatabase "Atomically writes complete cleaned text, capture rows, and FTS to" "sqlite3"
         ingestPipeline -> mediaManager "Records media refs through"
@@ -335,6 +338,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
 
         component wslLoopbackDaemon "DaemonPolicyComponents" {
             include httpRouter
+            include applicationUseCases
             include policyEngine
             include policyStore
             autoLayout lr
@@ -342,6 +346,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
 
         component wslLoopbackDaemon "DaemonIngestComponents" {
             include httpRouter
+            include applicationUseCases
             include ingestPipeline
             include sqliteDatabase
             autoLayout lr
@@ -349,6 +354,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
 
         component wslLoopbackDaemon "DaemonLifecycleComponents" {
             include httpRouter
+            include applicationUseCases
             include lifecyclePipeline
             include sqliteDatabase
             autoLayout lr
@@ -356,6 +362,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
 
         component wslLoopbackDaemon "DaemonMediaComponents" {
             include httpRouter
+            include applicationUseCases
             include mediaManager
             include mediaStateModel
             include mediaTaskRepository
@@ -386,6 +393,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
 
         component wslLoopbackDaemon "DaemonMediaResourceComponents" {
             include httpRouter
+            include applicationUseCases
             include mediaManager
             include mediaTaskRepository
             include mediaArtifactStore
@@ -409,6 +417,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
 
         component wslLoopbackDaemon "DaemonReadComponents" {
             include httpRouter
+            include applicationUseCases
             include searchReadModel
             include blobStore
             include sqliteDatabase
@@ -420,6 +429,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
 
         component wslLoopbackDaemon "DaemonForgetComponents" {
             include httpRouter
+            include applicationUseCases
             include forgetPipeline
             include storageReconciler
             include blobStore
@@ -432,6 +442,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
 
         component wslLoopbackDaemon "DaemonDoctorComponents" {
             include httpRouter
+            include applicationUseCases
             include opsDoctor
             include storageReconciler
             include sqliteDatabase
@@ -462,6 +473,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
 
         component wslLoopbackDaemon "DaemonMigrationComponents" {
             include httpRouter
+            include applicationUseCases
             include migrationKernel
             include sqliteDatabase
             autoLayout lr

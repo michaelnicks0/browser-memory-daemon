@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>0055-Add-Redaction-Safe-Http-Request-Envelope — browser-memory-daemon</title>
+<title>0056-Separate-Http-Transport-From-Application-Use-Cases — browser-memory-daemon</title>
 <style>
 :root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
@@ -121,44 +121,52 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <div class="wrap">
   <div class="docbar">
     <a class="home" href="../../../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
-    <span class="crumb">/ <b>docs/architecture/adr/0055-add-redaction-safe-http-request-envelope.md</b></span>
+    <span class="crumb">/ <b>docs/architecture/adr/0056-separate-http-transport-from-application-use-cases.md</b></span>
   </div>
   <article class="md-body">
-<h1 id="adr-0055-add-a-redaction-safe-http-request-envelope">ADR-0055: Add a redaction-safe HTTP request envelope</h1>
+<h1 id="adr-0056-separate-http-transport-from-application-use-cases">ADR-0056: Separate HTTP transport from application use cases</h1>
 <ul>
 <li>Status: accepted</li>
 <li>Date: 2026-07-10</li>
 <li>Decision owners: Browser Memory Daemon maintainers</li>
-<li>Related: ADR-0012, ADR-0053, ADR-0054</li>
+<li>Related: ADR-0014, ADR-0047, ADR-0053, ADR-0054, ADR-0055, REQ-040</li>
 </ul>
 <h2 id="context">Context</h2>
-<p>The loopback HTTP adapter had no per-request correlation identifier, suppressed ordinary access logs entirely, and applied only a subset of browser security headers depending on response type. Diagnostic logging must support local journald operations without recording request paths, query strings, URLs, headers, bearer values, or captured payloads.</p>
+<p>The characterized standard-library HTTP server still owned database initialization checks, transaction and audit boundaries, capture policy decisions, read-model calls, forget execution, media coordination, and background media kickoff inside <code>BaseHTTPRequestHandler</code> methods. This coupled every use case to HTTP request/response objects, made direct use-case verification awkward, and left <code>app.py</code> as a large mixed transport/domain module rather than a composition root.</p>
+<p>The endpoint paths, authentication order, response shapes, typed error mapping, request envelope, media streaming, and extension/UI clients are already compatibility-authoritative. The structural change must preserve those contracts without introducing a web framework, dependency-injection container, generic dispatcher, ORM, event bus, or unit-of-work abstraction.</p>
 <h2 id="decision">Decision</h2>
 <ol>
-<li>Generate an opaque server-side <code>req_</code> identifier for every HTTP request. Do not trust or reflect a caller-supplied request identifier.</li>
-<li>Return the identifier in <code>X-Request-ID</code> on JSON, UI/static, binary, error, and OPTIONS responses. Include the same identifier as <code>request_id</code> in compatible JSON error bodies and expose the header through CORS.</li>
-<li>Apply <code>Cache-Control: no-store</code>, content-type, frame, referrer, permissions, and content-security protections through one common response boundary. Use a restrictive API policy and a separate same-origin UI policy that permits the existing bootstrap JSON script and local UI assets.</li>
-<li>Emit exactly one compact JSON telemetry event per completed response to stderr for journald capture. The event contains only request ID, HTTP method, descriptor route name, status, integer latency, and safe error code.</li>
-<li>Never log raw paths, query strings, origins, client addresses, headers, bearer values, request/response bodies, captured URLs, or exception prose. Unknown or unsafe route labels collapse to <code>unknown</code>.</li>
-<li>Telemetry failure must not change the HTTP result.</li>
+<li><code>application.py</code> owns explicit request-independent capture, lifecycle, search/read, forget, policy, doctor, and media use-case methods. It owns database-ready checks, SQLite transaction/audit boundaries, capture policy evaluation, asynchronous post-capture media kickoff, and upload/download resource leases.</li>
+<li><code>http_server.py</code> owns the <code>BaseHTTPRequestHandler</code> adapter, immutable route matching, auth and input parsing, response status selection, common headers, typed error serialization, request telemetry, finite UI/static serving, and bounded body/stream transport behavior.</li>
+<li><code>app.py</code> is the composition root: initialize the versioned database once, construct <code>MemoryApplication</code>, and bind it to the standard-library HTTP server.</li>
+<li>Use explicit application methods rather than a generic route-to-callable framework. Domain modules remain independently callable by the CLI and workers.</li>
+<li>Media downloads cross the application boundary as a scoped context-managed stream descriptor so the resource lease and BlobStore handle remain live only while the transport streams the response.</li>
+<li>Typed application errors may carry an allowlisted structured payload for compatibility-sensitive safe details, such as the existing missing-media artifact summary. Arbitrary exception text remains sanitized by the transport classifier.</li>
 </ol>
 <h2 id="consequences">Consequences</h2>
 <ul>
-<li>Operators can correlate client errors with local daemon telemetry without exposing captured evidence.</li>
-<li>All response classes now carry the same baseline security envelope.</li>
-<li>Existing successful JSON bodies remain unchanged; error bodies gain only the additive <code>request_id</code> field.</li>
-<li>The UI retains same-origin operation under an explicit CSP rather than sharing the API's <code>default-src 'none'</code> policy.</li>
-<li><code>REQ-040</code> becomes active through the bounded upload/download slice and closes its remaining structural gap through ADR-0056's application/use-case separation.</li>
+<li>Capture/search/policy behavior can be exercised without constructing an HTTP handler.</li>
+<li>The HTTP adapter no longer imports ingest, search, forget, lifecycle, policy-store, operations, or media-domain functions directly.</li>
+<li><code>app.py</code> has one responsibility and no route or domain behavior.</li>
+<li>The standard-library-first architecture and all existing paths, methods, auth ordering, statuses, response fields, request IDs, security headers, and disconnect behavior remain intact.</li>
+<li>Transaction boundaries remain deliberately local to each explicit use case; this is not a generic repository or unit-of-work layer.</li>
 </ul>
 <h2 id="verification">Verification</h2>
 <ul>
-<li><code>daemon/tests/e2e/test_http_api.py::test_http_request_envelope_adds_unique_ids_and_security_headers_to_every_response_kind</code></li>
-<li><code>daemon/tests/e2e/test_http_api.py::test_http_structured_request_telemetry_contains_only_redaction_safe_fields</code></li>
-<li>Media response characterization in <code>daemon/tests/e2e/test_http_api.py</code> verifies the binary response envelope.</li>
+<li><code>daemon/tests/unit/test_application.py::test_app_module_is_only_the_http_composition_root</code></li>
+<li><code>daemon/tests/unit/test_application.py::test_application_capture_and_read_use_cases_run_without_http_handler</code></li>
+<li><code>daemon/tests/unit/test_application.py::test_application_policy_blocking_remains_a_use_case_decision</code></li>
+<li>The focused application, route, typed-error, HTTP transport, full HTTP API, admin API, UI smoke, CLI-admin, and media-worker set passes with 92 tests.</li>
+<li>Ruff and targeted strict Mypy pass for <code>app.py</code>, <code>application.py</code>, <code>http_server.py</code>, and <code>api_errors.py</code>.</li>
+<li>The hermetic fast gate passes 239 Python and 69 Node tests at 82.85% measured branch coverage; the broad repository gate passes with the extension build.</li>
+<li>Isolated cached Chrome for Testing passes the <code>all</code> and <code>strict</code> matrix without using the operator profile.</li>
+<li>The concurrency harness completes 12 captures and 40 mixed operations with zero failures, SQLite integrity <code>ok</code>, and all 12 media artifacts/tasks converged to stored/succeeded.</li>
+<li>The synthetic-small benchmark passes with 0.782 ms mean and 1.209 ms p95 ingest across 40 captures; 20 media tasks complete in 176.219 ms and all runtime paths remain under <code>/tmp</code>.</li>
+<li>Structurizr validation, 25 complete generated C4 view sets, visual QA, 128 rendered docs, requirement/test inventory, secret scan, and diff checks pass.</li>
 </ul>
   </article>
   <div class="md-footer">
-    Rendered from <code>docs/architecture/adr/0055-add-redaction-safe-http-request-envelope.md</code> — the Markdown file is the canonical,
+    Rendered from <code>docs/architecture/adr/0056-separate-http-transport-from-application-use-cases.md</code> — the Markdown file is the canonical,
     version-controlled source. This HTML is generated (regenerate with
     <code>scripts/render_docs.py</code>); do not hand-edit.
   </div>

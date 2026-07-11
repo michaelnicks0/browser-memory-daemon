@@ -35,7 +35,7 @@
 <text text-anchor="start" x="1737.5" y="-406.8" font-family="Arial" font-size="24.00" fill="#ffffff">Chrome extension APIs.</text>
 </g>
 <!-- 1&#45;&gt;2 -->
-<g id="52" class="edge">
+<g id="53" class="edge">
 <title>1&#45;&gt;2</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M395.24,-406.38C407.3,-408.67 419.29,-410.74 431,-412.5 867.04,-477.84 1384.77,-492.05 1663.71,-494.58"/>
 <polygon fill="#444444" stroke="#444444" points="1663.91,-498.08 1673.94,-494.67 1663.97,-491.08 1663.91,-498.08"/>
@@ -58,7 +58,7 @@
 <text text-anchor="start" x="893.5" y="-83.8" font-family="Arial" font-size="24.00" fill="#ffffff">operations.</text>
 </g>
 <!-- 1&#45;&gt;4 -->
-<g id="53" class="edge">
+<g id="54" class="edge">
 <title>1&#45;&gt;4</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M395.26,-316.9C493.71,-297.59 613.61,-274.07 716.98,-253.8"/>
 <polygon fill="#444444" stroke="#444444" points="717.8,-257.2 726.93,-251.84 716.45,-250.33 717.8,-257.2"/>
@@ -81,7 +81,7 @@
 <text text-anchor="start" x="2753" y="-159.8" font-family="Arial" font-size="24.00" fill="#ffffff">media.</text>
 </g>
 <!-- 2&#45;&gt;3 -->
-<g id="54" class="edge">
+<g id="55" class="edge">
 <title>2&#45;&gt;3</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M2060.13,-446.49C2211.49,-408.67 2422.26,-356.01 2578.15,-317.06"/>
 <polygon fill="#444444" stroke="#444444" points="2579.01,-320.45 2587.87,-314.63 2577.32,-313.66 2579.01,-320.45"/>
@@ -90,7 +90,7 @@
 <text text-anchor="start" x="2354.5" y="-407.8" font-family="Arial" font-size="19.00" fill="#444444">[HTTPS]</text>
 </g>
 <!-- 4&#45;&gt;2 -->
-<g id="55" class="edge">
+<g id="56" class="edge">
 <title>4&#45;&gt;2</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1181.07,-278.72C1329.16,-325.38 1521.05,-385.83 1664.03,-430.87"/>
 <polygon fill="#444444" stroke="#444444" points="1663.22,-434.28 1673.81,-433.95 1665.32,-427.61 1663.22,-434.28"/>
@@ -99,7 +99,7 @@
 <text text-anchor="start" x="1221" y="-387.3" font-family="Arial" font-size="24.00" fill="#444444">inside and uses APIs from</text>
 </g>
 <!-- 4&#45;&gt;3 -->
-<g id="56" class="edge">
+<g id="57" class="edge">
 <title>4&#45;&gt;3</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1181.2,-214.01C1429.41,-221.21 1839.59,-233.28 2193,-244.5 2320.71,-248.55 2463.82,-253.35 2577.73,-257.23"/>
 <polygon fill="#444444" stroke="#444444" points="2577.85,-260.74 2587.97,-257.58 2578.09,-253.74 2577.85,-260.74"/>

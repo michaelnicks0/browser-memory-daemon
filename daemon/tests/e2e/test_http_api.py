@@ -11,6 +11,7 @@ import urllib.request
 from dataclasses import replace
 
 import browser_memory_daemon.app as app_module
+import browser_memory_daemon.application as application_module
 import browser_memory_daemon.http_server as http_server_module
 import browser_memory_daemon.media_storage as media_storage_module
 from browser_memory_daemon.app import make_server
@@ -448,6 +449,10 @@ def test_http_media_download_disconnect_stops_stream_and_releases_process_budget
         max_media_inflight_bytes=1_000_019,
     )
     server = make_server(cfg)
+    # Keep the accepted socket's kernel send buffer below the artifact size so
+    # the coordinated abort must be observed by a later bounded write instead
+    # of the entire response being accepted before the reset is processed.
+    server.socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 4096)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     base = f"http://127.0.0.1:{server.server_address[1]}"
@@ -957,7 +962,7 @@ def test_http_maps_database_busy_and_unexpected_failures_without_leaking_interna
         raise RuntimeError(f"token=private-value path={tmp_path}/private.sqlite3")
 
     try:
-        monkeypatch.setattr(app_module, "search_memory", database_busy)
+        monkeypatch.setattr(application_module, "search_memory", database_busy)
         status, headers, busy = error_request("GET", f"{base}/search?q=test")
         assert status == 503
         assert busy == {
@@ -966,7 +971,7 @@ def test_http_maps_database_busy_and_unexpected_failures_without_leaking_interna
             "request_id": headers["X-Request-ID"],
         }
 
-        monkeypatch.setattr(app_module, "search_memory", unexpected_failure)
+        monkeypatch.setattr(application_module, "search_memory", unexpected_failure)
         status, headers, internal = error_request("GET", f"{base}/search?q=test")
         assert status == 500
         assert internal == {

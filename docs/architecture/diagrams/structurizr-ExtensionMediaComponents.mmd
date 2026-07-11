@@ -37,6 +37,7 @@ graph TB
       style 22 fill:#438dd5,stroke:#2e6295,color:#ffffff
     end
 
+    14-. "<div>Persists and drains media<br />work through</div><div style='font-size: 70%'></div>" .->17
     14-. "<div>Delivers media metadata and<br />raw blobs to</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT]</div>" .->22
     14-. "<div>Records aggregate media<br />status through</div><div style='font-size: 70%'></div>" .->15
     17-. "<div>Reads and writes media<br />tasks/blobs in</div><div style='font-size: 70%'>[IndexedDB]</div>" .->21
@@ -56,6 +57,5 @@ graph TB
     13-. "<div>Dispatches post-capture media<br />compensation through</div><div style='font-size: 70%'></div>" .->14
     13-. "<div>Delivers /capture and<br />/visit-events to</div><div style='font-size: 70%'>[Bearer HTTP/JSON]</div>" .->22
     13-. "<div>Records aggregate outbox<br />status through</div><div style='font-size: 70%'></div>" .->15
-    14-. "<div>Persists and drains media<br />work through</div><div style='font-size: 70%'></div>" .->17
 
   end

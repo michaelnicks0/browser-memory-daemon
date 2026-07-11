@@ -9,14 +9,16 @@ _DOMAIN_CONFLICT_MESSAGES = {
 
 
 class APIError(Exception):
-    def __init__(self, *, status: int, code: str, message: str) -> None:
+    def __init__(self, *, status: int, code: str, message: str, extra: dict[str, object] | None = None) -> None:
         super().__init__(message)
         self.status = status
         self.code = code
         self.message = message
+        self.extra = dict(extra or {})
 
     def payload(self, extra: dict[str, object] | None = None) -> dict[str, object]:
-        payload = dict(extra or {})
+        payload = dict(self.extra)
+        payload.update(extra or {})
         payload.update({"error": self.message, "error_code": self.code})
         return payload
 
@@ -37,8 +39,8 @@ class ForbiddenError(APIError):
 
 
 class NotFoundError(APIError):
-    def __init__(self, message: str = "not found") -> None:
-        super().__init__(status=404, code="not_found", message=message)
+    def __init__(self, message: str = "not found", *, extra: dict[str, object] | None = None) -> None:
+        super().__init__(status=404, code="not_found", message=message, extra=extra)
 
 
 class ConflictError(APIError):

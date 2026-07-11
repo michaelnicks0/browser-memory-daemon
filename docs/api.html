@@ -150,6 +150,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <hr />
 <h2 id="endpoint-index">Endpoint index</h2>
 <p>The method/path entries below are matched through immutable route descriptors in <code>routes.py</code>; UI assets remain a separate finite static-file boundary. Descriptor precedence keeps exact routes such as queue status ahead of parameterized artifact routes without changing endpoint behavior.</p>
+<p><code>http_server.py</code> owns bearer authentication, request parsing, response serialization, security headers, telemetry, static UI serving, and bounded stream transport. It invokes explicit request-independent methods in <code>application.py</code>, which owns database transaction/audit boundaries, capture policy decisions, reads, forget, policy administration, media coordination, and resource leases. <code>app.py</code> only initializes and composes those boundaries; this separation does not change any endpoint contract.</p>
 <table>
 <thead>
 <tr>

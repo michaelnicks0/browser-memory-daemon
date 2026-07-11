@@ -43,7 +43,7 @@
 | Generated test inventory | `scripts/generate_test_inventory.py`, `docs/TESTS.md` generated regions |
 | Hermetic fast quality gate | `scripts/run-fast-gate.sh`, `pyproject.toml`, `docs/coverage-baseline.md` |
 | Daemon runtime/config | `daemon/src/browser_memory_daemon/config.py`, `scripts/install-daily-driver.sh` |
-| HTTP API and UI serving | `daemon/src/browser_memory_daemon/app.py`, `ui/` |
+| HTTP API, application use cases, and UI serving | `daemon/src/browser_memory_daemon/http_server.py`, `daemon/src/browser_memory_daemon/application.py`, `daemon/src/browser_memory_daemon/app.py`, `ui/` |
 | Ingest/storage/search/forget | `ingest.py`, `schema.sql`, `search.py`, `forget.py` |
 | SQLite migration lifecycle | `migrations.py`, `migration_steps/`, `database-migrations.md` |
 | Capture policy modes | `policy.py`, `policy_store.py`, `extension/src/extractor.js`, `service_worker.js` |

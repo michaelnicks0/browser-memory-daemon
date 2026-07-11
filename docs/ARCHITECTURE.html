@@ -262,7 +262,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>The extension shall send captures to the local daemon over the authenticated loopback transport.</td>
 <td>Chrome MV3 Extension / WSL HTTP Daemon</td>
 <td>—</td>
-<td><code>extension/src/service_worker.js</code><br><code>daemon/src/browser_memory_daemon/app.py</code></td>
+<td><code>extension/src/service_worker.js</code><br><code>daemon/src/browser_memory_daemon/http_server.py</code><br><code>daemon/src/browser_memory_daemon/app.py</code></td>
 <td><code>scripts/run-real-chrome-e2e.sh</code></td>
 </tr>
 <tr>
@@ -272,7 +272,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>The daemon shall expose an authenticated HTTP API on the loopback boundary.</td>
 <td>WSL HTTP Daemon</td>
 <td>—</td>
-<td><code>daemon/src/browser_memory_daemon/app.py</code><br><code>daemon/src/browser_memory_daemon/config.py</code></td>
+<td><code>daemon/src/browser_memory_daemon/http_server.py</code><br><code>daemon/src/browser_memory_daemon/app.py</code><br><code>daemon/src/browser_memory_daemon/config.py</code></td>
 <td><code>daemon/tests/e2e/test_http_api.py</code></td>
 </tr>
 <tr>
@@ -512,7 +512,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>The daemon shall not expose a durable API token through a remotely reachable unauthenticated UI.</td>
 <td>WSL HTTP Daemon</td>
 <td><code>HRD-003</code></td>
-<td><code>daemon/src/browser_memory_daemon/app.py</code></td>
+<td><code>daemon/src/browser_memory_daemon/http_server.py</code><br><code>daemon/src/browser_memory_daemon/app.py</code></td>
 <td><code>daemon/tests/e2e/test_ui_dashboard_smoke.py::test_ui_dashboard_rejects_non_loopback_host_header</code></td>
 </tr>
 <tr>
@@ -522,7 +522,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Every blob read, write, move, and delete shall resolve under its configured root and resist traversal and symlink escape.</td>
 <td>Storage Path Boundary</td>
 <td><code>HRD-004</code></td>
-<td><code>daemon/src/browser_memory_daemon/blob_store.py</code><br><code>daemon/src/browser_memory_daemon/storage_paths.py</code><br><code>daemon/src/browser_memory_daemon/ingest.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/forget.py</code><br><code>daemon/src/browser_memory_daemon/ops.py</code><br><code>daemon/src/browser_memory_daemon/app.py</code><br><code>daemon/src/browser_memory_daemon/blob_migration.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0008_add_relative_blob_locators.sql</code></td>
+<td><code>daemon/src/browser_memory_daemon/blob_store.py</code><br><code>daemon/src/browser_memory_daemon/storage_paths.py</code><br><code>daemon/src/browser_memory_daemon/ingest.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/forget.py</code><br><code>daemon/src/browser_memory_daemon/ops.py</code><br><code>daemon/src/browser_memory_daemon/application.py</code><br><code>daemon/src/browser_memory_daemon/blob_migration.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0008_add_relative_blob_locators.sql</code></td>
 <td><code>daemon/tests/unit/test_blob_store.py::test_blob_store_stages_streams_verifies_hash_and_commits_atomically</code><br><code>daemon/tests/unit/test_blob_store.py::test_blob_store_rejects_traversal_symlink_escape_and_cross_root_stage</code><br><code>daemon/tests/integration/test_ingest_search_forget.py::test_blob_path_consumers_reject_db_paths_outside_configured_roots</code><br><code>daemon/tests/integration/test_migrations.py::test_version_eight_adds_nullable_relative_locators</code></td>
 </tr>
 <tr>
@@ -592,7 +592,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Media transitions, cache admission, leases, retries, and resource budgets shall be closed, bounded, and concurrency-safe.</td>
 <td>Media State Machine</td>
 <td><code>HRD-011</code></td>
-<td><code>daemon/src/browser_memory_daemon/app.py</code><br><code>daemon/src/browser_memory_daemon/config.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/media_transport.py</code><br><code>daemon/src/browser_memory_daemon/media_models.py</code><br><code>daemon/src/browser_memory_daemon/media_tasks.py</code><br><code>daemon/src/browser_memory_daemon/media_store.py</code><br><code>daemon/src/browser_memory_daemon/media_fetch.py</code><br><code>daemon/src/browser_memory_daemon/media_hls.py</code><br><code>daemon/src/browser_memory_daemon/media_ops.py</code><br><code>daemon/src/browser_memory_daemon/media_resources.py</code><br><code>daemon/src/browser_memory_daemon/media_storage.py</code><br><code>daemon/src/browser_memory_daemon/media_worker.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0010_split_media_root_and_add_spool.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0012_normalize_historical_media_state.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0013_add_media_cache_reservations.py</code></td>
+<td><code>daemon/src/browser_memory_daemon/application.py</code><br><code>daemon/src/browser_memory_daemon/http_server.py</code><br><code>daemon/src/browser_memory_daemon/config.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/media_transport.py</code><br><code>daemon/src/browser_memory_daemon/media_models.py</code><br><code>daemon/src/browser_memory_daemon/media_tasks.py</code><br><code>daemon/src/browser_memory_daemon/media_store.py</code><br><code>daemon/src/browser_memory_daemon/media_fetch.py</code><br><code>daemon/src/browser_memory_daemon/media_hls.py</code><br><code>daemon/src/browser_memory_daemon/media_ops.py</code><br><code>daemon/src/browser_memory_daemon/media_resources.py</code><br><code>daemon/src/browser_memory_daemon/media_storage.py</code><br><code>daemon/src/browser_memory_daemon/media_worker.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0010_split_media_root_and_add_spool.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0012_normalize_historical_media_state.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0013_add_media_cache_reservations.py</code></td>
 <td><code>daemon/tests/integration/test_media_tasks.py::test_media_task_repository_allows_only_one_concurrent_lease_owner</code><br><code>daemon/tests/unit/test_media_store.py::test_media_facade_preserves_admission_api_identity</code><br><code>daemon/tests/unit/test_media_store.py::test_media_facade_preserves_artifact_store_api_identity</code><br><code>daemon/tests/unit/test_media_resources.py</code><br><code>daemon/tests/unit/test_media_worker_claiming.py</code><br><code>daemon/tests/integration/test_storage_reconcile.py</code><br><code>daemon/tests/integration/test_media_storage.py::test_spool_reservations_serialize_concurrent_cap_checks</code><br><code>daemon/tests/integration/test_media_storage.py::test_cache_reservations_serialize_concurrent_global_admission</code><br><code>daemon/tests/integration/test_media_storage.py::test_cache_reservation_blocks_publication_until_released_and_expired_rows_are_reclaimed</code><br><code>daemon/tests/integration/test_media_storage.py::test_cancellation_like_stage_failure_releases_spool_and_cache_reservations</code><br><code>daemon/tests/integration/test_media_storage.py::test_failed_first_publication_removes_new_blob_and_spool_reservation</code><br><code>daemon/tests/integration/test_media_storage.py::test_failed_write_transaction_start_aborts_stage_and_releases_spool_reservation</code><br><code>daemon/tests/integration/test_media_storage.py::test_failed_replacement_preserves_previous_blob_and_removes_candidate</code><br><code>daemon/tests/e2e/test_http_api.py::test_http_upload_get_and_purge_use_bounded_spool_during_media_root_outage</code><br><code>daemon/tests/e2e/test_http_api.py::test_http_raw_media_upload_returns_503_when_global_byte_budget_cannot_admit_body</code><br><code>daemon/tests/integration/test_media_worker.py::test_media_worker_does_not_auto_requeue_terminal_budget_skips</code><br><code>daemon/tests/integration/test_media_worker.py::test_media_resource_pressure_does_not_roll_back_searchable_text</code><br><code>daemon/tests/integration/test_media_ops.py::test_media_requeue_is_scoped_and_dry_run_first</code><br><code>daemon/tests/integration/test_migrations.py::test_version_twelve_normalizes_historical_media_state_once</code><br><code>daemon/tests/integration/test_migrations.py::test_version_thirteen_adds_cache_reservations_from_exact_prior_schema</code></td>
 </tr>
 <tr>
@@ -632,8 +632,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>HTTP behavior shall provide stable typed errors, request IDs, secure headers, and bounded streaming.</td>
 <td>WSL HTTP Transport</td>
 <td><code>HRD-015</code></td>
-<td><code>daemon/src/browser_memory_daemon/app.py</code><br><code>daemon/src/browser_memory_daemon/http_server.py</code><br><code>daemon/src/browser_memory_daemon/routes.py</code><br><code>daemon/src/browser_memory_daemon/api_errors.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/blob_store.py</code></td>
-<td><code>daemon/tests/e2e/test_http_api.py::test_http_raw_media_upload_disconnect_cleans_staging_reservations_and_process_budget</code><br><code>daemon/tests/e2e/test_http_api.py::test_http_media_download_disconnect_stops_stream_and_releases_process_budget</code></td>
+<td><code>daemon/src/browser_memory_daemon/app.py</code><br><code>daemon/src/browser_memory_daemon/application.py</code><br><code>daemon/src/browser_memory_daemon/http_server.py</code><br><code>daemon/src/browser_memory_daemon/routes.py</code><br><code>daemon/src/browser_memory_daemon/api_errors.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/blob_store.py</code></td>
+<td><code>daemon/tests/e2e/test_http_api.py</code><br><code>daemon/tests/unit/test_application.py::test_application_capture_and_read_use_cases_run_without_http_handler</code><br><code>daemon/tests/e2e/test_http_api.py::test_http_raw_media_upload_disconnect_cleans_staging_reservations_and_process_budget</code><br><code>daemon/tests/e2e/test_http_api.py::test_http_media_download_disconnect_stops_stream_and_releases_process_budget</code></td>
 </tr>
 <tr>
 <td>REQ-041</td>
@@ -843,8 +843,13 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Daemon API</td>
-<td>Standard-library HTTP adapter plus immutable method/path route descriptors, typed status/code mapping, request envelope, auth, CORS, UI serving, token bootstrap, raw media blob upload, and cache controls.</td>
-<td><code>/health</code> public loopback; <code>/ui</code> HTML gets same-origin token bootstrap; memory APIs tokened; responses gain opaque request IDs and common security headers; redaction-safe telemetry logs route/status/latency/code only.</td>
+<td>Standard-library HTTP adapter plus immutable method/path route descriptors, typed status/code mapping, request envelope, auth, CORS, UI serving, token bootstrap, bounded media transport, and cache controls.</td>
+<td><code>http_server.py</code> owns HTTP-only adaptation; <code>/health</code> is public loopback, <code>/ui</code> gets same-origin token bootstrap, memory APIs are tokened, and telemetry logs route/status/latency/code only.</td>
+</tr>
+<tr>
+<td>Application use cases</td>
+<td>Request-independent capture, lifecycle, read, forget, policy, doctor, and media coordination with explicit transaction/audit boundaries.</td>
+<td><code>application.py</code> owns database readiness, policy decisions, async media kickoff, and scoped upload/download leases; <code>app.py</code> only initializes and composes it with the HTTP adapter.</td>
 </tr>
 <tr>
 <td>Migration kernel</td>

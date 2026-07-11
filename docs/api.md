@@ -34,6 +34,8 @@ JSON, UI/static, binary, error, and OPTIONS responses share a no-store security 
 
 The method/path entries below are matched through immutable route descriptors in `routes.py`; UI assets remain a separate finite static-file boundary. Descriptor precedence keeps exact routes such as queue status ahead of parameterized artifact routes without changing endpoint behavior.
 
+`http_server.py` owns bearer authentication, request parsing, response serialization, security headers, telemetry, static UI serving, and bounded stream transport. It invokes explicit request-independent methods in `application.py`, which owns database transaction/audit boundaries, capture policy decisions, reads, forget, policy administration, media coordination, and resource leases. `app.py` only initializes and composes those boundaries; this separation does not change any endpoint contract.
+
 | Endpoint | Method | Purpose | Auth |
 |---|---:|---|---|
 | `/health` | `GET` | Minimal daemon status and current policy mode. | No |

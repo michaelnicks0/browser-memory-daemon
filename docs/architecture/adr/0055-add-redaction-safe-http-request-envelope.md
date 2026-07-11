@@ -24,7 +24,7 @@ The loopback HTTP adapter had no per-request correlation identifier, suppressed 
 - All response classes now carry the same baseline security envelope.
 - Existing successful JSON bodies remain unchanged; error bodies gain only the additive `request_id` field.
 - The UI retains same-origin operation under an explicit CSP rather than sharing the API's `default-src 'none'` policy.
-- `REQ-040` remains planned until bounded upload/download disconnect handling and the remaining HTTP/application decomposition close.
+- `REQ-040` becomes active through the bounded upload/download slice and closes its remaining structural gap through ADR-0056's application/use-case separation.
 
 ## Verification
 

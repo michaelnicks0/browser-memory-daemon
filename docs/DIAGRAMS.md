@@ -256,7 +256,7 @@ Forget returns database counts plus durable deletion state. It cannot report com
 |---|---|
 | Extension protocol boundary | `manifest.json`, `extension/src/extractor.js`, `content_script.js`, `service_worker.js`, `popup.js`, `options.js`, `media_queue.js` |
 | Policy mode ladder | `docs/security-model.md`, `daemon/src/browser_memory_daemon/policy.py`, `policy_store.py`, `extension/src/extractor.js` |
-| Capture ingest and redaction branch | `docs/api.md`, `daemon/src/browser_memory_daemon/app.py`, `ingest.py`, `policy.py`, `schema.sql`, `extension/src/service_worker.js` |
+| Capture ingest and redaction branch | `docs/api.md`, `daemon/src/browser_memory_daemon/http_server.py`, `application.py`, `ingest.py`, `policy.py`, `schema.sql`, `extension/src/service_worker.js` |
 | Durable media sidecars and cache outcomes | `docs/media-artifacts.md`, `daemon/src/browser_memory_daemon/media.py`, `media_worker.py`, `schema.sql`, `extension/src/media_queue.js`, `cdp_recorder.js`, `service_worker.js` |
 | Dedupe and versioning | `daemon/src/browser_memory_daemon/ingest.py`, `schema.sql`, ingest tests |
 | Lifecycle telemetry | `docs/api.md`, `daemon/src/browser_memory_daemon/lifecycle.py`, `schema.sql`, `extension/src/service_worker.js` |

@@ -5,7 +5,7 @@
 > **Runtime:** Python **3.11+** (`pyproject.toml` requires `>=3.11`). Use `BMD_PYTHON=/path/to/python3.11` when the host `python3` is older.
 
 <!-- BEGIN GENERATED:inventory-summary -->
-> **Current inventory:** 305 static test functions across 53 files — 236 daemon pytest tests + 69 extension node:test tests.
+> **Current inventory:** 308 static test functions across 54 files — 239 daemon pytest tests + 69 extension node:test tests.
 <!-- END GENERATED:inventory-summary -->
 
 ---
@@ -79,7 +79,7 @@ Use `--runtime-root PATH` only for explicit fixture roots; do not point the stre
 ## Generated test inventory
 
 <!-- BEGIN GENERATED:audit-run -->
-Latest inventory: **305 static test functions** across **53 files** (236 daemon pytest; 69 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
+Latest inventory: **308 static test functions** across **54 files** (239 daemon pytest; 69 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
 <!-- END GENERATED:audit-run -->
 
 ## Requirements traceability gate
@@ -100,7 +100,7 @@ Traceability gate: **✅ pass**.
 | Normative changes without revision increment | none |
 | Requirements removed without catalog disposition | none |
 | Catalog load errors | none |
-| Static test inventory measured | 305 tests / 53 files |
+| Static test inventory measured | 308 tests / 54 files |
 <!-- END GENERATED:traceability-gate -->
 
 ### Per-file counts
@@ -129,6 +129,7 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/integration/test_text_authority.py` | pytest | 2 |
 | `daemon/tests/integration/test_visit_lifecycle.py` | pytest | 6 |
 | `daemon/tests/unit/test_api_errors.py` | pytest | 3 |
+| `daemon/tests/unit/test_application.py` | pytest | 3 |
 | `daemon/tests/unit/test_blob_store.py` | pytest | 5 |
 | `daemon/tests/unit/test_config.py` | pytest | 6 |
 | `daemon/tests/unit/test_daily_driver_health.py` | pytest | 6 |
@@ -160,7 +161,7 @@ Traceability gate: **✅ pass**.
 | `extension/tests/unit/service_worker.test.js` | node:test | 10 |
 | `extension/tests/unit/shared.test.js` | node:test | 2 |
 | `extension/tests/unit/visit_tracker.test.js` | node:test | 2 |
-| **Total** |  | **305** |
+| **Total** |  | **308** |
 <!-- END GENERATED:per-file-counts -->
 
 <details>
@@ -187,21 +188,21 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_generate_test_inventory_check_fails_for_catalog_gaps` | 162 | Generate test inventory check fails for catalog gaps. |
 | `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_catalog_rejects_duplicate_ids` | 188 | Catalog rejects duplicate ids. |
 | `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_catalog_statement_change_requires_revision_increment` | 202 | Catalog statement change requires revision increment. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_skips_request_time_db_initialization_after_startup` | 100 | Http capture skips request time db initialization after startup. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_upload_get_and_purge_use_bounded_spool_during_media_root_outage` | 132 | Http upload get and purge use bounded spool during media root outage. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_media_fetch_raw_upload_and_purge_rehydrate_controls` | 207 | Http media fetch raw upload and purge rehydrate controls. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_raw_media_upload_requires_explicit_nonnegative_content_length` | 283 | Http raw media upload requires explicit nonnegative content length. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_raw_media_upload_disconnect_cleans_staging_reservations_and_process_budget` | 325 | Http raw media upload disconnect cleans staging reservations and process budget. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_media_download_disconnect_stops_stream_and_releases_process_budget` | 435 | Http media download disconnect stops stream and releases process budget. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_raw_media_upload_returns_503_when_global_byte_budget_cannot_admit_body` | 551 | Http raw media upload returns 503 when global byte budget cannot admit body. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_search_forget_round_trip` | 603 | Http capture search forget round trip. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_api_contract_errors_methods_and_limits_are_json` | 719 | Http api contract errors methods and limits are json. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_route_catalog_preserves_auth_unknown_route_and_ready_contracts` | 772 | Http route catalog preserves auth unknown route and ready contracts. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_request_envelope_adds_unique_ids_and_security_headers_to_every_response_kind` | 829 | Http request envelope adds unique ids and security headers to every response kind. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_structured_request_telemetry_contains_only_redaction_safe_fields` | 871 | Http structured request telemetry contains only redaction safe fields. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_maps_capture_identity_conflicts_to_stable_conflict_error` | 913 | Http maps capture identity conflicts to stable conflict error. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_maps_database_busy_and_unexpected_failures_without_leaking_internal_details` | 946 | Http maps database busy and unexpected failures without leaking internal details. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_policy_rule_duplicate_creation_returns_existing_semantic_rule` | 984 | Http policy rule duplicate creation returns existing semantic rule. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_skips_request_time_db_initialization_after_startup` | 101 | Http capture skips request time db initialization after startup. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_upload_get_and_purge_use_bounded_spool_during_media_root_outage` | 133 | Http upload get and purge use bounded spool during media root outage. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_media_fetch_raw_upload_and_purge_rehydrate_controls` | 208 | Http media fetch raw upload and purge rehydrate controls. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_raw_media_upload_requires_explicit_nonnegative_content_length` | 284 | Http raw media upload requires explicit nonnegative content length. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_raw_media_upload_disconnect_cleans_staging_reservations_and_process_budget` | 326 | Http raw media upload disconnect cleans staging reservations and process budget. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_media_download_disconnect_stops_stream_and_releases_process_budget` | 436 | Http media download disconnect stops stream and releases process budget. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_raw_media_upload_returns_503_when_global_byte_budget_cannot_admit_body` | 556 | Http raw media upload returns 503 when global byte budget cannot admit body. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_search_forget_round_trip` | 608 | Http capture search forget round trip. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_api_contract_errors_methods_and_limits_are_json` | 724 | Http api contract errors methods and limits are json. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_route_catalog_preserves_auth_unknown_route_and_ready_contracts` | 777 | Http route catalog preserves auth unknown route and ready contracts. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_request_envelope_adds_unique_ids_and_security_headers_to_every_response_kind` | 834 | Http request envelope adds unique ids and security headers to every response kind. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_structured_request_telemetry_contains_only_redaction_safe_fields` | 876 | Http structured request telemetry contains only redaction safe fields. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_maps_capture_identity_conflicts_to_stable_conflict_error` | 918 | Http maps capture identity conflicts to stable conflict error. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_maps_database_busy_and_unexpected_failures_without_leaking_internal_details` | 951 | Http maps database busy and unexpected failures without leaking internal details. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_policy_rule_duplicate_creation_returns_existing_semantic_rule` | 989 | Http policy rule duplicate creation returns existing semantic rule. |
 | `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_path_invariant_rejects_blob_escape` | 47 | Performance benchmark path invariant rejects blob escape. |
 | `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_subprocess_does_not_write_default_home_blob_root` | 64 | Performance benchmark subprocess does not write default home blob root. |
 | `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_temp_runtime_cleanup_stays_inside_tmp_home` | 100 | Performance benchmark temp runtime cleanup stays inside tmp home. |
@@ -345,6 +346,9 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/unit/test_api_errors.py` | pytest | `(module)` | `test_typed_api_errors_have_stable_status_code_and_compatible_message` | 27 | Typed api errors have stable status code and compatible message. |
 | `daemon/tests/unit/test_api_errors.py` | pytest | `(module)` | `test_exception_classification_preserves_safe_client_errors_and_sanitizes_internal_failures` | 34 | Exception classification preserves safe client errors and sanitizes internal failures. |
 | `daemon/tests/unit/test_api_errors.py` | pytest | `(module)` | `test_exception_classification_retains_existing_typed_errors` | 50 | Exception classification retains existing typed errors. |
+| `daemon/tests/unit/test_application.py` | pytest | `(module)` | `test_app_module_is_only_the_http_composition_root` | 9 | App module is only the http composition root. |
+| `daemon/tests/unit/test_application.py` | pytest | `(module)` | `test_application_capture_and_read_use_cases_run_without_http_handler` | 18 | Application capture and read use cases run without http handler. |
+| `daemon/tests/unit/test_application.py` | pytest | `(module)` | `test_application_policy_blocking_remains_a_use_case_decision` | 44 | Application policy blocking remains a use case decision. |
 | `daemon/tests/unit/test_blob_store.py` | pytest | `(module)` | `test_blob_store_stages_streams_verifies_hash_and_commits_atomically` | 8 | Blob store stages streams verifies hash and commits atomically. |
 | `daemon/tests/unit/test_blob_store.py` | pytest | `(module)` | `test_blob_store_mismatch_aborts_stage_without_publishing` | 35 | Blob store mismatch aborts stage without publishing. |
 | `daemon/tests/unit/test_blob_store.py` | pytest | `(module)` | `test_blob_store_rejects_traversal_symlink_escape_and_cross_root_stage` | 47 | Blob store rejects traversal symlink escape and cross root stage. |

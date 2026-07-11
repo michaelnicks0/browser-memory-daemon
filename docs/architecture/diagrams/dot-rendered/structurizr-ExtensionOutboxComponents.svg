@@ -67,7 +67,7 @@
 <text text-anchor="start" x="3504" y="-1062.8" font-family="Arial" font-size="24.00" fill="#ffffff">only.</text>
 </g>
 <!-- 10&#45;&gt;21 -->
-<g id="87" class="edge">
+<g id="88" class="edge">
 <title>10&#45;&gt;21</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1891.9,-1319.26C1940.25,-1418.1 2018.47,-1557.31 2115.5,-1656.5 2237.07,-1780.77 2278.59,-1817.89 2445.5,-1866.5 2654.17,-1927.26 2734.87,-1952.42 2934.5,-1866.5 3101.55,-1794.6 3243.57,-1650.01 3346.77,-1517.78"/>
 <polygon fill="#444444" stroke="#444444" points="3349.83,-1519.54 3353.2,-1509.49 3344.3,-1515.25 3349.83,-1519.54"/>
@@ -104,7 +104,7 @@
 <text text-anchor="start" x="2570.5" y="-540.8" font-family="Arial" font-size="24.00" fill="#000000">URL&#45;shaped errors.</text>
 </g>
 <!-- 13&#45;&gt;15 -->
-<g id="97" class="edge">
+<g id="98" class="edge">
 <title>13&#45;&gt;15</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M2079.69,-794.34C2191.45,-763.29 2323.85,-726.49 2435.53,-695.46"/>
 <polygon fill="#444444" stroke="#444444" points="2436.54,-698.81 2445.24,-692.76 2434.67,-692.07 2436.54,-698.81"/>
@@ -130,7 +130,7 @@
 <text text-anchor="start" x="2615.5" y="-843.8" font-family="Arial" font-size="24.00" fill="#000000">accounting.</text>
 </g>
 <!-- 13&#45;&gt;16 -->
-<g id="93" class="edge">
+<g id="94" class="edge">
 <title>13&#45;&gt;16</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M2079.59,-882.65C2181.83,-893.45 2301.94,-908.59 2409.5,-928.5 2421.47,-930.72 2433.7,-933.16 2446.01,-935.77"/>
 <polygon fill="#444444" stroke="#444444" points="2445.39,-939.22 2455.91,-937.9 2446.87,-932.38 2445.39,-939.22"/>
@@ -141,7 +141,7 @@
 <text text-anchor="start" x="2192" y="-939.3" font-family="Arial" font-size="24.00" fill="#444444">work through</text>
 </g>
 <!-- 13&#45;&gt;21 -->
-<g id="94" class="edge">
+<g id="95" class="edge">
 <title>13&#45;&gt;21</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M2031.84,-1006.05C2146.02,-1082.66 2296.84,-1169.76 2445.5,-1213.5 2796.71,-1316.84 2901.5,-1308.94 3266.5,-1280.5 3274.9,-1279.85 3283.43,-1279.07 3292.04,-1278.21"/>
 <polygon fill="#444444" stroke="#444444" points="3292.6,-1281.67 3302.18,-1277.15 3291.87,-1274.71 3292.6,-1281.67"/>
@@ -168,7 +168,7 @@
 <text text-anchor="start" x="2564.5" y="-1520.8" font-family="Arial" font-size="24.00" fill="#ffffff">and static UI serving.</text>
 </g>
 <!-- 13&#45;&gt;22 -->
-<g id="96" class="edge">
+<g id="97" class="edge">
 <title>13&#45;&gt;22</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M2054,-1006.25C2063.54,-1017.71 2072.16,-1029.8 2079.5,-1042.5 2146.24,-1158.01 2041.76,-1229.32 2115.5,-1340.5 2190.84,-1454.08 2320.97,-1532.14 2436.95,-1582.82"/>
 <polygon fill="#444444" stroke="#444444" points="2435.77,-1586.13 2446.34,-1586.88 2438.54,-1579.7 2435.77,-1586.13"/>
@@ -178,7 +178,7 @@
 <text text-anchor="start" x="2174" y="-1571.8" font-family="Arial" font-size="19.00" fill="#444444">[Bearer HTTP/JSON]</text>
 </g>
 <!-- 15&#45;&gt;21 -->
-<g id="104" class="edge">
+<g id="105" class="edge">
 <title>15&#45;&gt;21</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M2873.59,-744.1C2894.17,-756.36 2914.77,-768.67 2934.5,-780.5 3082.44,-869.2 3130.4,-875.53 3266.5,-981.5 3275.84,-988.77 3285.19,-996.34 3294.52,-1004.13"/>
 <polygon fill="#444444" stroke="#444444" points="3292.44,-1006.96 3302.35,-1010.73 3296.95,-1001.61 3292.44,-1006.96"/>
@@ -188,7 +188,7 @@
 <text text-anchor="start" x="3013" y="-989.8" font-family="Arial" font-size="19.00" fill="#444444">[chrome.storage.local]</text>
 </g>
 <!-- 16&#45;&gt;21 -->
-<g id="98" class="edge">
+<g id="99" class="edge">
 <title>16&#45;&gt;21</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M2899.2,-1059.63C3019.94,-1094.17 3169.53,-1136.96 3292.51,-1172.14"/>
 <polygon fill="#444444" stroke="#444444" points="3291.87,-1175.59 3302.44,-1174.98 3293.79,-1168.86 3291.87,-1175.59"/>
@@ -226,7 +226,7 @@
 <text text-anchor="start" x="973" y="-773.8" font-family="Arial" font-size="24.00" fill="#000000">listeners.</text>
 </g>
 <!-- 8&#45;&gt;9 -->
-<g id="83" class="edge">
+<g id="84" class="edge">
 <title>8&#45;&gt;9</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M443.07,-861.5C548.97,-861.5 681.23,-861.5 792.44,-861.5"/>
 <polygon fill="#444444" stroke="#444444" points="792.45,-865 802.45,-861.5 792.45,-858 792.45,-865"/>
@@ -236,7 +236,7 @@
 <text text-anchor="start" x="490.5" y="-869.8" font-family="Arial" font-size="19.00" fill="#444444">[chrome.runtime.sendMessage]</text>
 </g>
 <!-- 9&#45;&gt;10 -->
-<g id="84" class="edge">
+<g id="85" class="edge">
 <title>9&#45;&gt;10</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1240.5,-951.81C1350.03,-997.18 1483.01,-1052.27 1595.5,-1098.87"/>
 <polygon fill="#444444" stroke="#444444" points="1594.36,-1102.19 1604.93,-1102.78 1597.04,-1095.72 1594.36,-1102.19"/>
@@ -246,7 +246,7 @@
 <text text-anchor="start" x="1376" y="-1090.3" font-family="Arial" font-size="24.00" fill="#444444">through</text>
 </g>
 <!-- 9&#45;&gt;13 -->
-<g id="90" class="edge">
+<g id="91" class="edge">
 <title>9&#45;&gt;13</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1240.5,-861.5C1346.39,-861.5 1474.2,-861.5 1584.22,-861.5"/>
 <polygon fill="#444444" stroke="#444444" points="1584.47,-865 1594.47,-861.5 1584.47,-858 1584.47,-865"/>
@@ -256,7 +256,7 @@
 <text text-anchor="start" x="1303" y="-872.3" font-family="Arial" font-size="24.00" fill="#444444">and durable drains to</text>
 </g>
 <!-- 9&#45;&gt;15 -->
-<g id="92" class="edge">
+<g id="93" class="edge">
 <title>9&#45;&gt;15</title>
 <path fill="none" stroke="#444444" stroke-dasharray="5,2" d="M1240.41,-746C1344.5,-697.18 1472.69,-646.02 1594.5,-621.5 1879.02,-564.23 2214.22,-578.64 2435.29,-599.06"/>
 <polygon fill="#444444" stroke="#444444" points="2435.12,-602.56 2445.4,-600.01 2435.77,-595.59 2435.12,-602.56"/>
