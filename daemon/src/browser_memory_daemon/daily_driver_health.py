@@ -55,7 +55,7 @@ _RUNTIME_TABLES = (
     "blob_storage_records",
 )
 _EXTENSION_TOKEN_FILES = (
-    "src/service_worker.js",
+    "src/config_store.js",
     "src/options.js",
     "src/popup.js",
 )

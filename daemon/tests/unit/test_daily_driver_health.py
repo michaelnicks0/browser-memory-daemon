@@ -103,7 +103,7 @@ def test_daily_driver_health_snapshot_is_aggregate_and_redaction_safe(tmp_path):
     extension_dir = tmp_path / "extension"
     (extension_dir / "src").mkdir(parents=True)
     (extension_dir / "manifest.json").write_text(json.dumps({"manifest_version": 3, "name": "Browser Memory Daemon", "version": "0.1.0"}))
-    for rel in ("src/service_worker.js", "src/options.js", "src/popup.js"):
+    for rel in ("src/config_store.js", "src/options.js", "src/popup.js"):
         (extension_dir / rel).write_text("const defaults = { apiToken: 'test-token', policyMode: 'all' };\n")
 
     def fake_runner(args, timeout):
@@ -143,7 +143,7 @@ def test_daily_driver_health_snapshot_is_aggregate_and_redaction_safe(tmp_path):
     assert snapshot["install"]["env_file"]["matches_token_file"] is True
     assert snapshot["extension"]["api_token_configured"] is True
     assert snapshot["extension"]["api_token_matches_token_file"] is True
-    assert snapshot["extension"]["policy_mode_defaults"]["src/service_worker.js"] == "all"
+    assert snapshot["extension"]["policy_mode_defaults"]["src/config_store.js"] == "all"
 
     rendered = json.dumps(snapshot, sort_keys=True)
     assert secret_text not in rendered
@@ -244,7 +244,7 @@ def test_daily_driver_health_detects_missing_extension_token(tmp_path):
     extension_dir = tmp_path / "extension"
     (extension_dir / "src").mkdir(parents=True)
     (extension_dir / "manifest.json").write_text(json.dumps({"manifest_version": 3, "name": "Browser Memory Daemon", "version": "0.1.0"}))
-    for rel in ("src/service_worker.js", "src/options.js", "src/popup.js"):
+    for rel in ("src/config_store.js", "src/options.js", "src/popup.js"):
         (extension_dir / rel).write_text("const defaults = { apiToken: '', policyMode: 'all' };\n")
 
     def quiet_runner(args, timeout):
@@ -279,7 +279,7 @@ def test_daily_driver_health_reports_required_blob_mount_failure(tmp_path, monke
     extension_dir = tmp_path / "extension"
     (extension_dir / "src").mkdir(parents=True)
     (extension_dir / "manifest.json").write_text(json.dumps({"manifest_version": 3, "name": "Browser Memory Daemon", "version": "0.1.0"}))
-    for rel in ("src/service_worker.js", "src/options.js", "src/popup.js"):
+    for rel in ("src/config_store.js", "src/options.js", "src/popup.js"):
         (extension_dir / rel).write_text("const defaults = { apiToken: 'test-token', policyMode: 'all' };\n")
     monkeypatch.setattr(media_storage_module, "has_non_root_mount_ancestor", lambda _path: False)
 
@@ -321,7 +321,7 @@ def test_daily_driver_health_detects_insecure_token_permissions_and_process_args
     extension_dir = tmp_path / "extension"
     (extension_dir / "src").mkdir(parents=True)
     (extension_dir / "manifest.json").write_text(json.dumps({"manifest_version": 3, "name": "Browser Memory Daemon", "version": "0.1.0"}))
-    for rel in ("src/service_worker.js", "src/options.js", "src/popup.js"):
+    for rel in ("src/config_store.js", "src/options.js", "src/popup.js"):
         (extension_dir / rel).write_text(f"const defaults = {{ apiToken: {json.dumps(token)}, policyMode: 'all' }};\n")
 
     def runner(args, timeout):
@@ -360,7 +360,7 @@ def test_daily_driver_health_detects_low_headroom_and_service_start_churn(tmp_pa
     extension_dir = tmp_path / "extension"
     (extension_dir / "src").mkdir(parents=True)
     (extension_dir / "manifest.json").write_text(json.dumps({"manifest_version": 3, "name": "Browser Memory Daemon", "version": "0.1.0"}))
-    for rel in ("src/service_worker.js", "src/options.js", "src/popup.js"):
+    for rel in ("src/config_store.js", "src/options.js", "src/popup.js"):
         (extension_dir / rel).write_text("const defaults = { apiToken: 'test-token', policyMode: 'all' };\n")
 
     class FakeUsage:
