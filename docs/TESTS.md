@@ -5,7 +5,7 @@
 > **Runtime:** Python **3.11+** (`pyproject.toml` requires `>=3.11`). Use `BMD_PYTHON=/path/to/python3.11` when the host `python3` is older.
 
 <!-- BEGIN GENERATED:inventory-summary -->
-> **Current inventory:** 324 static test functions across 57 files — 251 daemon pytest tests + 73 extension node:test tests.
+> **Current inventory:** 326 static test functions across 58 files — 253 daemon pytest tests + 73 extension node:test tests.
 <!-- END GENERATED:inventory-summary -->
 
 ---
@@ -79,7 +79,7 @@ Use `--runtime-root PATH` only for explicit fixture roots; do not point the stre
 ## Generated test inventory
 
 <!-- BEGIN GENERATED:audit-run -->
-Latest inventory: **324 static test functions** across **57 files** (251 daemon pytest; 73 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
+Latest inventory: **326 static test functions** across **58 files** (253 daemon pytest; 73 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
 <!-- END GENERATED:audit-run -->
 
 ## Requirements traceability gate
@@ -100,7 +100,7 @@ Traceability gate: **✅ pass**.
 | Normative changes without revision increment | none |
 | Requirements removed without catalog disposition | none |
 | Catalog load errors | none |
-| Static test inventory measured | 324 tests / 57 files |
+| Static test inventory measured | 326 tests / 58 files |
 <!-- END GENERATED:traceability-gate -->
 
 ### Per-file counts
@@ -125,6 +125,7 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/integration/test_media_tasks.py` | pytest | 2 |
 | `daemon/tests/integration/test_media_worker.py` | pytest | 26 |
 | `daemon/tests/integration/test_migrations.py` | pytest | 20 |
+| `daemon/tests/integration/test_observation_ingest_sequence.py` | pytest | 2 |
 | `daemon/tests/integration/test_observation_reads.py` | pytest | 2 |
 | `daemon/tests/integration/test_storage_reconcile.py` | pytest | 4 |
 | `daemon/tests/integration/test_text_authority.py` | pytest | 2 |
@@ -164,7 +165,7 @@ Traceability gate: **✅ pass**.
 | `extension/tests/unit/service_worker.test.js` | node:test | 10 |
 | `extension/tests/unit/shared.test.js` | node:test | 2 |
 | `extension/tests/unit/visit_tracker.test.js` | node:test | 2 |
-| **Total** |  | **324** |
+| **Total** |  | **326** |
 <!-- END GENERATED:per-file-counts -->
 
 <details>
@@ -322,26 +323,28 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_stores_hls_audio_rendition_sidecar` | 914 | Media worker stores hls audio rendition sidecar. |
 | `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_marks_blob_video_refs_covered_by_cdp_bytes` | 948 | Media worker marks blob video refs covered by cdp bytes. |
 | `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_classifies_uncovered_blob_video_refs_as_opaque` | 998 | Media worker classifies uncovered blob video refs as opaque. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_fresh_database_migrates_to_ordered_versioned_ledger_and_preserves_fts` | 118 | Fresh database migrates to ordered versioned ledger and preserves fts. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_unversioned_current_schema_is_stamped_then_historical_seed_runs_once` | 159 | Unversioned current schema is stamped then historical seed runs once. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_twelve_normalizes_historical_media_state_once` | 189 | Version twelve normalizes historical media state once. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_thirteen_adds_cache_reservations_from_exact_prior_schema` | 284 | Version thirteen adds cache reservations from exact prior schema. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_capture_observation_and_url_claim_schema_enforces_expand_contract` | 325 | Capture observation and url claim schema enforces expand contract. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_three_fixture_upgrades_once_to_capture_model_expand_schema` | 395 | Version three fixture upgrades once to capture model expand schema. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_five_backfills_only_evidence_supported_historical_relationships` | 430 | Version five backfills only evidence supported historical relationships. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_six_backfills_only_unambiguous_media_observation_links` | 535 | Version six backfills only unambiguous media observation links. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_seven_preserves_claimed_visit_identity_for_historical_events` | 637 | Version seven preserves claimed visit identity for historical events. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_eight_adds_nullable_relative_locators` | 699 | Version eight adds nullable relative locators. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_nine_backfills_hash_verified_chunks_and_new_ingest_uses_sqlite_authority` | 733 | Version nine backfills hash verified chunks and new ingest uses sqlite authority. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_ten_adds_media_storage_tiers_and_spool_reservations` | 788 | Version ten adds media storage tiers and spool reservations. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_eleven_adds_and_backfills_blob_lifecycle_records` | 834 | Version eleven adds and backfills blob lifecycle records. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_repeated_migration_is_a_noop_and_schema_has_no_recurring_repair_dml` | 899 | Repeated migration is a noop and schema has no recurring repair dml. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_concurrent_fresh_migration_applies_each_ledger_step_once` | 920 | Concurrent fresh migration applies each ledger step once. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_checksum_mismatch_and_unknown_newer_version_fail_closed` | 941 | Checksum mismatch and unknown newer version fail closed. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_unknown_unversioned_schema_is_not_stamped` | 959 | Unknown unversioned schema is not stamped. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_injected_migration_failure_rolls_back_step_and_ledger` | 973 | Injected migration failure rolls back step and ledger. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_destructive_migration_creates_online_backup_that_restores_search` | 1002 | Destructive migration creates online backup that restores search. |
-| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_destructive_migration_refuses_insufficient_backup_headroom_before_writes` | 1040 | Destructive migration refuses insufficient backup headroom before writes. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_fresh_database_migrates_to_ordered_versioned_ledger_and_preserves_fts` | 122 | Fresh database migrates to ordered versioned ledger and preserves fts. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_unversioned_current_schema_is_stamped_then_historical_seed_runs_once` | 163 | Unversioned current schema is stamped then historical seed runs once. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_twelve_normalizes_historical_media_state_once` | 193 | Version twelve normalizes historical media state once. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_thirteen_adds_cache_reservations_from_exact_prior_schema` | 289 | Version thirteen adds cache reservations from exact prior schema. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_capture_observation_and_url_claim_schema_enforces_expand_contract` | 331 | Capture observation and url claim schema enforces expand contract. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_three_fixture_upgrades_once_to_capture_model_expand_schema` | 401 | Version three fixture upgrades once to capture model expand schema. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_five_backfills_only_evidence_supported_historical_relationships` | 437 | Version five backfills only evidence supported historical relationships. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_six_backfills_only_unambiguous_media_observation_links` | 543 | Version six backfills only unambiguous media observation links. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_seven_preserves_claimed_visit_identity_for_historical_events` | 646 | Version seven preserves claimed visit identity for historical events. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_eight_adds_nullable_relative_locators` | 709 | Version eight adds nullable relative locators. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_nine_backfills_hash_verified_chunks_and_new_ingest_uses_sqlite_authority` | 744 | Version nine backfills hash verified chunks and new ingest uses sqlite authority. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_ten_adds_media_storage_tiers_and_spool_reservations` | 802 | Version ten adds media storage tiers and spool reservations. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_eleven_adds_and_backfills_blob_lifecycle_records` | 849 | Version eleven adds and backfills blob lifecycle records. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_repeated_migration_is_a_noop_and_schema_has_no_recurring_repair_dml` | 915 | Repeated migration is a noop and schema has no recurring repair dml. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_concurrent_fresh_migration_applies_each_ledger_step_once` | 936 | Concurrent fresh migration applies each ledger step once. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_checksum_mismatch_and_unknown_newer_version_fail_closed` | 957 | Checksum mismatch and unknown newer version fail closed. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_unknown_unversioned_schema_is_not_stamped` | 975 | Unknown unversioned schema is not stamped. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_injected_migration_failure_rolls_back_step_and_ledger` | 989 | Injected migration failure rolls back step and ledger. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_destructive_migration_creates_online_backup_that_restores_search` | 1018 | Destructive migration creates online backup that restores search. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_destructive_migration_refuses_insufficient_backup_headroom_before_writes` | 1056 | Destructive migration refuses insufficient backup headroom before writes. |
+| `daemon/tests/integration/test_observation_ingest_sequence.py` | pytest | `(module)` | `test_ingest_sequence_is_monotonic_idempotent_and_independent_of_capture_time` | 35 | Ingest sequence is monotonic idempotent and independent of capture time. |
+| `daemon/tests/integration/test_observation_ingest_sequence.py` | pytest | `(module)` | `test_migration_backfills_existing_observations_deterministically` | 59 | Migration backfills existing observations deterministically. |
 | `daemon/tests/integration/test_observation_reads.py` | pytest | `(module)` | `test_observation_first_reads_preserve_contemporaneous_snapshots_and_unique_visit_summary` | 40 | Observation first reads preserve contemporaneous snapshots and unique visit summary. |
 | `daemon/tests/integration/test_observation_reads.py` | pytest | `(module)` | `test_legacy_visit_fallback_is_explicit_and_uses_its_linked_snapshot_not_latest_document_snapshot` | 146 | Legacy visit fallback is explicit and uses its linked snapshot not latest document snapshot. |
 | `daemon/tests/integration/test_storage_reconcile.py` | pytest | `(module)` | `test_forget_persists_retryable_tombstone_before_database_cascade` | 67 | Forget persists retryable tombstone before database cascade. |

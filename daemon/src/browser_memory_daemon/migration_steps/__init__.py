@@ -19,6 +19,7 @@ from . import (
     v0011_add_blob_lifecycle_records,
     v0012_normalize_historical_media_state,
     v0013_add_media_cache_reservations,
+    v0014_add_observation_ingest_sequences,
 )
 
 
@@ -174,6 +175,18 @@ MIGRATIONS = (
         sql=v0013_add_media_cache_reservations.SQL,
         destructive=v0013_add_media_cache_reservations.DESTRUCTIVE,
         schema_fingerprint=v0013_add_media_cache_reservations.SCHEMA_FINGERPRINT,
+    ),
+    MigrationStep(
+        version=14,
+        name=v0014_add_observation_ingest_sequences.NAME,
+        checksum=migration_checksum(
+            14,
+            v0014_add_observation_ingest_sequences.NAME,
+            v0014_add_observation_ingest_sequences.SQL,
+        ),
+        sql=v0014_add_observation_ingest_sequences.SQL,
+        destructive=v0014_add_observation_ingest_sequences.DESTRUCTIVE,
+        schema_fingerprint=v0014_add_observation_ingest_sequences.SCHEMA_FINGERPRINT,
     ),
 )
 

@@ -357,6 +357,17 @@ def ingest_capture(conn: sqlite3.Connection, config: RuntimeConfig, payload: Cap
                 provenance_quality=observation_quality,
             )
 
+        conn.execute(
+            """
+            INSERT INTO observation_ingest_sequences(observation_id)
+            SELECT ?
+            WHERE NOT EXISTS (
+              SELECT 1 FROM observation_ingest_sequences WHERE observation_id = ?
+            )
+            """,
+            (observation_id, observation_id),
+        )
+
         claim_ids: list[str] = []
         if safe_canonical and canonical_normalized != normalized:
             claim_id = stable_id("claim", f"canonical:{document_id}:{canonical_normalized}")
