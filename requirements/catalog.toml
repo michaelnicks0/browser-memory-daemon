@@ -649,6 +649,21 @@ system_evidence = ["scripts/run-e2e.sh"]
 operational_evidence = ["AGENTS.md", "docs/security-model.md"]
 validation_evidence = ["daemon/tests/e2e/test_admin_api.py::test_policy_rule_blocks_future_capture_and_can_be_deleted"]
 
+[[requirements]]
+id = "REQ-044"
+revision = 1
+statement = "Passive X observation export shall be versioned, body-safe, losslessly cursorable, and unable to mutate or migrate its source database."
+rationale = "Birdclaw hydration requires a producer-owned integration contract without turning operator reads or browser capture time into unsafe authority or a lossy watermark."
+owner = "X Observation Export"
+status = "active"
+aliases = ["INT-002", "INT-003", "INT-008", "INT-009", "INT-010", "INT-014"]
+implementation = ["daemon/src/browser_memory_daemon/x_observation_export.py", "daemon/src/browser_memory_daemon/ingest.py", "daemon/src/browser_memory_daemon/migration_steps/v0014_add_observation_ingest_sequences.py", "daemon/src/browser_memory_daemon/routes.py", "daemon/src/browser_memory_daemon/http_server.py", "daemon/src/browser_memory_daemon/cli.py", "contracts/bmd.x-observations.v1.schema.json"]
+unit_evidence = ["daemon/tests/unit/test_routes.py::test_route_descriptors_characterize_every_current_api_endpoint"]
+integration_evidence = ["daemon/tests/integration/test_observation_ingest_sequence.py", "daemon/tests/integration/test_x_observation_export.py"]
+system_evidence = ["daemon/tests/e2e/test_x_observation_export_cli.py", "daemon/tests/e2e/test_http_api.py::test_authenticated_x_observation_export_uses_query_only_contract_without_audit_write"]
+operational_evidence = ["docs/api.md", "docs/architecture/adr/0060-export-versioned-body-safe-x-observations.md"]
+validation_evidence = ["daemon/tests/integration/test_x_observation_export.py::test_export_is_query_only_body_safe_and_losslessly_pages_late_delivery", "daemon/tests/integration/test_x_observation_export.py::test_export_cursor_survives_deleted_sequence_gap_and_replay_is_stable", "daemon/tests/integration/test_x_observation_export.py::test_export_fails_closed_for_malformed_cursor_and_schema_drift", "daemon/tests/integration/test_x_observation_export.py::test_producer_golden_fixture_matches_current_contract_output", "daemon/tests/e2e/test_x_observation_export_cli.py::test_cli_export_queries_existing_database_without_init_migration_or_token", "daemon/tests/e2e/test_http_api.py::test_authenticated_x_observation_export_uses_query_only_contract_without_audit_write"]
+
 # Explicit reconciliation of pre-catalog test-plan aliases and meanings that
 # collided with architecture-owned REQ-009 through REQ-017 meanings.
 

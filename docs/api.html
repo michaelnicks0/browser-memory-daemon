@@ -145,7 +145,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">{</span><span style="color: #FF4689">&quot;error&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;unauthorized&quot;</span><span style="color: #F8F8F2">, </span><span style="color: #FF4689">&quot;error_code&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;unauthorized&quot;</span><span style="color: #F8F8F2">, </span><span style="color: #FF4689">&quot;request_id&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;req_&lt;opaque&gt;&quot;</span><span style="color: #F8F8F2">}</span>
 </code></pre></div>
 
-<p>Missing or invalid bearer tokens return <code>401</code>; malformed JSON and invalid payloads return <code>400</code>; identity/integrity conflicts return <code>409</code>; unknown routes return <code>404</code>; database/resource availability failures return <code>503</code>; unexpected internal failures return a sanitized <code>500</code>; unsupported HTTP methods return <code>501</code>. Limit parameters are bounded server-side (<code>recent</code> max 100, <code>timeline</code> max 250, media queue max 200); invalid integer limits return <code>400</code> on endpoints that parse limits directly. Current stable codes are <code>invalid_request</code>, <code>unauthorized</code>, <code>forbidden</code>, <code>not_found</code>, <code>conflict</code>, <code>resource_unavailable</code>, <code>database_busy</code>, <code>database_unavailable</code>, <code>internal_error</code>, and <code>unsupported_method</code>.</p>
+<p>Missing or invalid bearer tokens return <code>401</code>; malformed JSON and invalid payloads return <code>400</code>; identity/integrity conflicts return <code>409</code>; unknown routes return <code>404</code>; database/resource availability failures return <code>503</code>; unexpected internal failures return a sanitized <code>500</code>; unsupported HTTP methods return <code>501</code>. Limit parameters are bounded server-side (<code>recent</code> max 100, <code>timeline</code> max 250, X-observation export max 1000, media queue max 200); invalid integer limits return <code>400</code> on endpoints that parse limits directly. Current stable codes are <code>invalid_request</code>, <code>unauthorized</code>, <code>forbidden</code>, <code>not_found</code>, <code>conflict</code>, <code>resource_unavailable</code>, <code>database_busy</code>, <code>database_unavailable</code>, <code>internal_error</code>, and <code>unsupported_method</code>.</p>
 <p>JSON requests accept at most one unsigned-decimal <code>Content-Length</code> and reject duplicate, signed, malformed, oversized, or truncated lengths before invoking an application use case. JSON body limits are 2 MiB for ordinary capture/lifecycle/policy/admin requests and 16 MiB for the compatibility base64 media artifact route. Raw media uploads require one explicit unsigned-decimal length and stream separately under artifact and process budgets.</p>
 <p>JSON, UI/static, binary, error, and OPTIONS responses share a no-store security envelope with content-type, frame, referrer, permissions, and content-security protections. Ordinary request telemetry is one compact journald JSON event containing only request ID, method, descriptor route name, status, integer latency, and safe error code; paths, queries, URLs, headers, tokens, bodies, and exception prose are excluded.</p>
 <hr />
@@ -244,6 +244,12 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td><code>/timeline?after=...&amp;before=...</code></td>
 <td style="text-align: right;"><code>GET</code></td>
 <td>Capture timeline for an explicit ISO range.</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>/exports/x-observations?cursor=...&amp;limit=...</code></td>
+<td style="text-align: right;"><code>GET</code></td>
+<td>Versioned, body-safe, query-only X observation producer contract.</td>
 <td>Yes</td>
 </tr>
 <tr>
@@ -441,6 +447,23 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <p>Historical visits without any observation row remain visible as <code>record_source: "legacy-visit"</code>, <code>disposition: "legacy-fallback"</code>, and <code>provenance_quality: "ambiguous"</code>. The fallback prefers a visit-linked snapshot and never labels a document-latest fallback as exact.</p>
 <p><code>GET /timeline</code> also includes an additive <code>summary</code> for the bounded returned items: distinct visits, observation count, capture count, dwell summed once per visit, maximum lifecycle scroll, and media relationship count.</p>
 <p>Document detail includes ordered <code>observations</code> and <code>url_claims</code>; snapshot detail includes only observations referencing that exact snapshot. Existing <code>visits</code>, <code>snapshots</code>, and endpoint paths remain available for compatibility.</p>
+<hr />
+<h2 id="query-only-x-observation-export">Query-only X observation export</h2>
+<p><code>GET /exports/x-observations</code> returns <code>bmd.x-observations</code> major version <code>1</code>. It is the producer-owned passive Birdclaw integration contract; <code>/recent</code>, <code>/timeline</code>, document detail, and snapshot detail are not substitute integration feeds.</p>
+<p>The route requires the bearer token. <code>cursor</code> is an opaque exclusive continuation token and <code>limit</code> is <code>1..1000</code>. Records are ordered by immutable <code>(ingest_sequence, observation_id)</code>, so a delayed MV3 delivery with an older <code>captured_at</code> remains visible after an earlier checkpoint. A deleted observation may leave a harmless sequence gap. Consumers must persist the returned cursor only after durably publishing the artifacts derived from that page.</p>
+<p>The query opens the existing SQLite database with URI <code>mode=ro</code>, enables <code>PRAGMA query_only=ON</code>, installs a deny-write SQLite authorizer, validates the complete migration ledger and schema fingerprint, and writes no audit row. Older, newer, missing, or drifted schemas fail closed. The default contract excludes page bodies, excerpts, raw titles, HTML, credentials, local paths, idempotency keys, and request data; it emits hashes, lengths, completeness/authority, observed/discovered X URLs, alias-only handle hints, capture provenance, and explicit collection evidence.</p>
+<p>Current BMD captures set collection evidence to <code>none</code>. A viewed status, URL mention, profile-path handle, caller-selected collection kind, or ordinary browsing surface does not prove bookmark/like membership or external X identity.</p>
+<p>The same pure query is available without starting the daemon or requiring an API token:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>memory<span style="color: #F8F8F2"> </span>--runtime-root<span style="color: #F8F8F2"> </span>~/.local/share/browser-memory-daemon<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  export </span>x-observations<span style="color: #F8F8F2"> </span>--limit<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">100</span>
+</code></pre></div>
+
+<p>Use <code>--database /path/to/browser-memory.sqlite3</code> to select an explicit existing database and <code>--cursor '&lt;opaque&gt;'</code> to continue. The standalone export command does not call readiness initialization or migration and does not create runtime directories. Contract schema and invented producer fixture are canonical at:</p>
+<ul>
+<li><code>contracts/bmd.x-observations.v1.schema.json</code></li>
+<li><code>daemon/tests/fixtures/x_observations/v1-page.json</code></li>
+<li><code>docs/architecture/adr/0060-export-versioned-body-safe-x-observations.md</code></li>
+</ul>
 <hr />
 <h2 id="blob-locator-read-contract">Blob locator read contract</h2>
 <p>SQLite migration version 8 adds root-relative blob locators while retaining legacy absolute compatibility paths. Media writes populate both forms. Legacy snapshot/media sidecar reads, media serving, forget, purge, and eviction prefer the relative locator and use the legacy absolute path only when the relative field is null or empty. Every selected value still resolves through the configured-root <code>BlobStore</code>; a populated invalid relative locator fails closed rather than falling back.</p>

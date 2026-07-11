@@ -20,6 +20,12 @@ from .media_worker import run_once as run_media_worker_once
 from .migrations import MigrationError, migrate_database, migration_status
 from .storage_reconcile import reconcile_storage
 from .text_authority import reconcile_snapshot_text_authority
+from .x_observation_export import (
+    XObservationCompatibilityError,
+    XObservationCursorError,
+    default_database_path,
+    export_x_observations,
+)
 
 
 def _request(method: str, url: str, *, token: str, body: dict | None = None) -> dict:
@@ -65,6 +71,12 @@ def main(argv: list[str] | None = None) -> int:
     timeline.add_argument("--after")
     timeline.add_argument("--before")
     timeline.add_argument("--limit", type=int, default=100)
+    export = sub.add_parser("export")
+    export_sub = export.add_subparsers(dest="export_command", required=True)
+    export_x = export_sub.add_parser("x-observations")
+    export_x.add_argument("--database", type=Path)
+    export_x.add_argument("--cursor")
+    export_x.add_argument("--limit", type=int, default=100)
     document = sub.add_parser("document")
     document.add_argument("document_id")
     snapshot = sub.add_parser("snapshot")
@@ -151,6 +163,28 @@ def main(argv: list[str] | None = None) -> int:
     backup_restore.add_argument("--destination", type=Path, required=True)
     backup_restore.add_argument("--execute", action="store_true")
     args = parser.parse_args(argv)
+
+    if args.command == "export" and args.export_command == "x-observations":
+        database = args.database or default_database_path(args.runtime_root)
+        try:
+            result = export_x_observations(
+                database,
+                cursor=args.cursor,
+                limit=args.limit,
+            )
+        except (XObservationCompatibilityError, XObservationCursorError, ValueError) as exc:
+            print(
+                json.dumps(
+                    {
+                        "error": str(exc),
+                        "error_code": getattr(exc, "code", "invalid_request"),
+                    },
+                    indent=2,
+                )
+            )
+            return 2
+        print(json.dumps(result, indent=2, sort_keys=True))
+        return 0
 
     cfg = load_config(
         host=args.host,

@@ -130,6 +130,55 @@ def test_http_capture_skips_request_time_db_initialization_after_startup(tmp_pat
     assert init_calls == 1
 
 
+def test_authenticated_x_observation_export_uses_query_only_contract_without_audit_write(tmp_path):
+    cfg = load_config(
+        runtime_root=tmp_path,
+        test_mode=True,
+        token="test-token",
+        host="127.0.0.1",
+        port=0,
+        policy_mode="all",
+    )
+    server = make_server(cfg)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        status, stored = request(
+            "POST",
+            f"{base}/capture",
+            body={
+                "observation_id": "browser-http-export",
+                "visit_id": "visit-http-export",
+                "url": "https://x.com/httpfixture/status/456",
+                "title": "HTTP fixture title",
+                "text": "HTTP-FIXTURE-BODY",
+                "captured_at": "2026-07-11T00:00:00Z",
+            },
+        )
+        assert status == 201
+        with connect(cfg.db_path) as conn:
+            audit_before = conn.execute("SELECT COUNT(*) FROM audit_events").fetchone()[0]
+
+        unauthorized, _headers, error = error_request(
+            "GET", f"{base}/exports/x-observations?limit=1", token=None
+        )
+        assert unauthorized == 401
+        assert error["error_code"] == "unauthorized"
+
+        status, payload = request("GET", f"{base}/exports/x-observations?limit=1")
+        assert status == 200
+        assert payload["contract"] == "bmd.x-observations"
+        assert [row["observation_id"] for row in payload["records"]] == [stored["observation_id"]]
+        assert "HTTP-FIXTURE-BODY" not in json.dumps(payload)
+
+        with connect(cfg.db_path) as conn:
+            assert conn.execute("SELECT COUNT(*) FROM audit_events").fetchone()[0] == audit_before
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+
+
 def test_http_upload_get_and_purge_use_bounded_spool_during_media_root_outage(tmp_path, monkeypatch):
     def forbid_whole_blob_read(*_args, **_kwargs):
         raise AssertionError("media GET must stream through BlobStore.open")

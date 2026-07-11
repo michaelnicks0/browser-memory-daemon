@@ -1,0 +1,99 @@
+{
+  "contract": "bmd.x-observations",
+  "contract_version": 1,
+  "exhausted": true,
+  "generated_at": "2026-07-11T12:00:00Z",
+  "holds": {
+    "legacy_without_observation_identity": 0,
+    "without_discovered_x_url": 0
+  },
+  "next_cursor": "eyJjb250cmFjdCI6ImJtZC54LW9ic2VydmF0aW9ucyIsImluZ2VzdF9zZXF1ZW5jZSI6MSwib2JzZXJ2YXRpb25faWQiOiJvYnNfMDY4MjMwNmVjMjc2YTk5NTM4OTFjYWEyZGU4MmU0ZjkiLCJ2ZXJzaW9uIjoxfQ",
+  "order": {
+    "boundary": "exclusive",
+    "direction": "ascending",
+    "fields": [
+      "ingest_sequence",
+      "observation_id"
+    ]
+  },
+  "producer": {
+    "build_revision": "fixture",
+    "name": "browser-memory-daemon",
+    "schema_version": 14,
+    "version": "0.1.0"
+  },
+  "records": [
+    {
+      "capture": {
+        "disposition": "accepted",
+        "extraction_version": "fixture-v1",
+        "media_relationship_count": 0,
+        "method": "dom-text",
+        "provenance_quality": "observed",
+        "reason": "navigation-settled",
+        "source_id": "chrome-extension"
+      },
+      "captured_at": "2026-07-11T10:00:00Z",
+      "collection_evidence": {
+        "classification": "none",
+        "kind": null,
+        "proof_type": null,
+        "source_surface": "status"
+      },
+      "discovered_x_urls": [
+        {
+          "discovery_source": "observed_url",
+          "handle_hint": "alice",
+          "kind": "status",
+          "provenance_quality": "observed",
+          "status_id": "111",
+          "url": "https://x.com/alice/status/111"
+        },
+        {
+          "discovery_source": "body",
+          "handle_hint": "bob",
+          "kind": "status",
+          "provenance_quality": "inferred",
+          "status_id": "222",
+          "url": "https://x.com/bob/status/222"
+        }
+      ],
+      "document_id": "doc_1cee9e0ba3e693fa6600e59891668c20",
+      "identity_hints": [
+        {
+          "kind": "handle",
+          "quality": "alias_only",
+          "source_url": "https://x.com/alice/status/111",
+          "value": "alice"
+        },
+        {
+          "kind": "handle",
+          "quality": "alias_only",
+          "source_url": "https://x.com/bob/status/222",
+          "value": "bob"
+        }
+      ],
+      "ingest_sequence": 1,
+      "navigation_id": "nav-golden-v1",
+      "normalized_observed_url": "https://x.com/alice/status/111",
+      "observation_id": "obs_0682306ec276a9953891caa2de82e4f9",
+      "observed_surface": "status",
+      "observed_url": "https://x.com/alice/status/111?utm_source=fixture",
+      "snapshot_id": "snap_6cdd873242bc0403518d11ab8a02237b",
+      "text": {
+        "authority_source": "capture",
+        "body_included": false,
+        "body_owner": "browser_memory_daemon",
+        "char_count": 54,
+        "completeness": "complete",
+        "sha256": "1c1c08a598fba813cac4369344b9267cd6e600b313276352565f24c186c898f7"
+      },
+      "title": {
+        "body_included": false,
+        "char_count": 20,
+        "sha256": "a6f3b276c6b234339807dcd6ab225945eb21885ff2c2d31ca686c01b49226365"
+      },
+      "visit_id": "visit-golden-v1"
+    }
+  ]
+}
