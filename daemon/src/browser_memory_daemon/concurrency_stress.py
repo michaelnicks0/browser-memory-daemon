@@ -2,18 +2,20 @@ from __future__ import annotations
 
 import argparse
 import base64
-from collections import Counter
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from contextlib import nullcontext
-from dataclasses import dataclass, replace
 import json
-from pathlib import Path
 import tempfile
 import threading
 import time
-from typing import Any, Callable, Iterable, TypeVar
+import urllib.error
 import urllib.parse
 import urllib.request
+from collections import Counter
+from collections.abc import Callable, Iterable
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextlib import nullcontext
+from dataclasses import dataclass, replace
+from pathlib import Path
+from typing import Any, TypeVar
 
 from .app import make_server
 from .config import RuntimeConfig, load_config
@@ -74,7 +76,7 @@ def _binary_request(
 
 
 def _data_url(seed: str) -> str:
-    content = f"stress-media-{seed}".encode("utf-8")
+    content = f"stress-media-{seed}".encode()
     encoded = base64.b64encode(content).decode("ascii")
     return f"data:image/png;base64,{encoded}"
 
@@ -286,15 +288,32 @@ def run_concurrency_stress(options: StressOptions | None = None, **overrides: An
             def upload_task(item: tuple[int, dict[str, Any]]) -> dict[str, Any]:
                 index, capture = item
                 artifact_id = capture["media_artifacts"][0]["artifact_id"]
-                return _binary_request(
-                    "PUT",
-                    f"{base_url}/media-artifacts/{urllib.parse.quote(artifact_id, safe='')}/blob",
-                    token=selected.token,
-                    body=f"raw-upload-{index}".encode("utf-8"),
-                    content_type="image/png",
-                    headers={"X-BMD-Document-ID": capture["document_id"], "X-BMD-Snapshot-ID": capture["snapshot_id"]},
-                    timeout=selected.timeout_seconds,
-                )[1]
+                deadline = time.monotonic() + selected.timeout_seconds
+                capacity_rejections = 0
+                while True:
+                    try:
+                        response = _binary_request(
+                            "PUT",
+                            f"{base_url}/media-artifacts/{urllib.parse.quote(artifact_id, safe='')}/blob",
+                            token=selected.token,
+                            body=f"raw-upload-{index}".encode(),
+                            content_type="image/png",
+                            headers={
+                                "X-BMD-Document-ID": capture["document_id"],
+                                "X-BMD-Snapshot-ID": capture["snapshot_id"],
+                            },
+                            timeout=selected.timeout_seconds,
+                        )[1]
+                        return {"response": response, "capacity_rejections": capacity_rejections}
+                    except urllib.error.HTTPError as exc:
+                        error_body = exc.read().decode("utf-8", errors="replace")
+                        if exc.code != 503 or "media resource budget" not in error_body.lower():
+                            raise
+                        capacity_rejections += 1
+                        remaining = deadline - time.monotonic()
+                        if remaining <= 0:
+                            raise TimeoutError("media upload remained capacity-limited") from exc
+                        time.sleep(min(0.005 * (2 ** min(capacity_rejections - 1, 5)), remaining))
 
             def reader_task(index: int) -> dict[str, Any]:
                 q = urllib.parse.urlencode({"q": SHARED_NEEDLE, "limit": "5"})
@@ -358,6 +377,11 @@ def run_concurrency_stress(options: StressOptions | None = None, **overrides: An
                 for result in mixed_results
                 if result.get("ok") and result.get("value", {}).get("operation") == "media_worker"
             ]
+            upload_summaries = [
+                result["value"]["result"]
+                for result in mixed_results
+                if result.get("ok") and result.get("value", {}).get("operation") == "upload"
+            ]
             hard_failures: list[str] = []
             if errors:
                 hard_failures.append(f"{len(errors)} stress operations failed")
@@ -371,6 +395,8 @@ def run_concurrency_stress(options: StressOptions | None = None, **overrides: An
                 hard_failures.append(f"expected {selected.captures} documents, got {db['counts']['documents']}")
             if db["counts"]["visit_events"] < len(captures):
                 hard_failures.append("lifecycle event count lower than successful capture count")
+            if mixed_ok_by_kind["upload"] != len(upload_inputs):
+                hard_failures.append("not all capacity-limited media uploads completed after retry")
 
             result = {
                 "ok": not hard_failures,
@@ -394,6 +420,9 @@ def run_concurrency_stress(options: StressOptions | None = None, **overrides: An
                     "attempted_by_kind": dict(sorted(op_counter.items())),
                     "ok_by_kind": dict(sorted(mixed_ok_by_kind.items())),
                     "failed_by_kind": dict(sorted(mixed_failed_by_kind.items())),
+                    "capacity_rejections": sum(
+                        int(summary.get("capacity_rejections") or 0) for summary in upload_summaries
+                    ),
                 },
                 "media_worker": {
                     "runs": len(worker_summaries),

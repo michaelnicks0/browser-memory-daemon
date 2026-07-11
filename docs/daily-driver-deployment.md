@@ -14,7 +14,9 @@ Windows Chrome unpacked extension
      - browser-memory-daemon.service
      - browser-memory-media-worker.service
   → ~/.local/share/browser-memory-daemon/browser-memory.sqlite3
-  → ${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}/{clean-text,media}/
+  → ${BMD_DERIVATIVE_ROOT:-${BMD_BLOB_ROOT}}/clean-text/
+  → ${BMD_MEDIA_ROOT:-${BMD_BLOB_ROOT}/media}/
+  → optional bounded ${BMD_MEDIA_SPOOL_ROOT}/
 ```
 
 The daemon is persistent in WSL. Chrome still requires **Load unpacked** / **Reload** through Chrome's UI because branded Chrome rejects direct profile JSON extension transplants.
@@ -32,10 +34,13 @@ The daemon is persistent in WSL. Chrome still requires **Load unpacked** / **Rel
 | systemd daemon unit | `~/.config/systemd/user/browser-memory-daemon.service` |
 | systemd media worker unit | `~/.config/systemd/user/browser-memory-media-worker.service` |
 | SQLite DB | `~/.local/share/browser-memory-daemon/browser-memory.sqlite3` |
-| Blob root | `${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}` |
-| Clean-text blobs | `${BMD_BLOB_ROOT}/clean-text/` |
-| Media blobs | `${BMD_BLOB_ROOT}/media/` |
-| Audit log | `~/.local/state/browser-memory-daemon/audit.jsonl` |
+| Legacy blob parent | `${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}` |
+| Derivative root | `${BMD_DERIVATIVE_ROOT:-${BMD_BLOB_ROOT}}` compatibility default; new layouts may select a local derivative root after migration |
+| Legacy clean-text sidecars | `${BMD_DERIVATIVE_ROOT}/clean-text/` |
+| Final media blobs | `${BMD_MEDIA_ROOT:-${BMD_BLOB_ROOT}/media}` |
+| Optional local media spool | `BMD_MEDIA_SPOOL_ROOT` under the local data root, paired with positive `BMD_MAX_MEDIA_SPOOL_BYTES` |
+| Per-process media capacity | Positive `BMD_MAX_MEDIA_INFLIGHT_BYTES` (at least one maximum artifact) and `BMD_MAX_MEDIA_CONCURRENT_REQUESTS` |
+| Durable audit events | SQLite `audit_events` table; no `audit.jsonl` writer exists. `BMD_AUDIT_LOG` is a reserved/unused compatibility field. |
 
 ---
 
@@ -48,11 +53,11 @@ BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
 
 The installer:
 
-1. validates `BMD_POLICY_MODE` and the Python 3.11+ runtime;
+1. validates `BMD_POLICY_MODE`, media-root guard/spool configuration, and the Python 3.11+ runtime;
 2. builds the MV3 extension;
 3. copies it to the Windows-local extension directory;
 4. creates or reuses the daemon token;
-5. writes protected WSL env with `BMD_API_TOKEN`, `BMD_POLICY_MODE`, `BMD_BLOB_ROOT`, and `PYTHONPATH`;
+5. writes protected WSL env with token/policy, legacy blob compatibility, derivative/media/spool roots and limits, media mount/identity guard, and `PYTHONPATH`;
 6. writes/enables/restarts `systemd --user` daemon and media-worker services whose `ExecStart` values do not carry token material;
 7. preconfigures the Windows extension copy with token and policy mode;
 8. verifies WSL and Windows loopback health.
@@ -69,25 +74,38 @@ Read-only installed-state check, with no rebuild/copy/unit writes/restarts:
 ./scripts/install-daily-driver.sh --check
 ```
 
-To place blobs on a WSL-mounted NAS dataset while keeping SQLite/WAL local:
+Database compatibility is separately inspectable with `memory migrate --check`; see [`database-migrations.md`](database-migrations.md). Service startup applies only non-destructive pending migrations. A future destructive step fails closed until the operator runs explicit `migrate --execute`, which requires disk headroom and a verified online SQLite backup. Repository verification must use temporary roots and must not run either install or migration execution against the live daily driver.
+
+To place only disposable media on a WSL-mounted NAS dataset while keeping SQLite/WAL and derivatives local, first provision the external root and `.bmd-media-root-id` marker, then configure:
 
 ```bash
-BMD_BLOB_ROOT=/mnt/nas/browser-memory-daemon/blobs \
+BMD_MEDIA_ROOT=/mnt/nas/browser-memory-daemon/media \
+  BMD_MEDIA_ROOT_IDENTITY=bmd-media-prod \
+  BMD_REQUIRE_MEDIA_ROOT_MOUNT=1 \
+  BMD_MEDIA_SPOOL_ROOT="$HOME/.local/share/browser-memory-daemon/media-spool" \
+  BMD_MAX_MEDIA_SPOOL_BYTES=1073741824 \
+  BMD_MAX_MEDIA_INFLIGHT_BYTES=524288000 \
+  BMD_MAX_MEDIA_CONCURRENT_REQUESTS=4 \
   BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
 ```
 
-`BMD_BLOB_ROOT` affects only clean-text/media blob files. The SQLite DB, WAL/SHM sidecars, token/env files, audit state, and systemd units remain under WSL XDG paths.
+`BMD_MEDIA_ROOT` affects only disposable media bytes. The SQLite DB, complete cleaned text, WAL/SHM sidecars, derivatives, SQLite audit events, token/env files, and systemd units remain under WSL XDG paths. `BMD_BLOB_ROOT` remains a legacy parent when no explicit media root is configured. `BMD_RAW_HTML_ENABLED` and `BMD_AUDIT_LOG` are currently parsed compatibility fields only: the daemon does not persist raw HTML or write an `audit.jsonl` side log.
 
-The mount only needs to be a normal WSL-visible filesystem path. Prefer NFS for simple kernel-mounted NAS storage when it works in the local WSL/network boundary; SSHFS is an acceptable fallback for blob payloads because SQLite/WAL stays local.
+The mount only needs to be a normal WSL-visible filesystem path. Prefer NFS for simple kernel-mounted NAS storage when it works in the local WSL/network boundary; SSHFS is an acceptable fallback for media payloads because SQLite/WAL stays local. Explicit external media roots require both a non-root mount and an exact identity marker. The installer never creates the external root. If it later becomes unavailable, text capture continues; media uses only an explicitly configured bounded local spool or fails visibly.
 
 For an existing install, migrate DB-referenced blob paths after copying/writing to the new root:
 
 ```bash
 systemctl --user stop browser-memory-media-worker.service browser-memory-daemon.service
-BMD_BLOB_ROOT=/mnt/nas/browser-memory-daemon/blobs \
+BMD_DERIVATIVE_ROOT="$HOME/.local/share/browser-memory-daemon/derivatives" \
+  BMD_MEDIA_ROOT=/mnt/nas/browser-memory-daemon/media \
+  BMD_MEDIA_ROOT_IDENTITY=bmd-media-prod \
+  BMD_REQUIRE_MEDIA_ROOT_MOUNT=1 \
   PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
-  blob-root migrate --execute
-BMD_BLOB_ROOT=/mnt/nas/browser-memory-daemon/blobs \
+  blob-root migrate --from-root "$HOME/.local/share/browser-memory-daemon/blobs" --execute
+BMD_MEDIA_ROOT=/mnt/nas/browser-memory-daemon/media \
+  BMD_MEDIA_ROOT_IDENTITY=bmd-media-prod \
+  BMD_REQUIRE_MEDIA_ROOT_MOUNT=1 \
   BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
 ```
 
@@ -98,6 +116,23 @@ Rotate token and refresh extension copy:
 ```bash
 BMD_ROTATE_TOKEN=1 BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
 ```
+
+The installer is a staged readiness transaction:
+
+1. `--dry-run` validates the media-root prerequisite and extension destination without creating config, data, state, or extension paths.
+2. Token/environment/unit files are prepared under a private state-directory stage. Existing files and absence markers are retained for rollback.
+3. The extension is built and patched in a uniquely named sibling of `%LOCALAPPDATA%\browser-memory-daemon\extension`; required files, Manifest V3 JSON, and destination headroom are validated before replacement.
+4. An existing database must pass read-only `migrate --check`. Pending migrations block install and must be reviewed/executed separately.
+5. The daemon is restarted and checked active plus healthy over loopback before the media worker is restarted and checked active. Windows loopback health is the final check when PowerShell is available.
+6. Any caught readiness failure restores the prior token, environment, units, extension artifact, enablement, and active/inactive service state. Failure to recover prior service readiness exits `70` with `ROLLBACK INCOMPLETE`.
+
+A successful install records redaction-safe artifact hashes/modes and extension counts under:
+
+```text
+~/.local/state/browser-memory-daemon/install-history/
+```
+
+The manifest does not contain the token value. Installer-owned stages/backups are removed after success or a caught failure. A `SIGKILL`, power loss, or cross-filesystem host failure is not transactionally recoverable; inspect uniquely named `install-stage.*`, `extension.stage.*`, or `extension.backup.*` paths rather than deleting broad globs.
 
 Then reload Chrome extension:
 
@@ -144,7 +179,7 @@ Expected health includes:
 {"ok": true, "capture_enabled": true, "policy_mode": "all"}
 ```
 
-The aggregate health JSON also checks storage headroom thresholds, systemd restart budgets, recent service-start failure churn, that `~/.config/browser-memory-daemon/token` and `env` are owner-only, that the environment file token matches the token file, that the unit files use the protected `EnvironmentFile`, that service process arguments do not expose token material, and that the Windows extension artifact token defaults match the token file. Token values are not printed. Defaults warn below 5 GB free or 90% used and hard-fail below 1 GB free or 98% used; restart/start-failure budgets warn at 3 and hard-fail at 10. Override with `BMD_HEALTH_HEADROOM_*` / `BMD_HEALTH_SERVICE_*` only for intentionally small local runtimes.
+The aggregate health JSON also checks storage headroom thresholds, required blob-root mount state, systemd restart budgets, recent service-start failure churn, that `~/.config/browser-memory-daemon/token` and `env` are owner-only, that the environment file token matches the token file, that the unit files use the protected `EnvironmentFile`, that service process arguments do not expose token material, and that the Windows extension artifact token defaults match the token file. Token values are not printed. Defaults warn below 5 GB free or 90% used and hard-fail below 1 GB free or 98% used; restart/start-failure budgets warn at 3 and hard-fail at 10. Override with `BMD_HEALTH_HEADROOM_*` / `BMD_HEALTH_SERVICE_*` only for intentionally small local runtimes.
 
 ---
 
@@ -154,7 +189,7 @@ The aggregate health JSON also checks storage headroom thresholds, systemd resta
 http://127.0.0.1:8765/ui
 ```
 
-Open the local UI directly through the daemon. The daemon embeds the current token into the served `/ui` HTML bootstrap, so the dashboard prepopulates the token and auto-loads recent captures, today's timeline, policy rules, and diagnostics. Static JS/CSS assets do not contain the token, and every memory/admin API still requires the bearer token.
+Open the local UI directly through the daemon. The daemon embeds the current token into the served `/ui` HTML bootstrap, so the dashboard prepopulates the token and auto-loads recent captures, today's timeline, policy rules, and diagnostics. The UI shell rejects non-loopback `Host` headers, static JS/CSS assets do not contain the token, and every memory/admin API still requires the bearer token.
 
 The **Save override** button remains available for unusual development/test cases; normal daily-driver use should not require pasting a token.
 
@@ -205,7 +240,7 @@ Use `forget` after the fact if a domain should be removed:
 ```bash
 PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
-  forget --domain example.com
+  forget --domain example.com --execute
 ```
 
 ---

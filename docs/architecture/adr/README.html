@@ -166,7 +166,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td><a href="0006-use-forget-cascade-with-deletion-receipts.html">ADR-0006</a></td>
-<td>accepted</td>
+<td>superseded by ADR-0040</td>
 <td>Use forget/delete cascades with deletion receipts.</td>
 </tr>
 <tr>
@@ -236,18 +236,193 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td><a href="0020-enforce-static-requirement-traceability-gate.html">ADR-0020</a></td>
-<td>accepted</td>
+<td>superseded by ADR-0027</td>
 <td>Enforce static requirement traceability in the generated test inventory gate.</td>
 </tr>
 <tr>
 <td><a href="0021-use-configurable-nas-blob-root-with-local-sqlite.html">ADR-0021</a></td>
-<td>accepted</td>
+<td>superseded by ADR-0039</td>
 <td>Use a configurable NAS-capable blob root while keeping SQLite/WAL local.</td>
 </tr>
 <tr>
 <td><a href="0022-use-fast-doctor-and-media-queue-health-telemetry.html">ADR-0022</a></td>
 <td>accepted</td>
 <td>Use fast doctor and media-queue health telemetry.</td>
+</tr>
+<tr>
+<td><a href="0023-guard-daemon-public-media-egress.html">ADR-0023</a></td>
+<td>superseded by ADR-0045</td>
+<td>Guard daemon-public media egress.</td>
+</tr>
+<tr>
+<td><a href="0024-contain-blob-and-media-artifact-paths.html">ADR-0024</a></td>
+<td>accepted</td>
+<td>Contain blob and media artifact paths.</td>
+</tr>
+<tr>
+<td><a href="0025-literal-policy-aware-forget-selectors.html">ADR-0025</a></td>
+<td>superseded by ADR-0057</td>
+<td>Use literal and policy-aware forget selectors.</td>
+</tr>
+<tr>
+<td><a href="0026-harden-loopback-ui-and-required-blob-mounts.html">ADR-0026</a></td>
+<td>accepted</td>
+<td>Harden loopback UI and required blob mounts.</td>
+</tr>
+<tr>
+<td><a href="0027-use-canonical-semantic-requirement-catalog.html">ADR-0027</a></td>
+<td>accepted</td>
+<td>Use one machine-readable semantic requirement catalog with explicit legacy aliases and generated V-model traceability.</td>
+</tr>
+<tr>
+<td><a href="0028-use-versioned-restore-backed-sqlite-migrations.html">ADR-0028</a></td>
+<td>accepted</td>
+<td>Use versioned restore-backed SQLite migrations with exact schema fingerprints, ordered checksums, and backup-gated destructive steps.</td>
+</tr>
+<tr>
+<td><a href="0029-use-hermetic-fast-quality-gate.html">ADR-0029</a></td>
+<td>accepted</td>
+<td>Add a network-free fast gate with targeted static analysis, branch coverage, an XDG write sentinel, and a measured coverage ratchet.</td>
+</tr>
+<tr>
+<td><a href="0030-separate-capture-observations-and-url-claims.html">ADR-0030</a></td>
+<td>accepted</td>
+<td>Add expand-only capture-observation and untrusted URL-claim authority before dual-write and read cutover.</td>
+</tr>
+<tr>
+<td><a href="0031-dual-write-observed-url-capture-provenance.html">ADR-0031</a></td>
+<td>accepted</td>
+<td>Dual-write observed-URL capture provenance, preserve visit rows on recapture, and backfill only evidence-supported historical relationships.</td>
+</tr>
+<tr>
+<td><a href="0032-link-media-artifacts-to-capture-observations.html">ADR-0032</a></td>
+<td>accepted</td>
+<td>Add explicit observation/artifact provenance links with conservative evidence-bounded historical backfill.</td>
+</tr>
+<tr>
+<td><a href="0033-use-observation-first-historical-activity-reads.html">ADR-0033</a></td>
+<td>accepted</td>
+<td>Read recent/timeline/detail activity from contemporaneous observations with an explicit ambiguous legacy fallback.</td>
+</tr>
+<tr>
+<td><a href="0034-bind-lifecycle-by-visit-identity-and-union-dwell.html">ADR-0034</a></td>
+<td>accepted</td>
+<td>Preserve claimed visit identity, reconcile delayed events, and derive dwell from interval unions.</td>
+</tr>
+<tr>
+<td><a href="0035-emit-stable-browser-observation-and-navigation-identities.html">ADR-0035</a></td>
+<td>accepted</td>
+<td>Persist opaque observation IDs per extraction and navigation IDs per tab/URL state across queue retries.</td>
+</tr>
+<tr>
+<td><a href="0036-route-blob-operations-through-contained-blobstore.html">ADR-0036</a></td>
+<td>accepted</td>
+<td>Route staged streaming writes, contained reads, stats, and deletes through one BlobStore while legacy locators remain compatible.</td>
+</tr>
+<tr>
+<td><a href="0037-expand-blob-references-with-relative-locators.html">ADR-0037</a></td>
+<td>accepted</td>
+<td>Dual-write root-relative blob locators, prefer them on reads, and retain a contained legacy absolute fallback during expansion.</td>
+</tr>
+<tr>
+<td><a href="0038-make-sqlite-authoritative-for-cleaned-snapshot-text.html">ADR-0038</a></td>
+<td>accepted</td>
+<td>Commit complete cleaned text to SQLite, stop creating new text sidecars, and hash-verify legacy promotion.</td>
+</tr>
+<tr>
+<td><a href="0039-split-media-root-and-add-bounded-durable-spool.html">ADR-0039</a></td>
+<td>accepted</td>
+<td>Split derivative and media roots, guard external identity, and bound local outage buffering.</td>
+</tr>
+<tr>
+<td><a href="0040-use-durable-deletion-intents-and-reconciliation.html">ADR-0040</a></td>
+<td>accepted</td>
+<td>Persist blob deletion intent before cascades and reconcile failures through contained retryable operations.</td>
+</tr>
+<tr>
+<td><a href="0041-use-manifest-backed-text-first-backup-and-empty-root-restore.html">ADR-0041</a></td>
+<td>accepted</td>
+<td>Create manifest-backed text-first online backups and restore only into an absent explicit runtime root.</td>
+</tr>
+<tr>
+<td><a href="0042-separate-media-state-and-task-repository.html">ADR-0042</a></td>
+<td>accepted</td>
+<td>Separate media status/transition authority and durable task leasing/retry workflow from the compatibility facade.</td>
+</tr>
+<tr>
+<td><a href="0043-isolate-media-cache-admission-and-eviction.html">ADR-0043</a></td>
+<td>accepted</td>
+<td>Isolate media cache accounting, admission, oldest-first eviction, and tombstone-backed deletion outcomes.</td>
+</tr>
+<tr>
+<td><a href="0044-publish-media-through-artifact-store.html">ADR-0044</a></td>
+<td>accepted</td>
+<td>Publish, resolve, and purge media through the artifact store with unique candidates and failed-write compensation.</td>
+</tr>
+<tr>
+<td><a href="0045-isolate-guarded-media-fetch-and-hls.html">ADR-0045</a></td>
+<td>accepted</td>
+<td>Isolate guarded media fetch and bounded HLS transport.</td>
+</tr>
+<tr>
+<td><a href="0046-move-historical-media-correction-out-of-worker-loop.html">ADR-0046</a></td>
+<td>accepted</td>
+<td>Move historical media correction out of the worker loop.</td>
+</tr>
+<tr>
+<td><a href="0047-stream-media-with-process-budgets-and-durable-cache-reservations.html">ADR-0047</a></td>
+<td>accepted</td>
+<td>Stream media with process budgets and durable cache reservations.</td>
+</tr>
+<tr>
+<td><a href="0048-use-transactional-indexeddb-capture-lifecycle-outbox.html">ADR-0048</a></td>
+<td>accepted</td>
+<td>Use a transactional IndexedDB outbox for capture and lifecycle delivery.</td>
+</tr>
+<tr>
+<td><a href="0049-bound-browser-media-queue-lifecycle.html">ADR-0049</a></td>
+<td>accepted</td>
+<td>Bound the browser media task and blob lifecycle.</td>
+</tr>
+<tr>
+<td><a href="0050-use-full-capture-digest-and-rendered-visibility.html">ADR-0050</a></td>
+<td>accepted</td>
+<td>Use full capture digests and a conservative rendered-visibility contract.</td>
+</tr>
+<tr>
+<td><a href="0051-extract-mv3-restart-state-controllers.html">ADR-0051</a></td>
+<td>accepted</td>
+<td>Extract MV3 restart-state controllers from the service worker.</td>
+</tr>
+<tr>
+<td><a href="0052-complete-mv3-service-worker-orchestration-split.html">ADR-0052</a></td>
+<td>accepted</td>
+<td>Complete the MV3 service-worker orchestration split.</td>
+</tr>
+<tr>
+<td><a href="0053-introduce-compatible-http-route-descriptors.html">ADR-0053</a></td>
+<td>accepted</td>
+<td>Introduce explicit HTTP route descriptors behind compatible endpoint contracts.</td>
+</tr>
+<tr>
+<td><a href="0054-use-typed-compatible-http-errors.html">ADR-0054</a></td>
+<td>accepted</td>
+<td>Use typed compatible HTTP errors and sanitize internal failures.</td>
+</tr>
+<tr>
+<td><a href="0055-add-redaction-safe-http-request-envelope.html">ADR-0055</a></td>
+<td>accepted</td>
+<td>Add opaque request IDs, common security headers, and redaction-safe request telemetry.</td>
+</tr>
+<tr>
+<td><a href="0056-separate-http-transport-from-application-use-cases.html">ADR-0056</a></td>
+<td>accepted</td>
+<td>Separate the standard-library HTTP adapter from explicit request-independent application use cases.</td>
+</tr>
+<tr>
+<td><a href="0057-preview-and-bound-forget-selection.html">ADR-0057</a></td>
+<td>accepted</td>
+<td>Preview exact forget scope and bound destructive execution.</td>
 </tr>
 </tbody>
 </table>

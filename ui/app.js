@@ -244,9 +244,24 @@ async function blockDomain(domain) {
 }
 
 async function forgetDomain(domain) {
-  const ok = confirm(`Forget all stored browser memory for ${domain}? This deletes matching rows, FTS entries, clean-text blobs, and media blobs.`);
+  const preview = await api('/forget', {
+    method: 'POST',
+    body: JSON.stringify({domain, dry_run: true}),
+  });
+  const selectedRecords = Number(preview.guard?.selected_records || 0);
+  if (selectedRecords === 0) {
+    els.results.innerHTML = `<pre class="code">${escapeHtml(JSON.stringify(preview, null, 2))}</pre>`;
+    return;
+  }
+  const ok = confirm(
+    `Forget ${preview.counts?.documents || 0} document(s) and ${selectedRecords} total stored record(s) for ${domain}? `
+    + 'This deletes matching rows, FTS entries, clean-text blobs, and media blobs.',
+  );
   if (!ok) return;
-  const payload = await api('/forget', {method: 'POST', body: JSON.stringify({domain})});
+  const payload = await api('/forget', {
+    method: 'POST',
+    body: JSON.stringify({domain, max_records: selectedRecords}),
+  });
   els.results.innerHTML = `<pre class="code">${escapeHtml(JSON.stringify(payload, null, 2))}</pre>`;
   await refreshRecent();
 }

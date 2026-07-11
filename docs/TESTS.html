@@ -132,7 +132,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </blockquote>
 <!-- BEGIN GENERATED:inventory-summary -->
 <blockquote>
-<p><strong>Current inventory:</strong> 116 static test functions across 24 files — 89 daemon pytest tests + 27 extension node:test tests.</p>
+<p><strong>Current inventory:</strong> 324 static test functions across 57 files — 251 daemon pytest tests + 73 extension node:test tests.</p>
 </blockquote>
 <!-- END GENERATED:inventory-summary -->
 
@@ -143,6 +143,10 @@ python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> <
 .<span style="color: #F8F8F2"> </span>.venv/bin/activate
 python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pip<span style="color: #F8F8F2"> </span>install<span style="color: #F8F8F2"> </span>-r<span style="color: #F8F8F2"> </span>requirements-dev.txt
 
+<span style="color: #959077"># Hermetic network-free pre-commit gate: Ruff, strict mypy, branch coverage,</span>
+<span style="color: #959077"># Python/Node tests, generated inventory, secret/diff checks, and XDG sentinel.</span>
+<span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-fast-gate.sh
+
 <span style="color: #959077"># Daemon tests — use Python 3.11+.</span>
 python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pytest<span style="color: #F8F8F2"> </span>-q
 
@@ -150,7 +154,7 @@ python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </spa
 <span style="color: #F8F8F2">cd </span>extension<span style="color: #F8F8F2"> </span><span style="color: #FF4689">&amp;&amp;</span><span style="color: #F8F8F2"> </span>npm<span style="color: #F8F8F2"> test </span><span style="color: #FF4689">&amp;&amp;</span><span style="color: #F8F8F2"> </span>npm<span style="color: #F8F8F2"> </span>run<span style="color: #F8F8F2"> </span>build
 
 <span style="color: #959077"># Real Windows Chrome-family e2e. Default matrix runs `all` and `strict`.</span>
-<span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
+<span style="color: #F8F8F2">BMD_REAL_CHROME_ALLOW_DOWNLOAD</span><span style="color: #FF4689">=</span><span style="color: #AE81FF">0</span><span style="color: #F8F8F2"> BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
 
 <span style="color: #959077"># Synthetic advisory performance benchmark.</span>
 ./scripts/run-performance-benchmarks.sh<span style="color: #F8F8F2"> </span>--small<span style="color: #F8F8F2"> </span>--json<span style="color: #F8F8F2"> </span>&gt;/tmp/bmd_benchmark.json
@@ -163,8 +167,9 @@ python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </spa
 git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span>--check<span style="color: #F8F8F2"> </span>--<span style="color: #F8F8F2"> </span>.
 </code></pre></div>
 
-<p><code>./scripts/run-e2e.sh</code> runs daemon tests, extension tests/build, the real Chrome e2e matrix unless <code>BMD_SKIP_REAL_CHROME_E2E=1</code>, secret scan, and whitespace check.</p>
-<p><code>python3.11 scripts/generate_test_inventory.py --check</code> is a hard static gate: it enforces the generated test inventory, verifies every <code>REQ-*</code> row in <code>docs/ARCHITECTURE.md</code> appears in <code>docs/test-plan.md</code>, and fails when test-plan file/test references drift to missing paths.</p>
+<p><code>./scripts/run-fast-gate.sh</code> is the short network-free authority. It redirects all default user roots into <code>/tmp</code>, runs targeted Ruff and strict mypy, measures full Python branch coverage against the 80% evidence-derived floor, runs all Python/Node tests, and fails if the redirected default-XDG roots receive a file. See <a href="coverage-baseline.html"><code>coverage-baseline.md</code></a>.</p>
+<p><code>./scripts/run-e2e.sh</code> remains the broad authority: daemon tests, extension tests/build, the real Chrome e2e matrix unless <code>BMD_SKIP_REAL_CHROME_E2E=1</code>, secret scan, and whitespace check.</p>
+<p><code>python3.11 scripts/generate_test_inventory.py --check</code> is a hard static gate over <code>requirements/catalog.toml</code>: it enforces unique stable IDs/aliases, explicit normative revisions, existing implementation/evidence paths, resolvable test node IDs, and validation evidence for active requirements. It also regenerates the catalog-owned requirement tables and volatile static test counts across the documentation set.</p>
 <p><code>./scripts/run-performance-benchmarks.sh --small --json</code> emits machine-readable synthetic benchmark evidence for ingest, search, recent/timeline/detail, read endpoint audit writes, media-worker task selection/run, and DB/WAL/blob sidecar growth. Budgets are advisory until a later ticket/ADR promotes measured thresholds to hard gates.</p>
 <hr />
 <h2 id="durabilityconcurrency-stress-harness">Durability/concurrency stress harness</h2>
@@ -172,7 +177,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>./scripts/run-concurrency-stress.sh
 </code></pre></div>
 
-<p>The harness uses a temporary isolated runtime root by default. It drives concurrent public HTTP captures, lifecycle events, search/detail reads, media blob uploads, and media-worker <code>run_once</code> passes against one SQLite database. It prints JSON and exits non-zero if any operation fails, SQLite <code>integrity_check</code> is not <code>ok</code>, chunks are missing FTS rows, or expected synthetic rows are absent.</p>
+<p>The harness uses a temporary isolated runtime root by default. It drives concurrent public HTTP captures, lifecycle events, search/detail reads, media blob uploads, and media-worker <code>run_once</code> passes against one SQLite database. Immediate <code>503</code> media-resource-budget rejections are expected overload evidence: uploads retry with bounded exponential delay, the report records <code>mixed_operations.capacity_rejections</code>, and every upload must still complete within the phase deadline. The harness prints JSON and exits non-zero if a non-capacity operation fails, a bounded upload cannot complete, SQLite <code>integrity_check</code> is not <code>ok</code>, chunks are missing FTS rows, or expected synthetic rows are absent.</p>
 <p>Useful knobs:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>./scripts/run-concurrency-stress.sh<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span>--captures<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">24</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
@@ -185,7 +190,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <hr />
 <h2 id="generated-test-inventory">Generated test inventory</h2>
 <!-- BEGIN GENERATED:audit-run -->
-<p>Latest inventory: <strong>116 static test functions</strong> across <strong>24 files</strong> (89 daemon pytest; 27 extension node:test). Regenerate with <code>python3.11 scripts/generate_test_inventory.py --write</code>; enforce with <code>--check</code>. Counts are source-level test functions, not pytest parametrized case expansions.</p>
+<p>Latest inventory: <strong>324 static test functions</strong> across <strong>57 files</strong> (251 daemon pytest; 73 extension node:test). Regenerate with <code>python3.11 scripts/generate_test_inventory.py --write</code>; enforce with <code>--check</code>. Counts are source-level test functions, not pytest parametrized case expansions.</p>
 <!-- END GENERATED:audit-run -->
 
 <h2 id="requirements-traceability-gate">Requirements traceability gate</h2>
@@ -200,24 +205,52 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 </thead>
 <tbody>
 <tr>
-<td>Architecture requirements found</td>
-<td>17</td>
+<td>Catalog requirements</td>
+<td>43 (43 active; 0 planned)</td>
 </tr>
 <tr>
-<td>Test-plan requirement rows found</td>
-<td>24</td>
-</tr>
-<tr>
-<td>Missing architecture requirements in <code>docs/test-plan.md</code></td>
+<td>Duplicate stable IDs</td>
 <td>none</td>
 </tr>
 <tr>
-<td>Unresolved file/test references in <code>docs/test-plan.md</code></td>
+<td>Invalid requirement definitions</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Duplicate plan/local aliases</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Legacy alias errors</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Missing implementation paths</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Unresolved evidence/test nodes</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Active requirements without validation evidence</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Normative changes without revision increment</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Requirements removed without catalog disposition</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Catalog load errors</td>
 <td>none</td>
 </tr>
 <tr>
 <td>Static test inventory measured</td>
-<td>116 tests / 24 files</td>
+<td>324 tests / 57 files</td>
 </tr>
 </tbody>
 </table>
@@ -242,7 +275,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <tr>
 <td><code>daemon/tests/e2e/test_cli_admin.py</code></td>
 <td>pytest</td>
-<td style="text-align: right;">1</td>
+<td style="text-align: right;">7</td>
 </tr>
 <tr>
 <td><code>daemon/tests/e2e/test_concurrency_stress.py</code></td>
@@ -252,22 +285,27 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <tr>
 <td><code>daemon/tests/e2e/test_daily_driver_install.py</code></td>
 <td>pytest</td>
-<td style="text-align: right;">1</td>
+<td style="text-align: right;">2</td>
 </tr>
 <tr>
 <td><code>daemon/tests/e2e/test_generate_test_inventory.py</code></td>
 <td>pytest</td>
-<td style="text-align: right;">2</td>
+<td style="text-align: right;">4</td>
 </tr>
 <tr>
 <td><code>daemon/tests/e2e/test_http_api.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">16</td>
+</tr>
+<tr>
+<td><code>daemon/tests/e2e/test_install_daily_driver.py</code></td>
 <td>pytest</td>
 <td style="text-align: right;">5</td>
 </tr>
 <tr>
 <td><code>daemon/tests/e2e/test_performance_benchmarks.py</code></td>
 <td>pytest</td>
-<td style="text-align: right;">2</td>
+<td style="text-align: right;">5</td>
 </tr>
 <tr>
 <td><code>daemon/tests/e2e/test_read_model_indexes.py</code></td>
@@ -277,35 +315,130 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <tr>
 <td><code>daemon/tests/e2e/test_ui_dashboard_smoke.py</code></td>
 <td>pytest</td>
-<td style="text-align: right;">3</td>
+<td style="text-align: right;">4</td>
+</tr>
+<tr>
+<td><code>daemon/tests/integration/test_backup_restore.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">18</td>
+</tr>
+<tr>
+<td><code>daemon/tests/integration/test_capture_observations.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">8</td>
 </tr>
 <tr>
 <td><code>daemon/tests/integration/test_ingest_search_forget.py</code></td>
 <td>pytest</td>
-<td style="text-align: right;">22</td>
+<td style="text-align: right;">29</td>
+</tr>
+<tr>
+<td><code>daemon/tests/integration/test_media_ops.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr>
+<td><code>daemon/tests/integration/test_media_storage.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">15</td>
+</tr>
+<tr>
+<td><code>daemon/tests/integration/test_media_tasks.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">2</td>
 </tr>
 <tr>
 <td><code>daemon/tests/integration/test_media_worker.py</code></td>
 <td>pytest</td>
+<td style="text-align: right;">26</td>
+</tr>
+<tr>
+<td><code>daemon/tests/integration/test_migrations.py</code></td>
+<td>pytest</td>
 <td style="text-align: right;">20</td>
 </tr>
 <tr>
+<td><code>daemon/tests/integration/test_observation_reads.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr>
+<td><code>daemon/tests/integration/test_storage_reconcile.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">4</td>
+</tr>
+<tr>
+<td><code>daemon/tests/integration/test_text_authority.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr>
 <td><code>daemon/tests/integration/test_visit_lifecycle.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">6</td>
+</tr>
+<tr>
+<td><code>daemon/tests/unit/test_api_errors.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr>
+<td><code>daemon/tests/unit/test_application.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">4</td>
+</tr>
+<tr>
+<td><code>daemon/tests/unit/test_blob_store.py</code></td>
 <td>pytest</td>
 <td style="text-align: right;">5</td>
 </tr>
 <tr>
 <td><code>daemon/tests/unit/test_config.py</code></td>
 <td>pytest</td>
-<td style="text-align: right;">1</td>
+<td style="text-align: right;">7</td>
 </tr>
 <tr>
 <td><code>daemon/tests/unit/test_daily_driver_health.py</code></td>
 <td>pytest</td>
-<td style="text-align: right;">5</td>
+<td style="text-align: right;">6</td>
 </tr>
 <tr>
 <td><code>daemon/tests/unit/test_db.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr>
+<td><code>daemon/tests/unit/test_http_server.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr>
+<td><code>daemon/tests/unit/test_media_fetch.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr>
+<td><code>daemon/tests/unit/test_media_hls.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr>
+<td><code>daemon/tests/unit/test_media_models.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">4</td>
+</tr>
+<tr>
+<td><code>daemon/tests/unit/test_media_resources.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr>
+<td><code>daemon/tests/unit/test_media_store.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr>
+<td><code>daemon/tests/unit/test_media_worker_claiming.py</code></td>
 <td>pytest</td>
 <td style="text-align: right;">2</td>
 </tr>
@@ -325,19 +458,79 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <td style="text-align: right;">4</td>
 </tr>
 <tr>
+<td><code>daemon/tests/unit/test_routes.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr>
+<td><code>daemon/tests/unit/test_storage_paths.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">5</td>
+</tr>
+<tr>
+<td><code>extension/tests/unit/capture_bridge.test.js</code></td>
+<td>node:test</td>
+<td style="text-align: right;">4</td>
+</tr>
+<tr>
+<td><code>extension/tests/unit/capture_digest.test.js</code></td>
+<td>node:test</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr>
 <td><code>extension/tests/unit/cdp_recorder.test.js</code></td>
 <td>node:test</td>
 <td style="text-align: right;">4</td>
 </tr>
 <tr>
+<td><code>extension/tests/unit/cdp_session.test.js</code></td>
+<td>node:test</td>
+<td style="text-align: right;">5</td>
+</tr>
+<tr>
+<td><code>extension/tests/unit/chrome_for_testing.test.js</code></td>
+<td>node:test</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr>
+<td><code>extension/tests/unit/config_store.test.js</code></td>
+<td>node:test</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr>
+<td><code>extension/tests/unit/content_script.test.js</code></td>
+<td>node:test</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
 <td><code>extension/tests/unit/extractor.test.js</code></td>
 <td>node:test</td>
-<td style="text-align: right;">11</td>
+<td style="text-align: right;">13</td>
+</tr>
+<tr>
+<td><code>extension/tests/unit/injection.test.js</code></td>
+<td>node:test</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr>
+<td><code>extension/tests/unit/media_bridge.test.js</code></td>
+<td>node:test</td>
+<td style="text-align: right;">4</td>
 </tr>
 <tr>
 <td><code>extension/tests/unit/media_queue.test.js</code></td>
 <td>node:test</td>
-<td style="text-align: right;">5</td>
+<td style="text-align: right;">9</td>
+</tr>
+<tr>
+<td><code>extension/tests/unit/outbox.test.js</code></td>
+<td>node:test</td>
+<td style="text-align: right;">6</td>
+</tr>
+<tr>
+<td><code>extension/tests/unit/popup.test.js</code></td>
+<td>node:test</td>
+<td style="text-align: right;">1</td>
 </tr>
 <tr>
 <td><code>extension/tests/unit/queue.test.js</code></td>
@@ -347,7 +540,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <tr>
 <td><code>extension/tests/unit/service_worker.test.js</code></td>
 <td>node:test</td>
-<td style="text-align: right;">4</td>
+<td style="text-align: right;">10</td>
 </tr>
 <tr>
 <td><code>extension/tests/unit/shared.test.js</code></td>
@@ -355,9 +548,14 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <td style="text-align: right;">2</td>
 </tr>
 <tr>
+<td><code>extension/tests/unit/visit_tracker.test.js</code></td>
+<td>node:test</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr>
 <td><strong>Total</strong></td>
 <td></td>
-<td style="text-align: right;"><strong>116</strong></td>
+<td style="text-align: right;"><strong>324</strong></td>
 </tr>
 </tbody>
 </table>
@@ -369,81 +567,235 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <!-- BEGIN GENERATED:test-case-inventory -->
 | File | Runner | Suite | Test function | Line | Coverage note |
 |---|---|---|---|---:|---|
-| `daemon/tests/e2e/test_admin_api.py` | pytest | `(module)` | `test_admin_read_apis_and_ui_assets` | 57 | Admin read apis and ui assets. |
-| `daemon/tests/e2e/test_admin_api.py` | pytest | `(module)` | `test_policy_rule_blocks_future_capture_and_can_be_deleted` | 128 | Policy rule blocks future capture and can be deleted. |
-| `daemon/tests/e2e/test_admin_api.py` | pytest | `(module)` | `test_url_prefix_policy_rule_applies_in_all_mode_without_blocking_all_localhost` | 170 | Url prefix policy rule applies in all mode without blocking all localhost. |
+| `daemon/tests/e2e/test_admin_api.py` | pytest | `(module)` | `test_admin_read_apis_and_ui_assets` | 56 | Admin read apis and ui assets. |
+| `daemon/tests/e2e/test_admin_api.py` | pytest | `(module)` | `test_policy_rule_blocks_future_capture_and_can_be_deleted` | 137 | Policy rule blocks future capture and can be deleted. |
+| `daemon/tests/e2e/test_admin_api.py` | pytest | `(module)` | `test_url_prefix_policy_rule_applies_in_all_mode_without_blocking_all_localhost` | 179 | Url prefix policy rule applies in all mode without blocking all localhost. |
 | `daemon/tests/e2e/test_cli_admin.py` | pytest | `(module)` | `test_cli_admin_commands` | 34 | Cli admin commands. |
+| `daemon/tests/e2e/test_cli_admin.py` | pytest | `(module)` | `test_cli_migrate_check_is_read_only_then_execute_applies_pending_steps` | 117 | Cli migrate check is read only then execute applies pending steps. |
+| `daemon/tests/e2e/test_cli_admin.py` | pytest | `(module)` | `test_cli_media_requeue_defaults_to_scoped_dry_run` | 146 | Cli media requeue defaults to scoped dry run. |
+| `daemon/tests/e2e/test_cli_admin.py` | pytest | `(module)` | `test_cli_snapshot_text_reconcile_defaults_to_dry_run` | 162 | Cli snapshot text reconcile defaults to dry run. |
+| `daemon/tests/e2e/test_cli_admin.py` | pytest | `(module)` | `test_cli_media_spool_status_and_drain_are_dry_run_safe` | 186 | Cli media spool status and drain are dry run safe. |
+| `daemon/tests/e2e/test_cli_admin.py` | pytest | `(module)` | `test_cli_storage_reconcile_defaults_to_dry_run` | 206 | Cli storage reconcile defaults to dry run. |
+| `daemon/tests/e2e/test_cli_admin.py` | pytest | `(module)` | `test_cli_backup_create_and_restore_validate_then_execute` | 226 | Cli backup create and restore validate then execute. |
 | `daemon/tests/e2e/test_concurrency_stress.py` | pytest | `(module)` | `test_concurrency_stress_harness_exercises_shared_sqlite_db` | 6 | Concurrency stress harness exercises shared sqlite db. |
-| `daemon/tests/e2e/test_concurrency_stress.py` | pytest | `(module)` | `test_concurrency_stress_cli_prints_json_for_explicit_runtime` | 36 | Concurrency stress cli prints json for explicit runtime. |
-| `daemon/tests/e2e/test_daily_driver_install.py` | pytest | `(module)` | `test_install_daily_driver_dry_run_is_non_mutating` | 12 | Install daily driver dry run is non mutating. |
-| `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_generate_test_inventory_reports_traceability_success` | 69 | Generate test inventory reports traceability success. |
-| `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_generate_test_inventory_check_fails_for_traceability_gaps` | 87 | Generate test inventory check fails for traceability gaps. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_skips_request_time_db_initialization_after_startup` | 61 | Http capture skips request time db initialization after startup. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_media_fetch_raw_upload_and_purge_rehydrate_controls` | 93 | Http media fetch raw upload and purge rehydrate controls. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_search_forget_round_trip` | 162 | Http capture search forget round trip. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_api_contract_errors_methods_and_limits_are_json` | 268 | Http api contract errors methods and limits are json. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_policy_rule_duplicate_creation_returns_existing_semantic_rule` | 312 | Http policy rule duplicate creation returns existing semantic rule. |
-| `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_json_output_is_structured` | 8 | Performance benchmark json output is structured. |
-| `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_human_summary_is_compact` | 44 | Performance benchmark human summary is compact. |
+| `daemon/tests/e2e/test_concurrency_stress.py` | pytest | `(module)` | `test_concurrency_stress_cli_prints_json_for_explicit_runtime` | 37 | Concurrency stress cli prints json for explicit runtime. |
+| `daemon/tests/e2e/test_daily_driver_install.py` | pytest | `(module)` | `test_install_daily_driver_dry_run_is_non_mutating` | 11 | Install daily driver dry run is non mutating. |
+| `daemon/tests/e2e/test_daily_driver_install.py` | pytest | `(module)` | `test_install_daily_driver_required_mount_guard_fails_before_writes` | 57 | Install daily driver required mount guard fails before writes. |
+| `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_generate_test_inventory_reports_catalog_traceability_success` | 140 | Generate test inventory reports catalog traceability success. |
+| `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_generate_test_inventory_check_fails_for_catalog_gaps` | 162 | Generate test inventory check fails for catalog gaps. |
+| `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_catalog_rejects_duplicate_ids` | 188 | Catalog rejects duplicate ids. |
+| `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_catalog_statement_change_requires_revision_increment` | 202 | Catalog statement change requires revision increment. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_skips_request_time_db_initialization_after_startup` | 101 | Http capture skips request time db initialization after startup. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_upload_get_and_purge_use_bounded_spool_during_media_root_outage` | 133 | Http upload get and purge use bounded spool during media root outage. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_media_fetch_raw_upload_and_purge_rehydrate_controls` | 208 | Http media fetch raw upload and purge rehydrate controls. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_raw_media_upload_requires_explicit_decimal_content_length` | 284 | Http raw media upload requires explicit decimal content length. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_json_body_rejects_ambiguous_invalid_and_truncated_content_lengths` | 330 | Http json body rejects ambiguous invalid and truncated content lengths. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_raw_media_upload_disconnect_cleans_staging_reservations_and_process_budget` | 379 | Http raw media upload disconnect cleans staging reservations and process budget. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_media_download_disconnect_stops_stream_and_releases_process_budget` | 489 | Http media download disconnect stops stream and releases process budget. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_raw_media_upload_returns_503_when_global_byte_budget_cannot_admit_body` | 609 | Http raw media upload returns 503 when global byte budget cannot admit body. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_search_forget_round_trip` | 661 | Http capture search forget round trip. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_api_contract_errors_methods_and_limits_are_json` | 805 | Http api contract errors methods and limits are json. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_route_catalog_preserves_auth_unknown_route_and_ready_contracts` | 858 | Http route catalog preserves auth unknown route and ready contracts. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_request_envelope_adds_unique_ids_and_security_headers_to_every_response_kind` | 915 | Http request envelope adds unique ids and security headers to every response kind. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_structured_request_telemetry_contains_only_redaction_safe_fields` | 957 | Http structured request telemetry contains only redaction safe fields. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_maps_capture_identity_conflicts_to_stable_conflict_error` | 999 | Http maps capture identity conflicts to stable conflict error. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_maps_database_busy_and_unexpected_failures_without_leaking_internal_details` | 1032 | Http maps database busy and unexpected failures without leaking internal details. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_policy_rule_duplicate_creation_returns_existing_semantic_rule` | 1070 | Http policy rule duplicate creation returns existing semantic rule. |
+| `daemon/tests/e2e/test_install_daily_driver.py` | pytest | `(module)` | `test_installer_stages_validates_swaps_and_restarts_services_in_order` | 158 | Installer stages validates swaps and restarts services in order. |
+| `daemon/tests/e2e/test_install_daily_driver.py` | pytest | `(module)` | `test_installer_readiness_failure_restores_prior_artifacts_and_service_state` | 196 | Installer readiness failure restores prior artifacts and service state. |
+| `daemon/tests/e2e/test_install_daily_driver.py` | pytest | `(module)` | `test_installer_blocks_incompatible_database_before_publication` | 217 | Installer blocks incompatible database before publication. |
+| `daemon/tests/e2e/test_install_daily_driver.py` | pytest | `(module)` | `test_installer_dry_run_rejects_unsafe_extension_destination_without_writes` | 233 | Installer dry run rejects unsafe extension destination without writes. |
+| `daemon/tests/e2e/test_install_daily_driver.py` | pytest | `(module)` | `test_installer_surfaces_incomplete_rollback_when_prior_service_cannot_restart` | 265 | Installer surfaces incomplete rollback when prior service cannot restart. |
+| `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_path_invariant_rejects_blob_escape` | 47 | Performance benchmark path invariant rejects blob escape. |
+| `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_subprocess_does_not_write_default_home_blob_root` | 64 | Performance benchmark subprocess does not write default home blob root. |
+| `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_temp_runtime_cleanup_stays_inside_tmp_home` | 100 | Performance benchmark temp runtime cleanup stays inside tmp home. |
+| `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_json_output_is_structured` | 132 | Performance benchmark json output is structured. |
+| `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_human_summary_is_compact` | 169 | Performance benchmark human summary is compact. |
 | `daemon/tests/e2e/test_read_model_indexes.py` | pytest | `(module)` | `test_read_model_ordered_queries_use_schema_indexes` | 12 | Read model ordered queries use schema indexes. |
-| `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | `(module)` | `test_ui_dashboard_shell_serves_bootstrap_and_core_panels` | 37 | Ui dashboard shell serves bootstrap and core panels. |
-| `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | `(module)` | `test_ui_dashboard_static_asset_path_traversal_is_rejected` | 70 | Ui dashboard static asset path traversal is rejected. |
-| `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | `(module)` | `test_ui_dashboard_smoke_runner_executes_bootstrap_empty_and_error_states` | 80 | Ui dashboard smoke runner executes bootstrap empty and error states. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_ingest_search_redact_and_forget` | 18 | Ingest search redact and forget. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_metadata_redacted_before_fts_and_forget_by_original_url` | 43 | Metadata redacted before fts and forget by original url. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_url_path_secret_redacted_and_not_searchable` | 66 | Url path secret redacted and not searchable. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_url_userinfo_redacted_before_storage_and_fts` | 83 | Url userinfo redacted before storage and fts. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_all_mode_stores_without_redaction_and_accepts_file_urls` | 104 | All mode stores without redaction and accepts file urls. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_artifacts_are_related_to_snapshot_not_fts_and_deleted_by_forget` | 127 | Media artifacts are related to snapshot not fts and deleted by forget. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_ingest_and_media_write_to_configured_blob_root` | 187 | Ingest and media write to configured blob root. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_blob_root_migration_copies_files_and_rewrites_db_paths` | 230 | Blob root migration copies files and rewrites db paths. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_artifact_size_gate_skips_oversized_blob` | 283 | Media artifact size gate skips oversized blob. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_global_cache_rolls_oldest_blob_when_limit_would_be_exceeded` | 319 | Media global cache rolls oldest blob when limit would be exceeded. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_domain_cache_rolls_oldest_blob_when_domain_limit_would_be_exceeded` | 341 | Media domain cache rolls oldest blob when domain limit would be exceeded. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_raw_blob_upload_rejects_truncated_body_and_infers_mime_from_url` | 362 | Raw blob upload rejects truncated body and infers mime from url. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_posted_cdp_metadata_enqueues_daemon_fetch_task` | 400 | Posted cdp metadata enqueues daemon fetch task. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_fetch_pending_media_artifacts_stores_data_url_without_indexing_media_metadata` | 439 | Fetch pending media artifacts stores data url without indexing media metadata. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_fetch_pending_media_artifacts_keeps_large_data_url_ref_intact` | 473 | Fetch pending media artifacts keeps large data url ref intact. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_fetch_reason_classification_keeps_remote_errors_out_of_failed_bucket` | 499 | Media fetch reason classification keeps remote errors out of failed bucket. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_forget_domain_includes_subdomains` | 506 | Forget domain includes subdomains. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_repeat_capture_dedupes_snapshot_but_adds_visit` | 522 | Repeat capture dedupes snapshot but adds visit. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_concurrent_duplicate_capture_is_idempotent_for_snapshot_chunks_and_fts` | 566 | Concurrent duplicate capture is idempotent for snapshot chunks and fts. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_changed_content_creates_new_snapshot_under_same_document` | 609 | Changed content creates new snapshot under same document. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_schema_has_planned_core_tables` | 651 | Schema has planned core tables. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_capture_payload_rejects_bad_timestamp` | 660 | Capture payload rejects bad timestamp. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_processes_data_url_task_and_marks_success` | 54 | Media worker processes data url task and marks success. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_tasks_are_seeded_when_existing_unresolved_refs_have_no_task` | 77 | Media worker tasks are seeded when existing unresolved refs have no task. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_marks_pending_task_succeeded_when_artifact_already_stored` | 100 | Media worker marks pending task succeeded when artifact already stored. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_fetch_pending_media_artifacts_respects_active_lease_and_recovers_stale_lease` | 136 | Fetch pending media artifacts respects active lease and recovers stale lease. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_capture_media_fetch_on_capture_background_uses_task_leasing` | 175 | Capture media fetch on capture background uses task leasing. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_concurrent_media_blob_writes_use_distinct_temp_files` | 227 | Concurrent media blob writes use distinct temp files. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_rehydrates_purged_cache_when_source_still_fetchable` | 269 | Media worker rehydrates purged cache when source still fetchable. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_normalizes_terminal_failed_artifacts` | 296 | Media worker normalizes terminal failed artifacts. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_retry_backoff_releases_lease_and_waits_until_due` | 347 | Media worker retry backoff releases lease and waits until due. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_reclassifies_legacy_blob_video_skips_as_references` | 389 | Media worker reclassifies legacy blob video skips as references. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_stores_hls_master_playlist_as_video_mp4` | 470 | Media worker stores hls master playlist as video mp4. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_hls_assembly_uses_single_deadline_across_segments` | 497 | Hls assembly uses single deadline across segments. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_requeues_legacy_hls_video_unsupported_skips` | 527 | Media worker requeues legacy hls video unsupported skips. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_requeues_snapshot_budget_skips_after_cap_raise` | 558 | Media worker requeues snapshot budget skips after cap raise. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_requeues_storage_budget_skips_after_cap_raise` | 589 | Media worker requeues storage budget skips after cap raise. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_stores_hls_audio_rendition_sidecar` | 619 | Media worker stores hls audio rendition sidecar. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_requeues_legacy_hls_audio_rendition_refs` | 646 | Media worker requeues legacy hls audio rendition refs. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_requeues_cdp_hls_manifest_refs` | 675 | Media worker requeues cdp hls manifest refs. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_marks_blob_video_refs_covered_by_cdp_bytes` | 716 | Media worker marks blob video refs covered by cdp bytes. |
-| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_classifies_uncovered_blob_video_refs_as_opaque` | 767 | Media worker classifies uncovered blob video refs as opaque. |
-| `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_updates_dwell_and_is_idempotent` | 9 | Visit lifecycle event updates dwell and is idempotent. |
-| `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_overlapping_lifecycle_events_do_not_double_count_dwell` | 67 | Overlapping lifecycle events do not double count dwell. |
-| `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_can_attach_to_latest_visit_by_url` | 114 | Visit lifecycle event can attach to latest visit by url. |
-| `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_without_matching_visit_stores_metadata_only` | 146 | Visit lifecycle event without matching visit stores metadata only. |
-| `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_validates_ranges` | 168 | Visit lifecycle event validates ranges. |
-| `daemon/tests/unit/test_config.py` | pytest | `(module)` | `test_blob_root_can_be_moved_independently_from_runtime_root` | 4 | Blob root can be moved independently from runtime root. |
-| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_snapshot_is_aggregate_and_redaction_safe` | 72 | Daily driver health snapshot is aggregate and redaction safe. |
-| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_media_queue_uses_datetime_comparisons_and_reports_worker_throughput` | 150 | Daily driver health media queue uses datetime comparisons and reports worker throughput. |
-| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_missing_extension_token` | 231 | Daily driver health detects missing extension token. |
-| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_insecure_token_permissions_and_process_args` | 265 | Daily driver health detects insecure token permissions and process args. |
-| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_low_headroom_and_service_start_churn` | 307 | Daily driver health detects low headroom and service start churn. |
+| `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | `(module)` | `test_ui_dashboard_shell_serves_bootstrap_and_core_panels` | 38 | Ui dashboard shell serves bootstrap and core panels. |
+| `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | `(module)` | `test_ui_dashboard_static_asset_path_traversal_is_rejected` | 73 | Ui dashboard static asset path traversal is rejected. |
+| `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | `(module)` | `test_ui_dashboard_rejects_non_loopback_host_header` | 83 | Ui dashboard rejects non loopback host header. |
+| `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | `(module)` | `test_ui_dashboard_smoke_runner_executes_bootstrap_empty_and_error_states` | 94 | Ui dashboard smoke runner executes bootstrap empty and error states. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_backup_create_is_dry_run_first_and_manifest_excludes_media_and_secrets` | 83 | Backup create is dry run first and manifest excludes media and secrets. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_backup_restore_recreates_search_detail_and_forget_without_media_cache` | 127 | Backup restore recreates search detail and forget without media cache. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_restore_rejects_tampered_bundle_and_existing_destination_without_mutation` | 154 | Restore rejects tampered bundle and existing destination without mutation. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_restore_rejects_traversal_and_symlinked_bundle_paths` | 192 | Restore rejects traversal and symlinked bundle paths. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_restore_rejects_truncated_and_newer_schema_databases_after_manifest_verification` | 221 | Restore rejects truncated and newer schema databases after manifest verification. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_atomic_publication_refuses_a_destination_created_after_preflight` | 249 | Atomic publication refuses a destination created after preflight. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_interrupted_restore_removes_staging_and_never_publishes_destination` | 266 | Interrupted restore removes staging and never publishes destination. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_backup_optionally_includes_only_referenced_contained_derivatives` | 286 | Backup optionally includes only referenced contained derivatives. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_backup_and_restore_force_private_tree_permissions_despite_umask` | 311 | Backup and restore force private tree permissions despite umask. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_backup_rejects_symlinked_or_out_of_root_source_database` | 328 | Backup rejects symlinked or out of root source database. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_restore_rejects_symlinked_manifest_and_validates_database_during_dry_run` | 339 | Restore rejects symlinked manifest and validates database during dry run. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_restore_rejects_malformed_or_incomplete_manifest_contract` | 372 | Restore rejects malformed or incomplete manifest contract. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_restore_requires_derivative_manifest_to_match_database_and_rebases_legacy_reference` | 401 | Restore requires derivative manifest to match database and rebases legacy reference. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_restore_rejects_invalid_json_root_and_unknown_manifest_version` | 438 | Restore rejects invalid json root and unknown manifest version. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_restore_dry_run_rejects_database_semantic_mismatch_matrix` | 448 | Restore dry run rejects database semantic mismatch matrix. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_default_bundle_excludes_populated_config_state_media_spool_and_secret_bytes` | 473 | Default bundle excludes populated config state media spool and secret bytes. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_backup_interrupt_cleanup_and_post_publication_fsync_state_are_explicit` | 494 | Backup interrupt cleanup and post publication fsync state are explicit. |
+| `daemon/tests/integration/test_backup_restore.py` | pytest | `(module)` | `test_backup_cli_is_dry_run_first_for_create_and_restore` | 527 | Backup cli is dry run first for create and restore. |
+| `daemon/tests/integration/test_capture_observations.py` | pytest | `(module)` | `test_same_visit_records_multiple_unchanged_observations_without_replacing_visit` | 36 | Same visit records multiple unchanged observations without replacing visit. |
+| `daemon/tests/integration/test_capture_observations.py` | pytest | `(module)` | `test_same_visit_changed_content_links_each_observation_to_contemporaneous_snapshot` | 86 | Same visit changed content links each observation to contemporaneous snapshot. |
+| `daemon/tests/integration/test_capture_observations.py` | pytest | `(module)` | `test_multiple_visits_can_observe_one_deduplicated_snapshot` | 111 | Multiple visits can observe one deduplicated snapshot. |
+| `daemon/tests/integration/test_capture_observations.py` | pytest | `(module)` | `test_out_of_order_observations_preserve_temporal_bounds_and_latest_claim_provenance` | 141 | Out of order observations preserve temporal bounds and latest claim provenance. |
+| `daemon/tests/integration/test_capture_observations.py` | pytest | `(module)` | `test_media_references_keep_their_capture_observation_provenance` | 193 | Media references keep their capture observation provenance. |
+| `daemon/tests/integration/test_capture_observations.py` | pytest | `(module)` | `test_observation_retry_is_idempotent_and_conflicting_reuse_fails` | 251 | Observation retry is idempotent and conflicting reuse fails. |
+| `daemon/tests/integration/test_capture_observations.py` | pytest | `(module)` | `test_cross_origin_canonical_is_a_non_authoritative_claim_and_visit_fk_survives_recapture` | 301 | Cross origin canonical is a non authoritative claim and visit fk survives recapture. |
+| `daemon/tests/integration/test_capture_observations.py` | pytest | `(module)` | `test_visit_id_cannot_be_reused_for_a_different_observed_navigation` | 378 | Visit id cannot be reused for a different observed navigation. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_ingest_search_redact_and_forget` | 32 | Ingest search redact and forget. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_metadata_redacted_before_fts_and_forget_by_original_url` | 59 | Metadata redacted before fts and forget by original url. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_url_path_secret_redacted_and_not_searchable` | 84 | Url path secret redacted and not searchable. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_url_userinfo_redacted_before_storage_and_fts` | 101 | Url userinfo redacted before storage and fts. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_all_mode_stores_without_redaction_and_accepts_file_urls` | 122 | All mode stores without redaction and accepts file urls. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_all_mode_forget_url_uses_literal_selector_but_redacts_receipt_scope` | 145 | All mode forget url uses literal selector but redacts receipt scope. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_forget_requires_one_literal_selector` | 172 | Forget requires one literal selector. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_forget_rejects_malformed_literal_domains` | 202 | Forget rejects malformed literal domains. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_forget_domain_normalizes_equivalent_unicode_and_idna_forms` | 210 | Forget domain normalizes equivalent unicode and idna forms. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_forget_preview_is_non_mutating_and_execution_is_broad_scope_guarded` | 233 | Forget preview is non mutating and execution is broad scope guarded. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_forget_url_preview_includes_exact_document_alias_claim` | 279 | Forget url preview includes exact document alias claim. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_artifacts_are_related_to_snapshot_not_fts_and_deleted_by_forget` | 306 | Media artifacts are related to snapshot not fts and deleted by forget. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_ingest_and_media_write_to_configured_blob_root` | 375 | Ingest and media write to configured blob root. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_blob_path_consumers_reject_db_paths_outside_configured_roots` | 432 | Blob path consumers reject db paths outside configured roots. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_blob_root_migration_copies_files_and_rewrites_db_paths` | 511 | Blob root migration copies files and rewrites db paths. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_artifact_size_gate_skips_oversized_blob` | 623 | Media artifact size gate skips oversized blob. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_global_cache_rolls_oldest_blob_when_limit_would_be_exceeded` | 659 | Media global cache rolls oldest blob when limit would be exceeded. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_domain_cache_rolls_oldest_blob_when_domain_limit_would_be_exceeded` | 686 | Media domain cache rolls oldest blob when domain limit would be exceeded. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_raw_blob_upload_streams_without_whole_artifact_spool_and_rejects_truncated_body` | 707 | Raw blob upload streams without whole artifact spool and rejects truncated body. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_posted_cdp_metadata_enqueues_daemon_fetch_task` | 761 | Posted cdp metadata enqueues daemon fetch task. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_fetch_pending_media_artifacts_stores_data_url_without_indexing_media_metadata` | 799 | Fetch pending media artifacts stores data url without indexing media metadata. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_fetch_pending_media_artifacts_keeps_large_data_url_ref_intact` | 833 | Fetch pending media artifacts keeps large data url ref intact. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_fetch_reason_classification_keeps_remote_errors_out_of_failed_bucket` | 859 | Media fetch reason classification keeps remote errors out of failed bucket. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_forget_domain_includes_subdomains` | 866 | Forget domain includes subdomains. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_repeat_capture_dedupes_snapshot_but_adds_visit` | 882 | Repeat capture dedupes snapshot but adds visit. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_concurrent_duplicate_capture_is_idempotent_for_snapshot_chunks_and_fts` | 927 | Concurrent duplicate capture is idempotent for snapshot chunks and fts. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_changed_content_creates_new_snapshot_under_same_document` | 970 | Changed content creates new snapshot under same document. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_schema_has_planned_core_tables` | 1013 | Schema has planned core tables. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_capture_payload_rejects_bad_timestamp` | 1035 | Capture payload rejects bad timestamp. |
+| `daemon/tests/integration/test_media_ops.py` | pytest | `(module)` | `test_media_requeue_is_scoped_and_dry_run_first` | 33 | Media requeue is scoped and dry run first. |
+| `daemon/tests/integration/test_media_ops.py` | pytest | `(module)` | `test_media_requeue_requires_explicit_scope` | 123 | Media requeue requires explicit scope. |
+| `daemon/tests/integration/test_media_storage.py` | pytest | `(module)` | `test_unavailable_external_media_root_spools_then_drains_with_hash_verification` | 78 | Unavailable external media root spools then drains with hash verification. |
+| `daemon/tests/integration/test_media_storage.py` | pytest | `(module)` | `test_failed_first_publication_removes_new_blob_and_spool_reservation` | 165 | Failed first publication removes new blob and spool reservation. |
+| `daemon/tests/integration/test_media_storage.py` | pytest | `(module)` | `test_cancellation_like_stage_failure_releases_spool_and_cache_reservations` | 195 | Cancellation like stage failure releases spool and cache reservations. |
+| `daemon/tests/integration/test_media_storage.py` | pytest | `(module)` | `test_failed_write_transaction_start_aborts_stage_and_releases_spool_reservation` | 213 | Failed write transaction start aborts stage and releases spool reservation. |
+| `daemon/tests/integration/test_media_storage.py` | pytest | `(module)` | `test_failed_replacement_preserves_previous_blob_and_removes_candidate` | 240 | Failed replacement preserves previous blob and removes candidate. |
+| `daemon/tests/integration/test_media_storage.py` | pytest | `(module)` | `test_metadata_refresh_reports_the_preserved_stored_state` | 273 | Metadata refresh reports the preserved stored state. |
+| `daemon/tests/integration/test_media_storage.py` | pytest | `(module)` | `test_replacement_admission_excludes_current_artifact_and_preserves_it_on_row_failure` | 291 | Replacement admission excludes current artifact and preserves it on row failure. |
+| `daemon/tests/integration/test_media_storage.py` | pytest | `(module)` | `test_spool_reservations_serialize_concurrent_cap_checks` | 329 | Spool reservations serialize concurrent cap checks. |
+| `daemon/tests/integration/test_media_storage.py` | pytest | `(module)` | `test_cache_reservations_serialize_concurrent_global_admission` | 354 | Cache reservations serialize concurrent global admission. |
+| `daemon/tests/integration/test_media_storage.py` | pytest | `(module)` | `test_cache_reservation_blocks_publication_until_released_and_expired_rows_are_reclaimed` | 390 | Cache reservation blocks publication until released and expired rows are reclaimed. |
+| `daemon/tests/integration/test_media_storage.py` | pytest | `(module)` | `test_expired_live_cache_reservation_is_refreshed_and_remains_admitted` | 429 | Expired live cache reservation is refreshed and remains admitted. |
+| `daemon/tests/integration/test_media_storage.py` | pytest | `(module)` | `test_cache_reservation_cascades_when_owner_is_forgotten` | 466 | Cache reservation cascades when owner is forgotten. |
+| `daemon/tests/integration/test_media_storage.py` | pytest | `(module)` | `test_spool_capacity_accounts_for_existing_files_and_exact_headroom` | 487 | Spool capacity accounts for existing files and exact headroom. |
+| `daemon/tests/integration/test_media_storage.py` | pytest | `(module)` | `test_concurrent_same_artifact_writers_hold_distinct_reservations` | 505 | Concurrent same artifact writers hold distinct reservations. |
+| `daemon/tests/integration/test_media_storage.py` | pytest | `(module)` | `test_text_and_provenance_commit_when_external_media_has_no_spool` | 531 | Text and provenance commit when external media has no spool. |
+| `daemon/tests/integration/test_media_tasks.py` | pytest | `(module)` | `test_media_task_repository_allows_only_one_concurrent_lease_owner` | 53 | Media task repository allows only one concurrent lease owner. |
+| `daemon/tests/integration/test_media_tasks.py` | pytest | `(module)` | `test_media_task_repository_preserves_terminal_state_unless_force_reset` | 75 | Media task repository preserves terminal state unless force reset. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_public_fetch_rejects_dns_to_private_without_opening` | 101 | Guarded public fetch rejects dns to private without opening. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_public_fetch_rejects_ipv6_loopback_literal_without_resolving` | 123 | Guarded public fetch rejects ipv6 loopback literal without resolving. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_public_fetch_allowlisted_private_host_omits_referer` | 143 | Guarded public fetch allowlisted private host omits referer. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_public_fetch_revalidates_public_to_private_redirect` | 171 | Guarded public fetch revalidates public to private redirect. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_public_fetch_detects_redirect_loop` | 195 | Guarded public fetch detects redirect loop. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_hls_revalidates_private_child_url` | 219 | Guarded hls revalidates private child url. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_hls_enforces_total_request_budget` | 246 | Guarded hls enforces total request budget. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_hls_initial_redirect_claims_total_request_budget` | 274 | Guarded hls initial redirect claims total request budget. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_fetch_enforces_deadline_during_slow_response_body` | 299 | Guarded fetch enforces deadline during slow response body. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_guarded_hls_enforces_initial_playlist_byte_budget` | 343 | Guarded hls enforces initial playlist byte budget. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_processes_data_url_task_and_marks_success` | 374 | Media worker processes data url task and marks success. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_resource_pressure_does_not_roll_back_searchable_text` | 397 | Media resource pressure does not roll back searchable text. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_init_db_does_not_repeat_historical_media_task_seed` | 440 | Init db does not repeat historical media task seed. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_marks_pending_task_succeeded_when_artifact_already_stored` | 462 | Media worker marks pending task succeeded when artifact already stored. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_does_not_auto_requeue_terminal_budget_skips` | 500 | Media worker does not auto requeue terminal budget skips. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_fetch_pending_media_artifacts_respects_active_lease_and_recovers_stale_lease` | 536 | Fetch pending media artifacts respects active lease and recovers stale lease. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_capture_media_fetch_on_capture_background_uses_task_leasing` | 575 | Capture media fetch on capture background uses task leasing. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_concurrent_media_blob_writes_use_distinct_temp_files` | 627 | Concurrent media blob writes use distinct temp files. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_rehydrates_purged_cache_when_source_still_fetchable` | 677 | Media worker rehydrates purged cache when source still fetchable. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_purge_media_cache_skips_db_paths_outside_media_root` | 704 | Purge media cache skips db paths outside media root. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_retry_backoff_releases_lease_and_waits_until_due` | 743 | Media worker retry backoff releases lease and waits until due. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_stores_hls_master_playlist_as_video_mp4` | 844 | Media worker stores hls master playlist as video mp4. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_hls_assembly_uses_single_deadline_across_segments` | 872 | Hls assembly uses single deadline across segments. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_stores_hls_audio_rendition_sidecar` | 914 | Media worker stores hls audio rendition sidecar. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_marks_blob_video_refs_covered_by_cdp_bytes` | 948 | Media worker marks blob video refs covered by cdp bytes. |
+| `daemon/tests/integration/test_media_worker.py` | pytest | `(module)` | `test_media_worker_classifies_uncovered_blob_video_refs_as_opaque` | 998 | Media worker classifies uncovered blob video refs as opaque. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_fresh_database_migrates_to_ordered_versioned_ledger_and_preserves_fts` | 118 | Fresh database migrates to ordered versioned ledger and preserves fts. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_unversioned_current_schema_is_stamped_then_historical_seed_runs_once` | 159 | Unversioned current schema is stamped then historical seed runs once. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_twelve_normalizes_historical_media_state_once` | 189 | Version twelve normalizes historical media state once. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_thirteen_adds_cache_reservations_from_exact_prior_schema` | 284 | Version thirteen adds cache reservations from exact prior schema. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_capture_observation_and_url_claim_schema_enforces_expand_contract` | 325 | Capture observation and url claim schema enforces expand contract. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_three_fixture_upgrades_once_to_capture_model_expand_schema` | 395 | Version three fixture upgrades once to capture model expand schema. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_five_backfills_only_evidence_supported_historical_relationships` | 430 | Version five backfills only evidence supported historical relationships. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_six_backfills_only_unambiguous_media_observation_links` | 535 | Version six backfills only unambiguous media observation links. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_seven_preserves_claimed_visit_identity_for_historical_events` | 637 | Version seven preserves claimed visit identity for historical events. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_eight_adds_nullable_relative_locators` | 699 | Version eight adds nullable relative locators. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_nine_backfills_hash_verified_chunks_and_new_ingest_uses_sqlite_authority` | 733 | Version nine backfills hash verified chunks and new ingest uses sqlite authority. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_ten_adds_media_storage_tiers_and_spool_reservations` | 788 | Version ten adds media storage tiers and spool reservations. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_version_eleven_adds_and_backfills_blob_lifecycle_records` | 834 | Version eleven adds and backfills blob lifecycle records. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_repeated_migration_is_a_noop_and_schema_has_no_recurring_repair_dml` | 899 | Repeated migration is a noop and schema has no recurring repair dml. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_concurrent_fresh_migration_applies_each_ledger_step_once` | 920 | Concurrent fresh migration applies each ledger step once. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_checksum_mismatch_and_unknown_newer_version_fail_closed` | 941 | Checksum mismatch and unknown newer version fail closed. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_unknown_unversioned_schema_is_not_stamped` | 959 | Unknown unversioned schema is not stamped. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_injected_migration_failure_rolls_back_step_and_ledger` | 973 | Injected migration failure rolls back step and ledger. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_destructive_migration_creates_online_backup_that_restores_search` | 1002 | Destructive migration creates online backup that restores search. |
+| `daemon/tests/integration/test_migrations.py` | pytest | `(module)` | `test_destructive_migration_refuses_insufficient_backup_headroom_before_writes` | 1040 | Destructive migration refuses insufficient backup headroom before writes. |
+| `daemon/tests/integration/test_observation_reads.py` | pytest | `(module)` | `test_observation_first_reads_preserve_contemporaneous_snapshots_and_unique_visit_summary` | 40 | Observation first reads preserve contemporaneous snapshots and unique visit summary. |
+| `daemon/tests/integration/test_observation_reads.py` | pytest | `(module)` | `test_legacy_visit_fallback_is_explicit_and_uses_its_linked_snapshot_not_latest_document_snapshot` | 146 | Legacy visit fallback is explicit and uses its linked snapshot not latest document snapshot. |
+| `daemon/tests/integration/test_storage_reconcile.py` | pytest | `(module)` | `test_forget_persists_retryable_tombstone_before_database_cascade` | 67 | Forget persists retryable tombstone before database cascade. |
+| `daemon/tests/integration/test_storage_reconcile.py` | pytest | `(module)` | `test_media_purge_remains_pending_until_tombstoned_bytes_are_deleted` | 115 | Media purge remains pending until tombstoned bytes are deleted. |
+| `daemon/tests/integration/test_storage_reconcile.py` | pytest | `(module)` | `test_concurrent_tombstone_processors_delete_once_and_converge` | 177 | Concurrent tombstone processors delete once and converge. |
+| `daemon/tests/integration/test_storage_reconcile.py` | pytest | `(module)` | `test_storage_reconcile_reports_and_repairs_missing_orphan_and_stale_stage` | 216 | Storage reconcile reports and repairs missing orphan and stale stage. |
+| `daemon/tests/integration/test_text_authority.py` | pytest | `(module)` | `test_new_capture_commits_complete_sqlite_text_without_creating_blob_root` | 12 | New capture commits complete sqlite text without creating blob root. |
+| `daemon/tests/integration/test_text_authority.py` | pytest | `(module)` | `test_reconcile_promotes_only_hash_verified_contained_legacy_sidecar` | 79 | Reconcile promotes only hash verified contained legacy sidecar. |
+| `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_updates_dwell_and_is_idempotent` | 10 | Visit lifecycle event updates dwell and is idempotent. |
+| `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_lifecycle_dwell_uses_interval_union_for_overlap_containment_adjacency_and_out_of_order` | 68 | Lifecycle dwell uses interval union for overlap containment adjacency and out of order. |
+| `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_legacy_visit_lifecycle_event_without_visit_id_can_attach_by_url` | 117 | Legacy visit lifecycle event without visit id can attach by url. |
+| `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_without_matching_visit_stores_metadata_only` | 151 | Visit lifecycle event without matching visit stores metadata only. |
+| `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_claimed_visit_identity_does_not_fall_back_by_url_and_reconciles_after_delayed_capture` | 173 | Claimed visit identity does not fall back by url and reconciles after delayed capture. |
+| `daemon/tests/integration/test_visit_lifecycle.py` | pytest | `(module)` | `test_visit_lifecycle_event_validates_ranges` | 271 | Visit lifecycle event validates ranges. |
+| `daemon/tests/unit/test_api_errors.py` | pytest | `(module)` | `test_typed_api_errors_have_stable_status_code_and_compatible_message` | 27 | Typed api errors have stable status code and compatible message. |
+| `daemon/tests/unit/test_api_errors.py` | pytest | `(module)` | `test_exception_classification_preserves_safe_client_errors_and_sanitizes_internal_failures` | 34 | Exception classification preserves safe client errors and sanitizes internal failures. |
+| `daemon/tests/unit/test_api_errors.py` | pytest | `(module)` | `test_exception_classification_retains_existing_typed_errors` | 50 | Exception classification retains existing typed errors. |
+| `daemon/tests/unit/test_application.py` | pytest | `(module)` | `test_app_module_is_only_the_http_composition_root` | 10 | App module is only the http composition root. |
+| `daemon/tests/unit/test_application.py` | pytest | `(module)` | `test_application_capture_and_read_use_cases_run_without_http_handler` | 19 | Application capture and read use cases run without http handler. |
+| `daemon/tests/unit/test_application.py` | pytest | `(module)` | `test_application_policy_blocking_remains_a_use_case_decision` | 45 | Application policy blocking remains a use case decision. |
+| `daemon/tests/unit/test_application.py` | pytest | `(module)` | `test_application_forget_preview_writes_no_audit_or_receipt` | 70 | Application forget preview writes no audit or receipt. |
+| `daemon/tests/unit/test_blob_store.py` | pytest | `(module)` | `test_blob_store_stages_streams_verifies_hash_and_commits_atomically` | 8 | Blob store stages streams verifies hash and commits atomically. |
+| `daemon/tests/unit/test_blob_store.py` | pytest | `(module)` | `test_blob_store_mismatch_aborts_stage_without_publishing` | 35 | Blob store mismatch aborts stage without publishing. |
+| `daemon/tests/unit/test_blob_store.py` | pytest | `(module)` | `test_blob_store_rejects_traversal_symlink_escape_and_cross_root_stage` | 47 | Blob store rejects traversal symlink escape and cross root stage. |
+| `daemon/tests/unit/test_blob_store.py` | pytest | `(module)` | `test_blob_store_delete_reports_outcomes_without_touching_outside_paths` | 68 | Blob store delete reports outcomes without touching outside paths. |
+| `daemon/tests/unit/test_blob_store.py` | pytest | `(module)` | `test_blob_store_concurrent_writers_publish_whole_file_and_leave_no_stages` | 82 | Blob store concurrent writers publish whole file and leave no stages. |
+| `daemon/tests/unit/test_config.py` | pytest | `(module)` | `test_default_runtime_roots_follow_xdg_environment` | 7 | Default runtime roots follow xdg environment. |
+| `daemon/tests/unit/test_config.py` | pytest | `(module)` | `test_blob_root_can_be_moved_independently_from_runtime_root` | 19 | Blob root can be moved independently from runtime root. |
+| `daemon/tests/unit/test_config.py` | pytest | `(module)` | `test_required_blob_root_mount_degrades_media_without_blocking_local_sqlite` | 40 | Required blob root mount degrades media without blocking local sqlite. |
+| `daemon/tests/unit/test_config.py` | pytest | `(module)` | `test_required_blob_root_mount_allows_mounted_blob_root` | 53 | Required blob root mount allows mounted blob root. |
+| `daemon/tests/unit/test_config.py` | pytest | `(module)` | `test_explicit_external_media_root_requires_mount_identity_and_marker` | 71 | Explicit external media root requires mount identity and marker. |
+| `daemon/tests/unit/test_config.py` | pytest | `(module)` | `test_media_spool_requires_explicit_local_root_and_positive_cap` | 100 | Media spool requires explicit local root and positive cap. |
+| `daemon/tests/unit/test_config.py` | pytest | `(module)` | `test_global_media_resource_budgets_are_positive_and_fit_one_artifact` | 114 | Global media resource budgets are positive and fit one artifact. |
+| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_snapshot_is_aggregate_and_redaction_safe` | 81 | Daily driver health snapshot is aggregate and redaction safe. |
+| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_media_queue_uses_datetime_comparisons_and_reports_worker_throughput` | 159 | Daily driver health media queue uses datetime comparisons and reports worker throughput. |
+| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_missing_extension_token` | 240 | Daily driver health detects missing extension token. |
+| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_reports_required_blob_mount_failure` | 274 | Daily driver health reports required blob mount failure. |
+| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_insecure_token_permissions_and_process_args` | 314 | Daily driver health detects insecure token permissions and process args. |
+| `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_low_headroom_and_service_start_churn` | 356 | Daily driver health detects low headroom and service start churn. |
 | `daemon/tests/unit/test_db.py` | pytest | `(module)` | `test_connect_uses_extended_busy_timeout` | 5 | Connect uses extended busy timeout. |
 | `daemon/tests/unit/test_db.py` | pytest | `(module)` | `test_init_db_enforces_wal_and_connection_pragmas` | 12 | Init db enforces wal and connection pragmas. |
+| `daemon/tests/unit/test_http_server.py` | pytest | `(module)` | `test_response_write_disconnect_is_swallowed_and_recorded_without_second_response` | 48 | Response write disconnect is swallowed and recorded without second response. |
+| `daemon/tests/unit/test_http_server.py` | pytest | `(module)` | `test_header_disconnect_is_swallowed_before_a_response_body_is_attempted` | 69 | Header disconnect is swallowed before a response body is attempted. |
+| `daemon/tests/unit/test_http_server.py` | pytest | `(module)` | `test_stream_response_bounds_reads_and_classifies_source_failure` | 81 | Stream response bounds reads and classifies source failure. |
+| `daemon/tests/unit/test_media_fetch.py` | pytest | `(module)` | `test_media_facade_preserves_guarded_fetch_api_identity` | 7 | Media facade preserves guarded fetch api identity. |
+| `daemon/tests/unit/test_media_fetch.py` | pytest | `(module)` | `test_guarded_fetch_layer_does_not_depend_on_hls_or_coordinator` | 14 | Guarded fetch layer does not depend on hls or coordinator. |
+| `daemon/tests/unit/test_media_hls.py` | pytest | `(module)` | `test_media_facade_preserves_hls_transport_api_identity` | 7 | Media facade preserves hls transport api identity. |
+| `daemon/tests/unit/test_media_hls.py` | pytest | `(module)` | `test_hls_assembly_streams_segments_without_joining_whole_artifact` | 13 | Hls assembly streams segments without joining whole artifact. |
+| `daemon/tests/unit/test_media_models.py` | pytest | `(module)` | `test_media_facade_preserves_public_state_and_task_symbols` | 15 | Media facade preserves public state and task symbols. |
+| `daemon/tests/unit/test_media_models.py` | pytest | `(module)` | `test_media_state_taxonomy_separates_internal_storage_recovery_states_from_caller_input` | 23 | Media state taxonomy separates internal storage recovery states from caller input. |
+| `daemon/tests/unit/test_media_models.py` | pytest | `(module)` | `test_media_transition_matrices_preserve_terminal_and_recovery_boundaries` | 32 | Media transition matrices preserve terminal and recovery boundaries. |
+| `daemon/tests/unit/test_media_models.py` | pytest | `(module)` | `test_fetch_reason_classification_is_independent_from_media_facade` | 46 | Fetch reason classification is independent from media facade. |
+| `daemon/tests/unit/test_media_resources.py` | pytest | `(module)` | `test_media_resource_budget_enforces_request_and_byte_caps_and_releases` | 17 | Media resource budget enforces request and byte caps and releases. |
+| `daemon/tests/unit/test_media_resources.py` | pytest | `(module)` | `test_media_resource_budget_serializes_waiters_without_leaking_capacity` | 34 | Media resource budget serializes waiters without leaking capacity. |
+| `daemon/tests/unit/test_media_resources.py` | pytest | `(module)` | `test_guarded_fetch_reports_retryable_global_request_pressure` | 61 | Guarded fetch reports retryable global request pressure. |
+| `daemon/tests/unit/test_media_store.py` | pytest | `(module)` | `test_media_facade_preserves_admission_api_identity` | 4 | Media facade preserves admission api identity. |
+| `daemon/tests/unit/test_media_store.py` | pytest | `(module)` | `test_media_store_owns_blob_admission_and_accounting_helpers` | 8 | Media store owns blob admission and accounting helpers. |
+| `daemon/tests/unit/test_media_store.py` | pytest | `(module)` | `test_media_facade_preserves_artifact_store_api_identity` | 13 | Media facade preserves artifact store api identity. |
+| `daemon/tests/unit/test_media_worker_claiming.py` | pytest | `(module)` | `test_worker_claims_each_task_immediately_before_processing` | 8 | Worker claims each task immediately before processing. |
+| `daemon/tests/unit/test_media_worker_claiming.py` | pytest | `(module)` | `test_synchronous_fetch_claims_each_task_immediately_before_processing` | 39 | Synchronous fetch claims each task immediately before processing. |
 | `daemon/tests/unit/test_normalize.py` | pytest | `(module)` | `test_normalize_url_removes_tracking_fragment_default_port_and_sorts_query` | 4 | Normalize url removes tracking fragment default port and sorts query. |
 | `daemon/tests/unit/test_normalize.py` | pytest | `(module)` | `test_normalize_url_preserves_meaningful_duplicate_query_values` | 11 | Normalize url preserves meaningful duplicate query values. |
 | `daemon/tests/unit/test_normalize.py` | pytest | `(module)` | `test_normalize_url_removes_empty_default_path_only_for_missing_path` | 18 | Normalize url removes empty default path only for missing path. |
@@ -454,14 +806,40 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 | `daemon/tests/unit/test_policy.py` | pytest | `(module)` | `test_allows_public_docs_url_in_all_modes` | 53 | Allows public docs url in all modes. |
 | `daemon/tests/unit/test_policy.py` | pytest | `(module)` | `test_redacts_before_storage_classes` | 59 | Redacts before storage classes. |
 | `daemon/tests/unit/test_policy.py` | pytest | `(module)` | `test_redacts_url_query_and_fragment` | 70 | Redacts url query and fragment. |
-| `daemon/tests/unit/test_policy_store.py` | pytest | `(module)` | `test_domain_rule_rejects_port_or_path_to_prevent_overbroad_localhost_blocks` | 19 | Domain rule rejects port or path to prevent overbroad localhost blocks. |
-| `daemon/tests/unit/test_policy_store.py` | pytest | `(module)` | `test_url_prefix_rule_scopes_to_port_and_path` | 26 | Url prefix rule scopes to port and path. |
-| `daemon/tests/unit/test_policy_store.py` | pytest | `(module)` | `test_policy_rule_creation_is_semantically_idempotent_under_concurrency` | 48 | Policy rule creation is semantically idempotent under concurrency. |
-| `daemon/tests/unit/test_policy_store.py` | pytest | `(module)` | `test_init_db_dedupes_existing_policy_rules_before_unique_index` | 67 | Init db dedupes existing policy rules before unique index. |
+| `daemon/tests/unit/test_policy_store.py` | pytest | `(module)` | `test_domain_rule_rejects_port_or_path_to_prevent_overbroad_localhost_blocks` | 20 | Domain rule rejects port or path to prevent overbroad localhost blocks. |
+| `daemon/tests/unit/test_policy_store.py` | pytest | `(module)` | `test_url_prefix_rule_scopes_to_port_and_path` | 27 | Url prefix rule scopes to port and path. |
+| `daemon/tests/unit/test_policy_store.py` | pytest | `(module)` | `test_policy_rule_creation_is_semantically_idempotent_under_concurrency` | 49 | Policy rule creation is semantically idempotent under concurrency. |
+| `daemon/tests/unit/test_policy_store.py` | pytest | `(module)` | `test_init_db_rejects_schema_drift_instead_of_replaying_policy_dedupe` | 68 | Init db rejects schema drift instead of replaying policy dedupe. |
+| `daemon/tests/unit/test_routes.py` | pytest | `(module)` | `test_route_descriptors_characterize_every_current_api_endpoint` | 31 | Route descriptors characterize every current api endpoint. |
+| `daemon/tests/unit/test_routes.py` | pytest | `(module)` | `test_route_matching_preserves_static_precedence_and_method_boundaries` | 39 | Route matching preserves static precedence and method boundaries. |
+| `daemon/tests/unit/test_routes.py` | pytest | `(module)` | `test_route_catalog_names_and_method_path_pairs_are_unique` | 51 | Route catalog names and method path pairs are unique. |
+| `daemon/tests/unit/test_storage_paths.py` | pytest | `(module)` | `test_storage_identifier_grammars_and_server_stems_are_stable` | 14 | Storage identifier grammars and server stems are stable. |
+| `daemon/tests/unit/test_storage_paths.py` | pytest | `(module)` | `test_contained_child_path_rejects_unsafe_parts_and_symlink_escape` | 27 | Contained child path rejects unsafe parts and symlink escape. |
+| `daemon/tests/unit/test_storage_paths.py` | pytest | `(module)` | `test_contained_child_path_create_root_is_explicit` | 42 | Contained child path create root is explicit. |
+| `daemon/tests/unit/test_storage_paths.py` | pytest | `(module)` | `test_resolve_db_path_reports_empty_invalid_outside_missing_and_ok` | 49 | Resolve db path reports empty invalid outside missing and ok. |
+| `daemon/tests/unit/test_storage_paths.py` | pytest | `(module)` | `test_resolve_db_path_rejects_symlinked_file_outside_root` | 70 | Resolve db path rejects symlinked file outside root. |
+| `extension/tests/unit/capture_bridge.test.js` | node:test | `(module)` | `capture bridge retains a transactionally admitted capture during daemon outage and resumes once` | 64 | Capture bridge retains a transactionally admitted capture during daemon outage and resumes once. |
+| `extension/tests/unit/capture_bridge.test.js` | node:test | `(module)` | `capture bridge checkpoints daemon acceptance before media admission compensation` | 88 | Capture bridge checkpoints daemon acceptance before media admission compensation. |
+| `extension/tests/unit/capture_bridge.test.js` | node:test | `(module)` | `capture bridge rejects blocked lifecycle events before outbox admission` | 113 | Capture bridge rejects blocked lifecycle events before outbox admission. |
+| `extension/tests/unit/capture_bridge.test.js` | node:test | `(module)` | `telemetry recursively removes captured fields and redacts URLs from errors` | 120 | Telemetry recursively removes captured fields and redacts URLs from errors. |
+| `extension/tests/unit/capture_digest.test.js` | node:test | `(module)` | `portable SHA-256 fallback matches the standard vector` | 5 | Portable SHA-256 fallback matches the standard vector. |
+| `extension/tests/unit/capture_digest.test.js` | node:test | `(module)` | `capture digest is deterministic across volatile capture time and object key order` | 11 | Capture digest is deterministic across volatile capture time and object key order. |
+| `extension/tests/unit/capture_digest.test.js` | node:test | `(module)` | `capture digest detects middle-text and complete media-list changes missed by the legacy fingerprint` | 34 | Capture digest detects middle-text and complete media-list changes missed by the legacy fingerprint. |
 | `extension/tests/unit/cdp_recorder.test.js` | node:test | `(module)` | `CDP recorder only attaches to configured X/Twitter page domains` | 10 | CDP recorder only attaches to configured X/Twitter page domains. |
 | `extension/tests/unit/cdp_recorder.test.js` | node:test | `(module)` | `CDP recorder recognizes X video segment and HLS manifest responses` | 17 | CDP recorder recognizes X video segment and HLS manifest responses. |
 | `extension/tests/unit/cdp_recorder.test.js` | node:test | `(module)` | `CDP recorder builds stable artifact metadata without cookies or headers` | 40 | CDP recorder builds stable artifact metadata without cookies or headers. |
 | `extension/tests/unit/cdp_recorder.test.js` | node:test | `(module)` | `CDP base64 byte estimate handles padding` | 59 | CDP base64 byte estimate handles padding. |
+| `extension/tests/unit/cdp_session.test.js` | node:test | `(module)` | `CDP session restores capture provenance and clears it on tab URL reuse` | 30 | CDP session restores capture provenance and clears it on tab URL reuse. |
+| `extension/tests/unit/cdp_session.test.js` | node:test | `(module)` | `CDP session reconstructs an attachment already owned by the extension after worker restart` | 43 | CDP session reconstructs an attachment already owned by the extension after worker restart. |
+| `extension/tests/unit/cdp_session.test.js` | node:test | `(module)` | `CDP session does not hide an attach failure without matching attached target evidence` | 51 | CDP session does not hide an attach failure without matching attached target evidence. |
+| `extension/tests/unit/cdp_session.test.js` | node:test | `(module)` | `CDP capture-context writes serialize so tab close cannot be overwritten by a slower capture write` | 56 | CDP capture-context writes serialize so tab close cannot be overwritten by a slower capture write. |
+| `extension/tests/unit/cdp_session.test.js` | node:test | `(module)` | `CDP recorder controller owns response correlation and media-body delivery outside the service worker` | 75 | CDP recorder controller owns response correlation and media-body delivery outside the service worker. |
+| `extension/tests/unit/chrome_for_testing.test.js` | node:test | `(module)` | `release Chrome for Testing lock is pinned and checksum-complete` | 27 | Release Chrome for Testing lock is pinned and checksum-complete. |
+| `extension/tests/unit/chrome_for_testing.test.js` | node:test | `(module)` | `cached pinned Chrome is verified without network or download permission` | 35 | Cached pinned Chrome is verified without network or download permission. |
+| `extension/tests/unit/chrome_for_testing.test.js` | node:test | `(module)` | `missing or corrupt pinned Chrome fails closed when download is not explicitly allowed` | 52 | Missing or corrupt pinned Chrome fails closed when download is not explicitly allowed. |
+| `extension/tests/unit/config_store.test.js` | node:test | `(module)` | `config store applies the CDP default-on migration once and normalizes typed values` | 21 | Config store applies the CDP default-on migration once and normalizes typed values. |
+| `extension/tests/unit/config_store.test.js` | node:test | `(module)` | `config store persists visit and CDP capture context maps independently` | 39 | Config store persists visit and CDP capture context maps independently. |
+| `extension/tests/unit/content_script.test.js` | node:test | `(module)` | `content capture retries the same full digest until admission succeeds and then suppresses duplicates` | 20 | Content capture retries the same full digest until admission succeeds and then suppresses duplicates. |
 | `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `all mode still skips hidden/form/editable/script/style/no-script extraction surfaces` | 17 | All mode still skips hidden/form/editable/script/style/no-script extraction surfaces. |
 | `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `strict mode skips form and editable elements` | 26 | Strict mode skips form and editable elements. |
 | `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `URL policy modes are adjustable` | 33 | URL policy modes are adjustable. |
@@ -469,22 +847,50 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 | `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `strict mode extracts readable tree text without form secrets` | 69 | Strict mode extracts readable tree text without form secrets. |
 | `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `real document extraction in all mode still skips hidden/form/editable surfaces` | 86 | Real document extraction in all mode still skips hidden/form/editable surfaces. |
 | `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `real document extraction uses strict skip traversal` | 111 | Real document extraction uses strict skip traversal. |
-| `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `real document extraction records image and video artifacts without adding media text` | 136 | Real document extraction records image and video artifacts without adding media text. |
-| `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `image extraction ignores empty-src document URL fallbacks` | 179 | Image extraction ignores empty-src document URL fallbacks. |
-| `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `performance video resources are preserved even when image refs fill the cap` | 202 | Performance video resources are preserved even when image refs fill the cap. |
-| `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `collapses whitespace` | 235 | Collapses whitespace. |
+| `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `computed rendered visibility excludes class, responsive, and ancestor-hidden content` | 136 | Computed rendered visibility excludes class, responsive, and ancestor-hidden content. |
+| `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `document traversal excludes computed-hidden subtrees and does not cross shadow roots` | 155 | Document traversal excludes computed-hidden subtrees and does not cross shadow roots. |
+| `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `real document extraction records image and video artifacts without adding media text` | 192 | Real document extraction records image and video artifacts without adding media text. |
+| `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `image extraction ignores empty-src document URL fallbacks` | 235 | Image extraction ignores empty-src document URL fallbacks. |
+| `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `performance video resources are preserved even when image refs fill the cap` | 258 | Performance video resources are preserved even when image refs fill the cap. |
+| `extension/tests/unit/extractor.test.js` | node:test | `(module)` | `collapses whitespace` | 291 | Collapses whitespace. |
+| `extension/tests/unit/injection.test.js` | node:test | `(module)` | `injection controller re-injects the complete ordered script set instead of trusting worker memory` | 17 | Injection controller re-injects the complete ordered script set instead of trusting worker memory. |
+| `extension/tests/unit/injection.test.js` | node:test | `(module)` | `injection controller preserves pause, token, and policy gates` | 32 | Injection controller preserves pause, token, and policy gates. |
+| `extension/tests/unit/injection.test.js` | node:test | `(module)` | `startup reconstruction revisits every active tab` | 48 | Startup reconstruction revisits every active tab. |
+| `extension/tests/unit/media_bridge.test.js` | node:test | `(module)` | `media bridge maps capture artifacts into one atomic bounded task admission` | 40 | Media bridge maps capture artifacts into one atomic bounded task admission. |
+| `extension/tests/unit/media_bridge.test.js` | node:test | `(module)` | `media bridge cleans terminal rows even while capture delivery is paused` | 49 | Media bridge cleans terminal rows even while capture delivery is paused. |
+| `extension/tests/unit/media_bridge.test.js` | node:test | `(module)` | `media bridge keeps an admitted blob when upload fails so retry never refetches` | 59 | Media bridge keeps an admitted blob when upload fails so retry never refetches. |
+| `extension/tests/unit/media_bridge.test.js` | node:test | `(module)` | `media bridge URL and MIME helpers preserve credentialed-fetch boundaries` | 83 | Media bridge URL and MIME helpers preserve credentialed-fetch boundaries. |
 | `extension/tests/unit/media_queue.test.js` | node:test | `(module)` | `media task normalization and due ordering` | 4 | Media task normalization and due ordering. |
 | `extension/tests/unit/media_queue.test.js` | node:test | `(module)` | `media queue retains fetched blob until task delete` | 13 | Media queue retains fetched blob until task delete. |
 | `extension/tests/unit/media_queue.test.js` | node:test | `(module)` | `future retry is not due until next_attempt_at` | 25 | Future retry is not due until next attempt at. |
 | `extension/tests/unit/media_queue.test.js` | node:test | `(module)` | `stale fetching and uploading tasks become due after processing window` | 32 | Stale fetching and uploading tasks become due after processing window. |
 | `extension/tests/unit/media_queue.test.js` | node:test | `(module)` | `normalizeTask requires stable artifact id for queue callers` | 40 | NormalizeTask requires stable artifact id for queue callers. |
+| `extension/tests/unit/media_queue.test.js` | node:test | `(module)` | `media task due-state classifier rejects terminal and malformed processing states` | 46 | Media task due-state classifier rejects terminal and malformed processing states. |
+| `extension/tests/unit/media_queue.test.js` | node:test | `(module)` | `media task batch admission is atomic and preserves existing work at count quota` | 55 | Media task batch admission is atomic and preserves existing work at count quota. |
+| `extension/tests/unit/media_queue.test.js` | node:test | `(module)` | `media blob admission atomically applies replacement-aware byte quota and task transition` | 71 | Media blob admission atomically applies replacement-aware byte quota and task transition. |
+| `extension/tests/unit/media_queue.test.js` | node:test | `(module)` | `terminal media quarantine cleanup retains fresh rows and atomically removes expired task and blob` | 89 | Terminal media quarantine cleanup retains fresh rows and atomically removes expired task and blob. |
+| `extension/tests/unit/outbox.test.js` | node:test | `(module)` | `concurrent enqueue preserves existing captures and visibly rejects only new work at capacity` | 5 | Concurrent enqueue preserves existing captures and visibly rejects only new work at capacity. |
+| `extension/tests/unit/outbox.test.js` | node:test | `(module)` | `claim, retry, due time, and acknowledgement are token-checked atomic transitions` | 19 | Claim, retry, due time, and acknowledgement are token-checked atomic transitions. |
+| `extension/tests/unit/outbox.test.js` | node:test | `(module)` | `stale claims recover after service-worker suspension without becoming concurrently claimable` | 42 | Stale claims recover after service-worker suspension without becoming concurrently claimable. |
+| `extension/tests/unit/outbox.test.js` | node:test | `(module)` | `legacy queue import is marked atomically and is idempotent before chrome storage cleanup` | 67 | Legacy queue import is marked atomically and is idempotent before chrome storage cleanup. |
+| `extension/tests/unit/outbox.test.js` | node:test | `(module)` | `serialized byte accounting uses UTF-8 payload bytes and survives claim metadata changes` | 87 | Serialized byte accounting uses UTF-8 payload bytes and survives claim metadata changes. |
+| `extension/tests/unit/outbox.test.js` | node:test | `(module)` | `serialized byte quota rejects only the new row and reports required bytes` | 99 | Serialized byte quota rejects only the new row and reports required bytes. |
+| `extension/tests/unit/popup.test.js` | node:test | `(module)` | `popup previews forget scope before bounded execution` | 7 | Popup previews forget scope before bounded execution. |
 | `extension/tests/unit/queue.test.js` | node:test | `(module)` | `queue preserves FIFO order` | 4 | Queue preserves FIFO order. |
-| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker preserves queued captures while daemon is down and drains them after reload` | 183 | Service worker preserves queued captures while daemon is down and drains them after reload. |
-| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker skips missing token and pause without mutating capture queue, then resumes` | 219 | Service worker skips missing token and pause without mutating capture queue, then resumes. |
-| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker injection respects stale token, pause, and strict URL controls` | 250 | Service worker injection respects stale token, pause, and strict URL controls. |
-| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker media upload retries keep fetched blob until successful upload` | 279 | Service worker media upload retries keep fetched blob until successful upload. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker preserves queued captures while daemon is down and drains them after reload` | 204 | Service worker preserves queued captures while daemon is down and drains them after reload. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker keeps navigation identity stable per URL state and emits a new observation per extraction` | 253 | Service worker keeps navigation identity stable per URL state and emits a new observation per extraction. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker queue overflow preserves old captures and visibly rejects the new capture` | 297 | Service worker queue overflow preserves old captures and visibly rejects the new capture. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker enforces byte quota and exposes redaction-safe outbox telemetry` | 331 | Service worker enforces byte quota and exposes redaction-safe outbox telemetry. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker cleans expired terminal media while capture is paused or tokenless` | 358 | Service worker cleans expired terminal media while capture is paused or tokenless. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker skips missing token and pause without mutating capture queue, then resumes` | 374 | Service worker skips missing token and pause without mutating capture queue, then resumes. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker transactionally imports and drains the legacy lifecycle queue before deleting it` | 405 | Service worker transactionally imports and drains the legacy lifecycle queue before deleting it. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `capture result checkpoint survives suspension without reposting before media enqueue compensation` | 439 | Capture result checkpoint survives suspension without reposting before media enqueue compensation. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker injection respects stale token, pause, and strict URL controls` | 492 | Service worker injection respects stale token, pause, and strict URL controls. |
+| `extension/tests/unit/service_worker.test.js` | node:test | `(module)` | `service worker media upload retries keep fetched blob until successful upload` | 522 | Service worker media upload retries keep fetched blob until successful upload. |
 | `extension/tests/unit/shared.test.js` | node:test | `(module)` | `daemon URL normalization strips trailing slashes` | 4 | Daemon URL normalization strips trailing slashes. |
 | `extension/tests/unit/shared.test.js` | node:test | `(module)` | `auth headers include bearer token` | 9 | Auth headers include bearer token. |
+| `extension/tests/unit/visit_tracker.test.js` | node:test | `(module)` | `visit identity helpers are deterministic and bound interval values` | 14 | Visit identity helpers are deterministic and bound interval values. |
+| `extension/tests/unit/visit_tracker.test.js` | node:test | `(module)` | `visit tracker preserves navigation identity for repeated captures and closes prior URL state` | 23 | Visit tracker preserves navigation identity for repeated captures and closes prior URL state. |
 <!-- END GENERATED:test-case-inventory -->
 
 </details>
@@ -528,15 +934,16 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 </tbody>
 </table>
 <p>Run the default all+strict real-browser matrix:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_REAL_CHROME_ALLOW_DOWNLOAD</span><span style="color: #FF4689">=</span><span style="color: #AE81FF">0</span><span style="color: #F8F8F2"> BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
 </code></pre></div>
 
+<p><code>scripts/chrome-for-testing-lock.json</code> is release authority for the Windows x64 browser version, canonical archive URL, archive size/SHA-256, and extracted executable size/SHA-256. Cached execution verifies the executable before launch and makes no metadata request. Missing or corrupt bytes fail closed unless <code>BMD_REAL_CHROME_ALLOW_DOWNLOAD=1</code> is explicitly supplied; any permitted download is staged and checksum-verified before extraction. <code>BMD_CHROME_EXE</code> is an explicit operator-managed override outside this lock.</p>
 <p>Run one mode while debugging:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> BMD_REAL_CHROME_POLICY_MODE</span><span style="color: #FF4689">=</span>strict<span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_REAL_CHROME_ALLOW_DOWNLOAD</span><span style="color: #FF4689">=</span><span style="color: #AE81FF">0</span><span style="color: #F8F8F2"> BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> BMD_REAL_CHROME_POLICY_MODE</span><span style="color: #FF4689">=</span>strict<span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
 </code></pre></div>
 
 <p>Run a custom matrix:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> BMD_REAL_CHROME_MATRIX_MODES</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;all strict balanced recall&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_REAL_CHROME_ALLOW_DOWNLOAD</span><span style="color: #FF4689">=</span><span style="color: #AE81FF">0</span><span style="color: #F8F8F2"> BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> BMD_REAL_CHROME_MATRIX_MODES</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;all strict balanced recall&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-real-chrome-e2e.sh
 </code></pre></div>
 
 <hr />

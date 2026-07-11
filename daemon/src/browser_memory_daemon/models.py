@@ -32,10 +32,14 @@ class CapturePayload:
     source_device: str = "workstation1-windows-chrome"
     browser_profile: str = "Default"
     visit_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    observation_id: str | None = None
+    navigation_id: str | None = None
     captured_at: str = field(default_factory=utc_now_iso)
     visit_started_at: str | None = None
     dwell_seconds: int | None = None
     extraction_method: str = "dom-visible-text-v1"
+    extraction_version: str = "legacy-v1"
+    capture_reason: str = "unspecified"
     content_type: str = "text/html"
     is_incognito: bool = False
     media_artifacts: list[dict[str, Any]] = field(default_factory=list)
@@ -73,10 +77,14 @@ class CapturePayload:
             source_device=str(data.get("source_device") or data.get("sourceDevice") or "workstation1-windows-chrome"),
             browser_profile=str(data.get("browser_profile") or data.get("browserProfile") or "Default"),
             visit_id=str(data.get("visit_id") or data.get("visitId") or uuid.uuid4()),
+            observation_id=str(data.get("observation_id") or data.get("observationId") or "").strip() or None,
+            navigation_id=str(data.get("navigation_id") or data.get("navigationId") or "").strip() or None,
             captured_at=captured_at or utc_now_iso(),
             visit_started_at=visit_started_at,
             dwell_seconds=dwell,
             extraction_method=str(data.get("extraction_method") or data.get("extractionMethod") or "dom-visible-text-v1"),
+            extraction_version=str(data.get("extraction_version") or data.get("extractionVersion") or "legacy-v1"),
+            capture_reason=str(data.get("capture_reason") or data.get("captureReason") or "unspecified"),
             content_type=str(data.get("content_type") or data.get("contentType") or "text/html"),
             is_incognito=bool(data.get("is_incognito") or data.get("incognito") or False),
             media_artifacts=[item for item in media_artifacts if isinstance(item, dict)],

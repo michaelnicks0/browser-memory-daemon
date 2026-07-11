@@ -1,13 +1,14 @@
 ---
 id: ADR-0021
-status: accepted
+status: superseded
 date: 2026-07-03
 decider: Operator
 scope: repo
 backfilled: false
 supersedes:
   - ADR-0004
-superseded_by: []
+superseded_by:
+  - ADR-0039
 related:
   - daemon/src/browser_memory_daemon/config.py
   - scripts/install-daily-driver.sh
@@ -21,6 +22,8 @@ verification:
 ---
 
 # ADR-0021: Use configurable NAS blob root with local SQLite
+
+> **Superseded by ADR-0039.** The local-SQLite decision remains, but one combined NAS-capable blob root has been replaced by a compatibility derivative root, independently guarded final media root, and opt-in bounded local media spool.
 
 ## Context
 

@@ -161,8 +161,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Local storage/search</td>
-<td>WSL daemon persists documents, visits, snapshots, chunks, FTS rows, lifecycle events, media refs, audit events, and deletion receipts.</td>
-<td><code>daemon/src/browser_memory_daemon/schema.sql</code>, integration tests.</td>
+<td>WSL daemon persists documents, visits, capture observations, snapshots, URL claims, chunks, FTS rows, claimed/resolved lifecycle events, media refs, audit events, and deletion receipts behind an exact schema fingerprint and ordered migration ledger. New identity follows the observed URL; canonical claims cannot auto-merge documents; dwell is derived from validated interval unions.</td>
+<td><code>schema.sql</code>, <code>migrations.py</code>, <code>ingest.py</code>, <code>lifecycle.py</code>, observation/migration integration tests.</td>
 </tr>
 <tr>
 <td>Default recall posture</td>
@@ -171,7 +171,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Operator controls</td>
-<td>CLI, local UI, HTTP API, popup/options controls, policy rules, forget receipts, doctor diagnostics.</td>
+<td>CLI, local UI, HTTP API, popup/options controls, policy rules, forget receipts, migration check/execute, and doctor diagnostics.</td>
 <td><code>cli.py</code>, <code>ui/</code>, <code>docs/api.md</code>, e2e tests.</td>
 </tr>
 <tr>
@@ -226,7 +226,15 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <h2 id="maturity-snapshot">Maturity snapshot</h2>
 <ul>
 <li><strong>Implemented:</strong> local capture/search/delete/UI/API/CLI/media sidecars/daily-driver install.</li>
-<li><strong>Verification depth:</strong> 80 static test functions across daemon pytest and extension node:test sources, plus real Chrome for Testing e2e.</li>
+</ul>
+<!-- BEGIN GENERATED:verification-depth -->
+<ul>
+<li><strong>Verification depth:</strong> 324 static test functions across 57 files (251 daemon pytest; 73 extension node:test), plus real Chrome for Testing e2e.</li>
+<li><strong>Requirement authority:</strong> <code>requirements/catalog.toml</code> defines 43 active and 0 planned stable requirements with generated traceability tables.</li>
+</ul>
+<!-- END GENERATED:verification-depth -->
+<ul>
+<li><strong>Fast quality gate:</strong> network-free targeted Ruff/strict mypy, full Python branch coverage with an 80% measured floor, all Node tests, generated-catalog/secret/diff checks, and a default-XDG write sentinel.</li>
 <li><strong>Architecture depth:</strong> C4/Structurizr atlas, ADR history, behavioral Mermaid diagrams, API/CLI/security docs.</li>
 <li><strong>Known future lanes:</strong> semantic/vector search, native messaging hardening, retention/export/backup, MCP/Hermes tools, richer policy actions.</li>
 </ul>

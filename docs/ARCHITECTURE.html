@@ -155,7 +155,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Storage owner</td>
-<td>WSL daemon owns the DB and paths; blob bytes may live under a configured WSL-mounted NAS root. Chrome profile is not the durable memory store.</td>
+<td>WSL daemon owns local SQLite as complete text/provenance authority. Reconstructible derivatives stay under a separate local derivative root; disposable media may use a guarded WSL-mounted root plus an explicitly configured bounded local spool. Chrome profile is not the durable memory store.</td>
 </tr>
 <tr>
 <td>Search model</td>
@@ -167,7 +167,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Deletion model</td>
-<td>Forget by domain/URL with deletion receipts.</td>
+<td>Forget by domain/URL with same-transaction deletion receipts, durable blob tombstones, and retryable contained reconciliation.</td>
 </tr>
 <tr>
 <td>Validation target</td>
@@ -195,7 +195,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td>Solid green</td>
 <td>Local authenticated ingest and storage.</td>
-<td>The WSL daemon applies policy, writes SQLite/FTS rows and clean-text blobs, and serves token-gated read/delete APIs.</td>
+<td>The WSL daemon applies policy, commits complete cleaned text plus SQLite/FTS/provenance rows without touching blob storage, and serves token-gated read/delete APIs.</td>
 </tr>
 <tr>
 <td>Dashed violet</td>
@@ -204,123 +204,562 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 </tbody>
 </table>
-<p>The fast path is text-first: page text, lifecycle metadata, and media references are captured before any media bytes are fetched. Media sidecars run later in Chrome or the daemon, media bytes are bounded and disposable, and all durable memory remains local under WSL-owned SQLite plus configured WSL-visible blob storage.</p>
+<p>The fast path is text-first: complete cleaned page text, lifecycle metadata, and media references commit to local SQLite before any media bytes are fetched. Media sidecars run later in Chrome or the daemon; media bytes are bounded and disposable. New captures do not create clean-text filesystem sidecars. An unavailable external media root degrades media storage without blocking this transaction and never causes startup to create a shadow media tree.</p>
+<p>Current storage topology:</p>
+<ul>
+<li><code>BMD_DERIVATIVE_ROOT</code> owns reconstructible artifacts such as legacy clean-text sidecars. When unset, it remains at the legacy-compatible <code>BMD_BLOB_ROOT</code>; moving unresolved sidecars requires explicit migration.</li>
+<li><code>BMD_MEDIA_ROOT</code> owns final media bytes. Explicit external roots require both a non-root mount and <code>.bmd-media-root-id</code> matching <code>BMD_MEDIA_ROOT_IDENTITY</code> before reads or writes.</li>
+<li><code>BMD_MEDIA_SPOOL_ROOT</code> plus positive <code>BMD_MAX_MEDIA_SPOOL_BYTES</code> enables a local durable outage spool contained under the WSL data root. SQLite reservations count distinct in-flight writers while filesystem census counts committed and orphaned spool files.</li>
+<li>Migration version 10 records each artifact's <code>media-root</code> or <code>spool</code> tier. Dry-run-first spool draining streams and hash-verifies the destination, commits the tier transition, and only then removes the source.</li>
+<li>Migration version 11 adds durable <code>blob_storage_records</code>. Forget, purge, eviction, spool drain, replacement, and blob migration register committed/tombstoned lifecycle state before filesystem deletion; <code>failed</code>/<code>blocked</code> work remains pending and visible until <code>storage reconcile --execute</code> converges it.</li>
+<li>Migration version 12 performs one-time historical media-state correction. The steady-state worker runs only bounded current-state CDP/task reconciliation plus due-task leasing; budget skips require an explicit scoped <code>media-cache requeue</code> preview/execute operation.</li>
+<li>Migration version 13 adds expiring SQLite cache reservations. Admission counts committed plus active reserved bytes transactionally across daemon and worker processes, and publication replaces its reservation with the committed artifact row in the same transaction.</li>
+<li><code>BMD_MAX_MEDIA_INFLIGHT_BYTES</code> and <code>BMD_MAX_MEDIA_CONCURRENT_REQUESTS</code> bound media bytes and active requests within each daemon or worker process. Known-length raw upload streams directly into contained BlobStore staging through 64 KiB reads; public HTTP/HLS fetch, artifact staging, and stored responses also use bounded streams. Upload/download disconnects abort incomplete staging or response work, release durable and process reservations, and never attempt a second HTTP response. Queue status exposes aggregate lease counters.</li>
+<li>Text-first backup uses SQLite's online backup API plus a redaction-safe SHA-256 manifest. Restore verifies into an absent runtime root; media/spool/secrets remain excluded by default.</li>
+</ul>
 <hr />
 <h2 id="requirements-trace">Requirements trace</h2>
+<p>The machine-readable source of truth is <a href="../requirements/catalog.toml"><code>../requirements/catalog.toml</code></a>. It preserves the architecture-owned meanings of <code>REQ-001</code> through <code>REQ-017</code>, assigns stable IDs to displaced test-plan meanings, and records explicit legacy aliases instead of silently renumbering or redefining requirements. The table below is generated by <code>scripts/generate_test_inventory.py</code>.</p>
+<!-- BEGIN GENERATED:requirements-trace -->
 <table>
 <thead>
 <tr>
 <th>ID</th>
-<th>Requirement</th>
+<th style="text-align: right;">Rev</th>
+<th>Status</th>
+<th>Normative requirement</th>
+<th>Owner</th>
+<th>Aliases</th>
 <th>Implementation</th>
-<th>Verification</th>
+<th>Validation</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>REQ-001</td>
-<td>Capture Chrome page text into WSL.</td>
-<td><code>extension/src/*</code>, <code>/capture</code>, <code>ingest.py</code></td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>The system shall capture useful rendered page text, title, observed URL, timestamps, and constrained metadata.</td>
+<td>Chrome MV3 Extension / WSL Daemon Ingest</td>
+<td>—</td>
+<td><code>extension/src/content_script.js</code><br><code>extension/src/service_worker.js</code><br><code>daemon/src/browser_memory_daemon/ingest.py</code></td>
 <td><code>scripts/run-real-chrome-e2e.sh</code></td>
 </tr>
 <tr>
 <td>REQ-002</td>
-<td>Keep durable data out of repo and Chrome profile.</td>
-<td><code>RuntimeConfig</code>, XDG paths, configurable blob root, <code>.gitignore</code></td>
-<td><code>doctor</code>, secret scan, runtime/blob-root tests</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>The system shall keep durable database and blob data outside the repository and browser profile.</td>
+<td>WSL Daemon Configuration / Storage</td>
+<td>—</td>
+<td><code>daemon/src/browser_memory_daemon/config.py</code><br><code>daemon/src/browser_memory_daemon/storage_paths.py</code><br><code>.gitignore</code></td>
+<td><code>scripts/run-e2e.sh</code></td>
 </tr>
 <tr>
 <td>REQ-003</td>
-<td>Service worker owns daemon communication.</td>
-<td><code>service_worker.js</code></td>
-<td>extension unit tests + real e2e</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>The extension shall send captures to the local daemon over the authenticated loopback transport.</td>
+<td>Chrome MV3 Extension / WSL HTTP Daemon</td>
+<td>—</td>
+<td><code>extension/src/service_worker.js</code><br><code>daemon/src/browser_memory_daemon/http_server.py</code><br><code>daemon/src/browser_memory_daemon/app.py</code></td>
+<td><code>scripts/run-real-chrome-e2e.sh</code></td>
 </tr>
 <tr>
 <td>REQ-004</td>
-<td>Authenticated loopback API.</td>
-<td><code>app.py</code>, bearer token</td>
-<td>HTTP e2e unauthorized test</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>The daemon shall expose an authenticated HTTP API on the loopback boundary.</td>
+<td>WSL HTTP Daemon</td>
+<td>—</td>
+<td><code>daemon/src/browser_memory_daemon/http_server.py</code><br><code>daemon/src/browser_memory_daemon/app.py</code><br><code>daemon/src/browser_memory_daemon/config.py</code></td>
+<td><code>daemon/tests/e2e/test_http_api.py</code></td>
 </tr>
 <tr>
 <td>REQ-005</td>
-<td>Adjustable capture policy modes.</td>
-<td><code>policy.py</code>, <code>extractor.js</code>, options/popup</td>
-<td>daemon + extension unit tests</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>The system shall preserve the all, recall, balanced, and strict policy modes with all as the daily-driver default.</td>
+<td>Static Policy Engine</td>
+<td>—</td>
+<td><code>daemon/src/browser_memory_daemon/policy.py</code><br><code>daemon/src/browser_memory_daemon/config.py</code><br><code>extension/src/extractor.js</code></td>
+<td><code>scripts/run-real-chrome-e2e.sh</code></td>
 </tr>
 <tr>
 <td>REQ-006</td>
-<td><code>all</code> mode disables URL filtering and daemon redaction while still skipping hidden/form/editable/script/style/no-script DOM text.</td>
-<td><code>policy_mode=all</code>, no-redaction ingest path</td>
-<td>unit/integration + real e2e all-mode expectations</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>The all policy mode shall disable built-in URL filtering and daemon redaction while retaining password, hidden, form, editable, script, style, noscript, and extension-UI DOM skip surfaces plus explicit local block rules.</td>
+<td>Extension Extractor</td>
+<td>—</td>
+<td><code>extension/src/extractor.js</code><br><code>extension/src/content_script.js</code></td>
+<td><code>extension/tests/unit/extractor.test.js</code></td>
 </tr>
 <tr>
 <td>REQ-007</td>
-<td>Non-all modes preserve redaction and stricter policy options.</td>
-<td><code>redact_text</code>, <code>redact_url</code>, strict/balanced/recall</td>
-<td>policy and ingest tests</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>The system shall apply URL, token, email, and identifier redaction before storage whenever the selected policy mode requires redaction.</td>
+<td>Static Policy Engine / Ingest Pipeline</td>
+<td>—</td>
+<td><code>daemon/src/browser_memory_daemon/policy.py</code><br><code>daemon/src/browser_memory_daemon/ingest.py</code></td>
+<td><code>daemon/tests/integration/test_ingest_search_forget.py::test_metadata_redacted_before_fts_and_forget_by_original_url</code></td>
 </tr>
 <tr>
 <td>REQ-008</td>
-<td>Exact search with citations.</td>
-<td><code>chunks_fts</code>, <code>search.py</code>, detail APIs</td>
-<td>integration/e2e search tests</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>The system shall support local FTS5 search with snippets, metadata filters, and source-backed detail retrieval.</td>
+<td>SQLite/FTS Read Model</td>
+<td>—</td>
+<td><code>daemon/src/browser_memory_daemon/search.py</code><br><code>daemon/src/browser_memory_daemon/ops.py</code></td>
+<td><code>scripts/run-real-chrome-e2e.sh</code></td>
 </tr>
 <tr>
 <td>REQ-009</td>
-<td>Dedupe repeated unchanged captures.</td>
-<td>normalized URLs + text hash snapshots</td>
-<td>ingest tests</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>The system shall deduplicate immutable snapshots by normalized document identity and cleaned-content hash.</td>
+<td>Daemon Ingest Pipeline</td>
+<td>—</td>
+<td><code>daemon/src/browser_memory_daemon/ingest.py</code><br><code>daemon/src/browser_memory_daemon/models.py</code></td>
+<td><code>daemon/tests/integration/test_ingest_search_forget.py::test_repeat_capture_dedupes_snapshot_but_adds_visit</code></td>
 </tr>
 <tr>
 <td>REQ-010</td>
-<td>Capture SPA/delayed pages.</td>
-<td>content-script delayed passes + history hooks</td>
-<td>real Chrome SPA fixture</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>The extension shall recapture changed SPA and late-rendered page content using bounded observation behavior.</td>
+<td>Extension Content Script / Service Worker</td>
+<td>—</td>
+<td><code>extension/src/content_script.js</code><br><code>extension/src/service_worker.js</code></td>
+<td><code>scripts/run-real-chrome-e2e.sh</code></td>
 </tr>
 <tr>
 <td>REQ-011</td>
-<td>Track dwell/lifecycle metadata.</td>
-<td><code>/visit-events</code>, <code>lifecycle.py</code></td>
-<td>lifecycle tests + real e2e</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>The system shall record visit lifecycle events and apply bounded idempotent dwell updates.</td>
+<td>Visit Lifecycle Pipeline</td>
+<td>—</td>
+<td><code>daemon/src/browser_memory_daemon/lifecycle.py</code><br><code>extension/src/service_worker.js</code></td>
+<td><code>daemon/tests/integration/test_visit_lifecycle.py</code></td>
 </tr>
 <tr>
 <td>REQ-012</td>
-<td>Local UI and CLI operations.</td>
-<td><code>ui/</code>, <code>cli.py</code>, admin APIs; <code>/ui</code> token bootstrap</td>
-<td>admin/CLI e2e tests</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>The system shall provide authenticated local UI and CLI workflows for search, recent activity, detail, health, policy, and destructive operations.</td>
+<td>Local UI / CLI</td>
+<td>—</td>
+<td><code>ui/app.js</code><br><code>daemon/src/browser_memory_daemon/cli.py</code></td>
+<td><code>daemon/tests/e2e/test_admin_api.py</code></td>
 </tr>
 <tr>
 <td>REQ-013</td>
-<td>Delete stored memory with receipts.</td>
-<td><code>forget.py</code>, <code>deletion_receipts</code></td>
-<td>forget integration/e2e tests</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>The system shall forget selected records with durable minimized deletion receipts and contained byte cleanup.</td>
+<td>Forget Pipeline</td>
+<td>—</td>
+<td><code>daemon/src/browser_memory_daemon/forget.py</code><br><code>daemon/src/browser_memory_daemon/db.py</code></td>
+<td><code>daemon/tests/integration/test_ingest_search_forget.py</code></td>
 </tr>
 <tr>
 <td>REQ-014</td>
-<td>Real daily-driver install path.</td>
-<td><code>install-daily-driver.sh</code></td>
-<td>WSL + Windows health checks</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>The repository shall provide a guarded and testable daily-driver installation path for the daemon, worker, extension build, and configuration.</td>
+<td>Daily-driver Installer</td>
+<td>—</td>
+<td><code>scripts/install-daily-driver.sh</code><br><code>daemon/src/browser_memory_daemon/daily_driver_health.py</code></td>
+<td><code>daemon/tests/e2e/test_daily_driver_install.py</code></td>
 </tr>
 <tr>
 <td>REQ-015</td>
-<td>Media bytes shall never block text/FTS capture.</td>
-<td><code>/capture</code> media refs, extension IndexedDB queue, media worker</td>
-<td>integration + real Chrome e2e</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>Text capture shall commit before asynchronous media acquisition while preserving durable media reference provenance.</td>
+<td>Daemon Ingest / Media Task Pipeline</td>
+<td>—</td>
+<td><code>daemon/src/browser_memory_daemon/ingest.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code></td>
+<td><code>daemon/tests/integration/test_media_worker.py</code></td>
 </tr>
 <tr>
 <td>REQ-016</td>
-<td>Credentialed media fetch shall stay inside Chrome; WSL shall not receive browser cookies.</td>
-<td>browser lazy sidecar <code>fetch(... credentials: 'include')</code> + raw <code>PUT</code></td>
-<td>cookie-required real Chrome fixture</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>Credentialed media fetch shall remain inside Chrome and shall upload only explicit raw bytes and constrained metadata to the daemon.</td>
+<td>Extension Media Bridge</td>
+<td>—</td>
+<td><code>extension/src/service_worker.js</code><br><code>extension/src/cdp_recorder.js</code><br><code>extension/src/media_queue.js</code></td>
+<td><code>scripts/run-real-chrome-e2e.sh</code></td>
 </tr>
 <tr>
 <td>REQ-017</td>
-<td>Media cache shall be bounded and disposable/rebuildable.</td>
-<td>size gates, <code>/media-artifacts/purge-cache</code>, <code>media-cache</code> CLI</td>
-<td>HTTP/integration tests</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>Media bytes shall be managed as a bounded disposable cache with status, provenance, purge, and rehydration behavior.</td>
+<td>Media Artifact Store</td>
+<td>—</td>
+<td><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/media_worker.py</code></td>
+<td><code>daemon/tests/integration/test_ingest_search_forget.py::test_media_global_cache_rolls_oldest_blob_when_limit_would_be_exceeded</code></td>
+</tr>
+<tr>
+<td>REQ-018</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>Durable mutation and security audit events shall be stored in SQLite with redaction-safe details.</td>
+<td>Daemon Audit Store</td>
+<td>—</td>
+<td><code>daemon/src/browser_memory_daemon/db.py</code><br><code>daemon/src/browser_memory_daemon/schema.sql</code></td>
+<td><code>daemon/tests/e2e/test_http_api.py</code></td>
+</tr>
+<tr>
+<td>REQ-019</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>The system shall provide fast health and doctor diagnostics with optional bounded storage census and redaction-safe output.</td>
+<td>Doctor / Daily-driver Health</td>
+<td>—</td>
+<td><code>daemon/src/browser_memory_daemon/ops.py</code><br><code>daemon/src/browser_memory_daemon/daily_driver_health.py</code></td>
+<td><code>daemon/tests/unit/test_daily_driver_health.py</code></td>
+</tr>
+<tr>
+<td>REQ-020</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>Tests, benchmarks, and normal repository commands shall not leave runtime databases, blobs, logs, tokens, or browser profiles in the repository.</td>
+<td>Verification Harness</td>
+<td>—</td>
+<td><code>.gitignore</code><br><code>scripts/run-e2e.sh</code><br><code>scripts/secret-scan.sh</code></td>
+<td><code>daemon/tests/e2e/test_performance_benchmarks.py::test_performance_benchmark_subprocess_does_not_write_default_home_blob_root</code></td>
+</tr>
+<tr>
+<td>REQ-021</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>Release verification shall exercise the unpacked extension against an isolated Chrome for Testing profile without using the operator Chrome profile.</td>
+<td>Real Chrome E2E Harness</td>
+<td>—</td>
+<td><code>scripts/run-real-chrome-e2e.sh</code><br><code>scripts/real-chrome-e2e.mjs</code><br><code>scripts/chrome-for-testing.mjs</code><br><code>scripts/chrome-for-testing-lock.json</code></td>
+<td><code>extension/tests/unit/chrome_for_testing.test.js</code><br><code>scripts/run-real-chrome-e2e.sh</code></td>
+</tr>
+<tr>
+<td>REQ-022</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>Durable media sidecar tasks shall preserve provenance and terminal status independently from successful searchable text capture.</td>
+<td>Extension and Daemon Media Pipelines</td>
+<td>—</td>
+<td><code>extension/src/media_queue.js</code><br><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/media_worker.py</code></td>
+<td><code>daemon/tests/integration/test_media_worker.py</code></td>
+</tr>
+<tr>
+<td>REQ-023</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>The SQLite schema shall contain the documented authority tables, constraints, indexes, FTS structures, and audit records required by the current release.</td>
+<td>SQLite Schema</td>
+<td>—</td>
+<td><code>daemon/src/browser_memory_daemon/schema.sql</code></td>
+<td><code>daemon/tests/integration/test_ingest_search_forget.py::test_schema_has_planned_core_tables</code></td>
+</tr>
+<tr>
+<td>REQ-024</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>Search and detail responses shall cite source URL, title, document identity, snapshot identity, and stored text or snippet as applicable.</td>
+<td>SQLite/FTS Read Model</td>
+<td>—</td>
+<td><code>daemon/src/browser_memory_daemon/search.py</code><br><code>daemon/src/browser_memory_daemon/ops.py</code></td>
+<td><code>daemon/tests/e2e/test_admin_api.py</code></td>
+</tr>
+<tr>
+<td>REQ-025</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>The extension shall provide pause, resume, policy selection, queue status, and bounded local operational controls without exposing captured content.</td>
+<td>Extension Popup / Options / Service Worker</td>
+<td>—</td>
+<td><code>extension/src/popup.js</code><br><code>extension/src/options.js</code><br><code>extension/src/service_worker.js</code></td>
+<td><code>extension/tests/unit/service_worker.test.js</code></td>
+</tr>
+<tr>
+<td>REQ-026</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>Every test, benchmark, and fixture write shall be confined to an explicit temporary root.</td>
+<td>Verification Harness</td>
+<td><code>HRD-001</code></td>
+<td><code>daemon/src/browser_memory_daemon/performance_benchmarks.py</code><br><code>scripts/run-fast-gate.sh</code><br><code>scripts/run-e2e.sh</code></td>
+<td><code>scripts/run-fast-gate.sh</code><br><code>daemon/tests/e2e/test_performance_benchmarks.py::test_performance_benchmark_subprocess_does_not_write_default_home_blob_root</code></td>
+</tr>
+<tr>
+<td>REQ-027</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>Daemon-public network fetches shall contact only approved destinations and shall revalidate every redirect and HLS-derived request.</td>
+<td>Guarded Media Fetch</td>
+<td><code>HRD-002</code></td>
+<td><code>daemon/src/browser_memory_daemon/media_transport.py</code><br><code>daemon/src/browser_memory_daemon/media_fetch.py</code><br><code>daemon/src/browser_memory_daemon/media_hls.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/config.py</code></td>
+<td><code>daemon/tests/integration/test_media_worker.py::test_guarded_public_fetch_revalidates_public_to_private_redirect</code><br><code>daemon/tests/integration/test_media_worker.py::test_guarded_hls_initial_redirect_claims_total_request_budget</code><br><code>daemon/tests/integration/test_media_worker.py::test_guarded_fetch_enforces_deadline_during_slow_response_body</code><br><code>daemon/tests/integration/test_media_worker.py::test_guarded_hls_enforces_initial_playlist_byte_budget</code></td>
+</tr>
+<tr>
+<td>REQ-028</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>The daemon shall not expose a durable API token through a remotely reachable unauthenticated UI.</td>
+<td>WSL HTTP Daemon</td>
+<td><code>HRD-003</code></td>
+<td><code>daemon/src/browser_memory_daemon/http_server.py</code><br><code>daemon/src/browser_memory_daemon/app.py</code></td>
+<td><code>daemon/tests/e2e/test_ui_dashboard_smoke.py::test_ui_dashboard_rejects_non_loopback_host_header</code></td>
+</tr>
+<tr>
+<td>REQ-029</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>Every blob read, write, move, and delete shall resolve under its configured root and resist traversal and symlink escape.</td>
+<td>Storage Path Boundary</td>
+<td><code>HRD-004</code></td>
+<td><code>daemon/src/browser_memory_daemon/blob_store.py</code><br><code>daemon/src/browser_memory_daemon/storage_paths.py</code><br><code>daemon/src/browser_memory_daemon/ingest.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/forget.py</code><br><code>daemon/src/browser_memory_daemon/ops.py</code><br><code>daemon/src/browser_memory_daemon/application.py</code><br><code>daemon/src/browser_memory_daemon/blob_migration.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0008_add_relative_blob_locators.sql</code></td>
+<td><code>daemon/tests/unit/test_blob_store.py::test_blob_store_stages_streams_verifies_hash_and_commits_atomically</code><br><code>daemon/tests/unit/test_blob_store.py::test_blob_store_rejects_traversal_symlink_escape_and_cross_root_stage</code><br><code>daemon/tests/integration/test_ingest_search_forget.py::test_blob_path_consumers_reject_db_paths_outside_configured_roots</code><br><code>daemon/tests/integration/test_migrations.py::test_version_eight_adds_nullable_relative_locators</code></td>
+</tr>
+<tr>
+<td>REQ-030</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>Destructive selectors shall be literal, validated, policy-aware, previewable, and bounded to the stated scope.</td>
+<td>Forget Pipeline</td>
+<td><code>HRD-005</code></td>
+<td><code>daemon/src/browser_memory_daemon/forget.py</code><br><code>daemon/src/browser_memory_daemon/application.py</code><br><code>daemon/src/browser_memory_daemon/cli.py</code><br><code>ui/app.js</code><br><code>extension/src/popup.js</code></td>
+<td><code>daemon/tests/integration/test_ingest_search_forget.py::test_forget_preview_is_non_mutating_and_execution_is_broad_scope_guarded</code><br><code>daemon/tests/e2e/test_http_api.py::test_http_capture_search_forget_round_trip</code></td>
+</tr>
+<tr>
+<td>REQ-031</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>Deletion and eviction shall be crash-recoverable and shall not report full success while required bytes remain.</td>
+<td>BlobStore / Forget / Media Store</td>
+<td><code>HRD-006</code></td>
+<td><code>daemon/src/browser_memory_daemon/blob_lifecycle.py</code><br><code>daemon/src/browser_memory_daemon/storage_reconcile.py</code><br><code>daemon/src/browser_memory_daemon/forget.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/media_storage.py</code><br><code>daemon/src/browser_memory_daemon/schema.sql</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0011_add_blob_lifecycle_records.py</code></td>
+<td><code>daemon/tests/integration/test_storage_reconcile.py::test_forget_persists_retryable_tombstone_before_database_cascade</code><br><code>daemon/tests/integration/test_storage_reconcile.py::test_media_purge_remains_pending_until_tombstoned_bytes_are_deleted</code><br><code>daemon/tests/integration/test_storage_reconcile.py::test_concurrent_tombstone_processors_delete_once_and_converge</code><br><code>daemon/tests/integration/test_storage_reconcile.py::test_storage_reconcile_reports_and_repairs_missing_orphan_and_stale_stage</code></td>
+</tr>
+<tr>
+<td>REQ-032</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>Every supported database shall have an explicit version and ordered, auditable, restore-backed migrations.</td>
+<td>Database Migration Kernel</td>
+<td><code>HRD-007</code></td>
+<td><code>daemon/src/browser_memory_daemon/migrations.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps</code><br><code>daemon/src/browser_memory_daemon/db.py</code></td>
+<td><code>daemon/tests/integration/test_migrations.py::test_destructive_migration_creates_online_backup_that_restores_search</code><br><code>daemon/tests/integration/test_migrations.py::test_version_eight_adds_nullable_relative_locators</code><br><code>daemon/tests/integration/test_migrations.py::test_version_nine_backfills_hash_verified_chunks_and_new_ingest_uses_sqlite_authority</code><br><code>daemon/tests/integration/test_migrations.py::test_version_ten_adds_media_storage_tiers_and_spool_reservations</code><br><code>daemon/tests/integration/test_migrations.py::test_version_eleven_adds_and_backfills_blob_lifecycle_records</code></td>
+</tr>
+<tr>
+<td>REQ-033</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>Visits, capture observations, snapshots, lifecycle events, and media provenance shall have explicit temporal relationships.</td>
+<td>Capture Observation Model</td>
+<td><code>HRD-008</code></td>
+<td><code>daemon/src/browser_memory_daemon/models.py</code><br><code>daemon/src/browser_memory_daemon/ingest.py</code><br><code>daemon/src/browser_memory_daemon/lifecycle.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/ops.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0004_capture_observations_and_url_claims.sql</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0005_backfill_historical_observations.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0006_link_media_artifacts_to_observations.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0007_add_claimed_visit_identity.sql</code><br><code>extension/src/service_worker.js</code></td>
+<td><code>daemon/tests/integration/test_observation_reads.py::test_observation_first_reads_preserve_contemporaneous_snapshots_and_unique_visit_summary</code><br><code>daemon/tests/integration/test_visit_lifecycle.py::test_claimed_visit_identity_does_not_fall_back_by_url_and_reconciles_after_delayed_capture</code></td>
+</tr>
+<tr>
+<td>REQ-034</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>The normalized observed browser URL shall control document identity while page-provided canonical and alternate URLs remain untrusted claims.</td>
+<td>Document Identity / URL Claims</td>
+<td><code>HRD-009</code></td>
+<td><code>daemon/src/browser_memory_daemon/models.py</code><br><code>daemon/src/browser_memory_daemon/ingest.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0004_capture_observations_and_url_claims.sql</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0005_backfill_historical_observations.py</code></td>
+<td><code>daemon/tests/integration/test_capture_observations.py::test_cross_origin_canonical_is_a_non_authoritative_claim_and_visit_fk_survives_recapture</code></td>
+</tr>
+<tr>
+<td>REQ-035</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>Searchable text and capture provenance shall commit locally without NAS or media dependency.</td>
+<td>SQLite Text Authority / Ingest</td>
+<td><code>HRD-010</code></td>
+<td><code>daemon/src/browser_memory_daemon/ingest.py</code><br><code>daemon/src/browser_memory_daemon/config.py</code><br><code>daemon/src/browser_memory_daemon/ops.py</code><br><code>daemon/src/browser_memory_daemon/text_authority.py</code><br><code>daemon/src/browser_memory_daemon/media_storage.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0009_add_sqlite_snapshot_text_authority.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0010_split_media_root_and_add_spool.py</code></td>
+<td><code>daemon/tests/integration/test_text_authority.py::test_new_capture_commits_complete_sqlite_text_without_creating_blob_root</code><br><code>daemon/tests/integration/test_media_storage.py::test_text_and_provenance_commit_when_external_media_has_no_spool</code></td>
+</tr>
+<tr>
+<td>REQ-036</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>Media transitions, cache admission, leases, retries, and resource budgets shall be closed, bounded, and concurrency-safe.</td>
+<td>Media State Machine</td>
+<td><code>HRD-011</code></td>
+<td><code>daemon/src/browser_memory_daemon/application.py</code><br><code>daemon/src/browser_memory_daemon/http_server.py</code><br><code>daemon/src/browser_memory_daemon/config.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/media_transport.py</code><br><code>daemon/src/browser_memory_daemon/media_models.py</code><br><code>daemon/src/browser_memory_daemon/media_tasks.py</code><br><code>daemon/src/browser_memory_daemon/media_store.py</code><br><code>daemon/src/browser_memory_daemon/media_fetch.py</code><br><code>daemon/src/browser_memory_daemon/media_hls.py</code><br><code>daemon/src/browser_memory_daemon/media_ops.py</code><br><code>daemon/src/browser_memory_daemon/media_resources.py</code><br><code>daemon/src/browser_memory_daemon/media_storage.py</code><br><code>daemon/src/browser_memory_daemon/media_worker.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0010_split_media_root_and_add_spool.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0012_normalize_historical_media_state.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0013_add_media_cache_reservations.py</code></td>
+<td><code>daemon/tests/integration/test_media_tasks.py::test_media_task_repository_allows_only_one_concurrent_lease_owner</code><br><code>daemon/tests/unit/test_media_store.py::test_media_facade_preserves_admission_api_identity</code><br><code>daemon/tests/unit/test_media_store.py::test_media_facade_preserves_artifact_store_api_identity</code><br><code>daemon/tests/unit/test_media_resources.py</code><br><code>daemon/tests/unit/test_media_worker_claiming.py</code><br><code>daemon/tests/integration/test_storage_reconcile.py</code><br><code>daemon/tests/integration/test_media_storage.py::test_spool_reservations_serialize_concurrent_cap_checks</code><br><code>daemon/tests/integration/test_media_storage.py::test_cache_reservations_serialize_concurrent_global_admission</code><br><code>daemon/tests/integration/test_media_storage.py::test_cache_reservation_blocks_publication_until_released_and_expired_rows_are_reclaimed</code><br><code>daemon/tests/integration/test_media_storage.py::test_cancellation_like_stage_failure_releases_spool_and_cache_reservations</code><br><code>daemon/tests/integration/test_media_storage.py::test_failed_first_publication_removes_new_blob_and_spool_reservation</code><br><code>daemon/tests/integration/test_media_storage.py::test_failed_write_transaction_start_aborts_stage_and_releases_spool_reservation</code><br><code>daemon/tests/integration/test_media_storage.py::test_failed_replacement_preserves_previous_blob_and_removes_candidate</code><br><code>daemon/tests/e2e/test_http_api.py::test_http_upload_get_and_purge_use_bounded_spool_during_media_root_outage</code><br><code>daemon/tests/e2e/test_http_api.py::test_http_raw_media_upload_returns_503_when_global_byte_budget_cannot_admit_body</code><br><code>daemon/tests/integration/test_media_worker.py::test_media_worker_does_not_auto_requeue_terminal_budget_skips</code><br><code>daemon/tests/integration/test_media_worker.py::test_media_resource_pressure_does_not_roll_back_searchable_text</code><br><code>daemon/tests/integration/test_media_ops.py::test_media_requeue_is_scoped_and_dry_run_first</code><br><code>daemon/tests/integration/test_migrations.py::test_version_twelve_normalizes_historical_media_state_once</code><br><code>daemon/tests/integration/test_migrations.py::test_version_thirteen_adds_cache_reservations_from_exact_prior_schema</code></td>
+</tr>
+<tr>
+<td>REQ-037</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>Browser capture, lifecycle, and media queues shall be transactional, restart-safe, quota-aware, and never silently truncate.</td>
+<td>Extension Durable Outboxes</td>
+<td><code>HRD-012</code></td>
+<td><code>extension/src/config_store.js</code><br><code>extension/src/capture_bridge.js</code><br><code>extension/src/media_bridge.js</code><br><code>extension/src/telemetry.js</code><br><code>extension/src/visit_tracker.js</code><br><code>extension/src/injection.js</code><br><code>extension/src/cdp_session.js</code><br><code>extension/src/outbox.js</code><br><code>extension/src/service_worker.js</code><br><code>extension/src/popup.js</code><br><code>extension/src/options.js</code><br><code>extension/src/media_queue.js</code></td>
+<td><code>extension/tests/unit/injection.test.js::startup reconstruction revisits every active tab</code><br><code>extension/tests/unit/cdp_session.test.js::CDP session reconstructs an attachment already owned by the extension after worker restart</code><br><code>extension/tests/unit/service_worker.test.js::service worker preserves queued captures while daemon is down and drains them after reload</code><br><code>extension/tests/unit/service_worker.test.js::service worker queue overflow preserves old captures and visibly rejects the new capture</code><br><code>extension/tests/unit/service_worker.test.js::service worker enforces byte quota and exposes redaction-safe outbox telemetry</code><br><code>extension/tests/unit/service_worker.test.js::capture result checkpoint survives suspension without reposting before media enqueue compensation</code><br><code>extension/tests/unit/service_worker.test.js::service worker cleans expired terminal media while capture is paused or tokenless</code><br><code>extension/tests/unit/service_worker.test.js::service worker media upload retries keep fetched blob until successful upload</code></td>
+</tr>
+<tr>
+<td>REQ-038</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>Dwell shall be derived from validated interval unions rather than additive overlapping reports.</td>
+<td>Visit Lifecycle Pipeline</td>
+<td><code>HRD-013</code></td>
+<td><code>daemon/src/browser_memory_daemon/lifecycle.py</code></td>
+<td><code>daemon/tests/integration/test_visit_lifecycle.py::test_lifecycle_dwell_uses_interval_union_for_overlap_containment_adjacency_and_out_of_order</code></td>
+</tr>
+<tr>
+<td>REQ-039</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>DOM extraction shall follow a documented rendered-visibility contract verified in a real browser.</td>
+<td>Extension Extractor</td>
+<td><code>HRD-014</code></td>
+<td><code>extension/src/extractor.js</code><br><code>extension/src/capture_digest.js</code><br><code>extension/src/content_script.js</code><br><code>extension/src/service_worker.js</code></td>
+<td><code>scripts/run-real-chrome-e2e.sh</code></td>
+</tr>
+<tr>
+<td>REQ-040</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>HTTP behavior shall provide stable typed errors, request IDs, secure headers, and bounded streaming.</td>
+<td>WSL HTTP Transport</td>
+<td><code>HRD-015</code></td>
+<td><code>daemon/src/browser_memory_daemon/app.py</code><br><code>daemon/src/browser_memory_daemon/application.py</code><br><code>daemon/src/browser_memory_daemon/http_server.py</code><br><code>daemon/src/browser_memory_daemon/routes.py</code><br><code>daemon/src/browser_memory_daemon/api_errors.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/blob_store.py</code></td>
+<td><code>daemon/tests/e2e/test_http_api.py</code><br><code>daemon/tests/unit/test_application.py::test_application_capture_and_read_use_cases_run_without_http_handler</code><br><code>daemon/tests/e2e/test_http_api.py::test_http_raw_media_upload_disconnect_cleans_staging_reservations_and_process_budget</code><br><code>daemon/tests/e2e/test_http_api.py::test_http_media_download_disconnect_stops_stream_and_releases_process_budget</code></td>
+</tr>
+<tr>
+<td>REQ-041</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>Backup, restore, and staged install rollback shall be executable and verified before retention or destructive maintenance.</td>
+<td>Operations / Installer</td>
+<td><code>HRD-016</code></td>
+<td><code>daemon/src/browser_memory_daemon/backup_ops.py</code><br><code>daemon/src/browser_memory_daemon/cli.py</code><br><code>daemon/src/browser_memory_daemon/config.py</code><br><code>scripts/install-daily-driver.sh</code><br><code>docs/retention-compaction-backup.md</code><br><code>docs/daily-driver-deployment.md</code></td>
+<td><code>daemon/tests/integration/test_backup_restore.py::test_backup_create_is_dry_run_first_and_manifest_excludes_media_and_secrets</code><br><code>daemon/tests/integration/test_backup_restore.py::test_backup_restore_recreates_search_detail_and_forget_without_media_cache</code><br><code>daemon/tests/integration/test_backup_restore.py::test_restore_rejects_tampered_bundle_and_existing_destination_without_mutation</code><br><code>daemon/tests/integration/test_backup_restore.py::test_restore_rejects_traversal_and_symlinked_bundle_paths</code><br><code>daemon/tests/integration/test_backup_restore.py::test_restore_rejects_truncated_and_newer_schema_databases_after_manifest_verification</code><br><code>daemon/tests/integration/test_backup_restore.py::test_atomic_publication_refuses_a_destination_created_after_preflight</code><br><code>daemon/tests/integration/test_backup_restore.py::test_interrupted_restore_removes_staging_and_never_publishes_destination</code><br><code>daemon/tests/integration/test_backup_restore.py::test_backup_optionally_includes_only_referenced_contained_derivatives</code><br><code>daemon/tests/integration/test_backup_restore.py::test_backup_and_restore_force_private_tree_permissions_despite_umask</code><br><code>daemon/tests/integration/test_backup_restore.py::test_backup_rejects_symlinked_or_out_of_root_source_database</code><br><code>daemon/tests/integration/test_backup_restore.py::test_restore_rejects_symlinked_manifest_and_validates_database_during_dry_run</code><br><code>daemon/tests/integration/test_backup_restore.py::test_restore_rejects_malformed_or_incomplete_manifest_contract</code><br><code>daemon/tests/integration/test_backup_restore.py::test_restore_requires_derivative_manifest_to_match_database_and_rebases_legacy_reference</code><br><code>daemon/tests/integration/test_backup_restore.py::test_restore_dry_run_rejects_database_semantic_mismatch_matrix</code><br><code>daemon/tests/integration/test_backup_restore.py::test_default_bundle_excludes_populated_config_state_media_spool_and_secret_bytes</code><br><code>daemon/tests/integration/test_backup_restore.py::test_backup_interrupt_cleanup_and_post_publication_fsync_state_are_explicit</code><br><code>daemon/tests/integration/test_backup_restore.py::test_backup_cli_is_dry_run_first_for_create_and_restore</code><br><code>daemon/tests/e2e/test_cli_admin.py::test_cli_backup_create_and_restore_validate_then_execute</code><br><code>daemon/tests/e2e/test_install_daily_driver.py::test_installer_stages_validates_swaps_and_restarts_services_in_order</code><br><code>daemon/tests/e2e/test_install_daily_driver.py::test_installer_readiness_failure_restores_prior_artifacts_and_service_state</code><br><code>daemon/tests/e2e/test_install_daily_driver.py::test_installer_blocks_incompatible_database_before_publication</code><br><code>daemon/tests/e2e/test_install_daily_driver.py::test_installer_dry_run_rejects_unsafe_extension_destination_without_writes</code><br><code>daemon/tests/e2e/test_install_daily_driver.py::test_installer_surfaces_incomplete_rollback_when_prior_service_cannot_restart</code></td>
+</tr>
+<tr>
+<td>REQ-042</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>Requirement statements, implementation links, and verification evidence shall have one machine-readable source of truth.</td>
+<td>Requirement Catalog / Verification Generator</td>
+<td><code>HRD-017</code></td>
+<td><code>requirements/catalog.toml</code><br><code>scripts/generate_test_inventory.py</code></td>
+<td><code>daemon/tests/e2e/test_generate_test_inventory.py::test_generate_test_inventory_reports_catalog_traceability_success</code></td>
+</tr>
+<tr>
+<td>REQ-043</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>Local-first policy modes, explicit block rules, and the no-cloud processing boundary shall remain intact.</td>
+<td>Policy Engine / System Boundary</td>
+<td><code>HRD-018</code></td>
+<td><code>daemon/src/browser_memory_daemon/policy.py</code><br><code>daemon/src/browser_memory_daemon/policy_store.py</code><br><code>extension/src/extractor.js</code></td>
+<td><code>daemon/tests/e2e/test_admin_api.py::test_policy_rule_blocks_future_capture_and_can_be_deleted</code></td>
 </tr>
 </tbody>
 </table>
+<h3 id="legacy-alias-reconciliation">Legacy alias reconciliation</h3>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Legacy ID</th>
+<th>Disposition</th>
+<th>Canonical ID(s)</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>docs/test-plan.md before catalog revision 1</td>
+<td><code>REQ-006A</code></td>
+<td>superseded</td>
+<td><code>REQ-043</code></td>
+<td>Legacy test-plan REQ-006A isolated explicit block-rule behavior now covered by canonical boundary requirement REQ-043.</td>
+</tr>
+<tr>
+<td>docs/test-plan.md before catalog revision 1</td>
+<td><code>REQ-009</code></td>
+<td>superseded</td>
+<td><code>REQ-023</code></td>
+<td>Legacy test-plan REQ-009 meant schema completeness; architecture REQ-009 remains snapshot deduplication.</td>
+</tr>
+<tr>
+<td>docs/test-plan.md before catalog revision 1</td>
+<td><code>REQ-010</code></td>
+<td>superseded</td>
+<td><code>REQ-009</code></td>
+<td>Legacy test-plan REQ-010 meant snapshot deduplication.</td>
+</tr>
+<tr>
+<td>docs/test-plan.md before catalog revision 1</td>
+<td><code>REQ-011</code></td>
+<td>superseded</td>
+<td><code>REQ-010</code></td>
+<td>Legacy test-plan REQ-011 meant SPA and late-content recapture.</td>
+</tr>
+<tr>
+<td>docs/test-plan.md before catalog revision 1</td>
+<td><code>REQ-012</code></td>
+<td>superseded</td>
+<td><code>REQ-011</code></td>
+<td>Legacy test-plan REQ-012 meant lifecycle and dwell behavior.</td>
+</tr>
+<tr>
+<td>docs/test-plan.md before catalog revision 1</td>
+<td><code>REQ-013</code></td>
+<td>alias</td>
+<td><code>REQ-013</code></td>
+<td>Legacy test-plan and architecture REQ-013 both meant forget behavior.</td>
+</tr>
+<tr>
+<td>docs/test-plan.md before catalog revision 1</td>
+<td><code>REQ-014</code></td>
+<td>superseded</td>
+<td><code>REQ-024</code></td>
+<td>Legacy test-plan REQ-014 meant cited search/detail results; architecture REQ-014 remains installation.</td>
+</tr>
+<tr>
+<td>docs/test-plan.md before catalog revision 1</td>
+<td><code>REQ-015</code></td>
+<td>superseded</td>
+<td><code>REQ-025</code></td>
+<td>Legacy test-plan REQ-015 meant extension controls; architecture REQ-015 remains text-first media provenance.</td>
+</tr>
+<tr>
+<td>docs/test-plan.md before catalog revision 1</td>
+<td><code>REQ-015A</code></td>
+<td>superseded</td>
+<td><code>REQ-014</code></td>
+<td>Legacy test-plan REQ-015A installation consistency is covered by canonical installation REQ-014.</td>
+</tr>
+<tr>
+<td>docs/test-plan.md before catalog revision 1</td>
+<td><code>REQ-016</code></td>
+<td>superseded</td>
+<td><code>REQ-012</code></td>
+<td>Legacy test-plan REQ-016 local UI semantics are part of canonical operator-surface REQ-012.</td>
+</tr>
+<tr>
+<td>docs/test-plan.md before catalog revision 1</td>
+<td><code>REQ-017</code></td>
+<td>superseded</td>
+<td><code>REQ-012</code></td>
+<td>Legacy test-plan REQ-017 CLI semantics are part of canonical operator-surface REQ-012.</td>
+</tr>
+</tbody>
+</table>
+<!-- END GENERATED:requirements-trace -->
+
 <hr />
 <h2 id="logical-decomposition">Logical decomposition</h2>
 <table>
@@ -339,23 +778,63 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Extractor</td>
-<td>Traverse DOM and build capture payload.</td>
-<td>Policy-aware; all modes skip hidden/form/editable/script/style/no-script DOM text.</td>
+<td>Traverse rendered light DOM and build capture payload.</td>
+<td>Policy-aware; all modes conservatively skip explicit/computed/ancestor-hidden, transparent, form, editable, script, style, and noscript content; shadow roots are outside the contract.</td>
 </tr>
 <tr>
 <td>Content script</td>
-<td>Schedule initial/delayed/SPA captures and scroll tracking.</td>
-<td>Reads <code>policyMode</code> from extension storage.</td>
+<td>Schedule initial/delayed/reinjected/SPA captures, full SHA-256 capture digests, and scroll tracking.</td>
+<td>Reads <code>policyMode</code> from extension storage; only records a digest as delivered after durable capture admission.</td>
 </tr>
 <tr>
 <td>Service worker</td>
-<td>Auth, queues, injection, lifecycle state, fast <code>/capture</code>, browser lazy media queue/drain, daemon POST/PUTs, CDP recorder orchestration.</td>
-<td>Text capture does not wait on media bytes.</td>
+<td>Compose extension modules and register MV3 message, tab, window, debugger, alarm, startup, and installation listeners.</td>
+<td>Listener/orchestration shell only; text capture does not wait on media bytes.</td>
+</tr>
+<tr>
+<td>Extension config store</td>
+<td>Own typed defaults/migration plus durable visit and minimal CDP capture-context maps in <code>chrome.storage.local</code>.</td>
+<td>CDP context excludes text, title, bodies, cookies, headers, and tokens; tab close or URL change removes it.</td>
+</tr>
+<tr>
+<td>Visit tracker</td>
+<td>Own tab/navigation identity, active segments, deterministic lifecycle event IDs, and capture decoration.</td>
+<td>Decorated queued IDs survive retry/restart and rotate with tab/URL navigation state.</td>
+</tr>
+<tr>
+<td>Injection controller</td>
+<td>Revisit active tabs at startup/worker evaluation and idempotently inject extractor, digest, and content scripts in a fixed order.</td>
+<td>Does not trust process-local injected-tab memory after MV3 suspension; ordinary rehydration avoids racing or rewriting durable active-lifecycle state.</td>
+</tr>
+<tr>
+<td>Capture bridge</td>
+<td>Own daemon capture/lifecycle delivery, transactional outbox import/admission/drain/checkpoint/retry, legacy fallback, media compensation, and queue status.</td>
+<td>Capture acceptance checkpoints before media admission so media failure cannot repost accepted text.</td>
+</tr>
+<tr>
+<td>Media bridge</td>
+<td>Own credentialed browser fetch, inline/CDP blob upload, specialized media queue drain/retry, and terminal cleanup.</td>
+<td>Media failure remains independent from accepted searchable text.</td>
+</tr>
+<tr>
+<td>Extension telemetry</td>
+<td>Persist aggregate redaction-safe queue/CDP/bridge status.</td>
+<td>Recursively removes payload/text/body/content/URL/token/header fields and redacts URL-shaped error substrings.</td>
+</tr>
+<tr>
+<td>CDP session controller</td>
+<td>Reconcile debugger attachment state, recover minimal capture provenance, correlate Network events, retrieve bounded response bodies, and dispatch through the media bridge.</td>
+<td>Accepts attachment recovery only with matching <code>chrome.debugger.getTargets</code> evidence; mismatched page URLs clear stale provenance.</td>
+</tr>
+<tr>
+<td>Capture/lifecycle outbox</td>
+<td>Versioned IndexedDB rows with sequence IDs, atomic claims, token-checked checkpoint/ack/retry, stale-claim recovery, bounded drains, legacy-array import, count/byte admission limits, and redaction-safe telemetry.</td>
+<td>Existing queued rows survive quota exhaustion; new work is visibly rejected. Legacy <code>chrome.storage.local</code> arrays are imported before deletion and remain only as a one-version failure fallback.</td>
 </tr>
 <tr>
 <td>Extension media queue</td>
-<td>Durable IndexedDB queue for credentialed media fetch/upload.</td>
-<td>Stores fetched blobs until raw upload succeeds.</td>
+<td>Version-2 IndexedDB task/blob queue for credentialed media fetch/upload with atomic task batches, atomic blob/state transitions, replacement-aware byte accounting, and bounded terminal cleanup.</td>
+<td>Caps the queue at 500 tasks, each blob at 250,000,000 bytes, and aggregate fetched blobs at 512 MiB; failed terminal rows are quarantined for 24 hours before bounded deletion.</td>
 </tr>
 <tr>
 <td>CDP recorder</td>
@@ -364,8 +843,23 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Daemon API</td>
-<td>Auth, CORS, routing, UI serving, token bootstrap, raw media blob upload, cache controls.</td>
-<td><code>/health</code> public loopback; <code>/ui</code> HTML gets same-origin token bootstrap; memory APIs tokened.</td>
+<td>Standard-library HTTP adapter plus immutable method/path route descriptors, typed status/code mapping, request envelope, auth, CORS, UI serving, token bootstrap, bounded media transport, and cache controls.</td>
+<td><code>http_server.py</code> owns HTTP-only adaptation; <code>/health</code> is public loopback, <code>/ui</code> gets same-origin token bootstrap, memory APIs are tokened, and telemetry logs route/status/latency/code only.</td>
+</tr>
+<tr>
+<td>Application use cases</td>
+<td>Request-independent capture, lifecycle, read, forget, policy, doctor, and media coordination with explicit transaction/audit boundaries.</td>
+<td><code>application.py</code> owns database readiness, policy decisions, async media kickoff, and scoped upload/download leases; <code>app.py</code> only initializes and composes it with the HTTP adapter.</td>
+</tr>
+<tr>
+<td>Migration kernel</td>
+<td>Exact schema fingerprinting, ordered checksummed migrations, compatibility refusal, and backup-gated destructive steps.</td>
+<td>Startup applies non-destructive steps; explicit <code>migrate --execute</code> owns destructive approval.</td>
+</tr>
+<tr>
+<td>Capture observation / URL-claim model</td>
+<td>Additive temporal observation, untrusted claim authority, explicit media-reference provenance, and observation-first activity reads in SQLite.</td>
+<td>Version-4 tables, version-5 observation backfill, version-6 media-observation links, version-7 claimed lifecycle identity, browser-authored observation/navigation IDs, and contemporaneous recent/timeline/detail reads are current.</td>
 </tr>
 <tr>
 <td>Policy engine</td>
@@ -374,39 +868,49 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Ingest pipeline</td>
-<td>Normalize, store visits/documents/snapshots/chunks/FTS plus related media artifact refs/blobs.</td>
-<td><code>all</code> bypasses redaction.</td>
+<td>Normalize and atomically store complete cleaned text, visits/documents/snapshots/chunks/FTS, capture observations, and media references.</td>
+<td><code>all</code> bypasses redaction; normalized observed URLs own new document identity; accepted text/provenance commits to local SQLite without blob-root access.</td>
 </tr>
 <tr>
 <td>Lifecycle pipeline</td>
-<td>Store metadata-only visit events and update dwell.</td>
-<td>Uses policy mode for URL redaction/filtering.</td>
+<td>Store metadata-only visit events and derive dwell from validated interval unions.</td>
+<td>Exact claimed visit IDs never fall back by URL; delayed captures reconcile pending events by claimed ID plus normalized observed URL, while no-ID legacy payloads remain explicitly labeled.</td>
 </tr>
 <tr>
 <td>Daemon media worker</td>
-<td>Durable public-media backfill with leases/backoff/retry and HLS/audio sidecar assembly.</td>
-<td>Does not receive or export Chrome cookies.</td>
+<td>Durable public-media backfill with leases/backoff/retry, process request/byte budgets, and streamed HLS/audio sidecar assembly.</td>
+<td>Does not receive or export Chrome cookies; claims one due task immediately before work; final and spool-backed media remain storage-tier aware.</td>
 </tr>
 <tr>
 <td>Media cache manager</td>
-<td>Applies size gates, manual purge/rehydrate, and oldest-first domain/global rolling eviction.</td>
-<td>Blob bytes are disposable; text, refs, hashes, and provenance remain durable.</td>
+<td>Applies size gates, transactional committed-plus-reserved cache admission, manual purge/rehydrate, oldest-first domain/global rolling eviction, guarded final-root selection, bounded local spool admission/drain, and retryable byte deletion.</td>
+<td>Blob bytes are disposable; text, refs, hashes, and provenance remain durable. Failed purge/eviction stays unreadable, retryable, and included in admission accounting.</td>
+</tr>
+<tr>
+<td>BlobStore and storage reconciler</td>
+<td>Contains blob path resolution plus streaming stage, size/hash verification, atomic commit, lifecycle registration, tombstoned delete, and dry-run-first reconciliation.</td>
+<td>SQLite records <code>committed</code>, <code>tombstoned</code>, <code>missing</code>, <code>deleted</code>, <code>blocked</code>, and <code>failed</code> outcomes. Reconciliation retries tombstones and detects missing references, in-root orphans, and stale stages without traversing unavailable or outside-root storage.</td>
 </tr>
 <tr>
 <td>Ops/read model</td>
 <td>Search, recent, timeline, detail, doctor.</td>
-<td>Captured text remains untrusted evidence.</td>
+<td>Detail reads prefer complete SQLite text and expose its authority source; legacy sidecar/chunk fallback is limited to null authority rows. Captured text remains untrusted evidence.</td>
 </tr>
 <tr>
 <td>Deletion pipeline</td>
-<td>Domain/URL forget and receipt creation.</td>
-<td>Removes DB rows, FTS rows, text/media blobs, lifecycle rows.</td>
+<td>Domain/URL forget, same-transaction receipt/tombstone creation, and post-commit contained deletion.</td>
+<td>Database memory is removed atomically; byte deletion reports complete only when every tombstone is <code>deleted</code> or <code>missing</code>, otherwise reconciliation owns the durable retry.</td>
+</tr>
+<tr>
+<td>Backup/restore operator</td>
+<td>Dry-run-first online SQLite bundle creation, optional referenced derivatives, strict manifest verification, and empty-root atomic restore.</td>
+<td>Complete search/detail/forget survives without media cache; no service install, token copy, or live destination overwrite occurs.</td>
 </tr>
 </tbody>
 </table>
 <hr />
 <h2 id="architecture-diagrams">Architecture diagrams</h2>
-<p>The canonical C4 model lives in <a href="architecture/workspace.dsl"><code>architecture/workspace.dsl</code></a>. Use the generated single-file atlas at <a href="architecture/c4-diagrams.html"><code>architecture/c4-diagrams.md</code></a> for architecture topology.</p>
+<p>The canonical C4 model lives in <a href="architecture/workspace.dsl"><code>architecture/workspace.dsl</code></a>. It labels implemented components <code>Current</code>; planned target boundaries remain <code>planned</code> catalog requirements until they are explicitly modeled with a <code>Target</code> tag. Use the generated single-file atlas at <a href="architecture/c4-diagrams.html"><code>architecture/c4-diagrams.md</code></a> for architecture topology.</p>
 <table>
 <thead>
 <tr>
@@ -428,12 +932,20 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td><code>BrowserMediaContainers</code>, <code>ExtensionMediaComponents</code>, <code>CredentialedMediaSidecarFlow</code></td>
 </tr>
 <tr>
-<td>How does daemon-public media backfill work?</td>
-<td><code>DaemonMediaWorkerContainers</code>, <code>DaemonMediaComponents</code>, <code>DaemonPublicMediaWorkerFlow</code></td>
+<td>How does daemon-public media backfill and bounded streaming work?</td>
+<td><code>DaemonMediaWorkerContainers</code>, <code>DaemonMediaComponents</code>, <code>DaemonMediaTransportComponents</code>, <code>DaemonMediaResourceComponents</code>, <code>DaemonPublicMediaWorkerFlow</code></td>
 </tr>
 <tr>
 <td>How do read/search/forget/doctor operations reach storage?</td>
 <td><code>OpsContainers</code>, <code>DaemonReadComponents</code>, <code>DaemonForgetComponents</code>, <code>DaemonDoctorComponents</code></td>
+</tr>
+<tr>
+<td>How is SQLite version compatibility and migration recovery controlled?</td>
+<td><code>DaemonMigrationComponents</code></td>
+</tr>
+<tr>
+<td>How are text-first backup bundles created and restored?</td>
+<td><code>CliBackupRestoreComponents</code></td>
 </tr>
 <tr>
 <td>What runs where on the daily-driver workstation?</td>
@@ -484,16 +996,17 @@ text/FTS/media refs remain authoritative
 </tr>
 <tr>
 <td>Daemon lazy sidecar</td>
-<td>Public unauthenticated backfill with leases, backoff, HLS assembly, and status classification.</td>
-<td><code>daemon/src/browser_memory_daemon/media_worker.py</code>, <code>media.py</code></td>
+<td>Public unauthenticated backfill with atomic just-in-time leases, backoff, streamed guarded HLS assembly, process resource budgets, and status classification.</td>
+<td><code>daemon/src/browser_memory_daemon/media_worker.py</code>, <code>media_tasks.py</code>, <code>media_models.py</code>, <code>media_transport.py</code>, <code>media_fetch.py</code>, <code>media_hls.py</code>, <code>media_resources.py</code>, <code>media.py</code> compatibility facade</td>
 </tr>
 <tr>
 <td>Cache management</td>
-<td>Purge/rehydrate controls plus oldest-first rolling eviction for domain/global caps.</td>
-<td><code>media.py</code>, <code>cli.py</code>, <code>/media-artifacts/*</code></td>
+<td>Transactional SQLite reservations plus purge/rehydrate controls and oldest-first rolling eviction for snapshot/domain/global caps.</td>
+<td><code>media_store.py</code>, migration version 13, <code>media.py</code> compatibility facade, <code>cli.py</code>, <code>/media-artifacts/*</code></td>
 </tr>
 </tbody>
 </table>
+<p>Media status vocabulary and ordinary transition matrices live in <code>media_models.py</code>. Durable task identity, terminal-state preservation, atomic just-in-time leasing, stale-lease recovery, and retry/backoff live in <code>media_tasks.py</code>. Artifact publication, row ownership, contained streamed reads, transactional cache reservation/admission, purge, oldest-first eviction, and tombstone-backed deletion outcomes live in <code>media_store.py</code>. <code>media_transport.py</code> owns acyclic direct-versus-HLS coordination, aggregate request budgeting from the initial open, and bounded playlist sniffing. Guarded streamed HTTP/data transport, per-read deadlines, and redirect/address policy live in <code>media_fetch.py</code>; bounded streamed HLS parsing and assembly live in <code>media_hls.py</code>, which calls the guard without a reverse dependency. <code>media_resources.py</code> owns process-local request/byte leases and aggregate telemetry. <code>media_ops.py</code> owns bounded current-state repair and scoped dry-run-first budget requeue; historical correction runs once in migration 12 rather than every worker pass. <code>media.py</code> remains the stable compatibility surface.</p>
 <h3 id="visual-references">Visual references</h3>
 <table>
 <thead>
@@ -743,8 +1256,20 @@ status_reason  = cache-evicted:global-oldest
 <td>Each captured visit, original/stored URL, dwell, browser profile.</td>
 </tr>
 <tr>
+<td><code>capture_observations</code></td>
+<td>Additive extraction records with idempotency, visit/document/snapshot time relationships, observed URL, capture semantics, and provenance quality. Recent/timeline/document/snapshot reads use observations first and retain an explicit ambiguous legacy-visit fallback.</td>
+</tr>
+<tr>
+<td><code>document_url_claims</code></td>
+<td>Canonical/alternate/Open Graph/historical URL claims with origin, same-origin assessment, and explicit non-authoritative identity effect. New ingest writes canonical claims and version 5 records ambiguous historical authority without speculative merges/splits.</td>
+</tr>
+<tr>
+<td><code>media_artifact_observations</code></td>
+<td>Exact current-ingest and evidence-bounded historical links between capture observations and deduplicated media artifacts. Multi-candidate history remains unlinked rather than guessed.</td>
+</tr>
+<tr>
 <td><code>visit_events</code></td>
-<td>Metadata-only lifecycle segments.</td>
+<td>Metadata-only lifecycle segments with claimed/resolved visit identity, explicit attachment method, and interval-union dwell evidence.</td>
 </tr>
 <tr>
 <td><code>snapshots</code></td>
@@ -753,6 +1278,10 @@ status_reason  = cache-evicted:global-oldest
 <tr>
 <td><code>chunks</code> / <code>chunks_fts</code></td>
 <td>Searchable text chunks and exact FTS index.</td>
+</tr>
+<tr>
+<td><code>schema_migrations</code> + <code>PRAGMA user_version</code></td>
+<td>Ordered migration version, immutable name/checksum ledger, and compatibility invariant; see ADR-0028.</td>
 </tr>
 <tr>
 <td>SQLite WAL sidecars (<code>*.sqlite3-wal</code>, <code>*.sqlite3-shm</code>)</td>
@@ -779,12 +1308,20 @@ status_reason  = cache-evicted:global-oldest
 <td>Forget receipts and counts.</td>
 </tr>
 <tr>
-<td><code>${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}/clean-text/</code></td>
-<td>Stored text snapshots. Daily-driver deployments may point this at a WSL-mounted NAS dataset.</td>
+<td><code>snapshots.cleaned_text</code></td>
+<td>Complete cleaned snapshot text; authoritative local SQLite content for detail/search/backup.</td>
 </tr>
 <tr>
-<td><code>${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}/media/</code></td>
-<td>Stored media blobs; purgeable cache. Daily-driver deployments may point this at a WSL-mounted NAS dataset.</td>
+<td><code>${BMD_DERIVATIVE_ROOT:-${BMD_BLOB_ROOT}}/clean-text/</code></td>
+<td>Optional reconstructible legacy sidecars; new capture does not write them.</td>
+</tr>
+<tr>
+<td><code>BMD_MEDIA_ROOT</code></td>
+<td>Final disposable media bytes. Explicit external roots require mount and identity-marker proof.</td>
+</tr>
+<tr>
+<td><code>BMD_MEDIA_SPOOL_ROOT</code></td>
+<td>Optional bounded local outage buffer; excluded from backup authority.</td>
 </tr>
 </tbody>
 </table>

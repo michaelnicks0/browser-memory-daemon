@@ -5,6 +5,7 @@ import pytest
 
 from browser_memory_daemon.config import load_config
 from browser_memory_daemon.db import connect, init_db
+from browser_memory_daemon.migrations import MigrationCompatibilityError
 from browser_memory_daemon.policy_store import create_policy_rule, evaluate_policy_rules, normalize_rule_pattern
 
 
@@ -64,7 +65,7 @@ def test_policy_rule_creation_is_semantically_idempotent_under_concurrency(tmp_p
         assert dict(rows[0]) == {"id": rules[0]["id"], "rule_type": "domain", "pattern": "example.com", "action": "block"}
 
 
-def test_init_db_dedupes_existing_policy_rules_before_unique_index(tmp_path):
+def test_init_db_rejects_schema_drift_instead_of_replaying_policy_dedupe(tmp_path):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token")
     init_db(cfg)
     with connect(cfg.db_path) as conn:
@@ -73,10 +74,11 @@ def test_init_db_dedupes_existing_policy_rules_before_unique_index(tmp_path):
         conn.execute("INSERT INTO privacy_rules(id, rule_type, pattern, action) VALUES ('rule-b', 'domain', 'duplicate.example', 'block')")
         conn.commit()
 
-    init_db(cfg)
+    with pytest.raises(MigrationCompatibilityError, match="schema fingerprint mismatch"):
+        init_db(cfg)
     with connect(cfg.db_path) as conn:
         rows = conn.execute("SELECT id, rule_type, pattern, action FROM privacy_rules WHERE pattern = 'duplicate.example'").fetchall()
-        assert len(rows) == 1
-        assert rows[0]["id"] == "rule-a"
-        with pytest.raises(sqlite3.IntegrityError):
-            conn.execute("INSERT INTO privacy_rules(id, rule_type, pattern, action) VALUES ('rule-c', 'domain', 'duplicate.example', 'block')")
+        assert [row["id"] for row in rows] == ["rule-a", "rule-b"]
+        assert conn.execute(
+            "SELECT COUNT(*) FROM sqlite_schema WHERE type = 'index' AND name = 'idx_privacy_rules_semantics'"
+        ).fetchone()[0] == 0

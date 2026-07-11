@@ -127,13 +127,14 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <h1 id="retention-compaction-export-and-backup-posture">Retention, Compaction, Export, and Backup Posture</h1>
 <blockquote>
 <p><strong>Audience:</strong> operator and future agents.
-<strong>Status:</strong> accepted design posture; implementation is split into follow-up tickets.
-<strong>Scope:</strong> Browser Memory Daemon WSL-owned runtime data, SQLite/FTS5/WAL sidecars, configurable clean-text/media blob root, backup/export boundaries, and forget/deletion semantics.</p>
+<strong>Status:</strong> backup/create/restore implemented; retention, compaction, and backup pruning remain future approval-gated work.
+<strong>Scope:</strong> Browser Memory Daemon WSL-owned runtime data, SQLite/FTS5/WAL sidecars, local derivatives, guarded media root, bounded local media spool, backup/export boundaries, and forget/deletion semantics.</p>
 </blockquote>
 <hr />
 <h2 id="bottom-line">Bottom line</h2>
 <p>Browser Memory Daemon should preserve text/FTS recall by default and treat media bytes as a bounded disposable cache. Backups must be local, explicit, manifest-backed, and WAL-aware. Forget deletes the current live store; any backup made before the forget can still contain forgotten data until backup retention/pruning removes it.</p>
 <p>This design does <strong>not</strong> add automatic age-based deletion yet. That would be a separate operator-approved retention policy because the daily-driver default is maximum local recall.</p>
+<p>ADR-0028 implements a narrower migration-only SQLite online backup gate before destructive schema steps. ADR-0041 and <code>backup create</code> / <code>backup restore</code> implement the manifest-backed text-first bundle and empty-root restore path described here.</p>
 <hr />
 <h2 id="mission-conops">Mission / ConOps</h2>
 <p>Browser Memory Daemon exists to provide local-first browser recall from Windows Chrome with durable WSL storage and a configurable WSL-visible blob root. Long-term operation needs enough storage hygiene to avoid SQLite/media growth surprises without undermining recall or deletion receipts.</p>
@@ -142,7 +143,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>Chrome and the daemon keep writing visits, snapshots, FTS chunks, audit rows, lifecycle events, media refs, and bounded media blobs.</li>
 <li>Health checks expose headroom, DB/WAL/blob/media sizes, and worker churn without dumping captured content.</li>
 <li>A future maintenance command performs dry-run-first checkpoint/optimize/audit/optional-compaction work under local runtime paths.</li>
-<li>A future backup/export command creates a local bundle or snapshot with a manifest and explicit inclusion/exclusion choices.</li>
+<li><code>backup create</code> creates a local text-first bundle with a manifest and explicit inclusion/exclusion choices; <code>backup restore</code> verifies it into an absent runtime root.</li>
 <li>Forget remains a live-store deletion operation; backup lifecycle must be documented and eventually automatable separately.</li>
 </ol>
 <hr />
@@ -201,17 +202,17 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td>RCB-003</td>
 <td>SQLite backup/compaction handling must respect WAL sidecars and avoid copying an inconsistent live database.</td>
-<td>ADR-0014; future backup command ticket.</td>
+<td>ADR-0014; ADR-0041; online backup/restore tests.</td>
 </tr>
 <tr>
 <td>RCB-004</td>
 <td>Maintenance/export tools must be local-only and redaction-safe by default.</td>
-<td>Future tickets require dry-run/manifest tests and secret scan.</td>
+<td>Backup path/manifest tests and secret scan; maintenance remains future.</td>
 </tr>
 <tr>
 <td>RCB-005</td>
 <td>Forget semantics must distinguish live-store deletion from historical backup copies.</td>
-<td>This doc and ADR-0019; future backup retention ticket.</td>
+<td>This doc, ADR-0019, and ADR-0041; backup retention remains future.</td>
 </tr>
 <tr>
 <td>RCB-006</td>
@@ -232,7 +233,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <h3 id="2-media-bytes">2. Media bytes</h3>
 <ul>
 <li>Preserve media rows, hashes, statuses, and provenance as durable evidence alongside snapshots.</li>
-<li>Continue treating media blobs under <code>${BMD_BLOB_ROOT}/media/</code> as a cache bounded by artifact/snapshot/domain/global gates.</li>
+<li>Continue treating final media blobs under <code>BMD_MEDIA_ROOT</code> as a cache bounded by artifact/snapshot/domain/global gates. A configured local spool is durable outage buffering under its own strict byte cap, not backup authority.</li>
 <li>Prefer purge/rehydrate over permanent media metadata deletion.</li>
 <li>Keep OCR/media-derived indexing out of this design; it belongs to a later media-enrichment lane.</li>
 </ul>
@@ -278,14 +279,19 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Include only for raw quiesced/live filesystem snapshots; not needed for <code>VACUUM INTO</code> / online backup output.</td>
 </tr>
 <tr>
-<td><code>${BMD_BLOB_ROOT}/clean-text/</code></td>
-<td style="text-align: right;">✅</td>
-<td>Needed if snapshot detail should keep external cleaned-text files. If this root is NAS-mounted, the backup/export command should record that source path explicitly.</td>
+<td><code>${BMD_DERIVATIVE_ROOT}/clean-text/</code></td>
+<td style="text-align: right;">Optional</td>
+<td>Reconstructible legacy sidecars; complete cleaned text is authoritative in SQLite.</td>
 </tr>
 <tr>
-<td><code>${BMD_BLOB_ROOT}/media/</code></td>
-<td style="text-align: right;">Optional</td>
-<td>Large cache; include only when operator wants binary media completeness. Refs remain in DB either way.</td>
+<td><code>BMD_MEDIA_ROOT</code></td>
+<td style="text-align: right;">❌</td>
+<td>Large disposable cache; exclude by default. Refs, hashes, status, and provenance remain in SQLite.</td>
+</tr>
+<tr>
+<td><code>BMD_MEDIA_SPOOL_ROOT</code></td>
+<td style="text-align: right;">❌</td>
+<td>Transient durable outage buffer; drain or reconcile separately rather than treating it as backup authority.</td>
 </tr>
 <tr>
 <td>Manifest JSON</td>
@@ -310,6 +316,15 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tbody>
 </table>
 <p>Export is not a publishing workflow. It stays on local filesystem paths unless the operator explicitly approves a destination.</p>
+<p>Both commands are dry-run first:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span>backup<span style="color: #F8F8F2"> </span>create<span style="color: #F8F8F2"> </span>--destination<span style="color: #F8F8F2"> </span>/absolute/local/path/backup-bundle
+python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span>backup<span style="color: #F8F8F2"> </span>create<span style="color: #F8F8F2"> </span>--destination<span style="color: #F8F8F2"> </span>/absolute/local/path/backup-bundle<span style="color: #F8F8F2"> </span>--execute
+python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span>backup<span style="color: #F8F8F2"> </span>restore<span style="color: #F8F8F2"> </span>--source<span style="color: #F8F8F2"> </span>/absolute/local/path/backup-bundle<span style="color: #F8F8F2"> </span>--destination<span style="color: #F8F8F2"> </span>/absolute/local/path/restored-runtime
+python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span>backup<span style="color: #F8F8F2"> </span>restore<span style="color: #F8F8F2"> </span>--source<span style="color: #F8F8F2"> </span>/absolute/local/path/backup-bundle<span style="color: #F8F8F2"> </span>--destination<span style="color: #F8F8F2"> </span>/absolute/local/path/restored-runtime<span style="color: #F8F8F2"> </span>--execute
+</code></pre></div>
+
+<p><code>--include-derivatives</code> adds only referenced, contained, hash-verified clean-text compatibility sidecars. Restore requires the derivative manifest to match database references and rebases legacy absolute references to contained relative locators. Restore rejects existing destinations, path traversal, symlinks, malformed manifests, undeclared files, and any size/hash/schema/fingerprint/FTS/foreign-key mismatch before publishing the new runtime root. Dry-run performs the immutable read-only database checks without creating the destination.</p>
+<p>Backup bundles and restored roots are forced to private <code>0700</code> directories with <code>0600</code> files, independent of the caller's umask. A process kill or power failure can leave a hidden private <code>.NAME.staging-*</code> directory; inspect it and remove it explicitly rather than relying on automatic stale-stage deletion. If publication succeeds but the parent-directory fsync fails, the command reports that the destination exists and must be inspected before retrying.</p>
 <h3 id="6-forget-and-backups">6. Forget and backups</h3>
 <p>Current forget guarantees live-store deletion from:</p>
 <ul>
@@ -332,7 +347,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <th>Requirement</th>
 <th>Logical component</th>
-<th>Future implementation unit</th>
+<th>Implementation unit</th>
 <th>Verification gate</th>
 </tr>
 </thead>
@@ -352,20 +367,20 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td>RCB-003</td>
 <td>WAL-aware backup</td>
-<td>Backup/export command</td>
-<td>Test online backup while WAL exists; restore opens with <code>integrity_check=ok</code>.</td>
+<td><code>backup_ops.py</code> + CLI</td>
+<td>Online backup/restore tests with <code>integrity_check=ok</code>, foreign keys, FTS, and schema fingerprint.</td>
 </tr>
 <tr>
 <td>RCB-004</td>
-<td>Redaction-safe maintenance</td>
-<td>Maintenance report serializer</td>
-<td>Golden tests asserting no raw captured text/URLs/tokens.</td>
+<td>Redaction-safe backup/maintenance</td>
+<td>Manifest serializer; future maintenance report</td>
+<td>Manifest tests assert no raw captured text/URLs/tokens.</td>
 </tr>
 <tr>
 <td>RCB-005</td>
 <td>Forget/backup boundary</td>
 <td>Docs + manifest metadata</td>
-<td>Forget test plus backup manifest timestamp/prune tests.</td>
+<td>Restored search/detail/forget test plus documented pre-forget backup caveat.</td>
 </tr>
 <tr>
 <td>RCB-006</td>
@@ -377,12 +392,11 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </table>
 <hr />
 <h2 id="split-follow-up-tickets">Split follow-up tickets</h2>
-<p>This design intentionally stops before implementation. Follow-ups:</p>
+<p>Backup/restore is implemented. Remaining follow-ups:</p>
 <ul>
 <li><code>017-retention-maintenance-command.md</code> — dry-run/execute maintenance command for checkpoint/optimize/orphan audit/optional compacted copy.</li>
-<li><code>018-local-backup-export-command.md</code> — local backup/export bundle with manifest, restore smoke, and backup/forget caveats.</li>
 </ul>
-<p>These are split follow-ups, not blockers for closing the current durability/performance/coverage queue.</p>
+<p>The former local backup/export follow-up is closed by ADR-0041 and <code>daemon/src/browser_memory_daemon/backup_ops.py</code>.</p>
 <hr />
 <h2 id="revisit-triggers">Revisit triggers</h2>
 <p>Revisit this posture if:</p>

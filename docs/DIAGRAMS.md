@@ -27,17 +27,35 @@ Topological diagrams previously in this atlas were folded into C4. The diagrams 
 
 ```mermaid
 flowchart LR
-  Page["Chrome page DOM"] --> Extractor["extractor.js"]
-  Extractor --> Content["content_script.js"]
+  Page["Chrome page light DOM"] --> Extractor["extractor.js<br/>computed/ancestor rendered visibility"]
+  Extractor --> Content["content_script.js<br/>full deterministic SHA-256 digest"]
   Content -->|"BMD_CAPTURE + inline blob messages"| ServiceWorker["service_worker.js"]
-  ServiceWorker -->|"POST /capture<br/>Bearer JSON"| DaemonCapture["WSL daemon /capture"]
-  ServiceWorker -->|"POST /visit-events<br/>metadata only"| DaemonVisit["WSL daemon /visit-events"]
-  ServiceWorker -->|"PUT /media-artifacts/{id}/blob<br/>raw bytes"| DaemonMedia["WSL media blob upload"]
-  ServiceWorker --> IDB[("IndexedDB media task/blob queue")]
+  ServiceWorker --> Config["config_store.js<br/>typed settings + durable restart context"]
+  ServiceWorker --> Visit["visit_tracker.js<br/>navigation identity + lifecycle"]
+  ServiceWorker --> Injection["injection.js<br/>active-tab reconstruction"]
+  ServiceWorker --> CDPSession["cdp_session.js<br/>attachment + provenance + Network event recovery"]
+  ServiceWorker --> CaptureBridge["capture_bridge.js<br/>capture/lifecycle delivery + outbox drain"]
+  ServiceWorker --> MediaBridge["media_bridge.js<br/>credentialed fetch + blob delivery"]
+  ServiceWorker --> Telemetry["telemetry.js<br/>redaction-safe aggregate status"]
+  Injection -->|"ordered idempotent executeScript"| Page
+  Visit --> Config
+  CDPSession --> Config
+  CDPSession -->|"chrome.debugger"| Page
+  CDPSession --> MediaBridge
+  CaptureBridge --> Outbox[("IndexedDB capture/lifecycle outbox")]
+  Outbox -->|"atomic claim/checkpoint/ack/retry"| CaptureBridge
+  CaptureBridge -->|"POST /capture<br/>Bearer JSON"| DaemonCapture["WSL daemon /capture"]
+  CaptureBridge -->|"POST /visit-events<br/>metadata only"| DaemonVisit["WSL daemon /visit-events"]
+  CaptureBridge --> MediaBridge
+  MediaBridge -->|"PUT /media-artifacts/{id}/blob<br/>raw bytes"| DaemonMedia["WSL media blob upload"]
+  MediaBridge --> MediaIDB[("Separate IndexedDB media task/blob queue<br/>atomic batch/blob transitions<br/>500 tasks / 512 MiB / terminal TTL")]
+  CaptureBridge --> Telemetry
+  MediaBridge --> Telemetry
+  CDPSession --> Telemetry
   Popup["popup.js"] -->|"runtime messages"| ServiceWorker
   Options["options.js"] --> Storage[("chrome.storage.local")]
   Storage --> Content
-  Storage --> ServiceWorker
+  Storage --> Config
 ```
 
 C4 shows the extension, service worker, browser storage, and daemon containers/components. This diagram keeps protocol names, endpoint names, and popup/options/storage wiring in one place.
@@ -63,19 +81,23 @@ Operator posture: start at `all` for maximum recall; move upward only when filte
 
 ```mermaid
 flowchart TD
-  Page["Chrome page DOM"] --> Extract["Content script extracts<br/>URL + title + text + media refs"]
+  Page["Chrome page light DOM"] --> Extract["Content script extracts rendered<br/>URL + title + text + media refs<br/>and computes full digest"]
   Extract -->|"BMD_CAPTURE"| SW["Service worker"]
+  SW --> Outbox[("Transactional IndexedDB outbox")]
+  Outbox -->|"claim due row"| SW
   SW -->|"POST /capture + bearer token"| API["WSL API"]
   API --> Policy["Policy engine<br/>mode + local rules"]
   Policy --> Decision{"policy_mode"}
   Decision -->|"all"| All["Store original URL/title/text<br/>no daemon redaction"]
   Decision -->|"recall / balanced / strict"| Redact["Redact URL/title/body<br/>before persistence"]
-  All --> Store["Ingest pipeline<br/>normalize URL + text hash<br/>write visits/documents/snapshots/chunks/FTS"]
+  All --> Store["Ingest pipeline<br/>normalize URL + text hash<br/>write visits/observations/documents/snapshots/chunks/FTS"]
   Redact --> Store
-  Store --> TextBlobs["Write clean-text snapshot blob"]
-  Store --> MediaRefs["Store media refs<br/>enqueue daemon-public tasks"]
-  Store --> Response["Return document/snapshot/chunk IDs<br/>+ media artifact IDs"]
-  Response --> Queue["Queue browser media work<br/>in IndexedDB"]
+  Store --> SQLiteText["Commit complete cleaned text<br/>inside local SQLite transaction"]
+  Store --> MediaRefs["Store media refs + observation links<br/>enqueue daemon-public tasks"]
+  Store --> Response["Return observation/document/snapshot/chunk IDs<br/>+ media artifact IDs"]
+  Response --> Checkpoint["Checkpoint capture result<br/>in claimed outbox row"]
+  Checkpoint --> Queue["Queue browser media work<br/>in separate IndexedDB"]
+  Queue --> Ack["Acknowledge outbox row"]
 ```
 
 Text/FTS recall completes before media bytes. Media sidecars are best-effort and asynchronous.
@@ -93,8 +115,14 @@ flowchart TB
   BrowserQueue --> BrowserFetch["Browser lazy sidecar<br/>fetch(credentials: include)"]
   BrowserFetch --> BrowserBlob[("IndexedDB fetched blob")]
   BrowserBlob --> RawPut["PUT /media-artifacts/{id}/blob"]
-  RawPut --> MediaBlobs[("blobs/media")]
-  RawPut --> Stored["media_artifacts.status = stored<br/>hash + byte_size recorded"]
+  RawPut --> RootReady{"guarded media root<br/>ready?"}
+  RootReady -->|"yes"| MediaBlobs[("BMD_MEDIA_ROOT<br/>final disposable bytes")]
+  RootReady -->|"no"| SpoolReady{"explicit local spool<br/>reservation available?"}
+  SpoolReady -->|"yes"| MediaSpool[("bounded local media spool")]
+  SpoolReady -->|"no"| MediaUnavailable["media write rejected visibly<br/>text/provenance remain committed"]
+  MediaBlobs --> Stored["media_artifacts.status = stored<br/>tier = media-root<br/>hash + byte_size recorded"]
+  MediaSpool --> Spooled["media_artifacts.status = stored<br/>tier = spool<br/>hash + byte_size recorded"]
+  Spooled --> BrowserDone
   Stored --> BrowserDone["delete completed IndexedDB task"]
 
   CDP --> CdpRows["cdp_recorder=true rows<br/>manifests/segments or response bodies"]
@@ -104,14 +132,17 @@ flowchart TB
 
   DaemonTasks --> Lease["daemon media worker lease"]
   Lease --> PublicFetch["public fetch / HLS assembly<br/>no Chrome cookies"]
-  PublicFetch --> MediaBlobs
+  PublicFetch --> RootReady
   PublicFetch --> Classified["referenced / metadata-only / retrying<br/>stored / skipped / expired / failed"]
 
   MediaBlobs --> Rolling["domain/global rolling cache<br/>oldest blob eviction"]
+  MediaSpool --> Drain["dry-run-first drain<br/>stream + verify size/SHA-256"]
+  Drain --> MediaBlobs
+  Drain --> TierSwitch["compare-and-switch SQLite tier<br/>then remove spool source"]
   Rolling --> Purged["status = purged<br/>refs/hash/provenance remain"]
 ```
 
-The media cache is bounded and disposable. Text, FTS rows, media refs, hashes, status reasons, and provenance remain authoritative when bytes are absent or purged.
+The final media cache is bounded and disposable. The optional local spool has a separate hard byte cap covering committed/orphaned files plus distinct in-flight reservations. SQLite version 13 also reserves snapshot/domain/global cache capacity transactionally across processes, while process-local request and byte leases bound concurrent streaming HTTP/HLS/upload/download work. Text, FTS rows, media refs, hashes, status reasons, and provenance remain authoritative when bytes are absent, spooled, purged, or delayed by resource pressure.
 
 ---
 
@@ -125,11 +156,11 @@ flowchart TD
   DocID --> SnapshotID["snapshot_id = hash(document_id + text_hash)"]
   TextHash --> SnapshotID
   SnapshotID --> Exists{"snapshot exists?"}
-  Exists -->|"yes"| VisitOnly["Insert/update visit only"]
-  Exists -->|"no"| NewSnapshot["Create snapshot + chunks + FTS rows"]
+  Exists -->|"yes"| ObservationOnly["Insert observation linked to existing snapshot"]
+  Exists -->|"no"| NewSnapshot["Create snapshot + chunks + FTS rows<br/>then insert observation"]
 ```
 
-Repeated unchanged captures add visits without duplicating text. Changed text at the same normalized URL creates another snapshot under the same document.
+Repeated unchanged extractions add observations without duplicating text or replacing the visit. Changed text at the same normalized observed URL creates another snapshot under the same document, and each observation retains its contemporaneous snapshot.
 
 ---
 
@@ -139,13 +170,21 @@ Repeated unchanged captures add visits without duplicating text. Changed text at
 flowchart LR
   Start(("start")) --> Active["Active"]
   Active --> Deactivate["tab deactivated<br/>window blurred"] --> Inactive["Inactive"]
-  Inactive --> Reactivate["tab active again"] --> Active
+  Inactive --> Reactivate["tab activated<br/>window focused"] --> Active
   Active --> Close["tab closed"] --> Closed["Closed"] --> End(("end"))
   Active --> Navigate["navigation-away<br/>SPA route"] --> Navigated["Navigated"]
   Navigated --> NewURL["new URL state"] --> Active
+  Deactivate --> Identity{"exact claimed<br/>visit exists?"}
+  Close --> Identity
+  Navigate --> Identity
+  Identity -->|yes| Link["link by visit ID"]
+  Identity -->|not yet| Pending["store claimed ID<br/>attachment=unmatched"]
+  Pending --> Capture["matching capture arrives"] --> Link
+  Link --> Union["validate + union all<br/>positive active intervals"]
+  Union --> Dwell["replace derived dwell"]
 ```
 
-Lifecycle events carry URL, timestamps, active seconds, and max-scroll percent. `/visit-events` is metadata-only; body text only flows through `/capture`.
+Lifecycle events carry claimed visit identity, URL, timezone-qualified timestamps, active seconds, and max-scroll percent. Identity-bearing events never fall back to the latest same-URL visit; delayed capture reconciles by claimed ID plus normalized observed URL. Dwell is the union of valid positive-active intervals, not an additive counter. `/visit-events` is metadata-only; body text only flows through `/capture`.
 
 ---
 
@@ -154,10 +193,10 @@ Lifecycle events carry URL, timestamps, active seconds, and max-scroll percent. 
 ```mermaid
 flowchart LR
   Search["GET /search"] --> FTS[("chunks_fts")]
-  Recent["GET /recent"] --> DB[("SQLite")]
-  Timeline["GET /timeline"] --> DB
-  Detail["GET /documents/{id}"] --> DB
-  Snapshot["GET /snapshots/{id}"] --> DB
+  Recent["GET /recent<br/>observation-first + explicit legacy fallback"] --> DB[("SQLite")]
+  Timeline["GET /timeline<br/>observation-first"] --> DB
+  Detail["GET /documents/{id}<br/>observations + URL claims"] --> DB
+  Snapshot["GET /snapshots/{id}<br/>exact observations"] --> DB
   Media["GET /media-artifacts/{id}"] --> MediaBlobs[("blobs/media")]
   UI["Local UI"] --> Search
   UI --> Recent
@@ -184,18 +223,30 @@ flowchart TD
   Scope --> URL["url"]
   Domain --> Match["Find matching documents/visits"]
   URL --> Match
-  Match --> DeleteEvents["Delete visit_events"]
-  Match --> DeleteFTS["Delete chunks_fts"]
-  Match --> DeleteChunks["Delete chunks"]
-  Match --> DeleteSnapshots["Delete snapshots + text blobs"]
-  Match --> DeleteMedia["Delete media_artifacts + media blobs"]
-  Match --> DeleteVisits["Delete visits"]
-  Match --> DeleteDocs["Delete documents"]
-  DeleteDocs --> Receipt["deletion_receipts + counts"]
-  DeleteMedia --> Receipt
+  Match --> Tx["One SQLite transaction"]
+  Tx --> Tombstones["Persist blob_storage_records<br/>state=tombstoned"]
+  Tx --> DeleteRows["Delete FTS/chunks/snapshots/media/<br/>events/visits/documents"]
+  Tx --> Receipt["Persist minimized deletion receipt"]
+  Tombstones --> Commit{"Transaction commits?"}
+  DeleteRows --> Commit
+  Receipt --> Commit
+  Commit -->|no| Rollback["No cascade or tombstone is durable"]
+  Commit -->|yes| Processor["Serialized contained tombstone processor"]
+  Processor --> Outcome{"BlobStore delete outcome"}
+  Outcome -->|deleted| Deleted["state=deleted"]
+  Outcome -->|already absent| Missing["state=missing"]
+  Outcome -->|I/O failure| Failed["state=failed<br/>retryable"]
+  Outcome -->|outside/unavailable| Blocked["state=blocked<br/>fail closed"]
+  Failed --> Reconcile["storage reconcile --execute"]
+  Blocked --> Reconcile
+  Reconcile --> Processor
+  Deleted --> Complete{"No pending records?"}
+  Missing --> Complete
+  Complete -->|yes| Success["forgotten=true"]
+  Complete -->|no| Pending["forgotten=false<br/>database_forgotten=true"]
 ```
 
-Forget returns counts so the operator can verify which stores were affected.
+Forget returns database counts plus durable deletion state. It cannot report complete success while required bytes remain failed or blocked.
 
 ---
 
@@ -205,7 +256,7 @@ Forget returns counts so the operator can verify which stores were affected.
 |---|---|
 | Extension protocol boundary | `manifest.json`, `extension/src/extractor.js`, `content_script.js`, `service_worker.js`, `popup.js`, `options.js`, `media_queue.js` |
 | Policy mode ladder | `docs/security-model.md`, `daemon/src/browser_memory_daemon/policy.py`, `policy_store.py`, `extension/src/extractor.js` |
-| Capture ingest and redaction branch | `docs/api.md`, `daemon/src/browser_memory_daemon/app.py`, `ingest.py`, `policy.py`, `schema.sql`, `extension/src/service_worker.js` |
+| Capture ingest and redaction branch | `docs/api.md`, `daemon/src/browser_memory_daemon/http_server.py`, `application.py`, `ingest.py`, `policy.py`, `schema.sql`, `extension/src/service_worker.js` |
 | Durable media sidecars and cache outcomes | `docs/media-artifacts.md`, `daemon/src/browser_memory_daemon/media.py`, `media_worker.py`, `schema.sql`, `extension/src/media_queue.js`, `cdp_recorder.js`, `service_worker.js` |
 | Dedupe and versioning | `daemon/src/browser_memory_daemon/ingest.py`, `schema.sql`, ingest tests |
 | Lifecycle telemetry | `docs/api.md`, `daemon/src/browser_memory_daemon/lifecycle.py`, `schema.sql`, `extension/src/service_worker.js` |

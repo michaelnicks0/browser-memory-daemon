@@ -157,6 +157,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td><a href="ARCHITECTURE.html"><code>ARCHITECTURE.md</code></a>, <a href="architecture/c4-diagrams.html"><code>architecture/c4-diagrams.md</code></a></td>
 </tr>
 <tr>
+<td>Inspect canonical requirements and V-model evidence</td>
+<td><a href="../requirements/catalog.toml"><code>../requirements/catalog.toml</code></a>, <a href="test-plan.html"><code>test-plan.md</code></a>, <a href="TESTS.html"><code>TESTS.md</code></a></td>
+</tr>
+<tr>
 <td>Understand architecture/design decision history</td>
 <td><a href="architecture/adr/README.html"><code>architecture/adr/README.md</code></a></td>
 </tr>
@@ -193,12 +197,32 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td><a href="retention-compaction-backup.html"><code>retention-compaction-backup.md</code></a></td>
 </tr>
 <tr>
+<td>Review the current blob-root migration helper and its safety limits</td>
+<td><a href="blob-root-migration.html"><code>blob-root-migration.md</code></a></td>
+</tr>
+<tr>
+<td>Inspect or operate SQLite schema migrations</td>
+<td><a href="database-migrations.html"><code>database-migrations.md</code></a>, <a href="architecture/adr/0028-use-versioned-restore-backed-sqlite-migrations.html"><code>architecture/adr/0028-use-versioned-restore-backed-sqlite-migrations.md</code></a></td>
+</tr>
+<tr>
 <td>Understand durable lazy media sidecars</td>
 <td><a href="ARCHITECTURE.html#durable-media-sidecar-architecture"><code>ARCHITECTURE.md</code></a>, <a href="media-artifacts.html"><code>media-artifacts.md</code></a></td>
 </tr>
 <tr>
 <td>Run verification gates</td>
 <td><a href="TESTS.html"><code>TESTS.md</code></a>, <a href="test-plan.html"><code>test-plan.md</code></a></td>
+</tr>
+<tr>
+<td>Review the measured branch-coverage baseline and ratchet</td>
+<td><a href="coverage-baseline.html"><code>coverage-baseline.md</code></a></td>
+</tr>
+<tr>
+<td>Review Phase 0 gate evidence</td>
+<td><a href="verification/phase-0-gate-2026-07-10.html"><code>verification/phase-0-gate-2026-07-10.md</code></a></td>
+</tr>
+<tr>
+<td>Review Phase 2 gate evidence</td>
+<td><a href="verification/phase-2-gate-2026-07-10.html"><code>verification/phase-2-gate-2026-07-10.md</code></a></td>
 </tr>
 </tbody>
 </table>
@@ -225,16 +249,24 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td><code>scripts/generate_test_inventory.py</code>, <code>docs/TESTS.md</code> generated regions</td>
 </tr>
 <tr>
+<td>Hermetic fast quality gate</td>
+<td><code>scripts/run-fast-gate.sh</code>, <code>pyproject.toml</code>, <code>docs/coverage-baseline.md</code></td>
+</tr>
+<tr>
 <td>Daemon runtime/config</td>
 <td><code>daemon/src/browser_memory_daemon/config.py</code>, <code>scripts/install-daily-driver.sh</code></td>
 </tr>
 <tr>
-<td>HTTP API and UI serving</td>
-<td><code>daemon/src/browser_memory_daemon/app.py</code>, <code>ui/</code></td>
+<td>HTTP API, application use cases, and UI serving</td>
+<td><code>daemon/src/browser_memory_daemon/http_server.py</code>, <code>daemon/src/browser_memory_daemon/application.py</code>, <code>daemon/src/browser_memory_daemon/app.py</code>, <code>ui/</code></td>
 </tr>
 <tr>
 <td>Ingest/storage/search/forget</td>
 <td><code>ingest.py</code>, <code>schema.sql</code>, <code>search.py</code>, <code>forget.py</code></td>
+</tr>
+<tr>
+<td>SQLite migration lifecycle</td>
+<td><code>migrations.py</code>, <code>migration_steps/</code>, <code>database-migrations.md</code></td>
 </tr>
 <tr>
 <td>Capture policy modes</td>
@@ -296,6 +328,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>venv<span style="color: #F8F8F2"> </span>.venv
 .<span style="color: #F8F8F2"> </span>.venv/bin/activate
 python<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>pip<span style="color: #F8F8F2"> </span>install<span style="color: #F8F8F2"> </span>-r<span style="color: #F8F8F2"> </span>requirements-dev.txt
+<span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-fast-gate.sh
 <span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;${</span><span style="color: #F8F8F2">BMD_PYTHON</span><span style="color: #66D9EF">:-</span><span style="color: #F8F8F2">python</span><span style="color: #E6DB74">}&quot;</span><span style="color: #F8F8F2"> </span>./scripts/run-e2e.sh
 python<span style="color: #F8F8F2"> </span>scripts/generate_test_inventory.py<span style="color: #F8F8F2"> </span>--check
 python<span style="color: #F8F8F2"> </span>scripts/generate_showcase.py<span style="color: #F8F8F2"> </span>--spec<span style="color: #F8F8F2"> </span>scripts/showcase.spec.json<span style="color: #F8F8F2"> </span>--check

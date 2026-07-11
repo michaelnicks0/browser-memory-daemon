@@ -39,6 +39,28 @@ async function config() {
   return chrome.storage.local.get(DEFAULTS);
 }
 
+function requestOutboxStatus() {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage({ type: 'BMD_OUTBOX_STATUS' }, (response) => {
+      const error = chrome.runtime.lastError;
+      if (error) return reject(new Error(error.message));
+      if (!response?.ok) return reject(new Error(response?.error || 'outbox status unavailable'));
+      resolve(response.result);
+    });
+  });
+}
+
+async function loadOutboxSummary() {
+  const status = await requestOutboxStatus();
+  const capture = status.capture || {};
+  const lifecycle = status.lifecycle || {};
+  const media = status.media || {};
+  document.getElementById('outbox').textContent = status.available
+    ? `outbox capture=${capture.count || 0}/${capture.max_items || 0} (${capture.serialized_bytes || 0}/${capture.max_bytes || 0} bytes, age=${Math.round((capture.oldest_age_ms || 0) / 1000)}s, attempts=${capture.attempts || 0}, errors=${capture.error_count || 0}, last=${capture.last_success_at || 'never'}); lifecycle=${lifecycle.count || 0}/${lifecycle.max_items || 0} (${lifecycle.serialized_bytes || 0}/${lifecycle.max_bytes || 0} bytes, age=${Math.round((lifecycle.oldest_age_ms || 0) / 1000)}s, attempts=${lifecycle.attempts || 0}, errors=${lifecycle.error_count || 0}, last=${lifecycle.last_success_at || 'never'}); media=${media.task_count || 0}/${media.max_tasks || 0} tasks, ${media.blob_bytes || 0}/${media.max_blob_bytes || 0} bytes; overflow=${status.last_overflow?.reason || 'none'}`
+    : 'outbox unavailable';
+  return status;
+}
+
 async function togglePause() {
   const cfg = await config();
   await chrome.storage.local.set({ capturePaused: !cfg.capturePaused });
@@ -48,6 +70,7 @@ async function togglePause() {
 
 async function health() {
   const cfg = await config();
+  const outbox = await loadOutboxSummary();
   const response = await fetch(`${normalizeDaemonUrl(cfg.daemonUrl)}/health`, { targetAddressSpace: 'loopback' });
   setStatus({
     extension: {
@@ -58,6 +81,7 @@ async function health() {
       lastCdpRecorderStatus: cfg.lastCdpRecorderStatus || null,
       lastCdpRecorderError: cfg.lastCdpRecorderError || null
     },
+    outbox,
     daemon: await response.json()
   });
 }
@@ -84,8 +108,14 @@ async function blockCurrentDomain() {
 
 async function forgetCurrentDomain() {
   if (!currentDomain) throw new Error('No current domain to forget.');
-  if (!confirm(`Forget all stored memory for ${currentDomain}?`)) return;
-  const payload = await daemonRequest('/forget', {domain: currentDomain});
+  const preview = await daemonRequest('/forget', {domain: currentDomain, dry_run: true});
+  const selectedRecords = Number(preview.guard?.selected_records || 0);
+  if (selectedRecords === 0) {
+    setStatus(preview);
+    return;
+  }
+  if (!confirm(`Forget ${preview.counts?.documents || 0} document(s) and ${selectedRecords} total stored record(s) for ${currentDomain}?`)) return;
+  const payload = await daemonRequest('/forget', {domain: currentDomain, max_records: selectedRecords});
   setStatus(payload);
 }
 
@@ -103,4 +133,4 @@ bind('health', health);
 bind('open-dashboard', openDashboard);
 bind('block-domain', blockCurrentDomain);
 bind('forget-domain', forgetCurrentDomain);
-loadCurrentDomain().catch((error) => setStatus(error.message));
+Promise.all([loadCurrentDomain(), loadOutboxSummary()]).catch((error) => setStatus(error.message));

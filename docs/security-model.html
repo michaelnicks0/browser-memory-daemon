@@ -143,7 +143,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tbody>
 <tr>
 <td>Network</td>
-<td>Daemon binds to <code>127.0.0.1</code> by default.</td>
+<td>Daemon binds to <code>127.0.0.1</code> by default; daemon-public media fetches reject non-global/private destinations unless explicitly allowlisted.</td>
 </tr>
 <tr>
 <td>API auth</td>
@@ -151,15 +151,15 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Health/UI shell</td>
-<td><code>/health</code> and <code>/ui</code> are public loopback only; <code>/ui</code> HTML includes a same-origin token bootstrap for operator UX, while static assets stay token-free.</td>
+<td><code>/health</code> and <code>/ui</code> are public loopback only; <code>/ui</code> rejects non-loopback <code>Host</code> headers and includes a same-origin token bootstrap for operator UX, while static assets stay token-free.</td>
 </tr>
 <tr>
 <td>Durable storage</td>
-<td>WSL XDG paths; repo and Chrome profile are not storage roots.</td>
+<td>WSL XDG paths; repo and Chrome profile are not storage roots; DB blob paths are validated against configured roots before read/serve/delete operations; explicit external media roots require mount and identity-marker proof; an optional local spool is contained under the WSL data root and hard-capped; durable deletion intents preserve retry work across crashes.</td>
 </tr>
 <tr>
 <td>Browser bridge</td>
-<td>Content scripts message service worker; service worker owns daemon fetch/auth/queues.</td>
+<td>Content scripts message the service worker; the worker owns daemon fetch/auth and drains transactional capture/lifecycle plus specialized media IndexedDB queues.</td>
 </tr>
 <tr>
 <td>Agent safety</td>
@@ -212,7 +212,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </table>
 <hr />
 <h2 id="all-mode-risk-acceptance"><code>all</code> mode risk acceptance</h2>
-<p><code>all</code> intentionally stores original URL/title/body text without daemon redaction and without built-in URL/domain/path/query filtering. It still applies explicit local block rules and skips hidden/form/editable/script/style/no-script DOM text because Operator requested those surfaces stay omitted. This is an operator-selected personal recall mode.</p>
+<p><code>all</code> intentionally stores original URL/title/body text without daemon redaction and without built-in URL/domain/path/query filtering. It still applies explicit local block rules and conservatively skips explicit/computed/ancestor-hidden, transparent, form, editable, script, style, and noscript light-DOM text. Shadow roots and pseudo-element content are outside the extraction contract. This is an operator-selected personal recall mode.</p>
 <p>Known consequences:</p>
 <ul>
 <li>visible/exposed page secrets can be stored and indexed;</li>
@@ -226,7 +226,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>bearer auth for memory/admin APIs;</li>
 <li>runtime data is outside the repo;</li>
 <li>secret scan protects committed repo content;</li>
-<li>forget-by-domain/URL can delete stored memory after the fact.</li>
+<li>forget-by-domain/URL can delete stored memory after the fact; selectors are literal and policy-aware, the CLI previews by default, and every execution is bounded by an explicit selected-record ceiling. Preview writes no receipt, audit, tombstone, database, or file state. URL forget uses the literal selector in <code>all</code> mode but redacts selector values in receipts. Receipt and byte-deletion tombstones commit with the relational cascade, and incomplete byte removal is reported as pending rather than complete.</li>
 </ul>
 <hr />
 <h2 id="non-all-redaction">Non-<code>all</code> redaction</h2>
@@ -245,15 +245,29 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <h2 id="current-controls">Current controls</h2>
 <ul>
 <li>API token required for <code>/capture</code>, <code>/visit-events</code>, <code>/media-artifacts/*</code>, <code>/search</code>, <code>/ready</code>, <code>/recent</code>, <code>/timeline</code>, <code>/documents/{id}</code>, <code>/snapshots/{id}</code>, <code>/policy/*</code>, <code>/doctor</code>, and <code>/forget</code>.</li>
+<li>HTTP errors retain a compatible top-level <code>error</code> string and add stable <code>error_code</code> values. Validation messages remain bounded client feedback; SQLite details, filesystem paths, and unexpected exception text are replaced with generic 5xx messages rather than returned to callers.</li>
+<li>Every response carries an opaque server-generated request ID and common no-store/CSP/frame/referrer/permissions/content-type protections. Structured request telemetry contains only request ID, method, descriptor route name, status, integer latency, and safe error code; it excludes raw paths, queries, URLs, origins, client addresses, headers, bearer values, payloads, captured content, and exception prose. Client disconnects during headers or body streaming close the connection without attempting a second response and are recorded only as status <code>499</code> with <code>client_disconnected</code>; source/read failures use generic safe codes.</li>
+<li>Known-length raw media uploads stream directly into contained staging with 64 KiB reads. Upload interruption aborts the stage and releases durable cache/spool plus process resource reservations; download interruption stops the stream and releases its process lease.</li>
+<li>JSON and raw-upload admission rejects duplicate, signed, malformed, oversized, or truncated <code>Content-Length</code> framing before domain mutation; JSON bodies remain within the configured 2 MiB or 16 MiB route boundary.</li>
 <li><code>/health</code> exposes minimal daemon status plus <code>policy_mode</code>.</li>
 <li>Daily-driver install stores the daemon API token in protected WSL config files and injects it into the Windows-local extension artifact; the token is never committed.</li>
+<li>Capture and lifecycle payloads are durable browser-profile data in a versioned IndexedDB outbox. Atomic token-checked claims recover after MV3 suspension; the extracted telemetry boundary recursively drops payload/text/body/content/URL/token/header fields and redacts URL-shaped error substrings before <code>chrome.storage.local</code> writes. Legacy <code>chrome.storage.local</code> queue arrays are imported before deletion and remain only as a one-version failure fallback.</li>
+<li>Typed extension state keeps visit/navigation state and minimal CDP capture provenance (<code>document_id</code>, <code>snapshot_id</code>, <code>visit_id</code>, and observed page URL) in <code>chrome.storage.local</code> so worker restart can reconstruct ownership. It excludes page text, titles, media bodies, cookies, request headers, and tokens; tab close or an observed URL change clears the CDP context.</li>
+<li>Fetched browser media remains in a separate versioned IndexedDB task/blob queue. Atomic task-batch and blob/state transitions enforce a 500-task and 512 MiB aggregate boundary; terminal failures are quarantined for 24 hours and then removed in bounded transactions. Media telemetry exposes aggregate counts and bytes only.</li>
 <li>Token rotation is supported:</li>
 </ul>
 <p><code>bash
   BMD_ROTATE_TOKEN=1 BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh</code></p>
 <ul>
-<li>Local web UI is served from loopback at <code>/ui</code>; the HTML bootstrap embeds the current daemon token so the dashboard auto-loads without manual paste. Static JS/CSS assets remain token-free, and every memory/admin API call still requires the bearer token.</li>
-<li>Deletion UX requires explicit browser confirmation before UI/popup forget-domain calls, and the daemon returns deletion receipts.</li>
+<li>Local web UI is served from loopback at <code>/ui</code>; the HTML bootstrap embeds the current daemon token so the dashboard auto-loads without manual paste. Requests with non-loopback <code>Host</code> headers are rejected, static JS/CSS assets remain token-free, and every memory/admin API call still requires the bearer token.</li>
+<li>Configure final media separately with <code>BMD_MEDIA_ROOT</code>. Explicit external roots, or roots guarded with <code>BMD_REQUIRE_MEDIA_ROOT_MOUNT=1</code>, require a non-root mount and <code>.bmd-media-root-id</code> whose exact content matches <code>BMD_MEDIA_ROOT_IDENTITY</code>. The daemon checks this boundary before media access and does not create the external media root during startup. <code>BMD_REQUIRE_BLOB_ROOT_MOUNT</code> remains a compatibility guard.</li>
+<li>A media-root outage never blocks local SQLite text/provenance capture. Optional fallback requires both a local <code>BMD_MEDIA_SPOOL_ROOT</code> beneath the data root and positive <code>BMD_MAX_MEDIA_SPOOL_BYTES</code>; no implicit or unbounded shadow fallback exists. Admission counts committed/orphaned spool files and distinct in-flight SQLite reservations so same-artifact concurrent writers cannot collapse capacity accounting.</li>
+<li>Forget, media purge, and eviction first persist contained locators in <code>blob_storage_records</code>. Failed or blocked bytes are not served, remain in budget accounting, degrade doctor status, and are retried only through the dry-run-first <code>storage reconcile</code> operator surface. Reconciliation does not follow outside-root paths or unavailable external roots.</li>
+<li>Daemon-public media fetch uses a no-cookie, no-<code>Referer</code>, HTTP(S)-only egress guard. Every direct URL, redirect target, HLS variant playlist, init map, and segment is resolved and rejected by default if it maps to loopback, private, link-local, unspecified, multicast, reserved, or otherwise non-global address space. Private destinations require explicit <code>BMD_MEDIA_PUBLIC_FETCH_ALLOW_PRIVATE_HOSTS</code> configuration. Potential HLS video transport claims its aggregate request budget before the first open, applies the playlist cap from final URL/MIME or bounded magic-prefix sniffing, and enforces the shared deadline before and after every response-body read while tightening the socket timeout to the remaining interval.</li>
+<li>Media request and byte use is process-bounded by positive <code>BMD_MAX_MEDIA_CONCURRENT_REQUESTS</code> and <code>BMD_MAX_MEDIA_INFLIGHT_BYTES</code>; the byte cap must admit at least one maximum artifact. Raw upload/download and public fetch/HLS paths stream through bounded chunks and release leases on cancellation or failure. SQLite version 13 cache reservations separately serialize committed-plus-reserved snapshot/domain/global admission across daemon and worker processes, with expired crash reservations removed by the next admission attempt. Aggregate queue telemetry exposes no captured content, URL, or storage path.</li>
+<li>Complete cleaned text and capture provenance commit atomically to local SQLite. New captures create no text sidecar. Legacy text promotion accepts only SHA-256 matches from ordered chunks or an in-root regular sidecar resolved through <code>BlobStore</code>; arbitrary database paths and hash mismatches remain unresolved.</li>
+<li>Media and legacy-sidecar blob operations are root-scoped through <code>BlobStore</code>: writes use unique streaming stages, optional size/hash checks, file and parent-directory <code>fsync</code>, and atomic replace; media filenames use hashed storage stems; and read/serve/stat/purge/forget/migration flows refuse stale or tampered DB locators. Media rows identify <code>media-root</code> or <code>spool</code> ownership and keep root-relative plus contained absolute compatibility locators. Reads fail closed rather than downgrading when a preferred locator is invalid. Spool drain verifies size/hash, commits the tier transition, then removes the source.</li>
+<li>Deletion UX requires explicit browser confirmation before UI/popup forget-domain calls, and the daemon returns deletion receipts. Destructive forget accepts exactly one selector; domain selectors must be literal hostnames, and URL selectors match the active policy's storage representation while keeping receipt scopes redaction-safe.</li>
 </ul>
 <hr />
 <h2 id="current-limitations">Current limitations</h2>

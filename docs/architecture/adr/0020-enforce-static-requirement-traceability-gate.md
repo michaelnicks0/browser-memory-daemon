@@ -1,12 +1,13 @@
 ---
 id: ADR-0020
-status: accepted
+status: superseded
 date: 2026-07-03
 decider: Operator
 scope: repo
 backfilled: false
 supersedes: []
-superseded_by: []
+superseded_by:
+  - ADR-0027
 related:
   - docs/TESTS.md
   - docs/test-plan.md
@@ -23,7 +24,7 @@ verification:
 
 ## Status
 
-accepted
+superseded by [ADR-0027](0027-use-canonical-semantic-requirement-catalog.md)
 
 ## Context
 

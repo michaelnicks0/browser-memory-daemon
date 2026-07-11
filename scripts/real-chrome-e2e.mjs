@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 import { spawn, spawnSync } from 'node:child_process';
 import { createServer } from 'node:http';
-import { mkdir, rm, access, cp } from 'node:fs/promises';
+import { mkdir, rm, access, cp, readFile } from 'node:fs/promises';
 import { constants as fsConstants } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ensurePinnedChromeForTesting } from './chrome-for-testing.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const ROOT = path.resolve(path.dirname(__filename), '..');
@@ -100,33 +101,13 @@ async function findChrome() {
 async function ensureChromeForTesting() {
   const windowsUser = process.env.BMD_WINDOWS_USER || process.env.USERNAME || process.env.USER || 'Default';
   const cacheRoot = process.env.BMD_CHROME_FOR_TESTING_CACHE || `/mnt/c/Users/${windowsUser}/AppData/Local/browser-memory-daemon/chrome-for-testing`;
-  const metaUrl = 'https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json';
-  await mkdir(cacheRoot, { recursive: true });
-  const metadataResponse = await fetch(metaUrl);
-  if (!metadataResponse.ok) fail(`failed to fetch Chrome for Testing metadata: ${metadataResponse.status}`);
-  const metadata = await metadataResponse.json();
-  const stable = metadata.channels?.Stable;
-  const win64 = stable?.downloads?.chrome?.find((item) => item.platform === 'win64');
-  if (!stable?.version || !win64?.url) fail(`Chrome for Testing metadata missing Stable win64 download: ${JSON.stringify(stable)}`);
-  const versionRoot = path.join(cacheRoot, stable.version);
-  const exe = path.join(versionRoot, 'chrome-win64', 'chrome.exe');
-  if (await pathExists(exe)) {
-    log(`using cached Chrome for Testing ${stable.version}: ${exe}`);
-    return exe;
-  }
-  if (process.env.BMD_REAL_CHROME_ALLOW_DOWNLOAD === '0') {
-    fail(`Chrome for Testing ${stable.version} is not cached at ${exe}; set BMD_REAL_CHROME_ALLOW_DOWNLOAD=1 or BMD_CHROME_EXE`);
-  }
-  await mkdir(versionRoot, { recursive: true });
-  const zipPath = path.join(versionRoot, 'chrome-win64.zip');
-  log(`downloading Chrome for Testing ${stable.version} win64`);
-  let result = spawnSync('curl', ['-L', '--fail', '--retry', '3', '-o', zipPath, win64.url], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-  if (result.status !== 0) fail(`curl Chrome for Testing failed: ${result.stderr || result.stdout}`);
-  result = spawnSync('unzip', ['-q', '-o', zipPath, '-d', versionRoot], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-  if (result.status !== 0) fail(`unzip Chrome for Testing failed: ${result.stderr || result.stdout}`);
-  if (!(await pathExists(exe))) fail(`Chrome for Testing unzip did not create ${exe}`);
-  log(`installed Chrome for Testing ${stable.version}: ${exe}`);
-  return exe;
+  const lock = JSON.parse(await readFile(path.join(ROOT, 'scripts', 'chrome-for-testing-lock.json'), 'utf8'));
+  return ensurePinnedChromeForTesting({
+    lock,
+    cacheRoot,
+    allowDownload: process.env.BMD_REAL_CHROME_ALLOW_DOWNLOAD === '1',
+    logger: log
+  });
 }
 
 function wslpathWin(wslPath) {
@@ -229,7 +210,16 @@ function startPageServer() {
       res.setHeader('Set-Cookie', 'bmd_media_cookie=ok; Path=/');
       res.end(`<!doctype html>
 <html>
-  <head><title>Allowed Real Chrome E2E</title></head>
+  <head>
+    <title>Allowed Real Chrome E2E</title>
+    <style>
+      .bmd-class-hidden { display: none; }
+      .bmd-ancestor-hidden { visibility: hidden; }
+      .bmd-transparent { opacity: 0; }
+      .bmd-content-hidden { content-visibility: hidden; }
+      @media (min-width: 1px) { .bmd-responsive-hidden { display: none; } }
+    </style>
+  </head>
   <body>
     <main>
       <h1>Allowed capture fixture</h1>
@@ -237,11 +227,20 @@ function startPageServer() {
       <img src="/media-image.png" width="64" height="64" alt="Synthetic public media artifact">
       <img src="/cookie-media.png" width="64" height="64" alt="Synthetic cookie media artifact">
       <p style="display:none">Hidden text must not be captured ${hiddenNeedle}</p>
+      <p class="bmd-class-hidden">Class-hidden text must not be captured ${hiddenNeedle}_CLASS</p>
+      <section class="bmd-ancestor-hidden"><p>Ancestor-hidden text must not be captured ${hiddenNeedle}_ANCESTOR</p></section>
+      <p class="bmd-responsive-hidden">Responsive-hidden text must not be captured ${hiddenNeedle}_RESPONSIVE</p>
+      <p class="bmd-transparent">Transparent text must not be captured ${hiddenNeedle}_OPACITY</p>
+      <p class="bmd-content-hidden">Content-visibility-hidden text must not be captured ${hiddenNeedle}_CONTENT</p>
       <p aria-hidden="true">ARIA hidden text must not be captured ${hiddenNeedle}_ARIA</p>
       <input value="Input field must not be captured ${hiddenNeedle}_INPUT">
       <textarea>Textarea must not be captured ${hiddenNeedle}_TEXTAREA</textarea>
       <div contenteditable="true">Editable text must not be captured ${hiddenNeedle}_EDITABLE</div>
+      <bmd-shadow-host id="shadow-host">Visible light-DOM host text.</bmd-shadow-host>
     </main>
+    <script>
+      document.getElementById('shadow-host').attachShadow({mode: 'open'}).innerHTML = '<p>Open shadow text is outside the extraction contract ${hiddenNeedle}_SHADOW</p>';
+    </script>
   </body>
 </html>`);
       return;
@@ -550,7 +549,7 @@ async function configureExtensionStorage(cdp) {
       const injectionProbe = await evaluate(
         cdp,
         sessionId,
-        `JSON.stringify({hasScripting: Boolean(chrome.scripting && chrome.scripting.executeScript), hasTabs: Boolean(chrome.tabs && chrome.tabs.onUpdated), hasPolicy: Boolean(globalThis.shouldBlockBrowserMemoryUrl)})`
+        `JSON.stringify({hasScripting: Boolean(chrome.scripting && chrome.scripting.executeScript), hasTabs: Boolean(chrome.tabs && chrome.tabs.onUpdated), hasPolicy: Boolean(globalThis.shouldBlockBrowserMemoryUrl), hasOutbox: Boolean(globalThis.BrowserMemoryOutbox)})`
       );
       log(`extension injection capabilities ${injectionProbe}`);
       log(`configured extension ${extensionId} storage for ${daemonUrl} policyMode=${policyMode}`);
@@ -606,13 +605,24 @@ async function getQueueLengths(cdp, storageSessionId) {
   const stored = await evaluate(
     cdp,
     storageSessionId,
-    `chrome.storage.local.get({captureQueue: [], visitEventQueue: []}).then((value) => JSON.stringify({captureQueue: value.captureQueue || [], visitEventQueue: value.visitEventQueue || []}))`,
+    `Promise.all([
+      globalThis.BrowserMemoryOutbox ? BrowserMemoryOutbox.getStats('capture') : Promise.resolve({count: -1}),
+      globalThis.BrowserMemoryOutbox ? BrowserMemoryOutbox.getStats('lifecycle') : Promise.resolve({count: -1}),
+      chrome.storage.local.get({captureQueue: [], visitEventQueue: []})
+    ]).then(([captures, lifecycle, legacy]) => JSON.stringify({
+      captureQueue: captures.count,
+      visitEventQueue: lifecycle.count,
+      legacyCaptureQueue: (legacy.captureQueue || []).length,
+      legacyVisitEventQueue: (legacy.visitEventQueue || []).length
+    }))`,
     { awaitPromise: true }
   );
   const parsed = JSON.parse(stored || '{}');
   return {
-    captureQueue: (parsed.captureQueue || []).length,
-    visitEventQueue: (parsed.visitEventQueue || []).length
+    captureQueue: Number(parsed.captureQueue ?? -1),
+    visitEventQueue: Number(parsed.visitEventQueue ?? -1),
+    legacyCaptureQueue: Number(parsed.legacyCaptureQueue ?? -1),
+    legacyVisitEventQueue: Number(parsed.legacyVisitEventQueue ?? -1)
   };
 }
 
@@ -621,7 +631,7 @@ async function waitForQueuesEmpty(cdp, storageSessionId, timeoutMs = 15000) {
   let lengths = { captureQueue: -1, visitEventQueue: -1 };
   while (Date.now() - started < timeoutMs) {
     lengths = await getQueueLengths(cdp, storageSessionId);
-    if (lengths.captureQueue === 0 && lengths.visitEventQueue === 0) return lengths;
+    if (lengths.captureQueue === 0 && lengths.visitEventQueue === 0 && lengths.legacyCaptureQueue === 0 && lengths.legacyVisitEventQueue === 0) return lengths;
     await sleep(500);
   }
   return lengths;
@@ -654,7 +664,21 @@ async function getQueueDebug(cdp, storageSessionId) {
   const stored = await evaluate(
     cdp,
     storageSessionId,
-    `chrome.storage.local.get({captureQueue: [], visitEventQueue: [], lastVisitEventError: null}).then((value) => JSON.stringify({captureQueue: value.captureQueue || [], visitEventQueue: value.visitEventQueue || [], lastVisitEventError: value.lastVisitEventError || null}))`,
+    `Promise.all([
+      globalThis.BrowserMemoryOutbox ? BrowserMemoryOutbox.getStats('capture') : Promise.resolve({unavailable: true}),
+      globalThis.BrowserMemoryOutbox ? BrowserMemoryOutbox.getStats('lifecycle') : Promise.resolve({unavailable: true}),
+      chrome.storage.local.get({captureQueue: [], visitEventQueue: [], lastVisitEventError: null, lastCaptureOutboxError: null, lastOutboxError: null})
+    ]).then(([captures, lifecycle, legacy]) => JSON.stringify({captures, lifecycle, legacyCaptureQueue: (legacy.captureQueue || []).length, legacyVisitEventQueue: (legacy.visitEventQueue || []).length, lastVisitEventError: legacy.lastVisitEventError || null, lastCaptureOutboxError: legacy.lastCaptureOutboxError || null, lastOutboxError: legacy.lastOutboxError || null}))`,
+    { awaitPromise: true }
+  );
+  return JSON.parse(stored || '{}');
+}
+
+async function getOutboxTelemetry(cdp, storageSessionId) {
+  const stored = await evaluate(
+    cdp,
+    storageSessionId,
+    `outboxStatus().then((value) => JSON.stringify(value))`,
     { awaitPromise: true }
   );
   return JSON.parse(stored || '{}');
@@ -666,8 +690,10 @@ function queryDbCounts() {
 import json, sqlite3, sys
 conn = sqlite3.connect(${JSON.stringify(dbPath)})
 counts = {}
-for table in ['documents', 'visits', 'visit_events', 'snapshots', 'chunks', 'media_artifacts', 'media_fetch_tasks', 'audit_events']:
+for table in ['documents', 'visits', 'visit_events', 'capture_observations', 'snapshots', 'chunks', 'media_artifacts', 'media_fetch_tasks', 'audit_events']:
     counts[table] = conn.execute(f'SELECT COUNT(*) FROM {table}').fetchone()[0]
+counts['browser_identity_observations'] = conn.execute("SELECT COUNT(*) FROM capture_observations WHERE idempotency_key LIKE 'browser:%' AND navigation_id IS NOT NULL AND TRIM(navigation_id) != ''").fetchone()[0]
+counts['sqlite_authoritative_snapshots'] = conn.execute("SELECT COUNT(*) FROM snapshots WHERE cleaned_text IS NOT NULL AND cleaned_text_source = 'capture'").fetchone()[0]
 counts['audit_event_types'] = dict(conn.execute('SELECT event_type, COUNT(*) FROM audit_events GROUP BY event_type').fetchall())
 print(json.dumps(counts, sort_keys=True))
 `;
@@ -682,12 +708,14 @@ function queryDbMediaState() {
 import json, pathlib, sqlite3
 conn = sqlite3.connect(${JSON.stringify(dbPath)})
 conn.row_factory = sqlite3.Row
-rows = [dict(row) for row in conn.execute('SELECT id, media_type, role, source_url, mime_type, byte_size, file_path, capture_status FROM media_artifacts ORDER BY created_at ASC').fetchall()]
+rows = [dict(row) for row in conn.execute('SELECT id, media_type, role, source_url, mime_type, byte_size, file_path, blob_locator, storage_tier, spool_locator, capture_status FROM media_artifacts ORDER BY created_at ASC').fetchall()]
 tasks = dict(conn.execute('SELECT status, COUNT(*) FROM media_fetch_tasks GROUP BY status').fetchall())
 for row in rows:
     path = pathlib.Path(row['file_path']) if row.get('file_path') else None
     row['has_file'] = bool(path and path.exists())
     row['file_size'] = path.stat().st_size if path and path.exists() else 0
+    locator = pathlib.PurePosixPath(row['blob_locator']) if row.get('blob_locator') else None
+    row['locator_is_relative'] = bool(row.get('storage_tier') == 'media-root' and locator and not locator.is_absolute() and '..' not in locator.parts)
 print(json.dumps({'rows': rows, 'stored': sum(1 for row in rows if row.get('has_file')), 'bytes': sum(row.get('file_size', 0) for row in rows), 'tasks': tasks}, sort_keys=True))
 `;
   const result = spawnSync(pythonBin, ['-c', script], { encoding: 'utf8' });
@@ -700,7 +728,8 @@ async function waitForMediaArtifactStored(timeoutMs = 20000) {
   let media = { rows: [], stored: 0, bytes: 0, tasks: {} };
   while (Date.now() - started < timeoutMs) {
     media = queryDbMediaState();
-    if (media.stored >= 2 && media.bytes >= 16) return media;
+    const storedRows = media.rows.filter((row) => row.has_file);
+    if (media.stored >= 2 && media.bytes >= 16 && storedRows.every((row) => row.locator_is_relative)) return media;
     await sleep(500);
   }
   fail(`timed out waiting for stored media artifacts: ${JSON.stringify(media)}`);
@@ -711,7 +740,7 @@ async function waitForBlobVideoStored(timeoutMs = 20000) {
   let media = { rows: [], stored: 0, bytes: 0, tasks: {} };
   while (Date.now() - started < timeoutMs) {
     media = queryDbMediaState();
-    const row = media.rows.find((item) => item.media_type === 'video' && String(item.source_url || '').startsWith('blob:') && item.has_file && Number(item.file_size || 0) >= 16);
+    const row = media.rows.find((item) => item.media_type === 'video' && String(item.source_url || '').startsWith('blob:') && item.has_file && item.locator_is_relative && Number(item.file_size || 0) >= 16);
     if (row) return { media, row };
     await sleep(500);
   }
@@ -861,16 +890,20 @@ async function runScenario() {
   const queueLengths = await waitForQueuesEmpty(browserCdp, storageSessionId);
   const mediaQueueCounts = await waitForMediaQueueEmpty(browserCdp, storageSessionId);
   const mediaQueueTotal = Object.values(mediaQueueCounts).reduce((sum, value) => sum + Number(value || 0), 0);
-  if (queueLengths.captureQueue !== 0 || queueLengths.visitEventQueue !== 0 || mediaQueueTotal !== 0) {
+  if (queueLengths.captureQueue !== 0 || queueLengths.visitEventQueue !== 0 || queueLengths.legacyCaptureQueue !== 0 || queueLengths.legacyVisitEventQueue !== 0 || mediaQueueTotal !== 0) {
     const queueDebug = await getQueueDebug(browserCdp, storageSessionId);
     fail(`extension queues not drained/empty: ${JSON.stringify({ ...queueLengths, mediaQueueCounts })} debug=${JSON.stringify(queueDebug).slice(0, 2000)}`);
+  }
+  const outboxTelemetry = await getOutboxTelemetry(browserCdp, storageSessionId);
+  if (!outboxTelemetry.available || outboxTelemetry.capture?.max_bytes !== 32 * 1024 * 1024 || outboxTelemetry.lifecycle?.max_bytes !== 2 * 1024 * 1024 || outboxTelemetry.media?.max_tasks !== 500 || outboxTelemetry.media?.max_blob_bytes !== 512 * 1024 * 1024 || outboxTelemetry.media?.task_count !== 0 || outboxTelemetry.media?.blob_count !== 0) {
+    fail(`extension outbox telemetry/quota verification failed: ${JSON.stringify(outboxTelemetry)}`);
   }
   log('extension capture, lifecycle, and media queues are empty');
 
   const counts = queryDbCounts();
   const expectedDocuments = allMode ? 6 : 3;
   const expectedSnapshots = allMode ? 6 : 3;
-  if (counts.documents !== expectedDocuments || counts.snapshots !== expectedSnapshots || counts.chunks < expectedSnapshots || counts.visit_events < 1) {
+  if (counts.documents !== expectedDocuments || counts.snapshots !== expectedSnapshots || counts.sqlite_authoritative_snapshots !== expectedSnapshots || counts.chunks < expectedSnapshots || counts.visit_events < 1 || counts.browser_identity_observations < expectedSnapshots) {
     fail(`unexpected DB counts after policy-mode scenarios: ${JSON.stringify({ policyMode, counts, expectedDocuments, expectedSnapshots })}`);
   }
   log(`DB counts ${JSON.stringify(counts)}`);

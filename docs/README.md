@@ -14,6 +14,7 @@
 | Understand value, maturity, and risk posture quickly | [`EXECUTIVE_BRIEF.md`](EXECUTIVE_BRIEF.md) |
 | Use the system day to day | [`USER_GUIDE.md`](USER_GUIDE.md) |
 | Understand the architecture | [`ARCHITECTURE.md`](ARCHITECTURE.md), [`architecture/c4-diagrams.md`](architecture/c4-diagrams.md) |
+| Inspect canonical requirements and V-model evidence | [`../requirements/catalog.toml`](../requirements/catalog.toml), [`test-plan.md`](test-plan.md), [`TESTS.md`](TESTS.md) |
 | Understand architecture/design decision history | [`architecture/adr/README.md`](architecture/adr/README.md) |
 | See behavioral Mermaid flows/diagrams | [`DIAGRAMS.md`](DIAGRAMS.md) |
 | Call or extend the HTTP API | [`api.md`](api.md) |
@@ -23,8 +24,13 @@
 | Check what is implemented vs pending | [`STATUS.md`](STATUS.md) |
 | Model storage growth | [`storage-growth-model.md`](storage-growth-model.md) |
 | Understand retention, compaction, export, and backup posture | [`retention-compaction-backup.md`](retention-compaction-backup.md) |
+| Review the current blob-root migration helper and its safety limits | [`blob-root-migration.md`](blob-root-migration.md) |
+| Inspect or operate SQLite schema migrations | [`database-migrations.md`](database-migrations.md), [`architecture/adr/0028-use-versioned-restore-backed-sqlite-migrations.md`](architecture/adr/0028-use-versioned-restore-backed-sqlite-migrations.md) |
 | Understand durable lazy media sidecars | [`ARCHITECTURE.md`](ARCHITECTURE.md#durable-media-sidecar-architecture), [`media-artifacts.md`](media-artifacts.md) |
 | Run verification gates | [`TESTS.md`](TESTS.md), [`test-plan.md`](test-plan.md) |
+| Review the measured branch-coverage baseline and ratchet | [`coverage-baseline.md`](coverage-baseline.md) |
+| Review Phase 0 gate evidence | [`verification/phase-0-gate-2026-07-10.md`](verification/phase-0-gate-2026-07-10.md) |
+| Review Phase 2 gate evidence | [`verification/phase-2-gate-2026-07-10.md`](verification/phase-2-gate-2026-07-10.md) |
 
 ---
 
@@ -35,9 +41,11 @@
 | Publish-ready front door | `browser-memory-daemon-high-level-doc.html`, `scripts/showcase.spec.json`, `scripts/generate_showcase.py` |
 | Markdown-to-HTML companions | `scripts/render_docs.py`, `scripts/mermaid-theme.json`, generated `*.html` siblings |
 | Generated test inventory | `scripts/generate_test_inventory.py`, `docs/TESTS.md` generated regions |
+| Hermetic fast quality gate | `scripts/run-fast-gate.sh`, `pyproject.toml`, `docs/coverage-baseline.md` |
 | Daemon runtime/config | `daemon/src/browser_memory_daemon/config.py`, `scripts/install-daily-driver.sh` |
-| HTTP API and UI serving | `daemon/src/browser_memory_daemon/app.py`, `ui/` |
+| HTTP API, application use cases, and UI serving | `daemon/src/browser_memory_daemon/http_server.py`, `daemon/src/browser_memory_daemon/application.py`, `daemon/src/browser_memory_daemon/app.py`, `ui/` |
 | Ingest/storage/search/forget | `ingest.py`, `schema.sql`, `search.py`, `forget.py` |
+| SQLite migration lifecycle | `migrations.py`, `migration_steps/`, `database-migrations.md` |
 | Capture policy modes | `policy.py`, `policy_store.py`, `extension/src/extractor.js`, `service_worker.js` |
 | Media sidecars | `daemon/src/browser_memory_daemon/media.py`, `media_worker.py`, `extension/src/media_queue.js`, `service_worker.js` |
 | Chrome extension extraction/bridge | `extension/src/extractor.js`, `content_script.js`, `service_worker.js` |
@@ -71,6 +79,7 @@ policy_mode = all
 python3.11 -m venv .venv
 . .venv/bin/activate
 python -m pip install -r requirements-dev.txt
+BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-fast-gate.sh
 BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-e2e.sh
 python scripts/generate_test_inventory.py --check
 python scripts/generate_showcase.py --spec scripts/showcase.spec.json --check

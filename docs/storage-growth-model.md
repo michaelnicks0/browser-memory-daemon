@@ -8,7 +8,7 @@
 
 ## TL;DR
 
-The implementation is **text-first** with optional bounded media blobs. Text/FTS growth remains manageable; media is intentionally cache-like and now has explicit size gates plus purge/rehydrate controls. Blob bytes can be moved to a configured WSL-visible NAS root with `BMD_BLOB_ROOT` while SQLite/FTS stays under the WSL runtime root.
+The implementation is **text-first** with optional bounded media blobs. Text/FTS growth remains manageable; media is intentionally cache-like and now has explicit size gates plus purge/rehydrate controls. Final media bytes can use a guarded WSL-visible NAS `BMD_MEDIA_ROOT` while SQLite/FTS and reconstructible derivatives stay local; an opt-in local spool has an independent hard byte cap for mount outages.
 
 Using a representative daily-driver baseline and the daemon's current storage multiplier, the most realistic planning range is:
 

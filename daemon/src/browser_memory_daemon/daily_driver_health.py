@@ -1,22 +1,24 @@
 from __future__ import annotations
 
-from collections import Counter
-from dataclasses import dataclass
-from datetime import datetime, timezone
 import json
 import os
-from pathlib import Path
 import re
 import shutil
 import sqlite3
 import stat
 import subprocess
 import time
-from typing import Any, Callable
 import urllib.error
 import urllib.request
+from collections import Counter
+from collections.abc import Callable
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any
 
 from .config import RuntimeConfig
+from .media_storage import media_root_readiness
 
 DAILY_DRIVER_UNITS = (
     "browser-memory-daemon.service",
@@ -50,6 +52,7 @@ _RUNTIME_TABLES = (
     "privacy_rules",
     "audit_events",
     "deletion_receipts",
+    "blob_storage_records",
 )
 _EXTENSION_TOKEN_FILES = (
     "src/service_worker.js",
@@ -173,7 +176,7 @@ def daily_driver_health_snapshot(
 
     return {
         "ok": not errors,
-        "generated_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+        "generated_at": datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
         "summary": {
             "status": "error" if errors else "warning" if warnings else "ok",
             "errors": errors,
@@ -537,7 +540,16 @@ def _latest_media_worker_run(conn: sqlite3.Connection) -> dict[str, Any] | None:
         "created_at": row["created_at"],
         "age_seconds": max(0, int(row["age_seconds"] or 0)),
     }
-    for key in ("worker_kind", "attempted", "stored", "failed", "skipped", "already_stored"):
+    for key in (
+        "worker_kind",
+        "attempted",
+        "stored",
+        "failed",
+        "skipped",
+        "already_stored",
+        "reconciled_stored_tasks",
+        "reconciled_cdp_blob_coverage",
+    ):
         if key in metadata:
             output[key] = metadata[key]
     return output
@@ -551,7 +563,16 @@ def _media_worker_throughput(conn: sqlite3.Connection) -> dict[str, dict[str, in
 
 
 def _media_worker_window(conn: sqlite3.Connection, sqlite_modifier: str) -> dict[str, int]:
-    totals = {"runs": 0, "attempted": 0, "stored": 0, "failed": 0, "skipped": 0, "already_stored": 0}
+    totals = {
+        "runs": 0,
+        "attempted": 0,
+        "stored": 0,
+        "failed": 0,
+        "skipped": 0,
+        "already_stored": 0,
+        "reconciled_stored_tasks": 0,
+        "reconciled_cdp_blob_coverage": 0,
+    }
     try:
         rows = conn.execute(
             """
@@ -567,7 +588,15 @@ def _media_worker_window(conn: sqlite3.Connection, sqlite_modifier: str) -> dict
     totals["runs"] = len(rows)
     for row in rows:
         metadata = _safe_json_dict(row["metadata_json"])
-        for key in ("attempted", "stored", "failed", "skipped", "already_stored"):
+        for key in (
+            "attempted",
+            "stored",
+            "failed",
+            "skipped",
+            "already_stored",
+            "reconciled_stored_tasks",
+            "reconciled_cdp_blob_coverage",
+        ):
             totals[key] += _safe_int(metadata.get(key)) or 0
     return totals
 
@@ -591,9 +620,18 @@ def _storage_status(config: RuntimeConfig, extension_dir: Path | None) -> dict[s
         "clean_text_root": config.clean_text_root,
         "media_root": config.media_root,
     }
+    if config.media_spool_root is not None:
+        paths["media_spool_root"] = config.media_spool_root
     if extension_dir is not None:
         paths["extension_dir"] = extension_dir
-    return {name: _disk_usage(path) for name, path in paths.items()}
+    output = {name: _disk_usage(path) for name, path in paths.items()}
+    readiness = media_root_readiness(config)
+    output.setdefault("media_root", {})["mount_guard"] = {
+        **readiness.as_dict(),
+        "required": readiness.mount_required or readiness.identity_required,
+        "spool_enabled": config.media_spool_enabled,
+    }
+    return output
 
 
 def _process_arg_secrecy(main_pid: int | None, runner: CommandRunner, *, api_token: str) -> dict[str, Any]:
@@ -668,6 +706,14 @@ def _env_file_state(path: Path, *, expected_api_token: str | None) -> dict[str, 
             "owner_only_permissions": _owner_only_permissions(path),
             "api_token_assignment_present": "BMD_API_TOKEN=" in text,
             "policy_mode_assignment_present": "BMD_POLICY_MODE=" in text,
+            "blob_root_assignment_present": "BMD_BLOB_ROOT=" in text,
+            "derivative_root_assignment_present": "BMD_DERIVATIVE_ROOT=" in text,
+            "media_root_assignment_present": "BMD_MEDIA_ROOT=" in text,
+            "media_spool_root_assignment_present": "BMD_MEDIA_SPOOL_ROOT=" in text,
+            "max_media_spool_bytes_assignment_present": "BMD_MAX_MEDIA_SPOOL_BYTES=" in text,
+            "media_root_identity_assignment_present": "BMD_MEDIA_ROOT_IDENTITY=" in text,
+            "require_blob_root_mount_assignment_present": "BMD_REQUIRE_BLOB_ROOT_MOUNT=" in text,
+            "require_media_root_mount_assignment_present": "BMD_REQUIRE_MEDIA_ROOT_MOUNT=" in text,
             "pythonpath_assignment_present": "PYTHONPATH=" in text,
             "matches_token_file": bool(expected_api_token and f"BMD_API_TOKEN={expected_api_token}" in text),
         }
@@ -876,6 +922,13 @@ def _score_storage(storage: dict[str, Any], errors: list[str], warnings: list[st
             errors.append(f"storage path {name} below hard headroom threshold: {state.get('free_bytes')} bytes free, {state.get('used_percent')}% used")
         elif headroom.get("status") == "warning":
             warnings.append(f"storage path {name} below warning headroom threshold: {state.get('free_bytes')} bytes free, {state.get('used_percent')}% used")
+        mount_guard = state.get("mount_guard") or {}
+        if mount_guard.get("required") and not mount_guard.get("ok"):
+            message = f"storage path {name} media-root guard failed: {mount_guard.get('status')}"
+            if mount_guard.get("spool_enabled"):
+                warnings.append(message)
+            else:
+                errors.append(message)
 
 
 def _score_install_artifacts(install: dict[str, Any], errors: list[str], warnings: list[str]) -> None:
@@ -903,6 +956,22 @@ def _score_install_artifacts(install: dict[str, Any], errors: list[str], warning
             errors.append("daily-driver environment token does not match token file")
         if not env_file.get("policy_mode_assignment_present"):
             warnings.append("daily-driver environment file is missing BMD_POLICY_MODE")
+        if not env_file.get("blob_root_assignment_present"):
+            warnings.append("daily-driver environment file is missing BMD_BLOB_ROOT")
+        if not env_file.get("derivative_root_assignment_present"):
+            warnings.append("daily-driver environment file is missing BMD_DERIVATIVE_ROOT")
+        if not env_file.get("media_root_assignment_present"):
+            warnings.append("daily-driver environment file is missing BMD_MEDIA_ROOT")
+        if not env_file.get("media_spool_root_assignment_present"):
+            warnings.append("daily-driver environment file is missing BMD_MEDIA_SPOOL_ROOT")
+        if not env_file.get("max_media_spool_bytes_assignment_present"):
+            warnings.append("daily-driver environment file is missing BMD_MAX_MEDIA_SPOOL_BYTES")
+        if not env_file.get("media_root_identity_assignment_present"):
+            warnings.append("daily-driver environment file is missing BMD_MEDIA_ROOT_IDENTITY")
+        if not env_file.get("require_blob_root_mount_assignment_present"):
+            warnings.append("daily-driver environment file is missing BMD_REQUIRE_BLOB_ROOT_MOUNT")
+        if not env_file.get("require_media_root_mount_assignment_present"):
+            warnings.append("daily-driver environment file is missing BMD_REQUIRE_MEDIA_ROOT_MOUNT")
         if not env_file.get("pythonpath_assignment_present"):
             warnings.append("daily-driver environment file is missing PYTHONPATH")
 
@@ -1019,7 +1088,7 @@ def _file_size(path: Path) -> int:
 
 
 def _realtime_us_to_iso(value: int) -> str:
-    return datetime.fromtimestamp(value / 1_000_000, tz=timezone.utc).isoformat(timespec="seconds")
+    return datetime.fromtimestamp(value / 1_000_000, tz=UTC).isoformat(timespec="seconds")
 
 
 def _select_keys(data: dict[str, Any], keys: tuple[str, ...]) -> dict[str, Any]:

@@ -138,6 +138,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">[</span>--port<span style="color: #F8F8F2"> </span>PORT<span style="color: #FF4689">]</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">[</span>--token<span style="color: #F8F8F2"> </span>TOKEN<span style="color: #FF4689">]</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">[</span>--runtime-root<span style="color: #F8F8F2"> </span>PATH<span style="color: #FF4689">]</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">[</span>--blob-root<span style="color: #F8F8F2"> </span>PATH<span style="color: #FF4689">]</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">[</span>--derivative-root<span style="color: #F8F8F2"> </span>PATH<span style="color: #FF4689">]</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">[</span>--media-root<span style="color: #F8F8F2"> </span>PATH<span style="color: #FF4689">]</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">[</span>--media-spool-root<span style="color: #F8F8F2"> </span>PATH<span style="color: #FF4689">]</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">[</span>--policy-mode<span style="color: #F8F8F2"> </span>all<span style="color: #F8F8F2">|</span>recall<span style="color: #F8F8F2">|</span>balanced<span style="color: #F8F8F2">|</span>strict<span style="color: #FF4689">]</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span>COMMAND<span style="color: #F8F8F2"> </span><span style="color: #FF4689">[</span>COMMAND_ARGS<span style="color: #FF4689">]</span>
 </code></pre></div>
@@ -173,6 +177,51 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Tests/e2e use temp runtime roots.</td>
 </tr>
 <tr>
+<td><code>--blob-root</code> / <code>BMD_BLOB_ROOT</code></td>
+<td><code>&lt;runtime-root&gt;/blobs</code></td>
+<td>Compatibility parent for legacy layouts; SQLite/WAL remains local.</td>
+</tr>
+<tr>
+<td><code>--derivative-root</code> / <code>BMD_DERIVATIVE_ROOT</code></td>
+<td><code>&lt;blob-root&gt;</code> compatibility default</td>
+<td>Reconstructible derivative placement, including legacy clean-text sidecars. Set explicitly only with a reviewed legacy-sidecar migration.</td>
+</tr>
+<tr>
+<td><code>--media-root</code> / <code>BMD_MEDIA_ROOT</code></td>
+<td><code>&lt;blob-root&gt;/media</code></td>
+<td>Final disposable media bytes. Explicit external roots require mount and identity-marker verification.</td>
+</tr>
+<tr>
+<td><code>--media-spool-root</code> / <code>BMD_MEDIA_SPOOL_ROOT</code></td>
+<td>disabled</td>
+<td>Local durable outage spool; must be under the runtime data root and paired with positive <code>BMD_MAX_MEDIA_SPOOL_BYTES</code>.</td>
+</tr>
+<tr>
+<td><code>BMD_MAX_MEDIA_SPOOL_BYTES</code></td>
+<td><code>0</code></td>
+<td>Hard spool cap. A positive value and spool root must be configured together.</td>
+</tr>
+<tr>
+<td><code>BMD_MAX_MEDIA_INFLIGHT_BYTES</code></td>
+<td><code>524288000</code></td>
+<td>Positive per-process cap for active media transfer bytes; must be at least <code>BMD_MAX_MEDIA_ARTIFACT_BYTES</code>.</td>
+</tr>
+<tr>
+<td><code>BMD_MAX_MEDIA_CONCURRENT_REQUESTS</code></td>
+<td><code>4</code></td>
+<td>Positive per-process cap for active media HTTP requests/transfers.</td>
+</tr>
+<tr>
+<td><code>BMD_MEDIA_ROOT_IDENTITY</code></td>
+<td>unset</td>
+<td>Expected exact content of <code>.bmd-media-root-id</code>; required for guarded external roots.</td>
+</tr>
+<tr>
+<td><code>BMD_REQUIRE_MEDIA_ROOT_MOUNT</code></td>
+<td><code>0</code></td>
+<td>Forces mount/identity guarding even for a compatibility-root layout. Explicit external media roots are guarded regardless.</td>
+</tr>
+<tr>
 <td><code>--policy-mode</code> / <code>BMD_POLICY_MODE</code></td>
 <td><code>all</code></td>
 <td>Daily-driver default is maximum recall.</td>
@@ -201,6 +250,16 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Raw JSON string.</td>
 </tr>
 <tr>
+<td><code>migrate --check</code></td>
+<td>Read-only schema fingerprint, version, ledger checksum, and pending-step report.</td>
+<td>Pretty JSON; exits <code>0</code> when current, <code>2</code> when compatible work is pending, and <code>1</code> when incompatible.</td>
+</tr>
+<tr>
+<td><code>migrate --execute</code></td>
+<td>Apply pending ordered migrations. Future destructive steps require disk headroom and a verified online backup.</td>
+<td>Pretty JSON including applied/stamped versions and backup path when applicable.</td>
+</tr>
+<tr>
 <td><code>doctor [--storage-census]</code></td>
 <td>Fetch <code>/doctor</code>; default uses fast DB-derived storage counts, <code>--storage-census</code> opts into an exact filesystem walk.</td>
 <td>Pretty JSON.</td>
@@ -212,22 +271,22 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td><code>recent --limit N</code></td>
-<td>Recent captures.</td>
+<td>Recent capture observations with contemporaneous snapshot snippets; explicit ambiguous legacy-visit fallback.</td>
 <td>Pretty JSON list.</td>
 </tr>
 <tr>
 <td><code>timeline [--date YYYY-MM-DD] [--after ISO] [--before ISO] [--limit N]</code></td>
-<td>Capture timeline.</td>
+<td>Observation-first capture timeline plus a visit-deduplicated bounded summary.</td>
 <td>Pretty JSON.</td>
 </tr>
 <tr>
 <td><code>document DOCUMENT_ID</code></td>
-<td>Document details.</td>
+<td>Document details including observations and untrusted URL claims.</td>
 <td>Pretty JSON.</td>
 </tr>
 <tr>
 <td><code>snapshot SNAPSHOT_ID</code></td>
-<td>Snapshot details and text.</td>
+<td>Snapshot details, text, and exact referencing observations.</td>
 <td>Pretty JSON.</td>
 </tr>
 <tr>
@@ -241,9 +300,9 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Pretty JSON. Applies in every mode, including <code>all</code>.</td>
 </tr>
 <tr>
-<td><code>forget [--domain DOMAIN] [--url URL]</code></td>
-<td>Delete memory by domain or URL.</td>
-<td>Pretty JSON deletion receipt.</td>
+<td><code>forget [--domain DOMAIN|--url URL] [--dry-run|--execute] [--max-records N]</code></td>
+<td>Preview by default or explicitly execute bounded deletion by one literal domain hostname/IP or absolute URL.</td>
+<td>Pretty JSON selection preview or deletion receipt.</td>
 </tr>
 <tr>
 <td><code>capture-fixture --url URL --title TITLE --text TEXT</code></td>
@@ -264,6 +323,46 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td><code>media-cache rehydrate [--domain DOMAIN] [--document-id ID] [--snapshot-id ID] [--limit N]</code></td>
 <td>Queue/refetch purged public media refs.</td>
 <td>Pretty JSON worker summary.</td>
+</tr>
+<tr>
+<td><code>media-cache requeue --reason {snapshot-budget,storage-budget,all-budget} [--domain DOMAIN] [--document-id ID] [--snapshot-id ID] [--limit N] [--dry-run|--execute]</code></td>
+<td>Preview or execute a bounded retry of terminal budget skips after an operator policy/cap change. At least one scope is required.</td>
+<td>Pretty JSON selection/update summary; dry-run by default.</td>
+</tr>
+<tr>
+<td><code>blob-root migrate [--from-root PATH] [--execute] [--remove-source]</code></td>
+<td>Dry-run by default; copies DB-referenced clean-text/media blobs to the configured root and rewrites paths only with <code>--execute</code>.</td>
+<td>Pretty JSON migration summary. <code>--remove-source</code> remains an explicit post-copy action.</td>
+</tr>
+<tr>
+<td><code>snapshot-text reconcile [--limit N] [--execute]</code></td>
+<td>Dry-run by default; promotes only exact hash-verified chunk reconstructions or contained legacy sidecars into SQLite complete-text authority.</td>
+<td>Pretty JSON with scanned/resolved/applied/source/unresolved counts. <code>--execute</code> is required to mutate rows.</td>
+</tr>
+<tr>
+<td><code>media-spool status</code></td>
+<td>Report final-root readiness plus configured cap, DB-backed artifact/reservation counts, filesystem-accounted bytes, and available capacity.</td>
+<td>Pretty JSON; read-only.</td>
+</tr>
+<tr>
+<td><code>media-spool drain [--limit N] [--execute]</code></td>
+<td>Preview or execute bounded spool-to-media-root transitions.</td>
+<td>Dry-run by default. Execute streams and verifies size/SHA-256, commits the SQLite tier switch, then removes the spool source.</td>
+</tr>
+<tr>
+<td><code>storage reconcile [--limit N] [--stale-stage-seconds N] [--execute]</code></td>
+<td>Preview or execute contained blob convergence across pending tombstones, missing references, in-root orphans, and stale stages.</td>
+<td>Dry-run by default. Exit <code>0</code> when no retryable tombstones remain; exit <code>2</code> when deletion work remains blocked/failed.</td>
+</tr>
+<tr>
+<td><code>backup create --destination ABS_PATH [--include-derivatives] [--execute]</code></td>
+<td>Preview or atomically create a manifest-backed SQLite-authoritative local bundle.</td>
+<td>Dry-run by default. Source DB must be real/contained; output is private <code>0700</code>/<code>0600</code>; media/spool/secrets are excluded; optional derivatives are reference- and hash-verified.</td>
+</tr>
+<tr>
+<td><code>backup restore --source ABS_PATH --destination ABS_PATH [--execute]</code></td>
+<td>Validate or restore a bundle into an absent explicit runtime root.</td>
+<td>Dry-run performs immutable SQLite/schema/FTS/FK/manifest validation without creating the destination. Execute publishes a private runtime and rejects existing destinations or any path/hash/semantic mismatch.</td>
 </tr>
 </tbody>
 </table>
@@ -286,8 +385,20 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>HTTP <code>401</code>; CLI surfaces exception/non-zero.</td>
 </tr>
 <tr>
+<td>Compatible migration work pending</td>
+<td><code>migrate --check</code> prints the pending ordered steps and exits <code>2</code> without creating or mutating the database.</td>
+</tr>
+<tr>
+<td>Migration incompatibility/failure</td>
+<td><code>migrate</code> prints JSON with <code>compatible=false</code>, <code>ready=false</code>, and a redaction-safe error, then exits <code>1</code>.</td>
+</tr>
+<tr>
 <td><code>daily-driver-health</code> hard error</td>
 <td>Prints JSON with <code>ok=false</code> and exits <code>1</code>; use <code>--no-fail</code> for report-only collection.</td>
+</tr>
+<tr>
+<td>Pending blob deletion</td>
+<td>Forget/purge JSON reports pending work; <code>doctor</code> is degraded and <code>storage reconcile --execute</code> exits <code>2</code> until blocked/failed records converge.</td>
 </tr>
 <tr>
 <td>Bad capture payload</td>
@@ -302,8 +413,12 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Stores unredacted payload when payload is otherwise parseable.</td>
 </tr>
 <tr>
-<td>Forget by neither URL nor domain</td>
-<td>HTTP <code>400</code> expected from daemon validation.</td>
+<td>Forget by neither URL nor domain, or both URL and domain</td>
+<td>CLI exits with parser error; HTTP API returns <code>400</code> from daemon validation.</td>
+</tr>
+<tr>
+<td>Forget execution exceeds <code>--max-records</code> / <code>max_records</code></td>
+<td>No deletion/audit/tombstone state is written; API returns <code>400 invalid_request</code> and CLI exits non-zero.</td>
 </tr>
 </tbody>
 </table>
@@ -338,10 +453,22 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <span style="color: #F8F8F2">  </span>policy-rules<span style="color: #F8F8F2"> </span>--block-url-prefix<span style="color: #F8F8F2"> </span>http://127.0.0.1:32400/
 </code></pre></div>
 
-<p>Forget a domain:</p>
+<p>Preview forgetting a domain. Domain selectors are literal hostnames/IPs and select that host plus subdomains; preview is the default and does not mutate state:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">PYTHONPATH</span><span style="color: #FF4689">=</span>daemon/src<span style="color: #F8F8F2"> </span>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span>--token<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;</span><span style="color: #66D9EF">$(</span>tr<span style="color: #F8F8F2"> </span>-d<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&#39;\r\n&#39;</span><span style="color: #F8F8F2"> </span>&lt;<span style="color: #F8F8F2"> </span>~/.config/browser-memory-daemon/token<span style="color: #66D9EF">)</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span>forget<span style="color: #F8F8F2"> </span>--domain<span style="color: #F8F8F2"> </span>example.com
+</code></pre></div>
+
+<p>Execute only after reviewing <code>guard.selected_records</code> and <code>counts</code>. The default bound is 10,000 selected database/FTS records; raise it deliberately only when the preview justifies the larger scope:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">PYTHONPATH</span><span style="color: #FF4689">=</span>daemon/src<span style="color: #F8F8F2"> </span>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>--token<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;</span><span style="color: #66D9EF">$(</span>tr<span style="color: #F8F8F2"> </span>-d<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&#39;\r\n&#39;</span><span style="color: #F8F8F2"> </span>&lt;<span style="color: #F8F8F2"> </span>~/.config/browser-memory-daemon/token<span style="color: #66D9EF">)</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>forget<span style="color: #F8F8F2"> </span>--domain<span style="color: #F8F8F2"> </span>example.com<span style="color: #F8F8F2"> </span>--execute<span style="color: #F8F8F2"> </span>--max-records<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">10000</span>
+</code></pre></div>
+
+<p>Preview one URL. URL selectors follow storage policy: <code>all</code> mode matches the literal stored URL; non-<code>all</code> modes match the redacted URL representation used during ingest. Exact observed document aliases are included, while claims never merge identity. Execute receipts redact sensitive selector values:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">PYTHONPATH</span><span style="color: #FF4689">=</span>daemon/src<span style="color: #F8F8F2"> </span>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>--token<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;</span><span style="color: #66D9EF">$(</span>tr<span style="color: #F8F8F2"> </span>-d<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&#39;\r\n&#39;</span><span style="color: #F8F8F2"> </span>&lt;<span style="color: #F8F8F2"> </span>~/.config/browser-memory-daemon/token<span style="color: #66D9EF">)</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>forget<span style="color: #F8F8F2"> </span>--url<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&#39;https://example.com/article?token=...&#39;</span>
 </code></pre></div>
 
 <p>Media cache dry-run:</p>
@@ -355,6 +482,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <ul>
 <li>CLI output is currently JSON but not formally versioned.</li>
 <li><code>capture-fixture</code> exists for tests/smoke checks, not browser capture replacement.</li>
+<li><code>migrate --check/--execute</code>, <code>blob-root migrate</code>, <code>snapshot-text reconcile</code>, and <code>storage reconcile</code> are current repository migration/reconciliation helpers; dry-run remains the default for filesystem-backed reconciliation.</li>
+<li><code>storage reconcile</code> never traverses an unavailable external media root and never deletes outside configured roots.</li>
+<li><code>backup create</code> and <code>backup restore</code> require absolute paths and are dry-run first. Create rejects active runtime/storage overlap and symlinked destination parents; restore never overwrites or merges an existing destination.</li>
+<li>Backup defaults to private SQLite plus manifest files. Tokens/config, Chrome state, final media, and spool bytes are excluded; <code>--include-derivatives</code> adds only referenced contained clean-text sidecars and restore normalizes legacy absolute references.</li>
 <li>Future CLI changes should update this contract and <code>daemon/tests/e2e/test_cli_admin.py</code> together.</li>
 </ul>
   </article>

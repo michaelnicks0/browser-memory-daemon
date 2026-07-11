@@ -1,7 +1,7 @@
 # Implement local backup/export command
 
 ## Status
-deferred-split
+closed — implemented 2026-07-10
 
 ## Question
 
@@ -15,6 +15,9 @@ task
 
 - `docs/retention-compaction-backup.md`
 - `docs/architecture/adr/0019-use-durable-text-retention-with-wal-aware-local-backup.md`
+- `docs/architecture/adr/0041-use-manifest-backed-text-first-backup-and-empty-root-restore.md`
+- `daemon/src/browser_memory_daemon/backup_ops.py`
+- `daemon/tests/integration/test_backup_restore.py`
 - `daemon/src/browser_memory_daemon/schema.sql`
 - `daemon/src/browser_memory_daemon/forget.py`
 - `docs/api.md#deletion-payloads`
@@ -30,15 +33,31 @@ task
 - Local-only backup/export destination; no remote upload or publishing.
 - Consistent SQLite backup via online backup / `VACUUM INTO` or explicit quiesced copy mode.
 - Manifest with counts, file sizes, hashes, created-at, policy mode, and include/exclude flags; no tokens/secrets/raw captured content.
-- Include `blobs/clean-text/` by default; make `blobs/media/` optional and explicit.
+- Include SQLite-authoritative complete text by default; make referenced clean-text compatibility derivatives optional.
+- Exclude disposable media and spool bytes. ADR-0041 intentionally tightens the older ticket's optional-media wording to the adopted backup boundary.
 - Exclude token/env/unit files and Windows extension artifact by default.
 - Restore smoke against the exported DB: opens read-only and passes `PRAGMA integrity_check` plus FTS consistency.
 - Docs and tests that state forget deletes the live store, not historical backups already created.
 
 ## Resolution
 
-Deferred split from ticket 012; not part of the current durability/performance/coverage closeout unless explicitly promoted.
+Implemented as a promoted hardening slice under ADR-0041:
+
+- `backup create` and `backup restore` are dry-run first and require explicit absolute local paths;
+- SQLite online backup captures committed WAL state into a staged, hash-manifested bundle;
+- tokens/config, Chrome state, media cache, and media spool are excluded;
+- optional derivatives are DB-referenced, root-contained, deduplicated, and hash-verified;
+- restore dry-run and execute reject traversal, symlinks, malformed provenance/types, undeclared/duplicate/missing files, tampering, truncation, schema/fingerprint/FTS/foreign-key mismatch, active-root overlap, and existing destinations;
+- bundle/restore trees enforce private permissions, source databases must be real contained files, populated config/state/media/spool fixtures remain excluded, and legacy derivative references are normalized on restore;
+- Linux no-replace publication and injected interruption tests prove no partial or raced destination overwrite;
+- restored search, snapshot detail/provenance, and forget work without media bytes.
+
+Focused evidence:
+
+```bash
+/tmp/browser-memory-daemon-verify-venv/bin/python -m pytest -q daemon/tests/integration/test_backup_restore.py
+```
 
 ## New tickets / fog updates
 
-Pending implementation.
+Backup retention/pruning, encryption/signing, and automatic compaction remain separate approval-gated work. Ticket 017 remains open for retention maintenance.

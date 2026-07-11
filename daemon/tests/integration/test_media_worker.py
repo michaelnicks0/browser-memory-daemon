@@ -1,22 +1,35 @@
-from contextlib import contextmanager
-from concurrent.futures import ThreadPoolExecutor
-from dataclasses import replace
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import base64
 import io
 import json
 import threading
 import time
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
+from dataclasses import replace
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 
+import browser_memory_daemon.media_fetch as media_fetch_module
+import browser_memory_daemon.media_hls as media_hls_module
+import browser_memory_daemon.media_transport as media_transport_module
 from browser_memory_daemon.app import make_server
 from browser_memory_daemon.config import load_config
 from browser_memory_daemon.db import connect, init_db
-import browser_memory_daemon.media as media_module
 from browser_memory_daemon.ingest import ingest_capture
-from browser_memory_daemon.media import claim_media_fetch_tasks, fetch_pending_media_artifacts, media_artifacts_for_snapshot, purge_media_cache, store_media_artifact, store_media_blob_stream
-from browser_memory_daemon.media_worker import normalize_cdp_covered_blob_video_refs, normalize_cdp_hls_manifest_refs, normalize_hls_audio_renditions, normalize_hls_video_skips, normalize_legacy_blob_video_skips, normalize_opaque_blob_video_refs, normalize_snapshot_budget_skips, normalize_storage_budget_skips, normalize_terminal_failed_artifacts, run_once
+from browser_memory_daemon.media import (
+    claim_media_fetch_tasks,
+    fetch_pending_media_artifacts,
+    media_artifacts_for_snapshot,
+    purge_media_cache,
+    store_media_artifact,
+    store_media_blob_stream,
+)
+from browser_memory_daemon.media_ops import reconcile_cdp_blob_coverage
+from browser_memory_daemon.media_resources import media_resource_budget
+from browser_memory_daemon.media_worker import run_once
 from browser_memory_daemon.models import CapturePayload
+from browser_memory_daemon.search import search_memory
 
 
 def post_json(url: str, token: str, body: dict) -> tuple[int, dict]:
@@ -51,6 +64,313 @@ def http_status_fixture_server(status_code: int, *, content_type: str = "image/p
         server.server_close()
 
 
+def allow_loopback_public_fetch(cfg):
+    return replace(cfg, media_public_fetch_allow_private_hosts=("127.0.0.1", "localhost", "::1"))
+
+
+class FakeFetchResponse:
+    def __init__(self, *, status: int = 200, headers: dict[str, str] | None = None, body: bytes = b""):
+        self.status = status
+        self.headers = {"content-length": str(len(body)), **(headers or {})}
+        self._body = io.BytesIO(body)
+        self._sock: object | None = None
+        self.bytes_read = 0
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+    def read(self, size: int = -1) -> bytes:
+        chunk = self._body.read(size)
+        self.bytes_read += len(chunk)
+        return chunk
+
+
+def fake_resolver_for(mapping: dict[str, str]):
+    def resolver(host: str, port: int, *args, **kwargs):
+        address = mapping[host]
+        family = media_fetch_module.socket.AF_INET6 if ":" in address else media_fetch_module.socket.AF_INET
+        sockaddr = (address, port, 0, 0) if family == media_fetch_module.socket.AF_INET6 else (address, port)
+        return [(family, media_fetch_module.socket.SOCK_STREAM, 6, "", sockaddr)]
+
+    return resolver
+
+
+def test_guarded_public_fetch_rejects_dns_to_private_without_opening(monkeypatch, tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    opened: list[str] = []
+
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"cdn.example": "10.0.0.5"}))
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", lambda request, *, timeout: opened.append(request.full_url))
+
+    content, mime_type, reason = media_transport_module._fetch_media_bytes(
+        "https://cdn.example/private.png",
+        "https://page.example/full/path?secret=1",
+        media_type="image",
+        max_bytes=100,
+        timeout_seconds=1,
+        config=cfg,
+    )
+
+    assert content == b""
+    assert mime_type == ""
+    assert reason == "fetch-blocked-private-address"
+    assert opened == []
+
+
+def test_guarded_public_fetch_rejects_ipv6_loopback_literal_without_resolving(monkeypatch, tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    opened: list[str] = []
+
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_RESOLVER", lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("resolver should not run")))
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", lambda request, *, timeout: opened.append(request.full_url))
+
+    _content, _mime_type, reason = media_transport_module._fetch_media_bytes(
+        "http://[::1]/loopback.png",
+        "https://page.example/full/path?secret=1",
+        media_type="image",
+        max_bytes=100,
+        timeout_seconds=1,
+        config=cfg,
+    )
+
+    assert reason == "fetch-blocked-private-address"
+    assert opened == []
+
+
+def test_guarded_public_fetch_allowlisted_private_host_omits_referer(monkeypatch, tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    cfg = replace(cfg, media_public_fetch_allow_private_hosts=("private.example",))
+    requests = []
+
+    def opener(request, *, timeout):
+        requests.append(request)
+        return FakeFetchResponse(headers={"content-type": "image/png"}, body=b"image-bytes")
+
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"private.example": "10.0.0.8"}))
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", opener)
+
+    content, mime_type, reason = media_transport_module._fetch_media_bytes(
+        "https://private.example/image.png",
+        "https://page.example/full/path?secret=1",
+        media_type="image",
+        max_bytes=100,
+        timeout_seconds=1,
+        config=cfg,
+    )
+
+    assert content == b"image-bytes"
+    assert mime_type == "image/png"
+    assert reason == ""
+    headers = {key.lower(): value for key, value in requests[0].header_items()}
+    assert "referer" not in headers
+
+
+def test_guarded_public_fetch_revalidates_public_to_private_redirect(monkeypatch, tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    opened: list[str] = []
+
+    def opener(request, *, timeout):
+        opened.append(request.full_url)
+        return FakeFetchResponse(status=302, headers={"location": "http://private.internal/image.png"})
+
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"public.example": "8.8.8.8", "private.internal": "10.0.0.9"}))
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", opener)
+
+    _content, _mime_type, reason = media_transport_module._fetch_media_bytes(
+        "https://public.example/redirect.png",
+        "https://page.example/full/path?secret=1",
+        media_type="image",
+        max_bytes=100,
+        timeout_seconds=1,
+        config=cfg,
+    )
+
+    assert reason == "fetch-blocked-private-address"
+    assert opened == ["https://public.example/redirect.png"]
+
+
+def test_guarded_public_fetch_detects_redirect_loop(monkeypatch, tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    opened: list[str] = []
+
+    def opener(request, *, timeout):
+        opened.append(request.full_url)
+        return FakeFetchResponse(status=302, headers={"location": request.full_url})
+
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"loop.example": "8.8.8.8"}))
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", opener)
+
+    _content, _mime_type, reason = media_transport_module._fetch_media_bytes(
+        "https://loop.example/media.png",
+        "https://page.example/full/path?secret=1",
+        media_type="image",
+        max_bytes=100,
+        timeout_seconds=1,
+        config=cfg,
+    )
+
+    assert reason == "fetch-redirect-loop"
+    assert opened == ["https://loop.example/media.png"]
+
+
+def test_guarded_hls_revalidates_private_child_url(monkeypatch, tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    opened: list[str] = []
+
+    def opener(request, *, timeout):
+        opened.append(request.full_url)
+        return FakeFetchResponse(
+            headers={"content-type": "application/x-mpegURL"},
+            body=b"#EXTM3U\n#EXTINF:1.0,\nhttp://192.168.1.10/segment.ts\n#EXT-X-ENDLIST\n",
+        )
+
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"media.example": "8.8.8.8"}))
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", opener)
+
+    _content, _mime_type, reason = media_transport_module._fetch_media_bytes(
+        "https://media.example/master.m3u8",
+        "https://page.example/full/path?secret=1",
+        media_type="video",
+        max_bytes=1000,
+        timeout_seconds=1,
+        config=cfg,
+    )
+
+    assert reason == "fetch-blocked-private-address"
+    assert opened == ["https://media.example/master.m3u8"]
+
+
+def test_guarded_hls_enforces_total_request_budget(monkeypatch, tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    cfg = replace(cfg, media_hls_max_requests=1)
+    opened: list[str] = []
+
+    def opener(request, *, timeout):
+        opened.append(request.full_url)
+        return FakeFetchResponse(
+            headers={"content-type": "application/x-mpegURL"},
+            body=b"#EXTM3U\n#EXTINF:1.0,\nhttps://media.example/segment.ts\n#EXT-X-ENDLIST\n",
+        )
+
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"media.example": "8.8.8.8"}))
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", opener)
+
+    _content, _mime_type, reason = media_transport_module._fetch_media_bytes(
+        "https://media.example/master.m3u8",
+        "https://page.example/full/path?secret=1",
+        media_type="video",
+        max_bytes=1000,
+        timeout_seconds=1,
+        config=cfg,
+    )
+
+    assert reason == "hls-request-budget-exceeded"
+    assert opened == ["https://media.example/master.m3u8"]
+
+
+def test_guarded_hls_initial_redirect_claims_total_request_budget(monkeypatch, tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    cfg = replace(cfg, media_hls_max_requests=1)
+    opened: list[str] = []
+
+    def opener(request, *, timeout):
+        opened.append(request.full_url)
+        return FakeFetchResponse(status=302, headers={"location": "https://media.example/master.m3u8"})
+
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"media.example": "8.8.8.8"}))
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", opener)
+
+    _content, _mime_type, reason = media_transport_module._fetch_media_bytes(
+        "https://media.example/redirect",
+        "https://page.example/full/path?secret=1",
+        media_type="video",
+        max_bytes=1000,
+        timeout_seconds=1,
+        config=cfg,
+    )
+
+    assert reason == "hls-request-budget-exceeded"
+    assert opened == ["https://media.example/redirect"]
+
+
+def test_guarded_fetch_enforces_deadline_during_slow_response_body(monkeypatch, tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    clock = {"now": 100.0}
+
+    class SlowFetchResponse(FakeFetchResponse):
+        def read(self, size: int = -1) -> bytes:
+            chunk = super().read(size)
+            clock["now"] += 2.0
+            return chunk
+
+    read_timeouts: list[float] = []
+
+    class FakeSocket:
+        def settimeout(self, timeout: float) -> None:
+            read_timeouts.append(timeout)
+
+    response = SlowFetchResponse(headers={"content-type": "video/mp2t"}, body=b"abc")
+    response._sock = FakeSocket()
+
+    def monotonic() -> float:
+        return clock["now"]
+
+    monkeypatch.setattr(media_fetch_module.time, "monotonic", monotonic)
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"media.example": "8.8.8.8"}))
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", lambda request, *, timeout: response)
+    output = io.BytesIO()
+
+    _content, _content_type, _final_url, reason = media_fetch_module._guarded_public_fetch(
+        cfg,
+        "https://media.example/segment.ts",
+        "https://page.example/full/path?secret=1",
+        accept="video/*",
+        max_bytes=1000,
+        timeout_seconds=10,
+        deadline=101.0,
+        output_stream=output,
+    )
+
+    assert reason == "hls-time-budget-exceeded"
+    assert response.bytes_read == 3
+    assert read_timeouts == [1.0]
+    assert output.getvalue() == b""
+
+
+def test_guarded_hls_enforces_initial_playlist_byte_budget(monkeypatch, tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    cfg = replace(cfg, media_hls_playlist_max_bytes=32)
+    opened: list[str] = []
+
+    response = FakeFetchResponse(
+        headers={"content-type": "application/octet-stream"},
+        body=b"#EXTM3U\n" + b"# oversized playlist padding\n" * 4,
+    )
+
+    def opener(request, *, timeout):
+        opened.append(request.full_url)
+        return response
+
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_RESOLVER", fake_resolver_for({"media.example": "8.8.8.8"}))
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", opener)
+
+    _content, _mime_type, reason = media_transport_module._fetch_media_bytes(
+        "https://media.example/disguised.bin",
+        "https://page.example/full/path?secret=1",
+        media_type="video",
+        max_bytes=1000,
+        timeout_seconds=1,
+        config=cfg,
+    )
+
+    assert reason == "media-too-large"
+    assert opened == ["https://media.example/disguised.bin"]
+    assert response.bytes_read == cfg.media_hls_playlist_max_bytes + 1
+
+
 def test_media_worker_processes_data_url_task_and_marks_success(tmp_path):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
     init_db(cfg)
@@ -74,7 +394,50 @@ def test_media_worker_processes_data_url_task_and_marks_success(tmp_path):
         assert task["status"] == "succeeded"
 
 
-def test_media_worker_tasks_are_seeded_when_existing_unresolved_refs_have_no_task(tmp_path):
+def test_media_resource_pressure_does_not_roll_back_searchable_text(tmp_path, monkeypatch):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    cfg = replace(cfg, max_media_concurrent_requests=1, media_fetch_timeout_seconds=0.01)
+    init_db(cfg)
+    monkeypatch.setattr(
+        media_fetch_module,
+        "_PUBLIC_FETCH_RESOLVER",
+        fake_resolver_for({"media.example": "93.184.216.34"}),
+    )
+
+    def unexpected_open(*_args, **_kwargs):
+        raise AssertionError("request slot exhaustion must prevent network open")
+
+    monkeypatch.setattr(media_fetch_module, "_PUBLIC_FETCH_OPENER", unexpected_open)
+    payload = CapturePayload.from_dict(
+        {
+            "url": "https://example.com/text-first-budget",
+            "title": "Text first under media pressure",
+            "text": "Searchable text commits before optional media fetch.",
+            "media_artifacts": [
+                {
+                    "media_type": "image",
+                    "source_url": "https://media.example/image.png",
+                    "mime_type": "image/png",
+                }
+            ],
+        },
+        allow_any_url=True,
+    )
+    with connect(cfg.db_path) as conn:
+        capture = ingest_capture(conn, cfg, payload)
+        conn.commit()
+        with media_resource_budget(cfg).acquire(byte_count=0, request_count=1, timeout=0):
+            summary = run_once(conn, cfg, worker_id="pressure-worker", limit=1)
+        media = media_artifacts_for_snapshot(conn, capture["snapshot_id"])[0]
+        results = search_memory(conn, "Searchable text commits", limit=5)
+
+    assert summary["attempted"] == 1
+    assert media["capture_status"] == "retrying"
+    assert media["status_reason"] == "media-resource-budget"
+    assert results and results[0]["snapshot_id"] == capture["snapshot_id"]
+
+
+def test_init_db_does_not_repeat_historical_media_task_seed(tmp_path):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
     init_db(cfg)
     payload = CapturePayload.from_dict(
@@ -93,8 +456,7 @@ def test_media_worker_tasks_are_seeded_when_existing_unresolved_refs_have_no_tas
         assert conn.execute("SELECT COUNT(*) FROM media_fetch_tasks").fetchone()[0] == 0
     init_db(cfg)
     with connect(cfg.db_path) as conn:
-        task = conn.execute("SELECT status FROM media_fetch_tasks").fetchone()
-        assert task["status"] == "pending"
+        assert conn.execute("SELECT COUNT(*) FROM media_fetch_tasks").fetchone()[0] == 0
 
 
 def test_media_worker_marks_pending_task_succeeded_when_artifact_already_stored(tmp_path):
@@ -122,7 +484,7 @@ def test_media_worker_marks_pending_task_succeeded_when_artifact_already_stored(
         summary = run_once(conn, cfg, worker_id="test-worker", limit=10)
         task = conn.execute("SELECT status, last_error, lease_owner, lease_until FROM media_fetch_tasks").fetchone()
         assert summary["attempted"] == 0
-        assert summary["already_stored"] == 1
+        assert summary["reconciled_stored_tasks"] == 1
         assert task["status"] == "succeeded"
         assert task["last_error"] is None
         assert task["lease_owner"] is None
@@ -130,7 +492,45 @@ def test_media_worker_marks_pending_task_succeeded_when_artifact_already_stored(
         final_media = conn.execute("SELECT file_path FROM media_artifacts WHERE id = ?", (stored_media["id"],)).fetchone()
         assert final_media["file_path"] == stored_path
         assert open(final_media["file_path"], "rb").read() == stored_bytes
-        assert len(list(cfg.media_root.glob(f"{stored_media['id']}*"))) == 1
+        assert Path(final_media["file_path"]).parent == cfg.media_root
+        assert Path(final_media["file_path"]).name != f"{stored_media['id']}.png"
+        assert len([path for path in cfg.media_root.iterdir() if path.is_file()]) == 1
+
+
+def test_media_worker_does_not_auto_requeue_terminal_budget_skips(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    payload = CapturePayload.from_dict(
+        {
+            "url": "https://example.com/terminal-budget",
+            "title": "Terminal budget",
+            "text": "Terminal budget work must converge to no work.",
+            "media_artifacts": [{"media_type": "image", "source_url": "https://cdn.example/budget.png"}],
+        },
+        allow_any_url=True,
+    )
+    with connect(cfg.db_path) as conn:
+        result = ingest_capture(conn, cfg, payload)
+        media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
+        conn.execute(
+            "UPDATE media_artifacts SET capture_status = 'skipped', status_reason = 'snapshot-media-budget' WHERE id = ?",
+            (media["id"],),
+        )
+        conn.execute(
+            "UPDATE media_fetch_tasks SET status = 'skipped', last_error = 'snapshot-media-budget' WHERE artifact_id = ?",
+            (media["id"],),
+        )
+        conn.commit()
+
+        first = run_once(conn, cfg, worker_id="test-worker", limit=10)
+        second = run_once(conn, cfg, worker_id="test-worker", limit=10)
+        assert first["attempted"] == second["attempted"] == 0
+        assert first["reconciled_cdp_blob_coverage"] == second["reconciled_cdp_blob_coverage"] == 0
+        row = conn.execute(
+            "SELECT capture_status, status_reason FROM media_artifacts WHERE id = ?",
+            (media["id"],),
+        ).fetchone()
+        assert tuple(row) == ("skipped", "snapshot-media-budget")
 
 
 def test_fetch_pending_media_artifacts_respects_active_lease_and_recovers_stale_lease(tmp_path):
@@ -263,7 +663,15 @@ def test_concurrent_media_blob_writes_use_distinct_temp_files(tmp_path):
         row = conn.execute("SELECT file_path, capture_status FROM media_artifacts WHERE id = ?", (media["id"],)).fetchone()
     assert row["capture_status"] == "stored"
     assert open(row["file_path"], "rb").read() in {b"first-upload", b"second-upload"}
-    assert not list((cfg.media_root / ".tmp").glob(f"{media['id']}*"))
+    committed_files = [
+        path for path in cfg.media_root.rglob("*") if path.is_file() and ".staging" not in path.parts
+    ]
+    assert committed_files == [Path(row["file_path"])]
+    staging_root = cfg.media_root / ".staging"
+    assert not staging_root.exists() or list(staging_root.iterdir()) == []
+    tmp_root = cfg.media_root / ".tmp"
+    if tmp_root.exists():
+        assert not list(tmp_root.iterdir())
 
 
 def test_media_worker_rehydrates_purged_cache_when_source_still_fetchable(tmp_path):
@@ -283,69 +691,58 @@ def test_media_worker_rehydrates_purged_cache_when_source_still_fetchable(tmp_pa
         assert run_once(conn, cfg, worker_id="test-worker", limit=10)["stored"] == 1
         purged = purge_media_cache(conn, cfg, {"domain": "example.com", "dry_run": False, "rehydrate": True})
         assert purged["purged"] == 1
-        media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
+        media = media_artifacts_for_snapshot(conn, result["snapshot_id"], cfg)[0]
         assert media["capture_status"] == "purged"
         assert media["has_file"] is False
         summary = run_once(conn, cfg, worker_id="test-worker", limit=10)
         assert summary["stored"] == 1
-        media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
+        media = media_artifacts_for_snapshot(conn, result["snapshot_id"], cfg)[0]
         assert media["capture_status"] == "stored"
         assert media["has_file"] is True
 
 
-def test_media_worker_normalizes_terminal_failed_artifacts(tmp_path):
-    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+def test_purge_media_cache_skips_db_paths_outside_media_root(tmp_path):
+    cfg = load_config(runtime_root=tmp_path / "runtime", test_mode=True, token="test-token", policy_mode="all")
     init_db(cfg)
+    outside_root = tmp_path / "outside"
+    outside_root.mkdir()
+    outside_media = outside_root / "media.png"
+    outside_media.write_bytes(b"outside")
     payload = CapturePayload.from_dict(
         {
-            "url": "https://example.com/normalize-failures",
-            "title": "Normalize Failures",
-            "text": "Readable worker failure classification body.",
-            "media_artifacts": [
-                {"media_type": "image", "source_url": "data:image/png;base64,bad", "mime_type": "image/png"},
-                {"media_type": "image", "source_url": "https://example.com/missing.png", "mime_type": "image/png"},
-                {"media_type": "image", "source_url": "https://example.com/rate.png", "mime_type": "image/png"},
-            ],
+            "url": "https://example.com/purge-outside",
+            "title": "Purge Outside",
+            "text": "Readable purge outside media body.",
+            "media_artifacts": [{"media_type": "image", "source_url": "data:image/png;base64,iVBORw0KGgo=", "mime_type": "image/png"}],
         },
         allow_any_url=True,
     )
     with connect(cfg.db_path) as conn:
         result = ingest_capture(conn, cfg, payload)
-        rows = media_artifacts_for_snapshot(conn, result["snapshot_id"])
-        reasons = {
-            "data:image/png;base64,bad": "invalid-data-url-payload",
-            "https://example.com/missing.png": "fetch-status-404",
-            "https://example.com/rate.png": "fetch-status-429",
-        }
-        for row in rows:
-            conn.execute("UPDATE media_artifacts SET capture_status = 'failed', status_reason = ? WHERE id = ?", (reasons[row["source_url"]], row["id"]))
-            conn.execute("UPDATE media_fetch_tasks SET status = 'failed', last_error = ? WHERE artifact_id = ?", (reasons[row["source_url"]], row["id"]))
-        changed = normalize_terminal_failed_artifacts(conn)
-        assert changed == 3
-        status_by_url = {row["source_url"]: row["capture_status"] for row in media_artifacts_for_snapshot(conn, result["snapshot_id"])}
-        assert status_by_url == {
-            "data:image/png;base64,bad": "skipped",
-            "https://example.com/missing.png": "expired",
-            "https://example.com/rate.png": "retrying",
-        }
-        task_status_by_url = {
-            row["source_url"]: row["status"]
-            for row in conn.execute(
-                """
-                SELECT m.source_url, t.status
-                FROM media_artifacts m
-                JOIN media_fetch_tasks t ON t.artifact_id = m.id
-                ORDER BY m.source_url
-                """
-            ).fetchall()
-        }
-        assert task_status_by_url["data:image/png;base64,bad"] == "skipped"
-        assert task_status_by_url["https://example.com/missing.png"] == "skipped"
-        assert task_status_by_url["https://example.com/rate.png"] == "retrying"
+        assert run_once(conn, cfg, worker_id="test-worker", limit=10)["stored"] == 1
+        media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
+        conn.execute(
+            "UPDATE media_artifacts SET file_path = ?, blob_locator = ?, byte_size = ? WHERE id = ?",
+            (str(outside_media), str(outside_media), outside_media.stat().st_size, media["id"]),
+        )
+
+        purged = purge_media_cache(conn, cfg, {"domain": "example.com", "dry_run": False})
+        row = conn.execute("SELECT capture_status, file_path FROM media_artifacts WHERE id = ?", (media["id"],)).fetchone()
+
+    assert purged["selected"] == 0
+    assert purged["purged"] == 0
+    assert purged["skipped_out_of_root"] == 1
+    assert row["capture_status"] == "stored"
+    assert row["file_path"] == str(outside_media)
+    assert outside_media.exists()
+
+
+
 
 
 def test_media_worker_retry_backoff_releases_lease_and_waits_until_due(tmp_path):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    cfg = allow_loopback_public_fetch(cfg)
     init_db(cfg)
     with http_status_fixture_server(429) as base_url:
         payload = CapturePayload.from_dict(
@@ -386,30 +783,7 @@ def test_media_worker_retry_backoff_releases_lease_and_waits_until_due(tmp_path)
             assert task["lease_until"] is None
 
 
-def test_media_worker_reclassifies_legacy_blob_video_skips_as_references(tmp_path):
-    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
-    init_db(cfg)
-    payload = CapturePayload.from_dict(
-        {
-            "url": "https://example.com/blob-video",
-            "title": "Blob Video",
-            "text": "Readable worker blob video classification body.",
-            "media_artifacts": [{"media_type": "video", "source_url": "blob:https://example.com/abc", "mime_type": "video/mp4"}],
-        },
-        allow_any_url=True,
-    )
-    with connect(cfg.db_path) as conn:
-        result = ingest_capture(conn, cfg, payload)
-        media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
-        conn.execute(
-            "UPDATE media_artifacts SET capture_status = 'skipped', status_reason = 'unsupported-media-url-scheme' WHERE id = ?",
-            (media["id"],),
-        )
-        changed = normalize_legacy_blob_video_skips(conn)
-        assert changed == 1
-        media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
-        assert media["capture_status"] == "referenced"
-        assert media["status_reason"] is None
+
 
 
 @contextmanager
@@ -469,6 +843,7 @@ def hls_fixture_server():
 
 def test_media_worker_stores_hls_master_playlist_as_video_mp4(tmp_path):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    cfg = allow_loopback_public_fetch(cfg)
     init_db(cfg)
     with hls_fixture_server() as (base_url, expected_bytes):
         payload = CapturePayload.from_dict(
@@ -485,7 +860,7 @@ def test_media_worker_stores_hls_master_playlist_as_video_mp4(tmp_path):
             summary = run_once(conn, cfg, worker_id="test-worker", limit=10)
             assert summary["attempted"] == 1
             assert summary["stored"] == 1
-            media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
+            media = media_artifacts_for_snapshot(conn, result["snapshot_id"], cfg)[0]
             assert media["capture_status"] == "stored"
             assert media["mime_type"] == "video/mp4"
             assert media["byte_size"] == len(expected_bytes)
@@ -494,27 +869,30 @@ def test_media_worker_stores_hls_master_playlist_as_video_mp4(tmp_path):
             assert open(file_row["file_path"], "rb").read() == expected_bytes
 
 
-def test_hls_assembly_uses_single_deadline_across_segments(monkeypatch):
+def test_hls_assembly_uses_single_deadline_across_segments(monkeypatch, tmp_path):
     clock = {"now": 100.0}
     fetched: list[str] = []
 
     def monotonic() -> float:
         return clock["now"]
 
-    def fake_fetch_hls_asset(source_url: str, page_url: str, *, max_bytes: int, timeout_seconds: float) -> tuple[bytes, str]:
+    def fake_fetch_hls_asset(source_url: str, page_url: str, *, max_bytes: int, timeout_seconds: float, **_kwargs) -> tuple[bytes, str]:
         fetched.append(source_url)
         clock["now"] += 2.0
         return b"segment", ""
 
-    monkeypatch.setattr(media_module.time, "monotonic", monotonic)
-    monkeypatch.setattr(media_module, "_fetch_hls_asset", fake_fetch_hls_asset)
+    monkeypatch.setattr(media_hls_module.time, "monotonic", monotonic)
+    monkeypatch.setattr(media_hls_module, "_fetch_hls_asset", fake_fetch_hls_asset)
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
 
-    content, mime_type, reason = media_module._hls_playlist_to_media(
+    content, mime_type, reason = media_hls_module._hls_playlist_to_media(
         "https://media.example/playlist.m3u8",
         "https://example.com/page",
         "#EXTM3U\n#EXTINF:1.0,\nseg1.ts\n#EXTINF:1.0,\nseg2.ts\n#EXT-X-ENDLIST\n",
         max_bytes=100,
         timeout_seconds=10,
+        config=cfg,
+        budget=media_hls_module._HlsFetchBudget(requests_remaining=10, deadline=101.0),
         deadline=101.0,
     )
 
@@ -524,100 +902,18 @@ def test_hls_assembly_uses_single_deadline_across_segments(monkeypatch):
     assert fetched == ["https://media.example/seg1.ts"]
 
 
-def test_media_worker_requeues_legacy_hls_video_unsupported_skips(tmp_path):
-    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
-    init_db(cfg)
-    with hls_fixture_server() as (base_url, _expected_bytes):
-        payload = CapturePayload.from_dict(
-            {
-                "url": "https://example.com/hls-requeue",
-                "title": "HLS Requeue",
-                "text": "Readable worker HLS requeue body.",
-                "media_artifacts": [{"media_type": "video", "source_url": f"{base_url}/master.m3u8", "metadata": {"cdp_recorder": True}}],
-            },
-            allow_any_url=True,
-        )
-        with connect(cfg.db_path) as conn:
-            result = ingest_capture(conn, cfg, payload)
-            media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
-            conn.execute(
-                "UPDATE media_artifacts SET capture_status = 'skipped', status_reason = 'unsupported-media-url-scheme' WHERE id = ?",
-                (media["id"],),
-            )
-            conn.execute("UPDATE media_fetch_tasks SET status = 'skipped', last_error = 'unsupported-media-url-scheme' WHERE artifact_id = ?", (media["id"],))
-            changed = normalize_hls_video_skips(conn)
-            assert changed == 1
-            summary = run_once(conn, cfg, worker_id="test-worker", limit=10)
-            assert summary["stored"] == 1
-            media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
-            assert media["capture_status"] == "stored"
-            stored_row = conn.execute("SELECT metadata_json FROM media_artifacts WHERE id = ?", (media["id"],)).fetchone()
-            assert json.loads(stored_row["metadata_json"])["cdp_recorder"] is True
 
 
-def test_media_worker_requeues_snapshot_budget_skips_after_cap_raise(tmp_path):
-    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
-    init_db(cfg)
-    with hls_fixture_server() as (base_url, _expected_bytes):
-        payload = CapturePayload.from_dict(
-            {
-                "url": "https://example.com/snapshot-budget-requeue",
-                "title": "Snapshot Budget Requeue",
-                "text": "Readable worker snapshot budget requeue body.",
-                "media_artifacts": [{"media_type": "video", "source_url": f"{base_url}/master.m3u8"}],
-            },
-            allow_any_url=True,
-        )
-        with connect(cfg.db_path) as conn:
-            result = ingest_capture(conn, cfg, payload)
-            media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
-            conn.execute(
-                "UPDATE media_artifacts SET capture_status = 'skipped', status_reason = 'snapshot-media-budget' WHERE id = ?",
-                (media["id"],),
-            )
-            conn.execute("UPDATE media_fetch_tasks SET status = 'skipped', last_error = 'snapshot-media-budget' WHERE artifact_id = ?", (media["id"],))
-            changed = normalize_snapshot_budget_skips(conn)
-            assert changed == 1
-            task = conn.execute("SELECT status FROM media_fetch_tasks WHERE artifact_id = ?", (media["id"],)).fetchone()
-            assert task["status"] == "pending"
-            summary = run_once(conn, cfg, worker_id="test-worker", limit=10)
-            assert summary["stored"] == 1
-            media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
-            assert media["capture_status"] == "stored"
 
 
-def test_media_worker_requeues_storage_budget_skips_after_cap_raise(tmp_path):
-    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
-    init_db(cfg)
-    data_url = "data:image/png;base64," + base64.b64encode(b"budgeted").decode("ascii")
-    payload = CapturePayload.from_dict(
-        {
-            "url": "https://example.com/domain-budget-requeue",
-            "title": "Domain Budget Requeue",
-            "text": "Readable worker domain budget requeue body.",
-            "media_artifacts": [{"media_type": "image", "source_url": data_url, "mime_type": "image/png"}],
-        },
-        allow_any_url=True,
-    )
-    with connect(cfg.db_path) as conn:
-        result = ingest_capture(conn, cfg, payload)
-        media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
-        conn.execute(
-            "UPDATE media_artifacts SET capture_status = 'skipped', status_reason = 'domain-media-budget' WHERE id = ?",
-            (media["id"],),
-        )
-        conn.execute("UPDATE media_fetch_tasks SET status = 'skipped', last_error = 'domain-media-budget' WHERE artifact_id = ?", (media["id"],))
-        assert normalize_storage_budget_skips(conn) == 1
-        task = conn.execute("SELECT status FROM media_fetch_tasks WHERE artifact_id = ?", (media["id"],)).fetchone()
-        assert task["status"] == "pending"
-        summary = run_once(conn, cfg, worker_id="test-worker", limit=10)
-        assert summary["stored"] == 1
-        media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
-        assert media["capture_status"] == "stored"
+
+
+
 
 
 def test_media_worker_stores_hls_audio_rendition_sidecar(tmp_path):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    cfg = allow_loopback_public_fetch(cfg)
     init_db(cfg)
     with hls_fixture_server() as (base_url, _expected_bytes):
         payload = CapturePayload.from_dict(
@@ -643,74 +939,10 @@ def test_media_worker_stores_hls_audio_rendition_sidecar(tmp_path):
             assert task["status"] == "succeeded"
 
 
-def test_media_worker_requeues_legacy_hls_audio_rendition_refs(tmp_path):
-    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
-    init_db(cfg)
-    with hls_fixture_server() as (base_url, _expected_bytes):
-        payload = CapturePayload.from_dict(
-            {
-                "url": "https://example.com/hls-audio-legacy",
-                "title": "HLS Audio Legacy",
-                "text": "Readable worker HLS audio legacy body.",
-                "media_artifacts": [{"media_type": "video", "source_url": f"{base_url}/mp4a/audio.m3u8"}],
-            },
-            allow_any_url=True,
-        )
-        with connect(cfg.db_path) as conn:
-            result = ingest_capture(conn, cfg, payload)
-            media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
-            conn.execute(
-                "UPDATE media_artifacts SET capture_status = 'referenced', status_reason = 'hls-audio-rendition' WHERE id = ?",
-                (media["id"],),
-            )
-            conn.execute(
-                "UPDATE media_fetch_tasks SET status = 'skipped', last_error = 'hls-audio-rendition' WHERE artifact_id = ?",
-                (media["id"],),
-            )
-            assert normalize_hls_audio_renditions(conn) == 1
-            task = conn.execute("SELECT status FROM media_fetch_tasks WHERE artifact_id = ?", (media["id"],)).fetchone()
-            assert task["status"] == "pending"
 
 
-def test_media_worker_requeues_cdp_hls_manifest_refs(tmp_path):
-    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
-    init_db(cfg)
-    with hls_fixture_server() as (base_url, _expected_bytes):
-        payload = CapturePayload.from_dict(
-            {
-                "url": "https://x.com/home",
-                "title": "X Home",
-                "text": "Readable X page with CDP manifest.",
-                "media_artifacts": [],
-            },
-            allow_any_url=True,
-        )
-        with connect(cfg.db_path) as conn:
-            result = ingest_capture(conn, cfg, payload)
-            store_media_artifact(
-                conn,
-                cfg,
-                {
-                    "artifact_id": "media_cdp_manifest_ref",
-                    "document_id": result["document_id"],
-                    "snapshot_id": result["snapshot_id"],
-                    "visit_id": result["visit_id"],
-                    "page_url": "https://x.com/home",
-                    "source_url": f"{base_url}/master.m3u8",
-                    "media_type": "video",
-                    "role": "content",
-                    "mime_type": "video/mp4",
-                    "metadata": {"cdp_recorder": True},
-                    "capture_status": "referenced",
-                },
-            )
-            conn.execute(
-                "UPDATE media_fetch_tasks SET status = 'skipped', last_error = 'skipped' WHERE artifact_id = ?",
-                ("media_cdp_manifest_ref",),
-            )
-            assert normalize_cdp_hls_manifest_refs(conn) == 1
-            task = conn.execute("SELECT status FROM media_fetch_tasks WHERE artifact_id = ?", ("media_cdp_manifest_ref",)).fetchone()
-            assert task["status"] == "pending"
+
+
 
 
 def test_media_worker_marks_blob_video_refs_covered_by_cdp_bytes(tmp_path):
@@ -743,7 +975,6 @@ def test_media_worker_marks_blob_video_refs_covered_by_cdp_bytes(tmp_path):
             conn,
             cfg,
             {
-                "artifact_id": "media_cdp_test_segment",
                 "document_id": result["document_id"],
                 "snapshot_id": result2["snapshot_id"],
                 "visit_id": result["visit_id"],
@@ -758,7 +989,7 @@ def test_media_worker_marks_blob_video_refs_covered_by_cdp_bytes(tmp_path):
             },
         )
         assert stored["stored"] is True
-        assert normalize_cdp_covered_blob_video_refs(conn) == 1
+        assert reconcile_cdp_blob_coverage(conn, limit=10) == 1
         row = conn.execute("SELECT capture_status, status_reason FROM media_artifacts WHERE id = ?", (blob_media["id"],)).fetchone()
         assert row["capture_status"] == "referenced"
         assert row["status_reason"] == "covered-by-cdp-recorder"
@@ -779,7 +1010,27 @@ def test_media_worker_classifies_uncovered_blob_video_refs_as_opaque(tmp_path):
     with connect(cfg.db_path) as conn:
         result = ingest_capture(conn, cfg, payload)
         media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
-        assert normalize_opaque_blob_video_refs(conn) == 1
         row = conn.execute("SELECT capture_status, status_reason FROM media_artifacts WHERE id = ?", (media["id"],)).fetchone()
         assert row["capture_status"] == "referenced"
         assert row["status_reason"] == "opaque-browser-blob"
+        stored = store_media_artifact(
+            conn,
+            cfg,
+            {
+                "artifact_id": media["id"],
+                "document_id": result["document_id"],
+                "snapshot_id": result["snapshot_id"],
+                "media_type": "video",
+                "source_url": "blob:https://x.com/uncovered-video",
+                "mime_type": "video/mp4",
+                "capture_status": "stored",
+                "content_base64": base64.b64encode(b"stored-blob-video").decode("ascii"),
+            },
+        )
+        assert stored["stored"] is True
+        ingest_capture(conn, cfg, payload)
+        refreshed = conn.execute(
+            "SELECT capture_status, status_reason FROM media_artifacts WHERE id = ?",
+            (media["id"],),
+        ).fetchone()
+        assert tuple(refreshed) == ("stored", None)

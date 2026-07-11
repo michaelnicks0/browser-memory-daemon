@@ -1,18 +1,32 @@
 import base64
+import io
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
-import io
+from pathlib import Path
 
+import browser_memory_daemon.media as media_module
 import pytest
-
+from browser_memory_daemon.blob_migration import migrate_blob_root
+from browser_memory_daemon.blob_store import BlobStore
 from browser_memory_daemon.config import load_config
 from browser_memory_daemon.db import connect, init_db
 from browser_memory_daemon.forget import forget
 from browser_memory_daemon.ingest import ingest_capture
-from browser_memory_daemon.blob_migration import migrate_blob_root
-from browser_memory_daemon.media import fetch_pending_media_artifacts, media_artifacts_for_snapshot, media_capture_status_for_fetch_reason, store_media_artifact, store_media_blob_stream
+from browser_memory_daemon.media import (
+    fetch_pending_media_artifacts,
+    media_artifacts_for_snapshot,
+    media_capture_status_for_fetch_reason,
+    store_media_artifact,
+    store_media_blob_stream,
+)
 from browser_memory_daemon.models import CapturePayload
+from browser_memory_daemon.ops import snapshot_detail
 from browser_memory_daemon.search import search_memory
+
+
+def stored_media_path(conn, artifact_id: str) -> Path:
+    row = conn.execute("SELECT file_path FROM media_artifacts WHERE id = ?", (artifact_id,)).fetchone()
+    return Path(row["file_path"])
 
 
 def test_ingest_search_redact_and_forget(tmp_path):
@@ -32,12 +46,14 @@ def test_ingest_search_redact_and_forget(tmp_path):
         rows = search_memory(conn, "Stirling", limit=5)
         assert len(rows) == 1
         assert rows[0]["title"] == "Stirling Test"
-        stored_text = cfg.clean_text_root.joinpath(f'{result["snapshot_id"]}.txt').read_text()
+        stored_text = conn.execute(
+            "SELECT cleaned_text FROM snapshots WHERE id = ?", (result["snapshot_id"],)
+        ).fetchone()["cleaned_text"]
         assert "SECRETSECRET" not in stored_text
-        receipt = forget(conn, domain="example.com")
+        receipt = forget(conn, cfg, domain="example.com")
         assert receipt["counts"]["documents"] == 1
         assert search_memory(conn, "Stirling", limit=5) == []
-        assert not cfg.clean_text_root.joinpath(f'{result["snapshot_id"]}.txt').exists()
+        assert not cfg.clean_text_root.exists()
 
 
 def test_metadata_redacted_before_fts_and_forget_by_original_url(tmp_path):
@@ -58,8 +74,10 @@ def test_metadata_redacted_before_fts_and_forget_by_original_url(tmp_path):
         assert rows
         assert title_secret not in rows[0]["title"]
         assert url_secret not in rows[0]["url"]
-        receipt = forget(conn, url=original_url)
+        receipt = forget(conn, cfg, url=original_url)
         assert receipt["counts"]["documents"] == 1
+        assert receipt["scope"]["selector_policy"] == "redacted"
+        assert url_secret not in receipt["scope"]["url"]
         assert search_memory(conn, "turbines", limit=5) == []
 
 
@@ -124,6 +142,167 @@ def test_all_mode_stores_without_redaction_and_accepts_file_urls(tmp_path):
         assert fake_secret in visit["url"]
 
 
+def test_all_mode_forget_url_uses_literal_selector_but_redacts_receipt_scope(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    url_secret = "ALLMODEURLSECRET1234567890"
+    original_url = f"file:///tmp/local-note.html?token={url_secret}#frag"
+    payload = CapturePayload.from_dict(
+        {
+            "url": original_url,
+            "title": "All Mode Forget URL",
+            "text": f"All mode forget should delete literal URL memory {url_secret}.",
+        },
+        allow_any_url=True,
+    )
+    with connect(cfg.db_path) as conn:
+        ingest_capture(conn, cfg, payload)
+        assert search_memory(conn, url_secret, limit=5)
+
+        receipt = forget(conn, cfg, url=original_url)
+        receipt_row = conn.execute("SELECT scope_json FROM deletion_receipts WHERE id = ?", (receipt["receipt_id"],)).fetchone()
+
+        assert receipt["counts"]["documents"] == 1
+        assert receipt["scope"]["selector_policy"] == "literal"
+        assert url_secret not in receipt["scope"]["url"]
+        assert url_secret not in receipt_row["scope_json"]
+        assert search_memory(conn, url_secret, limit=5) == []
+
+
+def test_forget_requires_one_literal_selector(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    with connect(cfg.db_path) as conn:
+        with pytest.raises(ValueError, match="exactly one selector"):
+            forget(conn, cfg)
+        with pytest.raises(ValueError, match="exactly one selector"):
+            forget(conn, cfg, domain="example.com", url="https://example.com/page")
+        with pytest.raises(ValueError, match="hostname, not a URL"):
+            forget(conn, cfg, domain="https://example.com/page")
+        with pytest.raises(ValueError, match="literal hostname"):
+            forget(conn, cfg, domain="*.example.com")
+        with pytest.raises(ValueError, match="absolute"):
+            forget(conn, cfg, url="example.com/page")
+
+
+@pytest.mark.parametrize(
+    "domain",
+    [
+        "example..com",
+        ".example.com",
+        "-example.com",
+        "example-.com",
+        "example_com",
+        "example.com:443",
+        "[not-an-ip]",
+        "127.000.000.001",
+        "xn--.example",
+    ],
+)
+def test_forget_rejects_malformed_literal_domains(tmp_path, domain):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    with connect(cfg.db_path) as conn:
+        with pytest.raises(ValueError, match="literal hostname|valid hostname"):
+            forget(conn, cfg, domain=domain, dry_run=True)
+
+
+def test_forget_domain_normalizes_equivalent_unicode_and_idna_forms(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    with connect(cfg.db_path) as conn:
+        ingest_capture(
+            conn,
+            cfg,
+            CapturePayload.from_dict(
+                {
+                    "url": "https://bücher.example/article",
+                    "title": "IDNA domain",
+                    "text": "Readable body for an internationalized domain.",
+                },
+                allow_any_url=True,
+            ),
+        )
+
+        preview = forget(conn, cfg, domain="xn--bcher-kva.example", dry_run=True)
+
+        assert preview["scope"]["domain"] == "xn--bcher-kva.example"
+        assert preview["counts"]["documents"] == 1
+
+
+def test_forget_preview_is_non_mutating_and_execution_is_broad_scope_guarded(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    payloads = [
+        ("https://example.com/one", "Example One"),
+        ("https://sub.example.com/two", "Example Two"),
+        ("https://notexample.com/three", "Unrelated Three"),
+    ]
+    with connect(cfg.db_path) as conn:
+        for url, title in payloads:
+            ingest_capture(
+                conn,
+                cfg,
+                CapturePayload.from_dict(
+                    {"url": url, "title": title, "text": f"Readable body for {title}."},
+                    allow_any_url=True,
+                ),
+            )
+
+        preview = forget(conn, cfg, domain="example.com", dry_run=True, max_records=1)
+
+        assert preview["dry_run"] is True
+        assert conn.in_transaction is False
+        assert preview["forgotten"] is False
+        assert preview["receipt_id"] is None
+        assert preview["counts"]["documents"] == 2
+        assert preview["counts"]["capture_observations"] == 2
+        assert preview["guard"]["within_limit"] is False
+        assert conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0] == 3
+        assert conn.execute("SELECT COUNT(*) FROM deletion_receipts").fetchone()[0] == 0
+
+        with pytest.raises(ValueError, match="exceeds max_records guard"):
+            forget(conn, cfg, domain="example.com", max_records=1)
+        assert conn.in_transaction is False
+        assert conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0] == 3
+        assert conn.execute("SELECT COUNT(*) FROM deletion_receipts").fetchone()[0] == 0
+
+        result = forget(conn, cfg, domain="example.com", max_records=preview["guard"]["selected_records"])
+
+        assert result["dry_run"] is False
+        assert result["counts"]["documents"] == preview["counts"]["documents"]
+        assert result["counts"]["capture_observations"] == preview["counts"]["capture_observations"]
+        remaining = conn.execute("SELECT domain FROM documents").fetchall()
+        assert [row["domain"] for row in remaining] == ["notexample.com"]
+
+
+def test_forget_url_preview_includes_exact_document_alias_claim(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    observed_url = "https://observed.example/article"
+    claimed_url = "https://alias.example/canonical"
+    with connect(cfg.db_path) as conn:
+        ingest_capture(
+            conn,
+            cfg,
+            CapturePayload.from_dict(
+                {
+                    "url": observed_url,
+                    "canonical_url": claimed_url,
+                    "title": "Alias claim",
+                    "text": "Readable body for an exact canonical alias claim.",
+                },
+                allow_any_url=True,
+            ),
+        )
+
+        preview = forget(conn, cfg, url=claimed_url, dry_run=True)
+
+        assert preview["counts"]["documents"] == 1
+        assert preview["counts"]["url_claims"] == 1
+        assert conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0] == 1
+
+
 def test_media_artifacts_are_related_to_snapshot_not_fts_and_deleted_by_forget(tmp_path):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
     init_db(cfg)
@@ -153,6 +332,7 @@ def test_media_artifacts_are_related_to_snapshot_not_fts_and_deleted_by_forget(t
         media = media_artifacts_for_snapshot(conn, result["snapshot_id"])
         assert len(media) == 1
         assert media[0]["capture_status"] == "referenced"
+        assert media[0]["file_path_status"] == "config-required"
         task = conn.execute("SELECT artifact_id, worker_kind, status FROM media_fetch_tasks").fetchone()
         assert task["artifact_id"] == media[0]["id"]
         assert task["worker_kind"] == "daemon-public"
@@ -176,9 +356,17 @@ def test_media_artifacts_are_related_to_snapshot_not_fts_and_deleted_by_forget(t
         file_rows = conn.execute("SELECT file_path, byte_size FROM media_artifacts").fetchall()
         assert len(file_rows) == 1
         assert file_rows[0]["byte_size"] == 8
-        media_path = cfg.media_root / f"{stored['artifact_id']}.png"
+        media_path = stored_media_path(conn, stored["artifact_id"])
+        assert media_path.parent == cfg.media_root
         assert media_path.exists()
-        receipt = forget(conn, domain="example.com")
+        blob_records_before = conn.execute("SELECT COUNT(*) FROM blob_storage_records").fetchone()[0]
+        preview = forget(conn, cfg, domain="example.com", dry_run=True)
+        assert preview["counts"]["media_artifacts"] == 1
+        assert preview["counts"]["media_blobs_tombstoned"] == 1
+        assert media_path.exists()
+        assert conn.execute("SELECT COUNT(*) FROM blob_storage_records").fetchone()[0] == blob_records_before
+        assert conn.execute("SELECT COUNT(*) FROM deletion_receipts").fetchone()[0] == 0
+        receipt = forget(conn, cfg, domain="example.com")
         assert receipt["counts"]["media_artifacts"] == 1
         assert receipt["counts"]["media_blobs"] == 1
         assert not media_path.exists()
@@ -200,9 +388,8 @@ def test_ingest_and_media_write_to_configured_blob_root(tmp_path):
     )
     with connect(cfg.db_path) as conn:
         result = ingest_capture(conn, cfg, payload)
-        clean_path = cfg.clean_text_root / f"{result['snapshot_id']}.txt"
         assert cfg.db_path == runtime_root / "browser-memory.sqlite3"
-        assert clean_path.exists()
+        assert not blob_root.exists()
         assert not (runtime_root / "blobs").exists()
 
         stored = store_media_artifact(
@@ -219,19 +406,119 @@ def test_ingest_and_media_write_to_configured_blob_root(tmp_path):
                 "content_base64": base64.b64encode(b"nasbytes").decode("ascii"),
             },
         )
-        row = conn.execute("SELECT cleaned_text_path FROM snapshots WHERE id = ?", (result["snapshot_id"],)).fetchone()
-        media_row = conn.execute("SELECT file_path FROM media_artifacts WHERE id = ?", (stored["artifact_id"],)).fetchone()
+        row = conn.execute(
+            """
+            SELECT cleaned_text, cleaned_text_source, cleaned_text_path, cleaned_text_locator
+            FROM snapshots WHERE id = ?
+            """,
+            (result["snapshot_id"],),
+        ).fetchone()
+        media_row = conn.execute(
+            "SELECT file_path, blob_locator FROM media_artifacts WHERE id = ?",
+            (stored["artifact_id"],),
+        ).fetchone()
 
-    assert row["cleaned_text_path"] == str(clean_path)
-    assert media_row["file_path"] == str(cfg.media_root / f"{stored['artifact_id']}.png")
-    assert (cfg.media_root / f"{stored['artifact_id']}.png").exists()
+    assert row["cleaned_text"] == "Readable body for relocated blob root."
+    assert row["cleaned_text_source"] == "capture"
+    assert row["cleaned_text_path"] is None
+    assert row["cleaned_text_locator"] is None
+    media_path = Path(media_row["file_path"])
+    assert media_row["blob_locator"] == media_path.name
+    assert media_path.parent == cfg.media_root
+    assert media_path.name != f"{stored['artifact_id']}.png"
+    assert media_path.exists()
+
+
+def test_blob_path_consumers_reject_db_paths_outside_configured_roots(tmp_path):
+    cfg = load_config(runtime_root=tmp_path / "runtime", test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    outside_root = tmp_path / "outside"
+    outside_root.mkdir()
+    outside_clean = outside_root / "clean.txt"
+    outside_media = outside_root / "media.png"
+    outside_clean.write_text("OUTSIDE_CLEAN_SECRET", encoding="utf-8")
+    outside_media.write_bytes(b"OUTSIDE_MEDIA_SECRET")
+    payload = CapturePayload.from_dict(
+        {
+            "url": "https://example.com/out-of-root-paths",
+            "title": "Out Of Root Paths",
+            "text": "Readable in-database fallback text.",
+            "media_artifacts": [{"media_type": "image", "source_url": "https://example.com/outside.png", "mime_type": "image/png"}],
+        },
+        allow_any_url=True,
+    )
+    with connect(cfg.db_path) as conn:
+        result = ingest_capture(conn, cfg, payload)
+        stored = store_media_artifact(
+            conn,
+            cfg,
+            {
+                "document_id": result["document_id"],
+                "snapshot_id": result["snapshot_id"],
+                "visit_id": result["visit_id"],
+                "page_url": "https://example.com/out-of-root-paths",
+                "media_type": "image",
+                "source_url": "https://example.com/outside.png",
+                "mime_type": "image/png",
+                "content_base64": base64.b64encode(b"inside").decode("ascii"),
+            },
+        )
+        conn.execute(
+            "UPDATE snapshots SET cleaned_text_path = ? WHERE id = ?",
+            (str(outside_clean), result["snapshot_id"]),
+        )
+        conn.execute(
+            "UPDATE media_artifacts SET file_path = ? WHERE id = ?",
+            (str(outside_media), stored["artifact_id"]),
+        )
+
+        relative_detail = snapshot_detail(conn, cfg, result["snapshot_id"])
+        assert "Readable in-database fallback text." in relative_detail["text"]
+        assert relative_detail["snapshot"]["text_authority"] == "capture"
+        assert relative_detail["snapshot"]["clean_text_locator_kind"] == "legacy-absolute"
+        assert relative_detail["snapshot"]["clean_text_path_status"] == "outside-root"
+        relative_media = media_artifacts_for_snapshot(conn, result["snapshot_id"], cfg)[0]
+        assert relative_media["has_file"] is True
+        assert relative_media["file_locator_kind"] == "relative"
+
+        conn.execute(
+            "UPDATE snapshots SET cleaned_text_locator = ? WHERE id = ?",
+            (str(outside_clean), result["snapshot_id"]),
+        )
+        conn.execute(
+            "UPDATE media_artifacts SET blob_locator = ?, byte_size = ? WHERE id = ?",
+            (str(outside_media), outside_media.stat().st_size, stored["artifact_id"]),
+        )
+
+        detail = snapshot_detail(conn, cfg, result["snapshot_id"])
+        assert "OUTSIDE_CLEAN_SECRET" not in detail["text"]
+        assert detail["snapshot"]["clean_text_path_status"] == "outside-root"
+        media = media_artifacts_for_snapshot(conn, result["snapshot_id"], cfg)[0]
+        assert media["has_file"] is False
+        assert media["file_path_status"] == "outside-root"
+        assert "content_url" not in media
+
+        receipt = forget(conn, cfg, domain="example.com")
+
+    assert receipt["counts"]["blobs"] == 0
+    assert receipt["counts"]["blobs_out_of_root"] == 1
+    assert receipt["counts"]["media_blobs"] == 0
+    assert receipt["counts"]["media_blobs_out_of_root"] == 1
+    assert outside_clean.exists()
+    assert outside_media.exists()
 
 
 def test_blob_root_migration_copies_files_and_rewrites_db_paths(tmp_path, monkeypatch):
     monkeypatch.delenv("BMD_BLOB_ROOT", raising=False)
     runtime_root = tmp_path / "runtime"
     nas_root = tmp_path / "nas-blobs"
-    old_cfg = load_config(runtime_root=runtime_root, test_mode=True, token="test-token", policy_mode="all")
+    old_cfg = load_config(
+        runtime_root=runtime_root,
+        derivative_root=runtime_root / "blobs",
+        test_mode=True,
+        token="test-token",
+        policy_mode="all",
+    )
     init_db(old_cfg)
     payload = CapturePayload.from_dict(
         {
@@ -260,24 +547,77 @@ def test_blob_root_migration_copies_files_and_rewrites_db_paths(tmp_path, monkey
         )
 
     old_clean_path = old_cfg.clean_text_root / f"{result['snapshot_id']}.txt"
-    old_media_path = old_cfg.media_root / f"{stored['artifact_id']}.png"
-    new_cfg = load_config(runtime_root=runtime_root, blob_root=nas_root, test_mode=True, token="test-token", policy_mode="all")
+    with connect(old_cfg.db_path) as conn:
+        BlobStore(old_cfg.clean_text_root).write_text(old_clean_path, "Readable body before blob migration.")
+        conn.execute(
+            "UPDATE snapshots SET cleaned_text_path = ?, cleaned_text_locator = ? WHERE id = ?",
+            (str(old_clean_path), old_clean_path.name, result["snapshot_id"]),
+        )
+        conn.commit()
+        old_media_path = stored_media_path(conn, stored["artifact_id"])
+    old_media_relative = old_media_path.relative_to(old_cfg.media_root)
+    new_cfg = load_config(
+        runtime_root=runtime_root,
+        blob_root=nas_root,
+        derivative_root=nas_root,
+        test_mode=True,
+        token="test-token",
+        policy_mode="all",
+    )
     with connect(new_cfg.db_path) as conn:
         dry_run = migrate_blob_root(conn, new_cfg)
         assert dry_run["dry_run"] is True
         assert dry_run["planned"] == 2
         executed = migrate_blob_root(conn, new_cfg, execute=True)
-        row = conn.execute("SELECT cleaned_text_path FROM snapshots WHERE id = ?", (result["snapshot_id"],)).fetchone()
-        media_row = conn.execute("SELECT file_path FROM media_artifacts WHERE id = ?", (stored["artifact_id"],)).fetchone()
+        row = conn.execute(
+            "SELECT cleaned_text_path, cleaned_text_locator FROM snapshots WHERE id = ?",
+            (result["snapshot_id"],),
+        ).fetchone()
+        media_row = conn.execute(
+            "SELECT file_path, blob_locator FROM media_artifacts WHERE id = ?",
+            (stored["artifact_id"],),
+        ).fetchone()
 
     assert executed["copied"] == 2
     assert executed["updated"] == 2
     assert old_clean_path.exists()
     assert old_media_path.exists()
     assert row["cleaned_text_path"] == str(new_cfg.clean_text_root / f"{result['snapshot_id']}.txt")
-    assert media_row["file_path"] == str(new_cfg.media_root / f"{stored['artifact_id']}.png")
+    assert row["cleaned_text_locator"] == f"{result['snapshot_id']}.txt"
+    assert media_row["file_path"] == str(new_cfg.media_root / old_media_relative)
+    assert media_row["blob_locator"] == old_media_relative.as_posix()
     assert (new_cfg.clean_text_root / f"{result['snapshot_id']}.txt").read_text() == "Readable body before blob migration."
-    assert (new_cfg.media_root / f"{stored['artifact_id']}.png").read_bytes() == b"movebytes"
+    assert (new_cfg.media_root / old_media_relative).read_bytes() == b"movebytes"
+
+    (new_cfg.media_root / old_media_relative).write_bytes(b"corrupt-existing-target")
+    with connect(new_cfg.db_path) as conn:
+        conn.execute(
+            "UPDATE media_artifacts SET file_path = ?, blob_locator = ? WHERE id = ?",
+            (str(old_media_path), old_media_relative.as_posix(), stored["artifact_id"]),
+        )
+        mismatch = migrate_blob_root(conn, new_cfg, execute=True)
+        current_path = conn.execute(
+            "SELECT file_path FROM media_artifacts WHERE id = ?", (stored["artifact_id"],)
+        ).fetchone()["file_path"]
+    assert mismatch["updated"] == 0
+    assert mismatch["errors"][0]["error"] == "target-integrity-mismatch"
+    assert current_path == str(old_media_path)
+
+    guarded_root = tmp_path / "missing-external-media"
+    monkeypatch.setenv("BMD_MEDIA_ROOT_IDENTITY", "migration-target")
+    guarded_cfg = load_config(
+        runtime_root=runtime_root,
+        derivative_root=new_cfg.clean_text_root.parent,
+        media_root=guarded_root,
+        test_mode=True,
+        token="test-token",
+        policy_mode="all",
+    )
+    with connect(guarded_cfg.db_path) as conn:
+        blocked = migrate_blob_root(conn, guarded_cfg, source_root=old_cfg.blob_root, execute=True)
+    assert blocked["planned"] == 1
+    assert blocked["errors"] == ["media root unavailable: mount-missing"]
+    assert not guarded_root.exists()
 
 
 def test_media_artifact_size_gate_skips_oversized_blob(tmp_path):
@@ -323,7 +663,7 @@ def test_media_global_cache_rolls_oldest_blob_when_limit_would_be_exceeded(tmp_p
     with connect(cfg.db_path) as conn:
         old_result = ingest_capture(conn, cfg, CapturePayload.from_dict({"url": "https://old.example/media", "title": "Old", "text": "Readable old media body.", "media_artifacts": [{"media_type": "image", "source_url": "https://old.example/old.png", "mime_type": "image/png"}]}, allow_any_url=True))
         old = store_media_artifact(conn, cfg, {"document_id": old_result["document_id"], "snapshot_id": old_result["snapshot_id"], "visit_id": old_result["visit_id"], "page_url": "https://old.example/media", "media_type": "image", "source_url": "https://old.example/old.png", "mime_type": "image/png", "content_base64": base64.b64encode(b"oldbytes").decode("ascii")})
-        old_path = cfg.media_root / f"{old['artifact_id']}.png"
+        old_path = stored_media_path(conn, old["artifact_id"])
         assert old_path.exists()
         conn.execute("UPDATE media_artifacts SET created_at = '2026-01-01 00:00:00' WHERE id = ?", (old["artifact_id"],))
 
@@ -332,9 +672,14 @@ def test_media_global_cache_rolls_oldest_blob_when_limit_would_be_exceeded(tmp_p
 
         assert new["stored"] is True
         assert not old_path.exists()
-        rows = {row["id"]: dict(row) for row in conn.execute("SELECT id, capture_status, status_reason, file_path FROM media_artifacts")}
+        rows = {
+            row["id"]: dict(row)
+            for row in conn.execute("SELECT id, capture_status, status_reason, file_path, blob_locator FROM media_artifacts")
+        }
         assert rows[old["artifact_id"]]["capture_status"] == "purged"
         assert rows[old["artifact_id"]]["status_reason"] == "cache-evicted:global-oldest"
+        assert rows[old["artifact_id"]]["file_path"] == ""
+        assert rows[old["artifact_id"]]["blob_locator"] is None
         assert rows[new["artifact_id"]]["capture_status"] == "stored"
 
 
@@ -345,7 +690,7 @@ def test_media_domain_cache_rolls_oldest_blob_when_domain_limit_would_be_exceede
     with connect(cfg.db_path) as conn:
         old_result = ingest_capture(conn, cfg, CapturePayload.from_dict({"url": "https://x.example/old", "title": "Old", "text": "Readable old domain media body.", "media_artifacts": [{"media_type": "image", "source_url": "https://x.example/old.png", "mime_type": "image/png"}]}, allow_any_url=True))
         old = store_media_artifact(conn, cfg, {"document_id": old_result["document_id"], "snapshot_id": old_result["snapshot_id"], "visit_id": old_result["visit_id"], "page_url": "https://x.example/old", "media_type": "image", "source_url": "https://x.example/old.png", "mime_type": "image/png", "content_base64": base64.b64encode(b"oldbytes").decode("ascii")})
-        old_path = cfg.media_root / f"{old['artifact_id']}.png"
+        old_path = stored_media_path(conn, old["artifact_id"])
         conn.execute("UPDATE media_artifacts SET created_at = '2026-01-01 00:00:00' WHERE id = ?", (old["artifact_id"],))
 
         new_result = ingest_capture(conn, cfg, CapturePayload.from_dict({"url": "https://x.example/new", "title": "New", "text": "Readable new domain media body.", "media_artifacts": [{"media_type": "image", "source_url": "https://x.example/new.png", "mime_type": "image/png"}]}, allow_any_url=True))
@@ -359,7 +704,7 @@ def test_media_domain_cache_rolls_oldest_blob_when_domain_limit_would_be_exceede
         assert rows[new["artifact_id"]]["capture_status"] == "stored"
 
 
-def test_raw_blob_upload_rejects_truncated_body_and_infers_mime_from_url(tmp_path):
+def test_raw_blob_upload_streams_without_whole_artifact_spool_and_rejects_truncated_body(tmp_path, monkeypatch):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
     init_db(cfg)
     payload = CapturePayload.from_dict(
@@ -374,6 +719,11 @@ def test_raw_blob_upload_rejects_truncated_body_and_infers_mime_from_url(tmp_pat
     with connect(cfg.db_path) as conn:
         result = ingest_capture(conn, cfg, payload)
         artifact = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
+
+        def reject_whole_artifact_spool(*_args, **_kwargs):
+            raise AssertionError("known-length raw upload must stream directly to BlobStore staging")
+
+        monkeypatch.setattr(media_module.tempfile, "SpooledTemporaryFile", reject_whole_artifact_spool)
         with pytest.raises(ValueError, match="incomplete media upload"):
             store_media_blob_stream(
                 conn,
@@ -383,18 +733,29 @@ def test_raw_blob_upload_rejects_truncated_body_and_infers_mime_from_url(tmp_pat
                 headers={"Content-Type": "application/octet-stream"},
                 content_length=8,
             )
+        class RecordingBytesIO(io.BytesIO):
+            def __init__(self, content):
+                super().__init__(content)
+                self.read_sizes = []
+
+            def read(self, size: int | None = -1):
+                self.read_sizes.append(size)
+                return super().read(size)
+
+        valid_stream = RecordingBytesIO(b"x" * (128 * 1024 + 7))
         stored = store_media_blob_stream(
             conn,
             cfg,
             artifact["id"],
-            io.BytesIO(b"12345678"),
+            valid_stream,
             headers={"Content-Type": "application/octet-stream"},
-            content_length=8,
+            content_length=128 * 1024 + 7,
         )
         assert stored["stored"] is True
+        assert valid_stream.read_sizes == [64 * 1024, 64 * 1024, 7]
         media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
         assert media["mime_type"] == "image/png"
-        assert media["byte_size"] == 8
+        assert media["byte_size"] == 128 * 1024 + 7
 
 
 def test_posted_cdp_metadata_enqueues_daemon_fetch_task(tmp_path):
@@ -414,7 +775,6 @@ def test_posted_cdp_metadata_enqueues_daemon_fetch_task(tmp_path):
             conn,
             cfg,
             {
-                "artifact_id": "media_cdp_test_segment",
                 "document_id": result["document_id"],
                 "snapshot_id": result["snapshot_id"],
                 "visit_id": result["visit_id"],
@@ -430,7 +790,7 @@ def test_posted_cdp_metadata_enqueues_daemon_fetch_task(tmp_path):
         assert posted["stored"] is False
         task = conn.execute(
             "SELECT artifact_id, worker_kind, status FROM media_fetch_tasks WHERE artifact_id = ?",
-            ("media_cdp_test_segment",),
+            (posted["artifact_id"],),
         ).fetchone()
         assert task["worker_kind"] == "daemon-public"
         assert task["status"] == "pending"
@@ -464,7 +824,7 @@ def test_fetch_pending_media_artifacts_stores_data_url_without_indexing_media_me
         assert fetched["attempted"] == 1
         assert fetched["stored"] == 1
         assert fetched["remaining"] == 0
-        media = media_artifacts_for_snapshot(conn, result["snapshot_id"])
+        media = media_artifacts_for_snapshot(conn, result["snapshot_id"], cfg)
         assert media[0]["capture_status"] == "stored"
         assert media[0]["byte_size"] == 8
         assert media[0]["has_file"] is True
@@ -514,7 +874,7 @@ def test_forget_domain_includes_subdomains(tmp_path):
     with connect(cfg.db_path) as conn:
         ingest_capture(conn, cfg, payload)
         assert search_memory(conn, "subdomain", limit=5)
-        receipt = forget(conn, domain="example.com")
+        receipt = forget(conn, cfg, domain="example.com")
         assert receipt["counts"]["documents"] == 1
         assert search_memory(conn, "subdomain", limit=5) == []
 
@@ -547,12 +907,13 @@ def test_repeat_capture_dedupes_snapshot_but_adds_visit(tmp_path):
             SELECT
               (SELECT COUNT(*) FROM documents) AS documents,
               (SELECT COUNT(*) FROM visits) AS visits,
+              (SELECT COUNT(*) FROM capture_observations) AS observations,
               (SELECT COUNT(*) FROM snapshots) AS snapshots,
               (SELECT COUNT(*) FROM chunks) AS chunks,
               (SELECT COUNT(*) FROM chunks_fts) AS chunks_fts
             """
         ).fetchone())
-        assert counts == {"documents": 1, "visits": 2, "snapshots": 1, "chunks": 1, "chunks_fts": 1}
+        assert counts == {"documents": 1, "visits": 2, "observations": 2, "snapshots": 1, "chunks": 1, "chunks_fts": 1}
         document = conn.execute("SELECT normalized_url, title, first_seen_at, last_seen_at FROM documents").fetchone()
         assert document["normalized_url"] == "https://example.com/article?a=1&b=2"
         assert document["title"] == "Dedupe Article Updated Title"
@@ -594,16 +955,16 @@ def test_concurrent_duplicate_capture_is_idempotent_for_snapshot_chunks_and_fts(
                 SELECT
                   (SELECT COUNT(*) FROM documents) AS documents,
                   (SELECT COUNT(*) FROM visits) AS visits,
+                  (SELECT COUNT(*) FROM capture_observations) AS observations,
                   (SELECT COUNT(*) FROM snapshots) AS snapshots,
                   (SELECT COUNT(*) FROM chunks) AS chunks,
                   (SELECT COUNT(*) FROM chunks_fts) AS chunks_fts
                 """
             ).fetchone()
         )
-        assert counts == {"documents": 1, "visits": 8, "snapshots": 1, "chunks": 1, "chunks_fts": 1}
+        assert counts == {"documents": 1, "visits": 8, "observations": 8, "snapshots": 1, "chunks": 1, "chunks_fts": 1}
         assert len(search_memory(conn, "IDEMPOTENT_CAPTURE_NEEDLE", limit=10)) == 1
-    clean_files = list(cfg.clean_text_root.glob(f"{results[0]['snapshot_id']}*.txt"))
-    assert clean_files == [cfg.clean_text_root / f"{results[0]['snapshot_id']}.txt"]
+    assert not cfg.clean_text_root.exists()
 
 
 def test_changed_content_creates_new_snapshot_under_same_document(tmp_path):
@@ -633,12 +994,13 @@ def test_changed_content_creates_new_snapshot_under_same_document(tmp_path):
             SELECT
               (SELECT COUNT(*) FROM documents) AS documents,
               (SELECT COUNT(*) FROM visits) AS visits,
+              (SELECT COUNT(*) FROM capture_observations) AS observations,
               (SELECT COUNT(*) FROM snapshots) AS snapshots,
               (SELECT COUNT(*) FROM chunks) AS chunks,
               (SELECT COUNT(*) FROM chunks_fts) AS chunks_fts
             """
         ).fetchone())
-        assert counts == {"documents": 1, "visits": 2, "snapshots": 2, "chunks": 2, "chunks_fts": 2}
+        assert counts == {"documents": 1, "visits": 2, "observations": 2, "snapshots": 2, "chunks": 2, "chunks_fts": 2}
         alpha_rows = search_memory(conn, "ALPHA_VERSION_NEEDLE", limit=5)
         beta_rows = search_memory(conn, "BETA_VERSION_NEEDLE", limit=5)
         assert len(alpha_rows) == 1
@@ -653,7 +1015,20 @@ def test_schema_has_planned_core_tables(tmp_path):
     init_db(cfg)
     with connect(cfg.db_path) as conn:
         tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type IN ('table','virtual table')")}
-    for expected in {"jobs", "embeddings", "redactions", "feedback_events", "deletion_receipts", "visit_events", "media_artifacts", "media_fetch_tasks"}:
+    for expected in {
+        "jobs",
+        "embeddings",
+        "redactions",
+        "feedback_events",
+        "deletion_receipts",
+        "visit_events",
+        "media_artifacts",
+        "media_fetch_tasks",
+        "capture_observations",
+        "document_url_claims",
+        "media_artifact_observations",
+        "schema_migrations",
+    }:
         assert expected in tables
 
 

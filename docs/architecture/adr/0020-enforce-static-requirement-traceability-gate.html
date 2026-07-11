@@ -126,13 +126,14 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
   <article class="md-body">
 <hr />
 <p>id: ADR-0020
-status: accepted
+status: superseded
 date: 2026-07-03
 decider: Operator
 scope: repo
 backfilled: false
 supersedes: []
-superseded_by: []
+superseded_by:
+  - ADR-0027
 related:
   - docs/TESTS.md
   - docs/test-plan.md
@@ -146,7 +147,7 @@ verification:
 <hr />
 <h1 id="adr-0020-enforce-static-requirement-traceability-gate">ADR-0020: Enforce Static Requirement Traceability Gate</h1>
 <h2 id="status">Status</h2>
-<p>accepted</p>
+<p>superseded by <a href="0027-use-canonical-semantic-requirement-catalog.html">ADR-0027</a></p>
 <h2 id="context">Context</h2>
 <p>The repo already generated a source-level test inventory from pytest and Node <code>node:test</code> sources, but the gate only checked that <code>docs/TESTS.md</code> matched discovered test functions. Ticket 014 asked whether to enforce measured coverage and requirement-to-test traceability beyond that static inventory after the coverage expansion tickets landed.</p>
 <p>Current measurement before choosing enforcement:</p>

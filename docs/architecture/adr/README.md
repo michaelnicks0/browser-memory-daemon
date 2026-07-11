@@ -13,7 +13,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0003](0003-use-all-policy-mode-as-daily-driver-default.md) | superseded | Use `all` policy mode as the daily-driver default. Superseded by ADR-0009. |
 | [ADR-0004](0004-use-text-first-sqlite-fts5-and-blob-storage.md) | superseded | Use text-first SQLite/FTS5 and WSL-local blob storage. Superseded by ADR-0021 for blob placement. |
 | [ADR-0005](0005-use-durable-lazy-media-sidecars-with-bounded-cache.md) | accepted | Use durable lazy media sidecars with a bounded disposable cache. |
-| [ADR-0006](0006-use-forget-cascade-with-deletion-receipts.md) | accepted | Use forget/delete cascades with deletion receipts. |
+| [ADR-0006](0006-use-forget-cascade-with-deletion-receipts.md) | superseded by ADR-0040 | Use forget/delete cascades with deletion receipts. |
 | [ADR-0007](0007-use-real-chrome-e2e-as-verification-authority.md) | accepted | Use real Chrome / Chrome for Testing e2e as the verification authority. |
 | [ADR-0008](0008-use-c4-structurizr-as-canonical-architecture-model.md) | accepted | Use C4/Structurizr under `docs/architecture/` as the canonical architecture model. |
 | [ADR-0009](0009-apply-explicit-block-rules-in-all-mode.md) | accepted | Apply explicit local block rules in `all` mode while preserving the daily-driver default. |
@@ -27,9 +27,44 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0017](0017-add-read-model-composite-indexes.md) | accepted | Add composite SQLite indexes for measured read-model ordering paths. |
 | [ADR-0018](0018-enforce-daily-driver-headroom-and-start-budgets.md) | accepted | Enforce daily-driver headroom and service-start failure budgets in local health checks. |
 | [ADR-0019](0019-use-durable-text-retention-with-wal-aware-local-backup.md) | accepted | Use durable text retention with WAL-aware local backup and disposable media cache. |
-| [ADR-0020](0020-enforce-static-requirement-traceability-gate.md) | accepted | Enforce static requirement traceability in the generated test inventory gate. |
-| [ADR-0021](0021-use-configurable-nas-blob-root-with-local-sqlite.md) | accepted | Use a configurable NAS-capable blob root while keeping SQLite/WAL local. |
+| [ADR-0020](0020-enforce-static-requirement-traceability-gate.md) | superseded by ADR-0027 | Enforce static requirement traceability in the generated test inventory gate. |
+| [ADR-0021](0021-use-configurable-nas-blob-root-with-local-sqlite.md) | superseded by ADR-0039 | Use a configurable NAS-capable blob root while keeping SQLite/WAL local. |
 | [ADR-0022](0022-use-fast-doctor-and-media-queue-health-telemetry.md) | accepted | Use fast doctor and media-queue health telemetry. |
+| [ADR-0023](0023-guard-daemon-public-media-egress.md) | superseded by ADR-0045 | Guard daemon-public media egress. |
+| [ADR-0024](0024-contain-blob-and-media-artifact-paths.md) | accepted | Contain blob and media artifact paths. |
+| [ADR-0025](0025-literal-policy-aware-forget-selectors.md) | superseded by ADR-0057 | Use literal and policy-aware forget selectors. |
+| [ADR-0026](0026-harden-loopback-ui-and-required-blob-mounts.md) | accepted | Harden loopback UI and required blob mounts. |
+| [ADR-0027](0027-use-canonical-semantic-requirement-catalog.md) | accepted | Use one machine-readable semantic requirement catalog with explicit legacy aliases and generated V-model traceability. |
+| [ADR-0028](0028-use-versioned-restore-backed-sqlite-migrations.md) | accepted | Use versioned restore-backed SQLite migrations with exact schema fingerprints, ordered checksums, and backup-gated destructive steps. |
+| [ADR-0029](0029-use-hermetic-fast-quality-gate.md) | accepted | Add a network-free fast gate with targeted static analysis, branch coverage, an XDG write sentinel, and a measured coverage ratchet. |
+| [ADR-0030](0030-separate-capture-observations-and-url-claims.md) | accepted | Add expand-only capture-observation and untrusted URL-claim authority before dual-write and read cutover. |
+| [ADR-0031](0031-dual-write-observed-url-capture-provenance.md) | accepted | Dual-write observed-URL capture provenance, preserve visit rows on recapture, and backfill only evidence-supported historical relationships. |
+| [ADR-0032](0032-link-media-artifacts-to-capture-observations.md) | accepted | Add explicit observation/artifact provenance links with conservative evidence-bounded historical backfill. |
+| [ADR-0033](0033-use-observation-first-historical-activity-reads.md) | accepted | Read recent/timeline/detail activity from contemporaneous observations with an explicit ambiguous legacy fallback. |
+| [ADR-0034](0034-bind-lifecycle-by-visit-identity-and-union-dwell.md) | accepted | Preserve claimed visit identity, reconcile delayed events, and derive dwell from interval unions. |
+| [ADR-0035](0035-emit-stable-browser-observation-and-navigation-identities.md) | accepted | Persist opaque observation IDs per extraction and navigation IDs per tab/URL state across queue retries. |
+| [ADR-0036](0036-route-blob-operations-through-contained-blobstore.md) | accepted | Route staged streaming writes, contained reads, stats, and deletes through one BlobStore while legacy locators remain compatible. |
+| [ADR-0037](0037-expand-blob-references-with-relative-locators.md) | accepted | Dual-write root-relative blob locators, prefer them on reads, and retain a contained legacy absolute fallback during expansion. |
+| [ADR-0038](0038-make-sqlite-authoritative-for-cleaned-snapshot-text.md) | accepted | Commit complete cleaned text to SQLite, stop creating new text sidecars, and hash-verify legacy promotion. |
+| [ADR-0039](0039-split-media-root-and-add-bounded-durable-spool.md) | accepted | Split derivative and media roots, guard external identity, and bound local outage buffering. |
+| [ADR-0040](0040-use-durable-deletion-intents-and-reconciliation.md) | accepted | Persist blob deletion intent before cascades and reconcile failures through contained retryable operations. |
+| [ADR-0041](0041-use-manifest-backed-text-first-backup-and-empty-root-restore.md) | accepted | Create manifest-backed text-first online backups and restore only into an absent explicit runtime root. |
+| [ADR-0042](0042-separate-media-state-and-task-repository.md) | accepted | Separate media status/transition authority and durable task leasing/retry workflow from the compatibility facade. |
+| [ADR-0043](0043-isolate-media-cache-admission-and-eviction.md) | accepted | Isolate media cache accounting, admission, oldest-first eviction, and tombstone-backed deletion outcomes. |
+| [ADR-0044](0044-publish-media-through-artifact-store.md) | accepted | Publish, resolve, and purge media through the artifact store with unique candidates and failed-write compensation. |
+| [ADR-0045](0045-isolate-guarded-media-fetch-and-hls.md) | accepted | Isolate guarded media fetch and bounded HLS transport. |
+| [ADR-0046](0046-move-historical-media-correction-out-of-worker-loop.md) | accepted | Move historical media correction out of the worker loop. |
+| [ADR-0047](0047-stream-media-with-process-budgets-and-durable-cache-reservations.md) | accepted | Stream media with process budgets and durable cache reservations. |
+| [ADR-0048](0048-use-transactional-indexeddb-capture-lifecycle-outbox.md) | accepted | Use a transactional IndexedDB outbox for capture and lifecycle delivery. |
+| [ADR-0049](0049-bound-browser-media-queue-lifecycle.md) | accepted | Bound the browser media task and blob lifecycle. |
+| [ADR-0050](0050-use-full-capture-digest-and-rendered-visibility.md) | accepted | Use full capture digests and a conservative rendered-visibility contract. |
+| [ADR-0051](0051-extract-mv3-restart-state-controllers.md) | accepted | Extract MV3 restart-state controllers from the service worker. |
+| [ADR-0052](0052-complete-mv3-service-worker-orchestration-split.md) | accepted | Complete the MV3 service-worker orchestration split. |
+| [ADR-0053](0053-introduce-compatible-http-route-descriptors.md) | accepted | Introduce explicit HTTP route descriptors behind compatible endpoint contracts. |
+| [ADR-0054](0054-use-typed-compatible-http-errors.md) | accepted | Use typed compatible HTTP errors and sanitize internal failures. |
+| [ADR-0055](0055-add-redaction-safe-http-request-envelope.md) | accepted | Add opaque request IDs, common security headers, and redaction-safe request telemetry. |
+| [ADR-0056](0056-separate-http-transport-from-application-use-cases.md) | accepted | Separate the standard-library HTTP adapter from explicit request-independent application use cases. |
+| [ADR-0057](0057-preview-and-bound-forget-selection.md) | accepted | Preview exact forget scope and bound destructive execution. |
 
 ## Backfilled decision history
 

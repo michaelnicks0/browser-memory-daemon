@@ -52,20 +52,6 @@
     globalThis.__BMD_MAX_SCROLL_PERCENT = Math.max(globalThis.__BMD_MAX_SCROLL_PERCENT || 0, currentScrollPercent());
   }
 
-  function captureKey(payload) {
-    const text = String(payload.text || '');
-    const media = Array.isArray(payload.media_artifacts) ? payload.media_artifacts : [];
-    const mediaKey = media.map((item) => [item.media_type, item.role, item.source_url, item.width, item.height].join(':')).slice(0, 20).join('|');
-    return [
-      payload.url || '',
-      payload.title || '',
-      text.length,
-      text.slice(0, 256),
-      text.slice(-256),
-      media.length,
-      mediaKey
-    ].join('\n');
-  }
 
   function getCaptureConfig() {
     if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
@@ -186,7 +172,7 @@
     }
 
     globalThis.__BMD_CAPTURE_IN_PROGRESS = true;
-    getCaptureConfig().then((cfg) => {
+    getCaptureConfig().then(async (cfg) => {
       const policyMode = normalizePolicyMode(cfg.policyMode);
       const payload = {
         ...globalThis.extractPageFromDocument(document, { policyMode }),
@@ -198,7 +184,8 @@
         globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'skipped', reason: 'short-or-empty-text', captureReason: reason, textLength, blocked: Boolean(payload.blocked), url: payload.url, policyMode };
         return;
       }
-      const key = captureKey(payload);
+      if (typeof globalThis.browserMemoryCaptureDigest !== 'function') throw new Error('missing full capture digest implementation');
+      const key = await globalThis.browserMemoryCaptureDigest(payload);
       if (key === globalThis.__BMD_LAST_CAPTURE_KEY) {
         globalThis.__BMD_CAPTURE_IN_PROGRESS = false;
         globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'skipped', reason: 'duplicate-payload', captureReason: reason, textLength, url: payload.url, policyMode };
@@ -206,7 +193,7 @@
       }
       globalThis.__BMD_LAST_CAPTURE_STATUS = { stage: 'sending', captureReason: reason, textLength, url: payload.url, policyMode };
       try {
-        chrome.runtime.sendMessage({ type: 'BMD_CAPTURE', payload: { ...payload, capture_reason: reason, policy_mode: policyMode } }, (response) => {
+        chrome.runtime.sendMessage({ type: 'BMD_CAPTURE', payload: { ...payload, capture_digest: key, capture_reason: reason, policy_mode: policyMode } }, (response) => {
           const lastError = safeRuntimeLastError();
           globalThis.__BMD_CAPTURE_IN_PROGRESS = false;
           if (!lastError && response && response.ok) {

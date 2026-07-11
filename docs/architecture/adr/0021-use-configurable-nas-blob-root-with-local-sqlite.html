@@ -126,14 +126,15 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
   <article class="md-body">
 <hr />
 <p>id: ADR-0021
-status: accepted
+status: superseded
 date: 2026-07-03
 decider: Operator
 scope: repo
 backfilled: false
 supersedes:
   - ADR-0004
-superseded_by: []
+superseded_by:
+  - ADR-0039
 related:
   - daemon/src/browser_memory_daemon/config.py
   - scripts/install-daily-driver.sh
@@ -146,6 +147,9 @@ verification:
   - live NAS dataset/mount smoke</p>
 <hr />
 <h1 id="adr-0021-use-configurable-nas-blob-root-with-local-sqlite">ADR-0021: Use configurable NAS blob root with local SQLite</h1>
+<blockquote>
+<p><strong>Superseded by ADR-0039.</strong> The local-SQLite decision remains, but one combined NAS-capable blob root has been replaced by a compatibility derivative root, independently guarded final media root, and opt-in bounded local media spool.</p>
+</blockquote>
 <h2 id="context">Context</h2>
 <p>ADR-0004 chose text-first SQLite/FTS5 with WSL-local blob files. That remains the right recall model, but browser-memory blob bytes now deserve a storage boundary separate from SQLite/WAL runtime files: media blobs are materially larger than text/FTS, clean-text blobs are easy filesystem payloads, and the NAS has encrypted ZFS capacity plus snapshot posture for local operator-owned storage.</p>
 <p>The operator wants BMD blobs moved to the NAS while preserving the current retention posture: text/FTS remains durable by default, media bytes remain a bounded disposable cache, and forget continues to delete the live DB/blob state while historical backups/snapshots remain a separate lifecycle concern.</p>

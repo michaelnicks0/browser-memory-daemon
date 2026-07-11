@@ -134,20 +134,24 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <h2 id="auth-and-boundary">Auth and boundary</h2>
 <ul>
 <li>Default bind: <code>http://127.0.0.1:8765</code>.</li>
-<li><code>/health</code> is public loopback. <code>/ui</code> HTML is public loopback and includes an inline JSON bootstrap with the current daemon token for same-origin dashboard use; static JS/CSS assets do not include the token.</li>
+<li><code>/health</code> is public loopback. <code>/ui</code> HTML is public loopback, rejects non-loopback <code>Host</code> headers, and includes an inline JSON bootstrap with the current daemon token for same-origin dashboard use; static JS/CSS assets do not include the token.</li>
 <li>Every memory, policy, deletion, and diagnostic API requires:</li>
 </ul>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #ED007E; background-color: #1E0010">Authorization: Bearer ***</span>
 </code></pre></div>
 
 <p>Captured page text is untrusted evidence. API clients must not treat retrieved page text as executable instructions.</p>
-<p>Error responses are JSON with a stable top-level <code>error</code> string:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">{</span><span style="color: #FF4689">&quot;error&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;unauthorized&quot;</span><span style="color: #F8F8F2">}</span>
+<p>Every response carries a server-generated <code>X-Request-ID</code>. Error responses repeat it as <code>request_id</code> while retaining the compatible top-level <code>error</code> string and stable machine-readable <code>error_code</code>:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">{</span><span style="color: #FF4689">&quot;error&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;unauthorized&quot;</span><span style="color: #F8F8F2">, </span><span style="color: #FF4689">&quot;error_code&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;unauthorized&quot;</span><span style="color: #F8F8F2">, </span><span style="color: #FF4689">&quot;request_id&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;req_&lt;opaque&gt;&quot;</span><span style="color: #F8F8F2">}</span>
 </code></pre></div>
 
-<p>Missing or invalid bearer tokens return <code>401</code>; malformed JSON and invalid payloads return <code>400</code>; unknown routes return <code>404</code>; unsupported HTTP methods return <code>501</code>. Limit parameters are bounded server-side (<code>recent</code> max 100, <code>timeline</code> max 250, media queue max 200); invalid integer limits return <code>400</code> on endpoints that parse limits directly.</p>
+<p>Missing or invalid bearer tokens return <code>401</code>; malformed JSON and invalid payloads return <code>400</code>; identity/integrity conflicts return <code>409</code>; unknown routes return <code>404</code>; database/resource availability failures return <code>503</code>; unexpected internal failures return a sanitized <code>500</code>; unsupported HTTP methods return <code>501</code>. Limit parameters are bounded server-side (<code>recent</code> max 100, <code>timeline</code> max 250, media queue max 200); invalid integer limits return <code>400</code> on endpoints that parse limits directly. Current stable codes are <code>invalid_request</code>, <code>unauthorized</code>, <code>forbidden</code>, <code>not_found</code>, <code>conflict</code>, <code>resource_unavailable</code>, <code>database_busy</code>, <code>database_unavailable</code>, <code>internal_error</code>, and <code>unsupported_method</code>.</p>
+<p>JSON requests accept at most one unsigned-decimal <code>Content-Length</code> and reject duplicate, signed, malformed, oversized, or truncated lengths before invoking an application use case. JSON body limits are 2 MiB for ordinary capture/lifecycle/policy/admin requests and 16 MiB for the compatibility base64 media artifact route. Raw media uploads require one explicit unsigned-decimal length and stream separately under artifact and process budgets.</p>
+<p>JSON, UI/static, binary, error, and OPTIONS responses share a no-store security envelope with content-type, frame, referrer, permissions, and content-security protections. Ordinary request telemetry is one compact journald JSON event containing only request ID, method, descriptor route name, status, integer latency, and safe error code; paths, queries, URLs, headers, tokens, bodies, and exception prose are excluded.</p>
 <hr />
 <h2 id="endpoint-index">Endpoint index</h2>
+<p>The method/path entries below are matched through immutable route descriptors in <code>routes.py</code>; UI assets remain a separate finite static-file boundary. Descriptor precedence keeps exact routes such as queue status ahead of parameterized artifact routes without changing endpoint behavior.</p>
+<p><code>http_server.py</code> owns bearer authentication, request parsing, response serialization, security headers, telemetry, static UI serving, and bounded stream transport. It invokes explicit request-independent methods in <code>application.py</code>, which owns database transaction/audit boundaries, capture policy decisions, reads, forget, policy administration, media coordination, and resource leases. <code>app.py</code> only initializes and composes those boundaries; this separation does not change any endpoint contract.</p>
 <table>
 <thead>
 <tr>
@@ -287,17 +291,30 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td><code>/forget</code></td>
 <td style="text-align: right;"><code>POST</code></td>
-<td>Forget by URL or domain and return a deletion receipt.</td>
+<td>Preview or execute bounded forget by one literal URL/domain selector; execution returns a deletion receipt.</td>
 <td>Yes</td>
 </tr>
 <tr>
 <td><code>/doctor[?storage_census=full]</code></td>
 <td style="text-align: right;"><code>GET</code></td>
-<td>DB integrity, FTS consistency, runtime paths, media queue, and fast DB-derived storage counts; optional filesystem census walks blob roots.</td>
+<td>DB integrity, FTS consistency, runtime paths, blob lifecycle/pending deletion health, media queue, and fast DB-derived storage counts; optional filesystem census walks blob roots.</td>
 <td>Yes</td>
 </tr>
 </tbody>
 </table>
+<hr />
+<h2 id="forget-preview-and-execution">Forget preview and execution</h2>
+<p><code>POST /forget</code> accepts exactly one of <code>domain</code> or <code>url</code>. Domain scope is the literal apex plus subdomains; malformed hostnames/IP literals, URL syntax, paths, ports, whitespace, and SQL wildcard characters are rejected. URL scope follows active storage policy and includes exact observed URL/document aliases. Receipt scopes remain redaction-safe.</p>
+<p>Add <code>"dry_run": true</code> to return exact current selection counts and guard state without writing an audit event, deletion receipt, blob tombstone, database row, or file. <code>max_records</code> defaults to <code>10000</code> and bounds the selected database/FTS records, not merely documents. Execution above the bound returns <code>400 invalid_request</code> before mutation; a reviewed caller may raise the positive per-request bound to the previewed scope.</p>
+<p>For compatibility with older authenticated callers, omission of <code>dry_run</code> still executes. Current first-party UI and extension controls preview first, show document/record counts in confirmation, and execute with the previewed bound. The CLI is safer by default: <code>forget</code> previews unless <code>--execute</code> is supplied.</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">{</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;domain&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;example.com&quot;</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;dry_run&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #66D9EF">true</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;max_records&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">10000</span>
+<span style="color: #F8F8F2">}</span>
+</code></pre></div>
+
+<p>Preview responses set <code>dry_run=true</code>, <code>forgotten=false</code>, and <code>receipt_id=null</code>, and include <code>counts</code> plus <code>guard.selected_records</code>, <code>guard.max_records</code>, and <code>guard.within_limit</code>. Execute responses set <code>dry_run=false</code> and retain the compatible receipt/deletion fields.</p>
 <hr />
 <h2 id="health-response">Health response</h2>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">{</span>
@@ -305,6 +322,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;version&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;0.1.0&quot;</span><span style="color: #F8F8F2">,</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;storage_root&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;/home/&lt;user&gt;/.local/share/browser-memory-daemon&quot;</span><span style="color: #F8F8F2">,</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;blob_root&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;/mnt/nas/browser-memory-daemon/blobs&quot;</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;derivative_root&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;/home/&lt;user&gt;/.local/share/browser-memory-daemon/derivatives&quot;</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;media_root&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;/mnt/nas/browser-memory-daemon/media&quot;</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;media_spool_enabled&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #66D9EF">true</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;media_root_status&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;ready&quot;</span><span style="color: #F8F8F2">,</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;capture_enabled&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #66D9EF">true</span><span style="color: #F8F8F2">,</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;policy_mode&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;all&quot;</span>
 <span style="color: #F8F8F2">}</span>
@@ -319,13 +340,26 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">{</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;ok&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #66D9EF">true</span><span style="color: #F8F8F2">,</span>
-<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;database&quot;</span><span style="color: #F8F8F2">: {</span><span style="color: #FF4689">&quot;integrity_check&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;ok&quot;</span><span style="color: #F8F8F2">, </span><span style="color: #FF4689">&quot;chunks_missing_fts&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">0</span><span style="color: #F8F8F2">},</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;database&quot;</span><span style="color: #F8F8F2">: {</span><span style="color: #FF4689">&quot;integrity_check&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;ok&quot;</span><span style="color: #F8F8F2">, </span><span style="color: #FF4689">&quot;chunks_missing_fts&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">0</span><span style="color: #F8F8F2">, </span><span style="color: #FF4689">&quot;snapshots_missing_authoritative_text&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">0</span><span style="color: #F8F8F2">},</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;storage&quot;</span><span style="color: #F8F8F2">: {</span>
 <span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;census_mode&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;db-derived&quot;</span><span style="color: #F8F8F2">,</span>
-<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;clean_text_files&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">2</span><span style="color: #F8F8F2">,</span>
-<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;clean_text_bytes&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">12345</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;clean_text_files&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">0</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;clean_text_bytes&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">0</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;sqlite_text_bytes&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">12345</span><span style="color: #F8F8F2">,</span>
 <span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;media_files&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">10</span><span style="color: #F8F8F2">,</span>
-<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;media_bytes&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">987654</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;media_bytes&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">987654</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;spool_files&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">2</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;spool_bytes&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">12345</span>
+<span style="color: #F8F8F2">  },</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;media_storage&quot;</span><span style="color: #F8F8F2">: {</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;enabled&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #66D9EF">true</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;limit_bytes&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">1073741824</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;stored_artifacts&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">2</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;filesystem_bytes&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">12345</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;reserved_bytes&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">0</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;accounted_bytes&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">12345</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;available_bytes&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">1073729479</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">    </span><span style="color: #FF4689">&quot;media_root&quot;</span><span style="color: #F8F8F2">: {</span><span style="color: #FF4689">&quot;ok&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #66D9EF">true</span><span style="color: #F8F8F2">, </span><span style="color: #FF4689">&quot;status&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;ready&quot;</span><span style="color: #F8F8F2">}</span>
 <span style="color: #F8F8F2">  },</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;media_queue&quot;</span><span style="color: #F8F8F2">: {</span><span style="color: #FF4689">&quot;artifacts&quot;</span><span style="color: #F8F8F2">: {</span><span style="color: #FF4689">&quot;stored&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">10</span><span style="color: #F8F8F2">}, </span><span style="color: #FF4689">&quot;tasks&quot;</span><span style="color: #F8F8F2">: {</span><span style="color: #FF4689">&quot;succeeded&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">10</span><span style="color: #F8F8F2">}}</span>
 <span style="color: #F8F8F2">}</span>
@@ -336,7 +370,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <span style="color: #ED007E; background-color: #1E0010">Authorization: Bearer ***</span>
 </code></pre></div>
 
-<p>Full storage census returns <code>storage.census_mode="filesystem"</code> and walks <code>clean_text_root</code> plus <code>media_root</code>; it can be slow on large NAS-backed blob roots.</p>
+<p>Full storage census returns <code>storage.census_mode="filesystem"</code> and walks <code>clean_text_root</code>, <code>media_root</code>, and the configured local spool; it can be slow on large NAS-backed media roots. <code>media_storage</code> separately reports final-root readiness and capacity accounting used for admission.</p>
 <hr />
 <h2 id="capture-payload">Capture payload</h2>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">{</span>
@@ -346,6 +380,11 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;text&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;Visible or extracted page text...&quot;</span><span style="color: #F8F8F2">,</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;captured_at&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;2026-06-09T12:00:00Z&quot;</span><span style="color: #F8F8F2">,</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;visit_id&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;visit_...&quot;</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;navigation_id&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;navigation_...&quot;</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;observation_id&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;observation_...&quot;</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;capture_reason&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;initial&quot;</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;extraction_method&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;dom-visible-text&quot;</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;extraction_version&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;extractor-v2&quot;</span><span style="color: #F8F8F2">,</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;visit_started_at&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;2026-06-09T11:59:01Z&quot;</span><span style="color: #F8F8F2">,</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;dwell_seconds&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">32</span><span style="color: #F8F8F2">,</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;max_scroll_percent&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">80</span><span style="color: #F8F8F2">,</span>
@@ -372,6 +411,9 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;document_id&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;doc_...&quot;</span><span style="color: #F8F8F2">,</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;snapshot_id&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;snap_...&quot;</span><span style="color: #F8F8F2">,</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;visit_id&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;visit_...&quot;</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;observation_id&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;obs_...&quot;</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;observation_created&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #66D9EF">true</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;url_claim_ids&quot;</span><span style="color: #F8F8F2">: [],</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;snapshot_created&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #66D9EF">true</span><span style="color: #F8F8F2">,</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;chunk_count&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">3</span><span style="color: #F8F8F2">,</span>
 <span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;media_ref_count&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">1</span><span style="color: #F8F8F2">,</span>
@@ -391,9 +433,23 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </code></pre></div>
 
 <p>In <code>all</code> mode, daemon redaction is disabled. In non-<code>all</code> modes, URL/title/body redaction runs before DB/FTS/blob storage.</p>
+<p>The normalized observed <code>url</code> is authoritative for new document identity. <code>canonical_url</code> is stored only as a URL claim when it differs; it never causes an automatic cross-origin document merge. Repeated captures may share one <code>visit_id</code>/<code>navigation_id</code> while producing distinct observations. Reusing an <code>observation_id</code> with identical stored provenance is idempotent; changing its navigation, document, snapshot, URL, capture time/method/reason, extraction version, title, or provenance quality is rejected. Exact retries return the same URL-claim and media-reference response shape without creating another observation. Reusing a <code>visit_id</code> for a different normalized observed URL/document is rejected so one visit cannot span navigations.</p>
+<p>The MV3 service worker emits opaque stable IDs: one observation ID per extraction and one navigation ID per persisted tab/URL state. It stores those IDs in the queued payload before daemon transport, preserves them across retry/restart, rotates navigation identity on URL change, and lazily decorates legacy queued captures before their next POST.</p>
+<hr />
+<h2 id="observation-first-activity-reads">Observation-first activity reads</h2>
+<p><code>GET /recent</code> and <code>GET /timeline</code> return one item per capture observation. Each item keeps the existing visit/document/snapshot fields and adds <code>observation_id</code>, <code>navigation_id</code>, <code>record_source</code>, capture method/reason/version, disposition, provenance quality, and <code>max_scroll_percent</code>. The snippet and media count are taken only from that observation's snapshot and stored media relationships.</p>
+<p>Historical visits without any observation row remain visible as <code>record_source: "legacy-visit"</code>, <code>disposition: "legacy-fallback"</code>, and <code>provenance_quality: "ambiguous"</code>. The fallback prefers a visit-linked snapshot and never labels a document-latest fallback as exact.</p>
+<p><code>GET /timeline</code> also includes an additive <code>summary</code> for the bounded returned items: distinct visits, observation count, capture count, dwell summed once per visit, maximum lifecycle scroll, and media relationship count.</p>
+<p>Document detail includes ordered <code>observations</code> and <code>url_claims</code>; snapshot detail includes only observations referencing that exact snapshot. Existing <code>visits</code>, <code>snapshots</code>, and endpoint paths remain available for compatibility.</p>
+<hr />
+<h2 id="blob-locator-read-contract">Blob locator read contract</h2>
+<p>SQLite migration version 8 adds root-relative blob locators while retaining legacy absolute compatibility paths. Media writes populate both forms. Legacy snapshot/media sidecar reads, media serving, forget, purge, and eviction prefer the relative locator and use the legacy absolute path only when the relative field is null or empty. Every selected value still resolves through the configured-root <code>BlobStore</code>; a populated invalid relative locator fails closed rather than falling back.</p>
+<p>SQLite migration version 9 makes <code>snapshots.cleaned_text</code> the complete-text authority and records <code>text_authority</code>/<code>text_source</code> as <code>capture</code>, <code>chunks-hash-verified</code>, <code>sidecar-hash-verified</code>, or <code>legacy-fallback</code>. New captures create no clean-text sidecar and return <code>clean_text_sidecar_status="not-created"</code>. Detail reads use non-null SQLite text before any legacy sidecar or chunk fallback.</p>
+<p>Snapshot summaries expose <code>clean_text_locator_kind</code>; media metadata exposes <code>file_locator_kind</code>. Locator values are <code>relative</code>, <code>legacy-absolute</code>, <code>none</code>, or <code>unresolved</code> where configuration is unavailable. <code>clean_text_path_status</code> and <code>file_path_status</code> report sidecar containment/availability such as <code>ok</code>, <code>missing</code>, <code>outside-root</code>, <code>empty</code>, or <code>config-required</code>. <code>has_clean_text</code> is true when authoritative SQLite text exists even if the sidecar status is <code>empty</code>. List/detail projections do not expose the underlying locator strings or duplicate complete text in summary rows.</p>
 <hr />
 <h2 id="media-artifact-apis">Media artifact APIs</h2>
 <p>Media references in <code>/capture</code> are relationship metadata only. Binary storage is asynchronous: the browser lazy sidecar fetches with Chrome cookies and uploads raw blobs, while the daemon media worker backfills public refs without Chrome cookies.</p>
+<p>Media artifact rows returned from artifact, document-detail, and snapshot-detail reads include <code>observations</code>. Each entry contains <code>observation_id</code>, <code>observed_at</code>, <code>link_provenance_quality</code>, <code>observation_provenance_quality</code>, visit/navigation identity, observed URL, and capture method/reason/version. The list contains only stored observation/artifact relationships; unresolved historical ambiguity is represented by an empty list rather than a synthesized latest-snapshot link.</p>
 <p>Raw browser upload:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #ED007E; background-color: #1E0010">PUT /media-artifacts/&lt;artifact_id&gt;/blob</span>
 <span style="color: #ED007E; background-color: #1E0010">Authorization: Bearer ***</span>
@@ -419,6 +475,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </code></pre></div>
 
 <p>If <code>content_base64</code> is omitted, the artifact is metadata-only.</p>
+<p>Raw <code>PUT</code> requires a non-negative <code>Content-Length</code>, rejects bodies above the configured artifact cap before consumption, and streams accepted bytes directly into contained <code>BlobStore</code> staging with reads capped at 64 KiB. Truncated or disconnected uploads abort staging, release cache and process reservations, and leave the prior artifact row authoritative. Media route capacity exhaustion returns HTTP <code>503</code> with the compatible top-level <code>error</code> field. Compatibility JSON remains bounded but can still require a base64 decode copy; raw upload is the preferred binary path.</p>
 <p>Public daemon backfill:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #ED007E; background-color: #1E0010">POST /media-artifacts/fetch-pending</span>
 <span style="color: #ED007E; background-color: #1E0010">Authorization: Bearer ***</span>
@@ -448,13 +505,13 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <span style="color: #F8F8F2">}</span>
 </code></pre></div>
 
-<p>Manual and background fetches use the same <code>media_fetch_tasks</code> lease path as the media worker. An actively leased task is not fetched by a competing caller; stale leases are eligible for recovery.</p>
+<p>Manual and background fetches use the same <code>media_fetch_tasks</code> lease path as the media worker. Each caller claims one task immediately before processing it, so later tasks do not age in a preclaimed batch while earlier work waits for process capacity or network deadlines. An actively leased task is not fetched by a competing caller; stale leases are eligible for recovery.</p>
 <p>Queue/cache status:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #ED007E; background-color: #1E0010">GET /media-artifacts/queue-status?limit=50</span>
 <span style="color: #ED007E; background-color: #1E0010">Authorization: Bearer ***</span>
 </code></pre></div>
 
-<p>The response includes artifact/task status counts, stored-byte totals, recent non-stored artifacts, and live cache gates (<code>max_media_artifact_bytes</code>, <code>max_media_bytes_per_snapshot</code>, <code>max_media_bytes_per_domain</code>, <code>max_media_cache_bytes</code>, MIME allowlist, priority floor, and cache pressure). The daily-driver health snapshot additionally derives due-task, oldest-due, stale-lease, latest-worker-run, and 1h/24h worker-throughput telemetry from the same task/audit tables using SQLite datetime comparisons, so mixed <code>CURRENT_TIMESTAMP</code> and ISO-<code>T</code> timestamps are compared as times rather than strings.</p>
+<p>The response includes artifact/task status counts, stored-byte totals, recent non-stored artifacts, live cache gates (<code>max_media_artifact_bytes</code>, <code>max_media_bytes_per_snapshot</code>, <code>max_media_bytes_per_domain</code>, <code>max_media_cache_bytes</code>, MIME allowlist, priority floor, and cache pressure), and aggregate process-resource counters (<code>max_inflight_bytes</code>, <code>inflight_bytes</code>, <code>max_concurrent_requests</code>, <code>active_requests</code>). The counters expose no captured content, URL, or storage path. The daily-driver health snapshot additionally derives due-task, oldest-due, stale-lease, latest-worker-run, and 1h/24h worker-throughput telemetry from the same task/audit tables using SQLite datetime comparisons, so mixed <code>CURRENT_TIMESTAMP</code> and ISO-<code>T</code> timestamps are compared as times rather than strings.</p>
 <p>Purge local media blob cache without deleting text/FTS/ref rows:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #ED007E; background-color: #1E0010">POST /media-artifacts/purge-cache</span>
 <span style="color: #ED007E; background-color: #1E0010">Authorization: Bearer ***</span>
@@ -464,11 +521,13 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">{</span><span style="color: #FF4689">&quot;domain&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;linkedin.com&quot;</span><span style="color: #F8F8F2">, </span><span style="color: #FF4689">&quot;dry_run&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #66D9EF">true</span><span style="color: #F8F8F2">, </span><span style="color: #FF4689">&quot;rehydrate&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #66D9EF">false</span><span style="color: #F8F8F2">}</span>
 </code></pre></div>
 
+<p>Execute mode first records a blob tombstone and sets selected artifacts to <code>purging</code>. It returns <code>pending_deletions &gt; 0</code> instead of claiming purge success when bytes are blocked or an unlink fails. Pending artifacts retain locators for retry but are not served or overwritten; they continue to count against media admission budgets until <code>storage reconcile --execute</code> reaches <code>deleted</code> or <code>missing</code>.</p>
 <p>Stored binaries are available via:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #ED007E; background-color: #1E0010">GET /media-artifacts/&lt;artifact_id&gt;</span>
 <span style="color: #ED007E; background-color: #1E0010">Authorization: Bearer ***</span>
 </code></pre></div>
 
+<p>The daemon validates the tier-owned locator against the configured media/spool root before serving bytes and streams accepted responses from <code>BlobStore.open</code> in 64 KiB chunks while holding a process byte/request lease. It checks the emitted length against the advertised length. A client disconnect closes the response without attempting a second HTTP response, emits only the safe <code>client_disconnected</code> telemetry code, and releases the lease. Missing, stale, invalid, out-of-root, <code>purging</code>, or <code>purged</code> artifacts return metadata/not-stored responses rather than reading arbitrary local files.</p>
 <p>Media metadata is not inserted into FTS; search results only expose <code>media_artifact_count</code>.</p>
 <hr />
 <h2 id="policy-rules">Policy rules</h2>
@@ -515,18 +574,21 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <span style="color: #F8F8F2">}</span>
 </code></pre></div>
 
-<p>If <code>visit_id</code> matches a stored visit, positive <code>active_seconds</code> is added to <code>visits.dwell_seconds</code>. Duplicate event IDs and overlapping active segments do not double-count dwell.</p>
+<p>If <code>visit_id</code> is present, it resolves only when exact identity and normalized observed URL agree. An event that arrives before its capture is retained with <code>visit_id: null</code>, its <code>claimed_visit_id</code>, and <code>attachment_method: "unmatched"</code>; capture ingestion later reconciles it only when claimed ID and normalized observed URL both match. Payloads that omit <code>visit_id</code> retain an explicitly labeled <code>legacy-url-fallback</code> during the compatibility window.</p>
+<p>Positive-active intervals require timezone-qualified start/end timestamps, a positive bounded duration, and reported <code>active_seconds</code> within one second of that duration. <code>visits.dwell_seconds</code> is replaced with the union of all valid positive-active intervals for the resolved visit, so overlap, containment, adjacency, out-of-order delivery, and duplicate event IDs do not double-count. The response separates resolved <code>visit_id</code> from <code>claimed_visit_id</code> and reports <code>attachment_method</code>, <code>dwell_updated</code>, and the current derived <code>dwell_seconds</code>.</p>
 <hr />
 <h2 id="deletion-payloads">Deletion payloads</h2>
-<p>Forget a domain:</p>
+<p>Forget accepts exactly one destructive selector. A domain selector is a literal hostname; it continues to delete that host and its subdomains:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">{</span><span style="color: #FF4689">&quot;domain&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;example.com&quot;</span><span style="color: #F8F8F2">}</span>
 </code></pre></div>
 
-<p>Forget one URL:</p>
+<p>Forget one absolute URL. URL matching is policy-aware: <code>all</code> mode matches the literal stored URL, while <code>recall</code>/<code>balanced</code>/<code>strict</code> match the redacted URL representation used at ingest time:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">{</span><span style="color: #FF4689">&quot;url&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;https://example.com/article&quot;</span><span style="color: #F8F8F2">}</span>
 </code></pre></div>
 
-<p>The response includes <code>receipt_id</code>, <code>scope</code>, and deletion counts for documents, visits, lifecycle events, snapshots, chunks, FTS, clean-text blobs, media artifacts/blobs, embeddings, redactions, and feedback events.</p>
+<p>Requests with neither selector or with both selectors return <code>400</code>. Domain selectors reject URL/path/query/wildcard/port/userinfo syntax; use <code>url</code> for a scoped URL deletion.</p>
+<p>The relational cascade, minimized receipt, and blob tombstones commit in one SQLite transaction. The response includes <code>database_forgotten</code>, <code>deletion</code>, and <code>counts.blob_deletions_pending</code>. <code>forgotten</code> is <code>true</code> only when every required byte is confirmed <code>deleted</code> or already <code>missing</code>; failed, blocked, unavailable-root, or outside-root deletion remains durable retry work and keeps <code>forgotten: false</code>. The receipt ID is also the deletion operation ID used by reconciliation.</p>
+<p>The response includes <code>receipt_id</code>, redaction-safe <code>scope</code>, and deletion counts for documents, visits, lifecycle events, snapshots, chunks, FTS, clean-text blobs, media artifacts/blobs, embeddings, redactions, and feedback events. Blob counters include out-of-root/failed unlink counts when stale or tampered DB paths are refused instead of followed. URL deletion receipts redact sensitive selector values even when <code>all</code> mode used the literal URL to find rows.</p>
   </article>
   <div class="md-footer">
     Rendered from <code>docs/api.md</code> — the Markdown file is the canonical,

@@ -16,7 +16,7 @@ Windows Chrome extension
   → browser lazy media sidecar: credentialed fetch + raw blob upload
   → CDP/HLS media sidecar: X/Twitter video manifests + segment backfill
   → WSL daemon policy mode + durable public media worker
-  → SQLite + FTS5 under WSL runtime paths + text/media blobs under the configured blob root
+  → SQLite-authoritative text under WSL runtime paths + guarded media root + optional bounded local spool
   → CLI / local UI / search / timeline / detail / forget / doctor
 ```
 
@@ -77,6 +77,9 @@ python -m pip install -r requirements-dev.txt
 ```
 
 ```bash
+# Run the hermetic network-free pre-commit gate
+BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-fast-gate.sh
+
 # Run daemon tests
 python -m pytest -q
 

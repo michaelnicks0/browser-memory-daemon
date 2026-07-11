@@ -1,13 +1,14 @@
 ---
 id: ADR-0006
-status: accepted
+status: superseded
 date: 2026-06-14
 decision_date: 2026-06-08
 decider: Operator
 scope: repo
 backfilled: true
 supersedes: []
-superseded_by: []
+superseded_by:
+  - ADR-0040
 related:
   - docs/ARCHITECTURE.md
   - docs/security-model.md
@@ -24,6 +25,8 @@ verification:
 ---
 
 # ADR-0006: Use Forget Cascade with Deletion Receipts
+
+> **Superseded by ADR-0040.** Physical forget and minimized receipts remain, but blob deletion now uses durable operational tombstones and retryable reconciliation before reporting complete success.
 
 ## Context
 

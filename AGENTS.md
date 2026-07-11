@@ -38,6 +38,7 @@ Guidance for AI coding agents working in this repo.
 
 ```bash
 python3.11 -m venv .venv && . .venv/bin/activate && python -m pip install -r requirements-dev.txt
+BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-fast-gate.sh
 BMD_PYTHON="${BMD_PYTHON:-python}" ./scripts/run-e2e.sh
 python scripts/generate_test_inventory.py --check
 python scripts/generate_showcase.py --spec scripts/showcase.spec.json --check

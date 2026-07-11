@@ -2,17 +2,24 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 import urllib.parse
 import urllib.request
+from pathlib import Path
 
 from .app import make_server
+from .backup_ops import BackupError, create_backup, restore_backup
 from .blob_migration import migrate_blob_root
 from .config import load_config
 from .daily_driver_health import daily_driver_health_snapshot
 from .db import connect, init_db
 from .media import purge_media_cache
-from .media_worker import run_loop as run_media_worker_loop, run_once as run_media_worker_once
+from .media_ops import requeue_media_artifacts
+from .media_storage import drain_media_spool, media_spool_status
+from .media_worker import run_loop as run_media_worker_loop
+from .media_worker import run_once as run_media_worker_once
+from .migrations import MigrationError, migrate_database, migration_status
+from .storage_reconcile import reconcile_storage
+from .text_authority import reconcile_snapshot_text_authority
 
 
 def _request(method: str, url: str, *, token: str, body: dict | None = None) -> dict:
@@ -32,10 +39,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--token", default=None)
     parser.add_argument("--runtime-root", default=None)
     parser.add_argument("--blob-root", default=None)
+    parser.add_argument("--derivative-root", default=None)
+    parser.add_argument("--media-root", default=None)
+    parser.add_argument("--media-spool-root", default=None)
     parser.add_argument("--policy-mode", choices=["all", "recall", "balanced", "strict"], default=None)
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("serve")
     sub.add_parser("health")
+    migrate_cmd = sub.add_parser("migrate")
+    migrate_mode = migrate_cmd.add_mutually_exclusive_group(required=True)
+    migrate_mode.add_argument("--check", action="store_true")
+    migrate_mode.add_argument("--execute", action="store_true")
     doctor_cmd = sub.add_parser("doctor")
     doctor_cmd.add_argument("--storage-census", action="store_true", help="walk clean-text/media roots for exact file counts; default uses DB-derived counts")
     daily_health = sub.add_parser("daily-driver-health")
@@ -64,6 +78,11 @@ def main(argv: list[str] | None = None) -> int:
     forget = sub.add_parser("forget")
     forget.add_argument("--domain")
     forget.add_argument("--url")
+    forget_mode = forget.add_mutually_exclusive_group()
+    forget_mode.add_argument("--dry-run", dest="execute", action="store_false")
+    forget_mode.add_argument("--execute", dest="execute", action="store_true")
+    forget.set_defaults(execute=False)
+    forget.add_argument("--max-records", type=int, default=10_000)
     cap = sub.add_parser("capture-fixture")
     cap.add_argument("--url", required=True)
     cap.add_argument("--title", default="Fixture")
@@ -89,12 +108,48 @@ def main(argv: list[str] | None = None) -> int:
     rehydrate.add_argument("--document-id")
     rehydrate.add_argument("--snapshot-id")
     rehydrate.add_argument("--limit", type=int, default=100)
+    requeue = cache_sub.add_parser("requeue")
+    requeue.add_argument("--reason", required=True, choices=("snapshot-budget", "storage-budget", "all-budget"))
+    requeue.add_argument("--domain")
+    requeue.add_argument("--document-id")
+    requeue.add_argument("--snapshot-id")
+    requeue.add_argument("--limit", type=int, default=100)
+    requeue_mode = requeue.add_mutually_exclusive_group()
+    requeue_mode.add_argument("--dry-run", action="store_true")
+    requeue_mode.add_argument("--execute", action="store_true")
     blob = sub.add_parser("blob-root")
     blob_sub = blob.add_subparsers(dest="blob_command", required=True)
     migrate = blob_sub.add_parser("migrate")
     migrate.add_argument("--from-root", default=None)
     migrate.add_argument("--execute", action="store_true")
     migrate.add_argument("--remove-source", action="store_true")
+    snapshot_text = sub.add_parser("snapshot-text")
+    snapshot_text_sub = snapshot_text.add_subparsers(dest="snapshot_text_command", required=True)
+    reconcile_text = snapshot_text_sub.add_parser("reconcile")
+    reconcile_text.add_argument("--execute", action="store_true")
+    reconcile_text.add_argument("--limit", type=int, default=1_000)
+    media_spool = sub.add_parser("media-spool")
+    media_spool_sub = media_spool.add_subparsers(dest="media_spool_command", required=True)
+    media_spool_sub.add_parser("status")
+    drain_spool = media_spool_sub.add_parser("drain")
+    drain_spool.add_argument("--execute", action="store_true")
+    drain_spool.add_argument("--limit", type=int, default=100)
+    storage = sub.add_parser("storage")
+    storage_sub = storage.add_subparsers(dest="storage_command", required=True)
+    reconcile_blobs = storage_sub.add_parser("reconcile")
+    reconcile_blobs.add_argument("--execute", action="store_true")
+    reconcile_blobs.add_argument("--limit", type=int, default=1_000)
+    reconcile_blobs.add_argument("--stale-stage-seconds", type=int, default=3_600)
+    backup = sub.add_parser("backup")
+    backup_sub = backup.add_subparsers(dest="backup_command", required=True)
+    backup_create = backup_sub.add_parser("create")
+    backup_create.add_argument("--destination", type=Path, required=True)
+    backup_create.add_argument("--include-derivatives", action="store_true")
+    backup_create.add_argument("--execute", action="store_true")
+    backup_restore = backup_sub.add_parser("restore")
+    backup_restore.add_argument("--source", type=Path, required=True)
+    backup_restore.add_argument("--destination", type=Path, required=True)
+    backup_restore.add_argument("--execute", action="store_true")
     args = parser.parse_args(argv)
 
     cfg = load_config(
@@ -104,6 +159,9 @@ def main(argv: list[str] | None = None) -> int:
         policy_mode=args.policy_mode,
         runtime_root=args.runtime_root,
         blob_root=args.blob_root,
+        derivative_root=args.derivative_root,
+        media_root=args.media_root,
+        media_spool_root=args.media_spool_root,
         test_mode=False,
     )
     base = f"http://{cfg.host}:{cfg.port}"
@@ -119,6 +177,22 @@ def main(argv: list[str] | None = None) -> int:
         with urllib.request.urlopen(f"{base}/health", timeout=10) as response:
             print(response.read().decode("utf-8"))
         return 0
+    if args.command == "migrate":
+        try:
+            result = (
+                migrate_database(cfg, execute=True, allow_destructive=True)
+                if args.execute
+                else migration_status(cfg)
+            )
+        except MigrationError as exc:
+            error = {"compatible": False, "ready": False, "error": str(exc)}
+            backup_path = getattr(exc, "backup_path", None)
+            if backup_path is not None:
+                error["backup_path"] = str(backup_path)
+            print(json.dumps(error, indent=2))
+            return 1
+        print(json.dumps(result, indent=2))
+        return 0 if result["ready"] else 2
     if args.command == "search":
         q = urllib.parse.urlencode({"q": args.query, "limit": str(args.limit)})
         print(json.dumps(_request("GET", f"{base}/search?{q}", token=cfg.api_token), indent=2))
@@ -174,7 +248,26 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(_request("GET", f"{base}/policy/rules", token=cfg.api_token), indent=2))
         return 0
     if args.command == "forget":
-        print(json.dumps(_request("POST", f"{base}/forget", token=cfg.api_token, body={"domain": args.domain, "url": args.url}), indent=2))
+        has_domain = args.domain is not None and str(args.domain).strip() != ""
+        has_url = args.url is not None and str(args.url).strip() != ""
+        if has_domain == has_url:
+            parser.error("forget accepts exactly one of --domain or --url")
+        print(
+            json.dumps(
+                _request(
+                    "POST",
+                    f"{base}/forget",
+                    token=cfg.api_token,
+                    body={
+                        "domain": args.domain,
+                        "url": args.url,
+                        "dry_run": not args.execute,
+                        "max_records": args.max_records,
+                    },
+                ),
+                indent=2,
+            )
+        )
         return 0
     if args.command == "media-worker":
         init_db(cfg)
@@ -205,12 +298,83 @@ def main(argv: list[str] | None = None) -> int:
                 purge_media_cache(conn, cfg, body)
                 print(json.dumps(run_media_worker_once(conn, cfg, limit=args.limit), indent=2))
             return 0
+        if args.cache_command == "requeue":
+            with connect(cfg.db_path) as conn:
+                print(
+                    json.dumps(
+                        requeue_media_artifacts(
+                            conn,
+                            reason=args.reason,
+                            domain=args.domain,
+                            document_id=args.document_id,
+                            snapshot_id=args.snapshot_id,
+                            limit=args.limit,
+                            execute=args.execute,
+                        ),
+                        indent=2,
+                    )
+                )
+            return 0
     if args.command == "blob-root":
         init_db(cfg)
         if args.blob_command == "migrate":
             with connect(cfg.db_path) as conn:
                 print(json.dumps(migrate_blob_root(conn, cfg, source_root=args.from_root, execute=args.execute, remove_source=args.remove_source), indent=2))
             return 0
+    if args.command == "snapshot-text":
+        init_db(cfg)
+        if args.snapshot_text_command == "reconcile":
+            with connect(cfg.db_path) as conn:
+                result = reconcile_snapshot_text_authority(
+                    conn,
+                    cfg,
+                    execute=args.execute,
+                    limit=args.limit,
+                )
+                print(json.dumps(result, indent=2))
+            return 0 if result["remaining"] == 0 else 2
+    if args.command == "media-spool":
+        init_db(cfg)
+        with connect(cfg.db_path) as conn:
+            if args.media_spool_command == "status":
+                result = media_spool_status(conn, cfg)
+            else:
+                result = drain_media_spool(conn, cfg, execute=args.execute, limit=args.limit)
+            print(json.dumps(result, indent=2))
+        return 0
+    if args.command == "storage":
+        init_db(cfg)
+        with connect(cfg.db_path) as conn:
+            result = reconcile_storage(
+                conn,
+                cfg,
+                execute=args.execute,
+                limit=args.limit,
+                stale_stage_seconds=args.stale_stage_seconds,
+            )
+            print(json.dumps(result, indent=2))
+        return 0 if result["tombstones"]["pending"] == 0 else 2
+    if args.command == "backup":
+        try:
+            if args.backup_command == "create":
+                result = create_backup(
+                    cfg,
+                    args.destination,
+                    execute=args.execute,
+                    include_derivatives=args.include_derivatives,
+                )
+            else:
+                result = restore_backup(
+                    args.source,
+                    args.destination,
+                    execute=args.execute,
+                    active_config=cfg,
+                )
+        except BackupError as exc:
+            print(json.dumps({"error": str(exc)}, indent=2))
+            return 1
+        print(json.dumps(result, indent=2))
+        return 0
     if args.command == "capture-fixture":
         print(json.dumps(_request("POST", f"{base}/capture", token=cfg.api_token, body={"url": args.url, "title": args.title, "text": args.text}), indent=2))
         return 0

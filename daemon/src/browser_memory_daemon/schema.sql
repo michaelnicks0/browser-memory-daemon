@@ -51,6 +51,8 @@ CREATE TABLE IF NOT EXISTS visit_events (
   max_scroll_percent INTEGER,
   metadata_json TEXT NOT NULL DEFAULT '{}',
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  claimed_visit_id TEXT,
+  attachment_method TEXT NOT NULL DEFAULT 'historical' CHECK (attachment_method IN ('historical', 'visit-id', 'visit-id-delayed', 'legacy-url-fallback', 'unmatched')),
   FOREIGN KEY(visit_id) REFERENCES visits(id) ON DELETE SET NULL,
   FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE,
   FOREIGN KEY(source_id) REFERENCES sources(id)
@@ -68,6 +70,9 @@ CREATE TABLE IF NOT EXISTS snapshots (
   privacy_class TEXT NOT NULL DEFAULT 'normal',
   redaction_count INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  cleaned_text_locator TEXT,
+  cleaned_text TEXT,
+  cleaned_text_source TEXT NOT NULL DEFAULT 'legacy-fallback' CHECK (cleaned_text_source IN ('legacy-fallback', 'capture', 'chunks-hash-verified', 'sidecar-hash-verified')),
   FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE,
   FOREIGN KEY(visit_id) REFERENCES visits(id) ON DELETE SET NULL
 );
@@ -117,6 +122,9 @@ CREATE TABLE IF NOT EXISTS media_artifacts (
   status_reason TEXT,
   metadata_json TEXT NOT NULL DEFAULT '{}',
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  blob_locator TEXT,
+  storage_tier TEXT NOT NULL DEFAULT 'media-root' CHECK (storage_tier IN ('media-root', 'spool')),
+  spool_locator TEXT,
   FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE,
   FOREIGN KEY(snapshot_id) REFERENCES snapshots(id) ON DELETE CASCADE,
   FOREIGN KEY(visit_id) REFERENCES visits(id) ON DELETE SET NULL
@@ -139,19 +147,57 @@ CREATE TABLE IF NOT EXISTS media_fetch_tasks (
   FOREIGN KEY(artifact_id) REFERENCES media_artifacts(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS media_spool_reservations (
+  reservation_id TEXT PRIMARY KEY,
+  artifact_id TEXT NOT NULL,
+  reserved_bytes INTEGER NOT NULL CHECK (reserved_bytes > 0),
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+
+CREATE TABLE IF NOT EXISTS media_cache_reservations (
+  reservation_id TEXT PRIMARY KEY,
+  artifact_id TEXT NOT NULL,
+  document_id TEXT NOT NULL,
+  snapshot_id TEXT NOT NULL,
+  domain TEXT NOT NULL DEFAULT '',
+  reserved_bytes INTEGER NOT NULL CHECK (reserved_bytes > 0),
+  owner_pid INTEGER NOT NULL CHECK (owner_pid > 0),
+  owner_start_token TEXT NOT NULL CHECK (owner_start_token <> ''),
+  expires_at TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE,
+  FOREIGN KEY(snapshot_id) REFERENCES snapshots(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_media_cache_reservations_expiry ON media_cache_reservations(expires_at);
+CREATE INDEX IF NOT EXISTS idx_media_cache_reservations_snapshot ON media_cache_reservations(snapshot_id);
+CREATE INDEX IF NOT EXISTS idx_media_cache_reservations_domain ON media_cache_reservations(domain);
+
+CREATE TABLE IF NOT EXISTS blob_storage_records (
+  id TEXT PRIMARY KEY,
+  operation_id TEXT,
+  owner_kind TEXT NOT NULL CHECK (owner_kind IN ('media-artifact', 'snapshot-derivative', 'orphan')),
+  owner_id TEXT NOT NULL,
+  storage_tier TEXT NOT NULL CHECK (storage_tier IN ('derivative', 'media-root', 'spool')),
+  locator TEXT NOT NULL,
+  byte_size INTEGER,
+  content_sha256 TEXT,
+  state TEXT NOT NULL CHECK (state IN ('staged', 'committed', 'tombstoned', 'missing', 'deleted', 'blocked', 'failed')),
+  reason TEXT,
+  attempts INTEGER NOT NULL DEFAULT 0,
+  last_error TEXT,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  completed_at TEXT,
+  UNIQUE(owner_kind, owner_id, storage_tier, locator)
+);
+
 CREATE TABLE IF NOT EXISTS privacy_rules (
   id TEXT PRIMARY KEY,
   rule_type TEXT NOT NULL,
   pattern TEXT NOT NULL,
   action TEXT NOT NULL,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-DELETE FROM privacy_rules
-WHERE rowid NOT IN (
-  SELECT MIN(rowid)
-  FROM privacy_rules
-  GROUP BY rule_type, pattern, action
 );
 
 CREATE TABLE IF NOT EXISTS redactions (
@@ -213,6 +259,7 @@ CREATE INDEX IF NOT EXISTS idx_visits_blocked_captured_created ON visits(blocked
 CREATE INDEX IF NOT EXISTS idx_visits_document_captured_created ON visits(document_id, captured_at DESC, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_visits_normalized_url ON visits(normalized_url);
 CREATE INDEX IF NOT EXISTS idx_visit_events_visit_id ON visit_events(visit_id);
+CREATE INDEX IF NOT EXISTS idx_visit_events_claimed_visit ON visit_events(claimed_visit_id, normalized_url, event_started_at);
 CREATE INDEX IF NOT EXISTS idx_visit_events_document_id ON visit_events(document_id);
 CREATE INDEX IF NOT EXISTS idx_visit_events_visit_ended_created ON visit_events(visit_id, event_ended_at DESC, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_visit_events_document_ended_created ON visit_events(document_id, event_ended_at DESC, created_at DESC);
@@ -228,9 +275,84 @@ CREATE INDEX IF NOT EXISTS idx_media_artifacts_status_created ON media_artifacts
 CREATE INDEX IF NOT EXISTS idx_media_fetch_tasks_status_next ON media_fetch_tasks(status, next_attempt_at, priority);
 CREATE INDEX IF NOT EXISTS idx_media_fetch_tasks_status_lease ON media_fetch_tasks(status, lease_until);
 CREATE INDEX IF NOT EXISTS idx_media_fetch_tasks_artifact ON media_fetch_tasks(artifact_id);
+CREATE INDEX IF NOT EXISTS idx_blob_storage_records_state_updated ON blob_storage_records(state, updated_at, id);
+CREATE INDEX IF NOT EXISTS idx_blob_storage_records_operation ON blob_storage_records(operation_id, state, id);
 CREATE INDEX IF NOT EXISTS idx_audit_events_type_created ON audit_events(event_type, created_at DESC);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_privacy_rules_semantics ON privacy_rules(rule_type, pattern, action);
 CREATE INDEX IF NOT EXISTS idx_chunks_document_id ON chunks(document_id);
 CREATE INDEX IF NOT EXISTS idx_chunks_document_snapshot_chunk_index ON chunks(document_id, snapshot_id, chunk_index);
 CREATE INDEX IF NOT EXISTS idx_chunks_snapshot_chunk_index ON chunks(snapshot_id, chunk_index);
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
+
+CREATE TABLE IF NOT EXISTS capture_observations (
+  id TEXT PRIMARY KEY,
+  idempotency_key TEXT NOT NULL UNIQUE,
+  navigation_id TEXT,
+  visit_id TEXT REFERENCES visits(id) ON DELETE SET NULL,
+  document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  snapshot_id TEXT REFERENCES snapshots(id) ON DELETE SET NULL,
+  source_id TEXT NOT NULL DEFAULT 'chrome-extension' REFERENCES sources(id),
+  observed_url TEXT NOT NULL,
+  normalized_observed_url TEXT NOT NULL,
+  title TEXT,
+  captured_at TEXT NOT NULL,
+  capture_reason TEXT NOT NULL DEFAULT 'unspecified',
+  capture_method TEXT NOT NULL DEFAULT 'unknown',
+  extraction_version TEXT NOT NULL DEFAULT 'unknown',
+  disposition TEXT NOT NULL DEFAULT 'accepted'
+    CHECK (disposition IN ('accepted', 'duplicate', 'rejected', 'historical-inferred', 'historical-ambiguous')),
+  provenance_quality TEXT NOT NULL DEFAULT 'observed'
+    CHECK (provenance_quality IN ('observed', 'inferred', 'ambiguous')),
+  metadata_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CHECK (length(idempotency_key) > 0)
+);
+
+CREATE INDEX IF NOT EXISTS idx_capture_observations_visit_captured
+  ON capture_observations(visit_id, captured_at DESC, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_capture_observations_document_captured
+  ON capture_observations(document_id, captured_at DESC, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_capture_observations_snapshot
+  ON capture_observations(snapshot_id);
+CREATE INDEX IF NOT EXISTS idx_capture_observations_normalized_url
+  ON capture_observations(normalized_observed_url, captured_at DESC);
+
+CREATE TABLE IF NOT EXISTS document_url_claims (
+  id TEXT PRIMARY KEY,
+  document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  observation_id TEXT REFERENCES capture_observations(id) ON DELETE SET NULL,
+  claim_type TEXT NOT NULL
+    CHECK (claim_type IN ('canonical', 'alternate', 'og-url', 'legacy-canonical')),
+  claimed_url TEXT NOT NULL,
+  normalized_claimed_url TEXT NOT NULL,
+  claim_origin TEXT,
+  same_origin INTEGER CHECK (same_origin IS NULL OR same_origin IN (0, 1)),
+  identity_effect TEXT NOT NULL DEFAULT 'none'
+    CHECK (identity_effect IN ('none', 'same-origin-alias', 'historical-authority')),
+  provenance_quality TEXT NOT NULL DEFAULT 'observed'
+    CHECK (provenance_quality IN ('observed', 'inferred', 'ambiguous')),
+  first_observed_at TEXT NOT NULL,
+  last_observed_at TEXT NOT NULL,
+  metadata_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(document_id, claim_type, normalized_claimed_url)
+);
+
+CREATE INDEX IF NOT EXISTS idx_document_url_claims_document
+  ON document_url_claims(document_id, last_observed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_document_url_claims_normalized
+  ON document_url_claims(normalized_claimed_url, claim_type);
+CREATE INDEX IF NOT EXISTS idx_document_url_claims_observation
+  ON document_url_claims(observation_id);
+
+CREATE TABLE IF NOT EXISTS media_artifact_observations (
+  artifact_id TEXT NOT NULL REFERENCES media_artifacts(id) ON DELETE CASCADE,
+  observation_id TEXT NOT NULL REFERENCES capture_observations(id) ON DELETE CASCADE,
+  provenance_quality TEXT NOT NULL CHECK (provenance_quality IN ('observed', 'inferred', 'ambiguous')),
+  observed_at TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (artifact_id, observation_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_media_artifact_observations_observation
+  ON media_artifact_observations(observation_id, observed_at DESC);

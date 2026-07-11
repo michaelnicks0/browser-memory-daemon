@@ -133,7 +133,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <hr />
 <h2 id="what-it-does">What it does</h2>
 <p>The system captures text from pages you browse in Windows Chrome, sends it over loopback to a WSL daemon, stores it in SQLite + FTS5, and lets you search, inspect, and forget it locally.</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>Windows Chrome extension → http://127.0.0.1:8765 → WSL SQLite/FTS/blobs → CLI/UI/search
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>Windows Chrome extension → http://127.0.0.1:8765 → WSL SQLite/FTS authority + media cache → CLI/UI/search
 </code></pre></div>
 
 <p>The mental model:</p>
@@ -148,7 +148,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tbody>
 <tr>
 <td>Chrome extension</td>
-<td>Capture, pause/block/forget UI, browser-side media queue.</td>
+<td>Capture, pause/block/forget UI, transactional capture/lifecycle outbox, browser-side media queue.</td>
 <td>Reload this after extension code or token/policy changes.</td>
 </tr>
 <tr>
@@ -158,8 +158,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>WSL runtime paths</td>
-<td>SQLite, clean-text blobs, media blobs, token/env, audit log.</td>
-<td>Runtime data never belongs in Git.</td>
+<td>SQLite complete-text/FTS authority, media blobs, legacy text sidecars, token/env, audit log.</td>
+<td>Runtime data never belongs in Git. New captures create no text sidecar.</td>
 </tr>
 </tbody>
 </table>
@@ -210,7 +210,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>./scripts/daily-driver-health.sh
 </code></pre></div>
 
-<p>The command prints JSON and exits non-zero when a hard health error is present. It does <strong>not</strong> dump captured page text, snippets, cookies, bearer tokens, raw captured URLs, or extension token values. Warnings such as due media retries are reported in <code>summary.warnings</code> while still producing a zero exit when the stack is otherwise healthy. The media-queue section reports due task counts by task/artifact status, oldest-due age, stale lease age, latest media-worker run, and 1h/24h worker throughput. Default storage thresholds are warning below 5 GB free or 90% used and hard error below 1 GB free or 98% used; restart/start-failure budgets warn at 3 and hard-fail at 10. Override these locally with <code>BMD_HEALTH_HEADROOM_*</code> and <code>BMD_HEALTH_SERVICE_*</code> environment variables when a small VM or test filesystem needs different bounds.</p>
+<p>The command prints JSON and exits non-zero when a hard health error is present. It does <strong>not</strong> dump captured page text, snippets, cookies, bearer tokens, raw captured URLs, or extension token values. Warnings such as due media retries are reported in <code>summary.warnings</code> while still producing a zero exit when the stack is otherwise healthy. The media-queue section reports due task counts by task/artifact status, oldest-due age, stale lease age, latest media-worker run, and 1h/24h worker throughput. Default storage thresholds are warning below 5 GB free or 90% used and hard error below 1 GB free or 98% used; restart/start-failure budgets warn at 3 and hard-fail at 10. If <code>BMD_REQUIRE_BLOB_ROOT_MOUNT=1</code>, health also hard-fails when the configured blob root is no longer under a mounted filesystem. Override local health thresholds with <code>BMD_HEALTH_HEADROOM_*</code> and <code>BMD_HEALTH_SERVICE_*</code> only when a small VM or test filesystem needs different bounds.</p>
 <p>Manual spot checks, if you need to isolate a layer:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>systemctl<span style="color: #F8F8F2"> </span>--user<span style="color: #F8F8F2"> </span>is-active<span style="color: #F8F8F2"> </span>browser-memory-daemon.service
 systemctl<span style="color: #F8F8F2"> </span>--user<span style="color: #F8F8F2"> </span>is-active<span style="color: #F8F8F2"> </span>browser-memory-media-worker.service
@@ -226,6 +226,13 @@ systemctl<span style="color: #F8F8F2"> </span>--user<span style="color: #F8F8F2"
 <span style="color: #F8F8F2">  </span>doctor<span style="color: #F8F8F2"> </span>--storage-census
 </code></pre></div>
 
+<p>Doctor reports <code>database.snapshots_missing_authoritative_text</code> and includes it in overall health. To preview promotion of pre-version-9 rows from exact hash-verified chunks or contained legacy sidecars:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">PYTHONPATH</span><span style="color: #FF4689">=</span>daemon/src<span style="color: #F8F8F2"> </span>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>--token<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;</span><span style="color: #66D9EF">$(</span>tr<span style="color: #F8F8F2"> </span>-d<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&#39;\r\n&#39;</span><span style="color: #F8F8F2"> </span>&lt;<span style="color: #F8F8F2"> </span>~/.config/browser-memory-daemon/token<span style="color: #66D9EF">)</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>snapshot-text<span style="color: #F8F8F2"> </span>reconcile
+</code></pre></div>
+
+<p>Review the redaction-safe JSON, then add <code>--execute</code> to promote only the reported exact candidates. Unresolved rows remain unchanged.</p>
 <p>Windows loopback check from WSL:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span>-NoProfile<span style="color: #F8F8F2"> </span>-Command<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;Invoke-RestMethod http://127.0.0.1:8765/health | ConvertTo-Json -Compress&quot;</span>
@@ -249,6 +256,19 @@ systemctl<span style="color: #F8F8F2"> </span>--user<span style="color: #F8F8F2"
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>./scripts/install-daily-driver.sh<span style="color: #F8F8F2"> </span>--check
 </code></pre></div>
 
+<p>To place only disposable media on a WSL-mounted NAS dataset while keeping derivatives local, pre-provision <code>/mnt/nas/browser-memory-daemon/media/.bmd-media-root-id</code> with the exact single-line identity <code>bmd-media-prod</code>, then configure:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_DERIVATIVE_ROOT</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2">$HOME</span><span style="color: #E6DB74">/.local/share/browser-memory-daemon/derivatives&quot;</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  BMD_MEDIA_ROOT</span><span style="color: #FF4689">=</span>/mnt/nas/browser-memory-daemon/media<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  BMD_MEDIA_ROOT_IDENTITY</span><span style="color: #FF4689">=</span>bmd-media-prod<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  BMD_REQUIRE_MEDIA_ROOT_MOUNT</span><span style="color: #FF4689">=</span><span style="color: #AE81FF">1</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  BMD_MEDIA_SPOOL_ROOT</span><span style="color: #FF4689">=</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2">$HOME</span><span style="color: #E6DB74">/.local/share/browser-memory-daemon/media-spool&quot;</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  BMD_MAX_MEDIA_SPOOL_BYTES</span><span style="color: #FF4689">=</span><span style="color: #AE81FF">1073741824</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  BMD_MAX_MEDIA_INFLIGHT_BYTES</span><span style="color: #FF4689">=</span><span style="color: #AE81FF">524288000</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  BMD_MAX_MEDIA_CONCURRENT_REQUESTS</span><span style="color: #FF4689">=</span><span style="color: #AE81FF">4</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  BMD_POLICY_MODE</span><span style="color: #FF4689">=</span>all<span style="color: #F8F8F2"> </span>./scripts/install-daily-driver.sh
+</code></pre></div>
+
+<p>Explicit external <code>BMD_MEDIA_ROOT</code> values are intentionally strict: media access requires a non-root mounted ancestor and an exact identity marker. The installer does not create the external media root or marker. A failed guard degrades media handling but does not block local SQLite text/provenance capture. The spool is optional, must remain under the local data root, and is enabled only when both its path and a positive byte cap are configured. <code>BMD_MAX_MEDIA_INFLIGHT_BYTES</code> must be positive and at least <code>BMD_MAX_MEDIA_ARTIFACT_BYTES</code>; <code>BMD_MAX_MEDIA_CONCURRENT_REQUESTS</code> must also be positive. These caps apply independently inside the daemon and worker processes, while SQLite cache reservations coordinate persistent cache admission across them. <code>BMD_BLOB_ROOT</code> and <code>BMD_REQUIRE_BLOB_ROOT_MOUNT</code> remain compatibility inputs for legacy layouts.</p>
 <p>Then reload the unpacked extension in Chrome:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>chrome://extensions → Browser Memory Daemon → Reload
 </code></pre></div>
@@ -272,7 +292,7 @@ systemctl<span style="color: #F8F8F2"> </span>--user<span style="color: #F8F8F2"
 <tbody>
 <tr>
 <td><code>all</code></td>
-<td>Captures all URL surfaces the extension/Chrome platform allows unless explicitly blocked; skips hidden/form/editable/script/style/no-script DOM text.</td>
+<td>Captures all URL surfaces the extension/Chrome platform allows unless explicitly blocked; skips explicit/computed/ancestor-hidden, transparent, form, editable, script, style, and noscript light-DOM text. Shadow roots are not traversed.</td>
 <td style="text-align: right;">❌ Off</td>
 <td style="text-align: right;">✅ Applied</td>
 </tr>
@@ -329,14 +349,53 @@ systemctl<span style="color: #F8F8F2"> </span>--user<span style="color: #F8F8F2"
 <span style="color: #F8F8F2">  </span>recent<span style="color: #F8F8F2"> </span>--limit<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">25</span>
 </code></pre></div>
 
+<p>Recent and timeline items represent extraction observations, so repeated captures during one navigation appear separately while sharing deduplicated snapshots when text is unchanged. Historical visits without an observation row are retained as explicit ambiguous <code>legacy-visit</code> fallbacks. Document and snapshot details show the observation/snapshot relationship and keep page-provided URL claims separate from observed identity.</p>
 <p>Local UI:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>http://127.0.0.1:8765/ui
 </code></pre></div>
 
-<p>The daily-driver daemon embeds the current token into the <code>/ui</code> HTML bootstrap, so opening <code>http://127.0.0.1:8765/ui</code> from the local machine should prepopulate the token and immediately load recent captures, today's timeline, policy rules, and diagnostics. The token is not written into the static JS/CSS assets or the repo, and every memory/admin API call still requires the bearer token.</p>
+<p>The daily-driver daemon embeds the current token into the <code>/ui</code> HTML bootstrap, so opening <code>http://127.0.0.1:8765/ui</code> from the local machine should prepopulate the token and immediately load recent captures, today's timeline, policy rules, and diagnostics. The UI shell rejects non-loopback <code>Host</code> headers, the token is not written into the static JS/CSS assets or the repo, and every memory/admin API call still requires the bearer token.</p>
 <hr />
 <h2 id="media-cache-controls">Media cache controls</h2>
-<p>Text/FTS rows are the durable recall source. Media blobs are a bounded cache under <code>${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}/media/</code>; artifact refs remain even if blobs are purged.</p>
+<p>Text/FTS rows are the durable recall source. Final media blobs are a bounded disposable cache under <code>BMD_MEDIA_ROOT</code> (legacy default <code>${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}/media/</code>); artifact refs remain even if blobs are purged. During a guarded-root outage, explicitly configured local spool bytes remain readable as stored artifacts.</p>
+<p>Raw uploads, daemon-public HTTP/HLS fetch, artifact publication, and stored-media responses use bounded streams. The authenticated <code>/media/queue-status</code> response reports configured/current counters for the serving daemon process; CLI queue status runs in its own short-lived process, so those counters are normally idle. A temporary <code>media-resource-budget</code> outcome is retryable; snapshot/domain/global cache-budget skips remain terminal until explicitly requeued after a cap or policy change. SQLite version 13 reservations prevent daemon and worker processes from concurrently committing beyond persistent cache caps.</p>
+<p>Inspect spool capacity and final-root readiness without mutation:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">PYTHONPATH</span><span style="color: #FF4689">=</span>daemon/src<span style="color: #F8F8F2"> </span>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>--token<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;</span><span style="color: #66D9EF">$(</span>tr<span style="color: #F8F8F2"> </span>-d<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&#39;\r\n&#39;</span><span style="color: #F8F8F2"> </span>&lt;<span style="color: #F8F8F2"> </span>~/.config/browser-memory-daemon/token<span style="color: #66D9EF">)</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>media-spool<span style="color: #F8F8F2"> </span>status
+</code></pre></div>
+
+<p>Preview a bounded drain, review the JSON, then add <code>--execute</code> only after the expected media mount and marker are verified:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">PYTHONPATH</span><span style="color: #FF4689">=</span>daemon/src<span style="color: #F8F8F2"> </span>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>--token<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;</span><span style="color: #66D9EF">$(</span>tr<span style="color: #F8F8F2"> </span>-d<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&#39;\r\n&#39;</span><span style="color: #F8F8F2"> </span>&lt;<span style="color: #F8F8F2"> </span>~/.config/browser-memory-daemon/token<span style="color: #66D9EF">)</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>media-spool<span style="color: #F8F8F2"> </span>drain<span style="color: #F8F8F2"> </span>--limit<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">100</span>
+</code></pre></div>
+
+<p>Preview durable deletion/reconciliation work without mutation:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">PYTHONPATH</span><span style="color: #FF4689">=</span>daemon/src<span style="color: #F8F8F2"> </span>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>--token<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;</span><span style="color: #66D9EF">$(</span>tr<span style="color: #F8F8F2"> </span>-d<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&#39;\r\n&#39;</span><span style="color: #F8F8F2"> </span>&lt;<span style="color: #F8F8F2"> </span>~/.config/browser-memory-daemon/token<span style="color: #66D9EF">)</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>storage<span style="color: #F8F8F2"> </span>reconcile<span style="color: #F8F8F2"> </span>--limit<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">1000</span>
+</code></pre></div>
+
+<p>Review <code>tombstones</code>, <code>missing</code>, <code>corrupt</code>, <code>recovered</code>, <code>wrong_root</code>, <code>unavailable</code>, <code>orphans</code>, and <code>stale_stages</code>. Add <code>--execute</code> only to retry contained tombstones, mark confirmed missing media, and remove reported in-root orphan/stage files. Outside-root locators and unavailable external roots remain pending rather than being followed. A non-zero pending count means a prior forget/purge/eviction has not completed byte deletion even if its database rows are already gone.</p>
+<p>Create a text-first local backup by previewing first, then executing to a new absolute path:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">PYTHONPATH</span><span style="color: #FF4689">=</span>daemon/src<span style="color: #F8F8F2"> </span>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>--token<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;</span><span style="color: #66D9EF">$(</span>tr<span style="color: #F8F8F2"> </span>-d<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&#39;\r\n&#39;</span><span style="color: #F8F8F2"> </span>&lt;<span style="color: #F8F8F2"> </span>~/.config/browser-memory-daemon/token<span style="color: #66D9EF">)</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>backup<span style="color: #F8F8F2"> </span>create<span style="color: #F8F8F2"> </span>--destination<span style="color: #F8F8F2"> </span>/absolute/local/path/backup-bundle
+
+<span style="color: #F8F8F2">PYTHONPATH</span><span style="color: #FF4689">=</span>daemon/src<span style="color: #F8F8F2"> </span>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>--token<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;</span><span style="color: #66D9EF">$(</span>tr<span style="color: #F8F8F2"> </span>-d<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&#39;\r\n&#39;</span><span style="color: #F8F8F2"> </span>&lt;<span style="color: #F8F8F2"> </span>~/.config/browser-memory-daemon/token<span style="color: #66D9EF">)</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>backup<span style="color: #F8F8F2"> </span>create<span style="color: #F8F8F2"> </span>--destination<span style="color: #F8F8F2"> </span>/absolute/local/path/backup-bundle<span style="color: #F8F8F2"> </span>--execute
+</code></pre></div>
+
+<p>Restore is also dry-run first and only publishes into an absent destination:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">PYTHONPATH</span><span style="color: #FF4689">=</span>daemon/src<span style="color: #F8F8F2"> </span>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>--token<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;</span><span style="color: #66D9EF">$(</span>tr<span style="color: #F8F8F2"> </span>-d<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&#39;\r\n&#39;</span><span style="color: #F8F8F2"> </span>&lt;<span style="color: #F8F8F2"> </span>~/.config/browser-memory-daemon/token<span style="color: #66D9EF">)</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>backup<span style="color: #F8F8F2"> </span>restore<span style="color: #F8F8F2"> </span>--source<span style="color: #F8F8F2"> </span>/absolute/local/path/backup-bundle<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>--destination<span style="color: #F8F8F2"> </span>/absolute/local/path/restored-runtime
+</code></pre></div>
+
+<p>The default bundle includes SQLite-authoritative text/provenance plus a hash manifest. It excludes API tokens/config, Chrome state, final media, and spool bytes. Add <code>--include-derivatives</code> only when legacy clean-text sidecars are useful. A backup created before a forget can still contain the forgotten data; backup erasure/retention remains a separate operator action.</p>
 <p>Dry-run a domain purge:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">PYTHONPATH</span><span style="color: #FF4689">=</span>daemon/src<span style="color: #F8F8F2"> </span>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span>--token<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;</span><span style="color: #66D9EF">$(</span>tr<span style="color: #F8F8F2"> </span>-d<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&#39;\r\n&#39;</span><span style="color: #F8F8F2"> </span>&lt;<span style="color: #F8F8F2"> </span>~/.config/browser-memory-daemon/token<span style="color: #66D9EF">)</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
@@ -349,6 +408,13 @@ systemctl<span style="color: #F8F8F2"> </span>--user<span style="color: #F8F8F2"
 <span style="color: #F8F8F2">  </span>media-cache<span style="color: #F8F8F2"> </span>purge<span style="color: #F8F8F2"> </span>--domain<span style="color: #F8F8F2"> </span>linkedin.com<span style="color: #F8F8F2"> </span>--execute<span style="color: #F8F8F2"> </span>--rehydrate
 </code></pre></div>
 
+<p>After intentionally raising a media budget, preview a scoped retry of rows that were terminally skipped under the old cap:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">PYTHONPATH</span><span style="color: #FF4689">=</span>daemon/src<span style="color: #F8F8F2"> </span>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>--token<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;</span><span style="color: #66D9EF">$(</span>tr<span style="color: #F8F8F2"> </span>-d<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&#39;\r\n&#39;</span><span style="color: #F8F8F2"> </span>&lt;<span style="color: #F8F8F2"> </span>~/.config/browser-memory-daemon/token<span style="color: #66D9EF">)</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>media-cache<span style="color: #F8F8F2"> </span>requeue<span style="color: #F8F8F2"> </span>--reason<span style="color: #F8F8F2"> </span>all-budget<span style="color: #F8F8F2"> </span>--domain<span style="color: #F8F8F2"> </span>linkedin.com<span style="color: #F8F8F2"> </span>--dry-run
+</code></pre></div>
+
+<p>Repeat with <code>--execute</code> only after reviewing the selected count and sample artifact IDs. The ordinary worker never revives budget skips automatically.</p>
 <p>Run one media worker pass manually:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">PYTHONPATH</span><span style="color: #FF4689">=</span>daemon/src<span style="color: #F8F8F2"> </span>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span>--token<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;</span><span style="color: #66D9EF">$(</span>tr<span style="color: #F8F8F2"> </span>-d<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&#39;\r\n&#39;</span><span style="color: #F8F8F2"> </span>&lt;<span style="color: #F8F8F2"> </span>~/.config/browser-memory-daemon/token<span style="color: #66D9EF">)</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
@@ -403,7 +469,7 @@ systemctl<span style="color: #F8F8F2"> </span>--user<span style="color: #F8F8F2"
 </tr>
 </tbody>
 </table>
-<p>Resilience behavior: if the daemon is temporarily unavailable, successfully queued captures stay in extension storage and are retried on the next queue drain/service-worker lifetime. Missing-token or paused states skip new capture queue mutation; resume capture after restoring the token or toggling pause off. Browser-side media uploads keep fetched blobs in IndexedDB until upload succeeds or the retry budget is exhausted.</p>
+<p>Resilience behavior: if the daemon is temporarily unavailable, successfully queued captures and lifecycle messages stay as independent IndexedDB outbox rows and are retried by startup/install/alarm drains after their due time. MV3 suspension claims recover after five minutes; capture acceptance is checkpointed before browser media compensation. At the 100-capture/32 MiB capture or 200-lifecycle/2 MiB lifecycle limit, existing rows remain intact and the new message is visibly rejected instead of silently sliced. The separate browser media queue atomically admits capture task batches, caps work at 500 tasks and 512 MiB of fetched blobs, and keeps failed terminal task/blob pairs in a 24-hour quarantine before bounded cleanup. The popup and options page show redaction-safe counts, serialized bytes, oldest age, claims, quotas, overflow, and last-success state without captured text or URLs. Missing-token or paused states skip new capture queue mutation; resume capture after restoring the token or toggling pause off.</p>
 <p>Options page controls:</p>
 <table>
 <thead>

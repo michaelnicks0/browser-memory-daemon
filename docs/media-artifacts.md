@@ -49,10 +49,11 @@ Quality skips retained:
 
 ```text
 document → snapshot → media_artifacts
-         ↘ visit ↗
+         ↘ capture_observations ↔ media_artifact_observations ↗
+           ↘ visit
 
 media_fetch_tasks → media_artifacts
-blobs/media/<artifact_id>.<ext>
+blobs/media/media_<hash-of-artifact-id>-<unique-candidate>.<ext>
 ```
 
 Key fields:
@@ -62,6 +63,7 @@ Key fields:
 | `document_id` | Parent document. |
 | `snapshot_id` | Exact text snapshot the media appeared with. |
 | `visit_id` | Visit that generated/uploaded the artifact when known. |
+| `media_artifact_observations` | Many-to-many provenance links to the exact capture observations that supplied the reference. New links are observed; historical links are added only for a unique supported candidate and labeled inferred/ambiguous. |
 | `media_type` | `image` or `video`. |
 | `role` | `content`, `poster`, or `source`. |
 | `source_url` | Original media URL, redacted outside `all` mode. |
@@ -69,16 +71,21 @@ Key fields:
 | `width`, `height`, `duration_seconds` | DOM metadata. |
 | `capture_status` | `referenced`, `metadata-only`, `queued`, `fetching`, `fetched`, `uploading`, `stored`, `retrying`, `failed`, `skipped`, `expired`, or `purged`. |
 | `status_reason` | Terminal or diagnostic reason, e.g. `media-too-large`, `fetch-status-403`, `cache-purged:domain:x.com`, `cache-evicted:domain-oldest`, `covered-by-cdp-recorder`, `opaque-browser-blob`. |
-| `file_path` | Local blob path when binary is currently stored. |
+| `storage_tier`, `blob_locator`, `spool_locator` | Explicit owning root and contained relative locator. Exactly the active tier locator is populated. |
+| `file_path` | Absolute compatibility path when binary is currently stored. Consumers select the tier first and validate containment before reading, serving, purging, or deleting it. |
 | `content_sha256`, `byte_size` | Blob provenance retained even after cache purge. |
 
-Binary files live under:
+Artifact/detail API rows include an `observations` array with the stored link quality, observation quality, observed URL, visit/navigation identity, capture reason/method/version, and observation time. An empty array is truthful for unresolved multi-candidate history; readers do not synthesize a latest-snapshot association.
+
+Final binary files live under:
 
 ```text
-${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}/media/
+${BMD_MEDIA_ROOT:-${BMD_BLOB_ROOT:-~/.local/share/browser-memory-daemon/blobs}/media}
 ```
 
-Daily-driver deployments can set `BMD_BLOB_ROOT` to a WSL-mounted NAS dataset while leaving SQLite, WAL, config, state, and service units on the WSL filesystem.
+Daily-driver deployments can set `BMD_MEDIA_ROOT` to a WSL-mounted NAS dataset while leaving SQLite-authoritative text, WAL, derivatives, config, state, and service units on the local WSL filesystem. Explicit external roots require mount and identity-marker proof. When enabled, a bounded `BMD_MEDIA_SPOOL_ROOT` beneath the local data root temporarily owns outage bytes; each row records which root owns it.
+
+Blob paths are treated as root-scoped evidence, not authority. Media filenames use a hashed artifact-ID storage stem plus a unique server-generated candidate suffix; `BlobStore` stages uniquely under the selected root and atomically promotes only size/hash-verified bytes. Replacements do not overwrite the previously committed locator in place: the artifact store publishes the candidate, advances SQLite and lifecycle state, then tombstones the old locator. A handled database failure removes the candidate and releases its spool reservation while preserving the prior row and bytes. If a stale or tampered row points outside its declared final/spool root, read-model, media-serving, purge, and forget paths report the file as unavailable/out-of-root and do not follow or unlink it.
 
 ---
 
@@ -123,7 +130,9 @@ Important properties:
 - `/capture` stores text/FTS and media reference rows without waiting on media bytes.
 - Credentialed media fetch happens inside Chrome; cookies are **not** exported to WSL.
 - WSL daemon media worker backfills public `http:`, `https:`, and `data:` refs through `media_fetch_tasks` leases; manual `/fetch-pending` and `media_fetch_on_capture=True` background fetches use the same lease path rather than bypassing worker ownership.
-- HLS `.m3u8` playlist URLs are daemon-owned, not browser-queue-owned: the worker follows master playlists to a variant playlist, downloads init/segment bytes within the artifact cap, and stores the assembled bytes as local video. Audio-only HLS renditions are also stored as audio MIME sidecars (`audio/mp4`, etc.) while retaining `media_type='video'` provenance.
+- Daemon-public HTTP(S) fetches are no-cookie and no-`Referer`. The daemon resolves and validates every direct URL, redirect hop, HLS variant playlist, init map, and segment before opening it; loopback/private/link-local/unspecified/multicast/reserved/non-global addresses are denied by default unless the operator explicitly allowlists the private host.
+- `media_transport.py` coordinates direct-versus-HLS classification, creates the aggregate video/HLS request budget before the initial open, and applies bounded playlist sniffing. `media_fetch.py` owns the guarded HTTP/data boundary and enforces deadlines during every body read; `media_hls.py` owns bounded playlist parsing and assembly and routes every derived request through the guard without a reverse module dependency. `media.py` retains compatible facade imports.
+- HLS `.m3u8` playlist URLs are daemon-owned, not browser-queue-owned: the worker follows master playlists to a variant playlist, downloads init/segment bytes within artifact/request/depth/deadline caps, and stores the assembled bytes as local video. Audio-only HLS renditions are also stored as audio MIME sidecars (`audio/mp4`, etc.) while retaining `media_type='video'` provenance.
 - CDP recorder lane: when enabled and an active tab matches the configured recorder domains (`x.com`, `twitter.com` by default), the extension attaches `chrome.debugger`, enables CDP `Network`, records `video.twimg.com` manifest/segment responses, creates `media_artifacts` rows with `cdp_recorder=true`, and either uploads the response body directly or lets the daemon HLS backfill worker assemble the manifest. This captures media before X exposes only transient `blob:` URLs; same-snapshot or same-page/time-window `blob:` video rows are labeled `covered-by-cdp-recorder` when stored CDP bytes exist.
 - Content scripts opportunistically fetch `blob:`/inline media while the renderer page is alive and send bytes through the service worker; this is the only reliable path for simple transient browser blob URLs. Remaining uncovered `blob:` videos are kept as `referenced:opaque-browser-blob`, not failures.
 - If media cannot be fetched, the reference row remains with an explicit classified status/reason. `failed` is reserved for unexpected/unclassified bugs; terminal remote conditions are normalized to `skipped`, `expired`, or `retrying`.
@@ -169,7 +178,7 @@ X-BMD-Document-ID: doc_...
 X-BMD-Snapshot-ID: snap_...
 ```
 
-The daemon size/MIME/cache gates the blob, writes through `${BMD_BLOB_ROOT}/media/.tmp`, then atomically renames to the final file.
+The daemon size/MIME/cache gates the blob, verifies final-root identity, then writes through a unique in-root stage and atomically promotes to the contained hashed-stem file. If the guarded final root is unavailable, only an explicitly configured spool with an available transactional byte reservation may accept the bytes.
 
 ### Compatibility JSON artifact upload
 
@@ -241,6 +250,7 @@ CLI wrappers:
 TOKEN="$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)"
 PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon --token "$TOKEN" media-cache purge --domain linkedin.com --dry-run
 PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon --token "$TOKEN" media-cache purge --domain linkedin.com --execute --rehydrate
+PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon --token "$TOKEN" media-cache requeue --reason all-budget --domain linkedin.com --dry-run
 PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon --token "$TOKEN" media-worker --once --limit 100
 ```
 
@@ -263,9 +273,11 @@ Returns the stored binary with its MIME type if available. If the artifact has n
 | Max binary artifact | 250 MB by default |
 | Max media JSON upload | 40 MB |
 | Browser lazy sidecar | Extension IndexedDB queue, `chrome.alarms`, fetch with `credentials: include`, raw `PUT` upload |
-| Daemon lazy sidecar | `browser-memory-media-worker.service`, public fetch only, no Chrome cookies |
+| Daemon lazy sidecar | `browser-memory-media-worker.service`, guarded public fetch only, no Chrome cookies, no daemon `Referer` |
 | Manual fetch-pending call limit | 100 artifacts |
 | Daemon-supported fetch schemes | `http:`, `https:`, `data:` |
+| Daemon-public HTTP(S) destinations | Public/global addresses only by default; explicit private-host allowlist via `BMD_MEDIA_PUBLIC_FETCH_ALLOW_PRIVATE_HOSTS` |
+| HLS public fetch budgets | Redirect hops: 5; total initial/redirect/child opens: 64; depth: 3; path/MIME/magic-detected playlist bytes: 1 MB; plus artifact bytes and a deadline enforced during every body read |
 | Browser inline/blob upload schemes | `blob:` and `data:` when the content script can read bytes before page teardown |
 | Unsupported/hard schemes | browser-internal URLs, opaque streaming, DRM, media-source streams with no readable file/blob |
 
