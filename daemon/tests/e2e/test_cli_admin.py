@@ -80,6 +80,26 @@ def test_cli_admin_commands(cli_server, capsys, monkeypatch):
     with pytest.raises(SystemExit):
         main(_base_args(cli_server) + ["forget", "--domain", "cli.example", "--url", "https://cli.example/stirling"])
 
+    assert main(_base_args(cli_server) + ["forget", "--domain", "cli.example"]) == 0
+    forget_preview = _last_json(capsys)
+    assert forget_preview["dry_run"] is True
+    assert forget_preview["counts"]["documents"] == 1
+
+    assert main(
+        _base_args(cli_server)
+        + [
+            "forget",
+            "--domain",
+            "cli.example",
+            "--execute",
+            "--max-records",
+            str(forget_preview["guard"]["selected_records"]),
+        ]
+    ) == 0
+    forget_result = _last_json(capsys)
+    assert forget_result["dry_run"] is False
+    assert forget_result["counts"]["documents"] == 1
+
     def fake_daily_driver_health_snapshot(cfg, *, extension_dir, journal_since, include_windows_loopback, powershell):
         assert cfg.api_token == "test-token"
         assert extension_dir == "/tmp/bmd-extension"

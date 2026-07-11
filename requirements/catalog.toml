@@ -443,16 +443,16 @@ validation_evidence = ["daemon/tests/unit/test_blob_store.py::test_blob_store_st
 id = "REQ-030"
 revision = 1
 statement = "Destructive selectors shall be literal, validated, policy-aware, previewable, and bounded to the stated scope."
-rationale = "Current literal and policy-aware selection exists, but preview and broad-scope guards remain planned."
+rationale = "Forget planning validates literal selectors, returns non-mutating cross-authority counts, and refuses execution above an explicit selected-record ceiling."
 owner = "Forget Pipeline"
-status = "planned"
+status = "active"
 aliases = ["HRD-005"]
-implementation = ["daemon/src/browser_memory_daemon/forget.py", "daemon/src/browser_memory_daemon/cli.py"]
-unit_evidence = []
-integration_evidence = ["daemon/tests/integration/test_ingest_search_forget.py"]
-system_evidence = []
-operational_evidence = ["docs/CLI_UX_CONTRACT.md"]
-validation_evidence = []
+implementation = ["daemon/src/browser_memory_daemon/forget.py", "daemon/src/browser_memory_daemon/application.py", "daemon/src/browser_memory_daemon/cli.py", "ui/app.js", "extension/src/popup.js"]
+unit_evidence = ["daemon/tests/unit/test_application.py::test_application_forget_preview_writes_no_audit_or_receipt", "extension/tests/unit/popup.test.js"]
+integration_evidence = ["daemon/tests/integration/test_ingest_search_forget.py::test_forget_rejects_malformed_literal_domains", "daemon/tests/integration/test_ingest_search_forget.py::test_forget_domain_normalizes_equivalent_unicode_and_idna_forms", "daemon/tests/integration/test_ingest_search_forget.py::test_forget_preview_is_non_mutating_and_execution_is_broad_scope_guarded", "daemon/tests/integration/test_ingest_search_forget.py::test_forget_url_preview_includes_exact_document_alias_claim"]
+system_evidence = ["daemon/tests/e2e/test_http_api.py::test_http_capture_search_forget_round_trip", "daemon/tests/e2e/test_cli_admin.py::test_cli_admin_commands", "daemon/tests/e2e/test_ui_dashboard_smoke.py::test_ui_dashboard_shell_serves_bootstrap_and_core_panels"]
+operational_evidence = ["docs/CLI_UX_CONTRACT.md", "docs/api.md", "docs/security-model.md", "docs/architecture/adr/0057-preview-and-bound-forget-selection.md"]
+validation_evidence = ["daemon/tests/integration/test_ingest_search_forget.py::test_forget_preview_is_non_mutating_and_execution_is_broad_scope_guarded", "daemon/tests/e2e/test_http_api.py::test_http_capture_search_forget_round_trip"]
 
 [[requirements]]
 id = "REQ-031"

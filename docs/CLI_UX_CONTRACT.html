@@ -300,9 +300,9 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Pretty JSON. Applies in every mode, including <code>all</code>.</td>
 </tr>
 <tr>
-<td><code>forget [--domain DOMAIN] [--url URL]</code></td>
-<td>Delete memory by exactly one selector: literal domain hostname or absolute URL.</td>
-<td>Pretty JSON deletion receipt.</td>
+<td><code>forget [--domain DOMAIN|--url URL] [--dry-run|--execute] [--max-records N]</code></td>
+<td>Preview by default or explicitly execute bounded deletion by one literal domain hostname/IP or absolute URL.</td>
+<td>Pretty JSON selection preview or deletion receipt.</td>
 </tr>
 <tr>
 <td><code>capture-fixture --url URL --title TITLE --text TEXT</code></td>
@@ -416,6 +416,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Forget by neither URL nor domain, or both URL and domain</td>
 <td>CLI exits with parser error; HTTP API returns <code>400</code> from daemon validation.</td>
 </tr>
+<tr>
+<td>Forget execution exceeds <code>--max-records</code> / <code>max_records</code></td>
+<td>No deletion/audit/tombstone state is written; API returns <code>400 invalid_request</code> and CLI exits non-zero.</td>
+</tr>
 </tbody>
 </table>
 <hr />
@@ -449,13 +453,19 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <span style="color: #F8F8F2">  </span>policy-rules<span style="color: #F8F8F2"> </span>--block-url-prefix<span style="color: #F8F8F2"> </span>http://127.0.0.1:32400/
 </code></pre></div>
 
-<p>Forget a domain. Domain selectors are literal hostnames and delete that host plus subdomains:</p>
+<p>Preview forgetting a domain. Domain selectors are literal hostnames/IPs and select that host plus subdomains; preview is the default and does not mutate state:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">PYTHONPATH</span><span style="color: #FF4689">=</span>daemon/src<span style="color: #F8F8F2"> </span>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span>--token<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;</span><span style="color: #66D9EF">$(</span>tr<span style="color: #F8F8F2"> </span>-d<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&#39;\r\n&#39;</span><span style="color: #F8F8F2"> </span>&lt;<span style="color: #F8F8F2"> </span>~/.config/browser-memory-daemon/token<span style="color: #66D9EF">)</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span>forget<span style="color: #F8F8F2"> </span>--domain<span style="color: #F8F8F2"> </span>example.com
 </code></pre></div>
 
-<p>Forget one URL. URL selectors follow storage policy: <code>all</code> mode matches the literal stored URL; non-<code>all</code> modes match the redacted URL representation used during ingest. Receipts redact sensitive selector values:</p>
+<p>Execute only after reviewing <code>guard.selected_records</code> and <code>counts</code>. The default bound is 10,000 selected database/FTS records; raise it deliberately only when the preview justifies the larger scope:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">PYTHONPATH</span><span style="color: #FF4689">=</span>daemon/src<span style="color: #F8F8F2"> </span>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>--token<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;</span><span style="color: #66D9EF">$(</span>tr<span style="color: #F8F8F2"> </span>-d<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&#39;\r\n&#39;</span><span style="color: #F8F8F2"> </span>&lt;<span style="color: #F8F8F2"> </span>~/.config/browser-memory-daemon/token<span style="color: #66D9EF">)</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
+<span style="color: #F8F8F2">  </span>forget<span style="color: #F8F8F2"> </span>--domain<span style="color: #F8F8F2"> </span>example.com<span style="color: #F8F8F2"> </span>--execute<span style="color: #F8F8F2"> </span>--max-records<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">10000</span>
+</code></pre></div>
+
+<p>Preview one URL. URL selectors follow storage policy: <code>all</code> mode matches the literal stored URL; non-<code>all</code> modes match the redacted URL representation used during ingest. Exact observed document aliases are included, while claims never merge identity. Execute receipts redact sensitive selector values:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">PYTHONPATH</span><span style="color: #FF4689">=</span>daemon/src<span style="color: #F8F8F2"> </span>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span>--token<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;</span><span style="color: #66D9EF">$(</span>tr<span style="color: #F8F8F2"> </span>-d<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&#39;\r\n&#39;</span><span style="color: #F8F8F2"> </span>&lt;<span style="color: #F8F8F2"> </span>~/.config/browser-memory-daemon/token<span style="color: #66D9EF">)</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span>forget<span style="color: #F8F8F2"> </span>--url<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&#39;https://example.com/article?token=...&#39;</span>

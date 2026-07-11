@@ -49,7 +49,7 @@ Mitigations that remain even in `all`:
 - bearer auth for memory/admin APIs;
 - runtime data is outside the repo;
 - secret scan protects committed repo content;
-- forget-by-domain/URL can delete stored memory after the fact; URL forget uses the literal selector in `all` mode but redacts selector values in receipts. Receipt and byte-deletion tombstones commit with the relational cascade, and incomplete byte removal is reported as pending rather than complete.
+- forget-by-domain/URL can delete stored memory after the fact; selectors are literal and policy-aware, the CLI previews by default, and every execution is bounded by an explicit selected-record ceiling. Preview writes no receipt, audit, tombstone, database, or file state. URL forget uses the literal selector in `all` mode but redacts selector values in receipts. Receipt and byte-deletion tombstones commit with the relational cascade, and incomplete byte removal is reported as pending rather than complete.
 
 ---
 

@@ -61,8 +61,28 @@ The method/path entries below are matched through immutable route descriptors in
 | `/policy/rules` | `POST` | Add block-domain or block-URL-prefix rule. | Yes |
 | `/policy/rules/{rule_id}` | `DELETE` | Delete a policy rule. | Yes |
 | `/policy/evaluate?url=...` | `GET` | Explain static + local capture decision. | Yes |
-| `/forget` | `POST` | Forget by URL or domain and return a deletion receipt. | Yes |
+| `/forget` | `POST` | Preview or execute bounded forget by one literal URL/domain selector; execution returns a deletion receipt. | Yes |
 | `/doctor[?storage_census=full]` | `GET` | DB integrity, FTS consistency, runtime paths, blob lifecycle/pending deletion health, media queue, and fast DB-derived storage counts; optional filesystem census walks blob roots. | Yes |
+
+---
+
+## Forget preview and execution
+
+`POST /forget` accepts exactly one of `domain` or `url`. Domain scope is the literal apex plus subdomains; malformed hostnames/IP literals, URL syntax, paths, ports, whitespace, and SQL wildcard characters are rejected. URL scope follows active storage policy and includes exact observed URL/document aliases. Receipt scopes remain redaction-safe.
+
+Add `"dry_run": true` to return exact current selection counts and guard state without writing an audit event, deletion receipt, blob tombstone, database row, or file. `max_records` defaults to `10000` and bounds the selected database/FTS records, not merely documents. Execution above the bound returns `400 invalid_request` before mutation; a reviewed caller may raise the positive per-request bound to the previewed scope.
+
+For compatibility with older authenticated callers, omission of `dry_run` still executes. Current first-party UI and extension controls preview first, show document/record counts in confirmation, and execute with the previewed bound. The CLI is safer by default: `forget` previews unless `--execute` is supplied.
+
+```json
+{
+  "domain": "example.com",
+  "dry_run": true,
+  "max_records": 10000
+}
+```
+
+Preview responses set `dry_run=true`, `forgotten=false`, and `receipt_id=null`, and include `counts` plus `guard.selected_records`, `guard.max_records`, and `guard.within_limit`. Execute responses set `dry_run=false` and retain the compatible receipt/deletion fields.
 
 ---
 

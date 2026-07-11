@@ -108,8 +108,14 @@ async function blockCurrentDomain() {
 
 async function forgetCurrentDomain() {
   if (!currentDomain) throw new Error('No current domain to forget.');
-  if (!confirm(`Forget all stored memory for ${currentDomain}?`)) return;
-  const payload = await daemonRequest('/forget', {domain: currentDomain});
+  const preview = await daemonRequest('/forget', {domain: currentDomain, dry_run: true});
+  const selectedRecords = Number(preview.guard?.selected_records || 0);
+  if (selectedRecords === 0) {
+    setStatus(preview);
+    return;
+  }
+  if (!confirm(`Forget ${preview.counts?.documents || 0} document(s) and ${selectedRecords} total stored record(s) for ${currentDomain}?`)) return;
+  const payload = await daemonRequest('/forget', {domain: currentDomain, max_records: selectedRecords});
   setStatus(payload);
 }
 

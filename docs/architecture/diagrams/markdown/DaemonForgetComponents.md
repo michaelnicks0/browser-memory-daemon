@@ -34,7 +34,7 @@ graph LR
         style 39 fill:#85bbf0,stroke:#1168bd,color:#000000
         40["<div style='font-weight: bold'>Blob Lifecycle and Storage Reconciler</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + filesystem]</div><div style='font-size: 80%; margin-top:10px'>Persists<br />committed/tombstoned/missing/deleted/blocked/failed<br />blob state; serializes<br />deletion processors; retries<br />tombstones; and dry-run<br />detects missing refs, in-root<br />orphans, and stale stages.</div>"]
         style 40 fill:#85bbf0,stroke:#1168bd,color:#000000
-        42["<div style='font-weight: bold'>Forget Pipeline</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Commits URL/domain-scoped<br />relational deletion,<br />minimized receipt, and blob<br />tombstones in one<br />transaction; reports complete<br />only after required bytes<br />converge.</div>"]
+        42["<div style='font-weight: bold'>Forget Pipeline</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Plans literal policy-aware<br />URL/domain scope with<br />non-mutating cross-authority<br />counts and a selected-record<br />guard; bounded execution<br />commits relational deletion,<br />minimized receipt, and blob<br />tombstones, then reports<br />complete only after required<br />bytes converge.</div>"]
         style 42 fill:#85bbf0,stroke:#1168bd,color:#000000
       end
 

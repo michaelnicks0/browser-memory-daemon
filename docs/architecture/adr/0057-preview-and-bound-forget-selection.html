@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>0025-Literal-Policy-Aware-Forget-Selectors — browser-memory-daemon</title>
+<title>0057-Preview-And-Bound-Forget-Selection — browser-memory-daemon</title>
 <style>
 :root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
@@ -121,59 +121,57 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <div class="wrap">
   <div class="docbar">
     <a class="home" href="../../../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
-    <span class="crumb">/ <b>docs/architecture/adr/0025-literal-policy-aware-forget-selectors.md</b></span>
+    <span class="crumb">/ <b>docs/architecture/adr/0057-preview-and-bound-forget-selection.md</b></span>
   </div>
   <article class="md-body">
 <hr />
-<p>id: ADR-0025
-status: superseded
+<p>id: ADR-0057
+status: accepted
 date: 2026-07-10
 decision_date: 2026-07-10
 decider: Operator
 scope: repo
-supersedes: []
-superseded_by:
-  - ADR-0057
+supersedes:
+  - ADR-0025
+superseded_by: []
 related:
   - docs/architecture/adr/0006-use-forget-cascade-with-deletion-receipts.md
+  - docs/architecture/adr/0040-use-durable-deletion-intents-and-reconciliation.md
   - docs/security-model.md
   - docs/api.md
   - docs/CLI_UX_CONTRACT.md
   - daemon/src/browser_memory_daemon/forget.py
 verification:
-  - BMD_PYTHON=/tmp/browser-memory-daemon-verify-venv/bin/python -m pytest -q daemon/tests/integration/test_ingest_search_forget.py daemon/tests/e2e/test_http_api.py daemon/tests/e2e/test_cli_admin.py</p>
+  - /tmp/browser-memory-daemon-verify-venv/bin/python -m pytest -q daemon/tests/integration/test_ingest_search_forget.py daemon/tests/unit/test_application.py daemon/tests/e2e/test_http_api.py daemon/tests/e2e/test_cli_admin.py daemon/tests/e2e/test_ui_dashboard_smoke.py
+  - cd extension &amp;&amp; npm test &amp;&amp; npm run build
+  - BMD_PYTHON=/tmp/browser-memory-daemon-verify-venv/bin/python ./scripts/run-fast-gate.sh
+  - BMD_SKIP_REAL_CHROME_E2E=1 BMD_PYTHON=/tmp/browser-memory-daemon-verify-venv/bin/python ./scripts/run-e2e.sh
+  - BMD_REAL_CHROME_ALLOW_DOWNLOAD=0 BMD_PYTHON=/tmp/browser-memory-daemon-verify-venv/bin/python ./scripts/run-real-chrome-e2e.sh</p>
 <hr />
-<h1 id="adr-0025-use-literal-and-policy-aware-forget-selectors">ADR-0025: Use literal and policy-aware forget selectors</h1>
-<blockquote>
-<p><strong>Superseded by ADR-0057.</strong> Literal and policy-aware selector semantics remain, while preview counts and bounded execution now govern destructive application.</p>
-</blockquote>
+<h1 id="adr-0057-preview-and-bound-forget-selection">ADR-0057: Preview and bound forget selection</h1>
 <h2 id="context">Context</h2>
-<p>ADR-0006 established the forget cascade and deletion receipts. The selector boundary still needs hardening because deletion is destructive:</p>
-<ul>
-<li>a request with both <code>domain</code> and <code>url</code> previously selected the domain branch implicitly;</li>
-<li>domain input was lowercased directly rather than parsed as a literal hostname;</li>
-<li>URL forget always applied redaction before matching, which made <code>all</code> mode unable to forget exact unredacted stored URLs containing sensitive query/path material;</li>
-<li>deletion receipts must not preserve the URL secrets the operator just deleted.</li>
-</ul>
-<p>The daemon now supports multiple policy modes. <code>all</code> stores literal URL/title/text; <code>recall</code>, <code>balanced</code>, and <code>strict</code> store redacted URL metadata. Forget selectors must therefore match the storage representation for the active policy while keeping receipts redaction-safe.</p>
+<p>ADR-0025 made forget selectors literal and policy-aware but intentionally left preview and unexpectedly broad selection guards open. Forget now cascades across authoritative documents, visits, observations, snapshots, FTS rows, URL claims, media provenance, and durable blob tombstones. A syntactically valid domain can therefore select substantially more state than an operator expects, and the old CLI executed immediately without showing that scope.</p>
+<p>The hardening requirement is not merely to validate selector syntax. The operator must be able to inspect the exact current selection without mutation, and execution must fail closed when the current selection exceeds an explicit record bound.</p>
 <h2 id="decision">Decision</h2>
-<p>Forget requests shall accept exactly one selector:</p>
+<p>Forget selection shall be planned before mutation:</p>
 <ul>
-<li><code>domain</code>: a literal hostname only; no URL, path, query, userinfo, wildcard, SQL wildcard, or port syntax. The domain scope continues to include subdomains for compatibility with ADR-0006's domain-suffix behavior.</li>
-<li><code>url</code>: an absolute URL. In <code>all</code> mode, matching uses the literal URL because storage is unredacted. In non-<code>all</code> modes, matching uses the same redacted URL representation used at ingest time.</li>
-</ul>
-<p>Deletion receipts shall record a redaction-safe selector scope:</p>
-<ul>
-<li>URL scopes are redacted before receipt storage even when <code>all</code> mode used the literal URL for matching.</li>
-<li>Scope metadata records the selector policy (<code>literal</code>, <code>redacted</code>, or <code>domain-suffix</code>) without storing deleted page body text or secrets.</li>
+<li>Domain input is normalized and validated as a hostname or IP literal. SQL wildcard syntax, malformed labels and IDNs, schemes, paths, ports, userinfo, and whitespace are rejected.</li>
+<li>Domain matching is literal apex-plus-subdomain matching without SQL <code>LIKE</code> wildcard semantics.</li>
+<li>URL matching follows active storage policy and selects exact observed document/visit URLs plus exact URL claims as documented aliases. A claim never changes identity; it only participates when the operator explicitly supplies that exact claimed URL.</li>
+<li>Preview returns redaction-safe scope, row counts across every selected authority/provenance surface, reconstructible blob candidates, and a guard result. It creates no deletion receipt, audit event, tombstone, or filesystem change.</li>
+<li>Execution uses a default <code>max_records</code> bound of 10,000 selected database/FTS records and rejects a broader selection before any mutation. An operator may deliberately raise the positive bound for that request to the reviewed scope; no hard ceiling can make a valid large domain impossible to forget.</li>
+<li>The CLI is dry-run by default and requires <code>--execute</code> for mutation. <code>--max-records</code> carries the reviewed bound into execution.</li>
+<li>The authenticated HTTP endpoint retains execute-by-default behavior for older compatible callers, but accepts <code>dry_run</code> and <code>max_records</code>. The current UI and extension popup preview first, show document/record counts in confirmation, then execute with the previewed record bound.</li>
+<li>Successful execution retains the existing durable deletion receipt and blob-tombstone workflow and includes the applied guard in its response.</li>
 </ul>
 <h2 id="decision-drivers">Decision drivers</h2>
 <ul>
-<li>Destructive APIs must fail closed on ambiguous selector input.</li>
-<li><code>all</code> mode forget must be able to delete exactly the literal memory it stored.</li>
-<li>Non-<code>all</code> mode forget must remain able to delete records whose URLs were redacted before storage.</li>
-<li>Receipts should prove action/counts without retaining the secret selector value.</li>
-<li>The change should preserve the current database schema and the existing domain-suffix deletion behavior.</li>
+<li>Destructive selection must be reviewable before mutation.</li>
+<li>A valid domain selector can still be unexpectedly broad.</li>
+<li>Preview must not manufacture audit evidence that implies deletion occurred.</li>
+<li>Existing authenticated UI and extension endpoint behavior must remain compatible.</li>
+<li>URL claims remain untrusted for identity and must not trigger implicit merging.</li>
+<li>Selection and receipt metadata must remain redaction-safe.</li>
 </ul>
 <h2 id="options-considered">Options considered</h2>
 <table>
@@ -187,62 +185,68 @@ verification:
 </thead>
 <tbody>
 <tr>
-<td>Keep unconditional URL redaction</td>
-<td>Preserves old receipt shape</td>
-<td>Cannot forget some <code>all</code> mode literal URLs; ambiguous both-selector requests remain</td>
+<td>Keep immediate execution after syntax validation</td>
+<td>Fully compatible</td>
+<td>No scope review or broad-selection protection</td>
 <td>Rejected</td>
 </tr>
 <tr>
-<td>Always match both literal and redacted URL forms</td>
-<td>More likely to find records after policy changes</td>
-<td>Broadens deletion for token-collapsed redacted URLs and makes receipts harder to reason about</td>
-<td>Rejected</td>
+<td>Require a frozen plan token for every API execution</td>
+<td>Strong review/apply binding</td>
+<td>Breaks existing UI/extension contract and adds a larger protocol migration</td>
+<td>Deferred</td>
 </tr>
 <tr>
-<td>Match by active storage policy and redact receipt scope</td>
-<td>Exact for <code>all</code>, compatible for non-<code>all</code>, redaction-safe evidence</td>
-<td>If policy mode changed since capture, the operator may need to use a domain selector or the stored URL form</td>
+<td>Add preview plus a per-request record ceiling</td>
+<td>Compatible, bounded, independently testable</td>
+<td>Preview and later CLI execution can observe different current state; execution therefore recomputes and enforces the bound</td>
 <td>Chosen</td>
 </tr>
 <tr>
-<td>Make domain exact-only now</td>
-<td>Narrowest destructive behavior</td>
-<td>Breaks established ADR-0006/UI expectation that domain forget includes subdomains</td>
-<td>Deferred</td>
+<td>Bound only document count</td>
+<td>Simple</td>
+<td>One document can own many observations/chunks/events</td>
+<td>Rejected</td>
 </tr>
 </tbody>
 </table>
 <h2 id="consequences">Consequences</h2>
 <ul>
-<li>Positive: <code>/forget</code> and CLI forget reject missing or both selectors before mutation.</li>
-<li>Positive: domain selectors cannot accidentally accept full URLs, wildcards, paths, queries, ports, or userinfo.</li>
-<li>Positive: all-mode URL forget works for literal stored URLs while receipts avoid storing URL secrets.</li>
-<li>Positive: strict/balanced/recall URL forget continues to work with original input by applying ingest-equivalent redaction.</li>
-<li>Neutral: domain forget still includes subdomains; this remains documented as <code>domain-suffix</code> scope.</li>
-<li>Negative: if an operator changes policy mode after capture, URL forget follows the current mode's storage representation rather than trying every historical representation.</li>
+<li>Positive: CLI forget is non-mutating unless <code>--execute</code> is explicit.</li>
+<li>Positive: API and CLI callers can inspect exact current counts without receipts, audits, tombstones, or file deletion.</li>
+<li>Positive: executions above the reviewed/default bound fail before the transaction begins.</li>
+<li>Positive: literal suffix matching no longer depends on SQL wildcard behavior.</li>
+<li>Positive: receipts count capture observations, URL claims, and media provenance rows removed by cascades.</li>
+<li>Neutral: domain scope remains apex plus subdomains for compatibility.</li>
+<li>Neutral: the API remains execute-by-default for older clients even though current first-party operator surfaces preview before bounded execution.</li>
+<li>Negative: large intentional deletions require a preview and an explicitly raised <code>max_records</code> value.</li>
 </ul>
 <h2 id="verification-validation">Verification / validation</h2>
 <ul>
-<li><code>daemon/tests/integration/test_ingest_search_forget.py</code> covers all-mode literal URL forget with redaction-safe receipt scope, strict-mode redacted URL forget, and selector validation.</li>
-<li><code>daemon/tests/e2e/test_http_api.py</code> covers API rejection for both selectors.</li>
-<li><code>daemon/tests/e2e/test_cli_admin.py</code> covers CLI rejection for missing and both selectors.</li>
+<li>Integration tests cover malformed domains, exact apex/subdomain selection, exclusion of suffix lookalikes, non-mutating preview, broad-guard refusal, exact URL-claim aliases, and preview/execution count agreement.</li>
+<li>HTTP tests prove preview leaves searchable text intact, guarded execution returns a stable typed error, and bounded execution completes.</li>
+<li>CLI tests prove default dry-run and explicit bounded <code>--execute</code> behavior against a temporary daemon runtime.</li>
+<li>UI and popup contract tests prove first-party controls preview before confirmation and carry the previewed bound into execution.</li>
+<li>Existing all/recall/balanced/strict policy and durable blob-deletion tests remain part of the broad gate.</li>
 </ul>
 <h2 id="revisit-triggers">Revisit triggers</h2>
 <ul>
-<li>Supersede if domain forget becomes exact-only by default or grows an explicit <code>include_subdomains</code> flag.</li>
-<li>Revisit if deletion scopes expand to document IDs, snapshot IDs, policy rules, date ranges, or arbitrary query selectors.</li>
-<li>Revisit if receipts need cryptographic proofs, tombstones, backup erasure semantics, or raw-selector escrow.</li>
+<li>Version the HTTP contract if the UI/extension can adopt mandatory preview-bound execution.</li>
+<li>Introduce immutable plan hashes if concurrent drift between review and execution becomes an operational problem.</li>
+<li>Supersede if deletion scopes expand to dates, arbitrary queries, policy groups, or backup bundles.</li>
 </ul>
 <h2 id="references">References</h2>
 <ul>
 <li><code>daemon/src/browser_memory_daemon/forget.py</code></li>
+<li><code>daemon/src/browser_memory_daemon/application.py</code></li>
+<li><code>daemon/src/browser_memory_daemon/cli.py</code></li>
 <li><code>daemon/tests/integration/test_ingest_search_forget.py</code></li>
 <li><code>daemon/tests/e2e/test_http_api.py</code></li>
 <li><code>daemon/tests/e2e/test_cli_admin.py</code></li>
 </ul>
   </article>
   <div class="md-footer">
-    Rendered from <code>docs/architecture/adr/0025-literal-policy-aware-forget-selectors.md</code> — the Markdown file is the canonical,
+    Rendered from <code>docs/architecture/adr/0057-preview-and-bound-forget-selection.md</code> — the Markdown file is the canonical,
     version-controlled source. This HTML is generated (regenerate with
     <code>scripts/render_docs.py</code>); do not hand-edit.
   </div>

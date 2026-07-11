@@ -763,8 +763,36 @@ def test_http_capture_search_forget_round_trip(tmp_path):
         assert status == 400
         assert "exactly one selector" in bad_forget["error"]
 
-        status, receipt = request("POST", f"{base}/forget", body={"domain": "example.org"})
+        status, preview = request(
+            "POST",
+            f"{base}/forget",
+            body={"domain": "example.org", "dry_run": True, "max_records": 1},
+        )
         assert status == 200
+        assert preview["dry_run"] is True
+        assert preview["counts"]["documents"] == 1
+        assert preview["guard"]["within_limit"] is False
+
+        status, found_after_preview = request("GET", f"{base}/search?{q}")
+        assert status == 200
+        assert len(found_after_preview["results"]) == 1
+
+        status, _, guarded = error_request(
+            "POST",
+            f"{base}/forget",
+            body={"domain": "example.org", "max_records": 1},
+        )
+        assert status == 400
+        assert guarded["error_code"] == "invalid_request"
+        assert "exceeds max_records guard" in guarded["error"]
+
+        status, receipt = request(
+            "POST",
+            f"{base}/forget",
+            body={"domain": "example.org", "max_records": preview["guard"]["selected_records"]},
+        )
+        assert status == 200
+        assert receipt["dry_run"] is False
         assert receipt["counts"]["documents"] == 1
 
         status, found_after = request("GET", f"{base}/search?{q}")

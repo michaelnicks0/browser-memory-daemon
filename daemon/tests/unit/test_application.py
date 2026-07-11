@@ -4,6 +4,7 @@ from pathlib import Path
 import browser_memory_daemon.app as app_module
 from browser_memory_daemon.application import MemoryApplication
 from browser_memory_daemon.config import load_config
+from browser_memory_daemon.db import connect
 
 
 def test_app_module_is_only_the_http_composition_root():
@@ -64,3 +65,32 @@ def test_application_policy_blocking_remains_a_use_case_decision(tmp_path):
         "reason": "policy-rule:block-domain:blocked.example",
     }
     assert application.search("This body must not be stored", limit=10) == []
+
+
+def test_application_forget_preview_writes_no_audit_or_receipt(tmp_path):
+    config = load_config(
+        runtime_root=tmp_path,
+        test_mode=True,
+        token="test-token",
+        policy_mode="all",
+    )
+    application = MemoryApplication(config)
+    application.capture(
+        {
+            "url": "https://preview.example/article",
+            "title": "Forget preview",
+            "text": "Forget preview must not manufacture mutation evidence.",
+        }
+    )
+    with connect(config.db_path) as conn:
+        audit_before = conn.execute("SELECT COUNT(*) FROM audit_events").fetchone()[0]
+        receipts_before = conn.execute("SELECT COUNT(*) FROM deletion_receipts").fetchone()[0]
+
+    preview = application.forget({"domain": "preview.example", "dry_run": True})
+
+    assert preview["dry_run"] is True
+    assert preview["counts"]["documents"] == 1
+    with connect(config.db_path) as conn:
+        assert conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0] == 1
+        assert conn.execute("SELECT COUNT(*) FROM audit_events").fetchone()[0] == audit_before
+        assert conn.execute("SELECT COUNT(*) FROM deletion_receipts").fetchone()[0] == receipts_before

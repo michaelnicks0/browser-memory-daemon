@@ -363,18 +363,32 @@ class MemoryApplication:
         return result
 
     def forget(self, data: Mapping[str, Any]) -> dict[str, Any]:
+        dry_run = data.get("dry_run", data.get("dryRun", False))
+        if not isinstance(dry_run, bool):
+            raise ValueError("forget dry_run must be a boolean")
+        max_records = data.get("max_records", data.get("maxRecords", 10_000))
+        if isinstance(max_records, bool) or not isinstance(max_records, int):
+            raise ValueError("forget max_records must be an integer")
         self.ensure_database()
         with connect(self.config.db_path) as conn:
-            result = cast(dict[str, Any], forget(conn, self.config, domain=data.get("domain"), url=data.get("url")))
-            audit(
+            result = forget(
                 conn,
-                "forget",
-                {
-                    "receipt_id": result["receipt_id"],
-                    "scope_keys": sorted(result["scope"].keys()),
-                },
+                self.config,
+                domain=data.get("domain"),
+                url=data.get("url"),
+                dry_run=dry_run,
+                max_records=max_records,
             )
-            conn.commit()
+            if not dry_run:
+                audit(
+                    conn,
+                    "forget",
+                    {
+                        "receipt_id": result["receipt_id"],
+                        "scope_keys": sorted(result["scope"].keys()),
+                    },
+                )
+                conn.commit()
         return result
 
     def create_policy_rule(self, *, rule_type: str, pattern: str, action: str) -> dict[str, Any]:

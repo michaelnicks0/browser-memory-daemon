@@ -528,12 +528,12 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td>REQ-030</td>
 <td style="text-align: right;">1</td>
-<td>planned</td>
+<td>active</td>
 <td>Destructive selectors shall be literal, validated, policy-aware, previewable, and bounded to the stated scope.</td>
 <td>Forget Pipeline</td>
 <td><code>HRD-005</code></td>
-<td><code>daemon/src/browser_memory_daemon/forget.py</code><br><code>daemon/src/browser_memory_daemon/cli.py</code></td>
-<td>—</td>
+<td><code>daemon/src/browser_memory_daemon/forget.py</code><br><code>daemon/src/browser_memory_daemon/application.py</code><br><code>daemon/src/browser_memory_daemon/cli.py</code><br><code>ui/app.js</code><br><code>extension/src/popup.js</code></td>
+<td><code>daemon/tests/integration/test_ingest_search_forget.py::test_forget_preview_is_non_mutating_and_execution_is_broad_scope_guarded</code><br><code>daemon/tests/e2e/test_http_api.py::test_http_capture_search_forget_round_trip</code></td>
 </tr>
 <tr>
 <td>REQ-031</td>

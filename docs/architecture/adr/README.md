@@ -32,7 +32,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0022](0022-use-fast-doctor-and-media-queue-health-telemetry.md) | accepted | Use fast doctor and media-queue health telemetry. |
 | [ADR-0023](0023-guard-daemon-public-media-egress.md) | superseded by ADR-0045 | Guard daemon-public media egress. |
 | [ADR-0024](0024-contain-blob-and-media-artifact-paths.md) | accepted | Contain blob and media artifact paths. |
-| [ADR-0025](0025-literal-policy-aware-forget-selectors.md) | accepted | Use literal and policy-aware forget selectors. |
+| [ADR-0025](0025-literal-policy-aware-forget-selectors.md) | superseded by ADR-0057 | Use literal and policy-aware forget selectors. |
 | [ADR-0026](0026-harden-loopback-ui-and-required-blob-mounts.md) | accepted | Harden loopback UI and required blob mounts. |
 | [ADR-0027](0027-use-canonical-semantic-requirement-catalog.md) | accepted | Use one machine-readable semantic requirement catalog with explicit legacy aliases and generated V-model traceability. |
 | [ADR-0028](0028-use-versioned-restore-backed-sqlite-migrations.md) | accepted | Use versioned restore-backed SQLite migrations with exact schema fingerprints, ordered checksums, and backup-gated destructive steps. |
@@ -64,6 +64,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0054](0054-use-typed-compatible-http-errors.md) | accepted | Use typed compatible HTTP errors and sanitize internal failures. |
 | [ADR-0055](0055-add-redaction-safe-http-request-envelope.md) | accepted | Add opaque request IDs, common security headers, and redaction-safe request telemetry. |
 | [ADR-0056](0056-separate-http-transport-from-application-use-cases.md) | accepted | Separate the standard-library HTTP adapter from explicit request-independent application use cases. |
+| [ADR-0057](0057-preview-and-bound-forget-selection.md) | accepted | Preview exact forget scope and bound destructive execution. |
 
 ## Backfilled decision history
 

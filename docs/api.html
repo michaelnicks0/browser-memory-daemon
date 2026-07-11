@@ -291,7 +291,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td><code>/forget</code></td>
 <td style="text-align: right;"><code>POST</code></td>
-<td>Forget by URL or domain and return a deletion receipt.</td>
+<td>Preview or execute bounded forget by one literal URL/domain selector; execution returns a deletion receipt.</td>
 <td>Yes</td>
 </tr>
 <tr>
@@ -302,6 +302,19 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 </tbody>
 </table>
+<hr />
+<h2 id="forget-preview-and-execution">Forget preview and execution</h2>
+<p><code>POST /forget</code> accepts exactly one of <code>domain</code> or <code>url</code>. Domain scope is the literal apex plus subdomains; malformed hostnames/IP literals, URL syntax, paths, ports, whitespace, and SQL wildcard characters are rejected. URL scope follows active storage policy and includes exact observed URL/document aliases. Receipt scopes remain redaction-safe.</p>
+<p>Add <code>"dry_run": true</code> to return exact current selection counts and guard state without writing an audit event, deletion receipt, blob tombstone, database row, or file. <code>max_records</code> defaults to <code>10000</code> and bounds the selected database/FTS records, not merely documents. Execution above the bound returns <code>400 invalid_request</code> before mutation; a reviewed caller may raise the positive per-request bound to the previewed scope.</p>
+<p>For compatibility with older authenticated callers, omission of <code>dry_run</code> still executes. Current first-party UI and extension controls preview first, show document/record counts in confirmation, and execute with the previewed bound. The CLI is safer by default: <code>forget</code> previews unless <code>--execute</code> is supplied.</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">{</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;domain&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #E6DB74">&quot;example.com&quot;</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;dry_run&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #66D9EF">true</span><span style="color: #F8F8F2">,</span>
+<span style="color: #F8F8F2">  </span><span style="color: #FF4689">&quot;max_records&quot;</span><span style="color: #F8F8F2">: </span><span style="color: #AE81FF">10000</span>
+<span style="color: #F8F8F2">}</span>
+</code></pre></div>
+
+<p>Preview responses set <code>dry_run=true</code>, <code>forgotten=false</code>, and <code>receipt_id=null</code>, and include <code>counts</code> plus <code>guard.selected_records</code>, <code>guard.max_records</code>, and <code>guard.within_limit</code>. Execute responses set <code>dry_run=false</code> and retain the compatible receipt/deletion fields.</p>
 <hr />
 <h2 id="health-response">Health response</h2>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">{</span>

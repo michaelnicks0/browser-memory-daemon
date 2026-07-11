@@ -185,6 +185,124 @@ def test_forget_requires_one_literal_selector(tmp_path):
             forget(conn, cfg, url="example.com/page")
 
 
+@pytest.mark.parametrize(
+    "domain",
+    [
+        "example..com",
+        ".example.com",
+        "-example.com",
+        "example-.com",
+        "example_com",
+        "example.com:443",
+        "[not-an-ip]",
+        "127.000.000.001",
+        "xn--.example",
+    ],
+)
+def test_forget_rejects_malformed_literal_domains(tmp_path, domain):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    with connect(cfg.db_path) as conn:
+        with pytest.raises(ValueError, match="literal hostname|valid hostname"):
+            forget(conn, cfg, domain=domain, dry_run=True)
+
+
+def test_forget_domain_normalizes_equivalent_unicode_and_idna_forms(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    with connect(cfg.db_path) as conn:
+        ingest_capture(
+            conn,
+            cfg,
+            CapturePayload.from_dict(
+                {
+                    "url": "https://bücher.example/article",
+                    "title": "IDNA domain",
+                    "text": "Readable body for an internationalized domain.",
+                },
+                allow_any_url=True,
+            ),
+        )
+
+        preview = forget(conn, cfg, domain="xn--bcher-kva.example", dry_run=True)
+
+        assert preview["scope"]["domain"] == "xn--bcher-kva.example"
+        assert preview["counts"]["documents"] == 1
+
+
+def test_forget_preview_is_non_mutating_and_execution_is_broad_scope_guarded(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    payloads = [
+        ("https://example.com/one", "Example One"),
+        ("https://sub.example.com/two", "Example Two"),
+        ("https://notexample.com/three", "Unrelated Three"),
+    ]
+    with connect(cfg.db_path) as conn:
+        for url, title in payloads:
+            ingest_capture(
+                conn,
+                cfg,
+                CapturePayload.from_dict(
+                    {"url": url, "title": title, "text": f"Readable body for {title}."},
+                    allow_any_url=True,
+                ),
+            )
+
+        preview = forget(conn, cfg, domain="example.com", dry_run=True, max_records=1)
+
+        assert preview["dry_run"] is True
+        assert conn.in_transaction is False
+        assert preview["forgotten"] is False
+        assert preview["receipt_id"] is None
+        assert preview["counts"]["documents"] == 2
+        assert preview["counts"]["capture_observations"] == 2
+        assert preview["guard"]["within_limit"] is False
+        assert conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0] == 3
+        assert conn.execute("SELECT COUNT(*) FROM deletion_receipts").fetchone()[0] == 0
+
+        with pytest.raises(ValueError, match="exceeds max_records guard"):
+            forget(conn, cfg, domain="example.com", max_records=1)
+        assert conn.in_transaction is False
+        assert conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0] == 3
+        assert conn.execute("SELECT COUNT(*) FROM deletion_receipts").fetchone()[0] == 0
+
+        result = forget(conn, cfg, domain="example.com", max_records=preview["guard"]["selected_records"])
+
+        assert result["dry_run"] is False
+        assert result["counts"]["documents"] == preview["counts"]["documents"]
+        assert result["counts"]["capture_observations"] == preview["counts"]["capture_observations"]
+        remaining = conn.execute("SELECT domain FROM documents").fetchall()
+        assert [row["domain"] for row in remaining] == ["notexample.com"]
+
+
+def test_forget_url_preview_includes_exact_document_alias_claim(tmp_path):
+    cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
+    init_db(cfg)
+    observed_url = "https://observed.example/article"
+    claimed_url = "https://alias.example/canonical"
+    with connect(cfg.db_path) as conn:
+        ingest_capture(
+            conn,
+            cfg,
+            CapturePayload.from_dict(
+                {
+                    "url": observed_url,
+                    "canonical_url": claimed_url,
+                    "title": "Alias claim",
+                    "text": "Readable body for an exact canonical alias claim.",
+                },
+                allow_any_url=True,
+            ),
+        )
+
+        preview = forget(conn, cfg, url=claimed_url, dry_run=True)
+
+        assert preview["counts"]["documents"] == 1
+        assert preview["counts"]["url_claims"] == 1
+        assert conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0] == 1
+
+
 def test_media_artifacts_are_related_to_snapshot_not_fts_and_deleted_by_forget(tmp_path):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
     init_db(cfg)
@@ -241,6 +359,13 @@ def test_media_artifacts_are_related_to_snapshot_not_fts_and_deleted_by_forget(t
         media_path = stored_media_path(conn, stored["artifact_id"])
         assert media_path.parent == cfg.media_root
         assert media_path.exists()
+        blob_records_before = conn.execute("SELECT COUNT(*) FROM blob_storage_records").fetchone()[0]
+        preview = forget(conn, cfg, domain="example.com", dry_run=True)
+        assert preview["counts"]["media_artifacts"] == 1
+        assert preview["counts"]["media_blobs_tombstoned"] == 1
+        assert media_path.exists()
+        assert conn.execute("SELECT COUNT(*) FROM blob_storage_records").fetchone()[0] == blob_records_before
+        assert conn.execute("SELECT COUNT(*) FROM deletion_receipts").fetchone()[0] == 0
         receipt = forget(conn, cfg, domain="example.com")
         assert receipt["counts"]["media_artifacts"] == 1
         assert receipt["counts"]["media_blobs"] == 1

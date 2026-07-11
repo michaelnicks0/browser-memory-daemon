@@ -226,7 +226,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>bearer auth for memory/admin APIs;</li>
 <li>runtime data is outside the repo;</li>
 <li>secret scan protects committed repo content;</li>
-<li>forget-by-domain/URL can delete stored memory after the fact; URL forget uses the literal selector in <code>all</code> mode but redacts selector values in receipts. Receipt and byte-deletion tombstones commit with the relational cascade, and incomplete byte removal is reported as pending rather than complete.</li>
+<li>forget-by-domain/URL can delete stored memory after the fact; selectors are literal and policy-aware, the CLI previews by default, and every execution is bounded by an explicit selected-record ceiling. Preview writes no receipt, audit, tombstone, database, or file state. URL forget uses the literal selector in <code>all</code> mode but redacts selector values in receipts. Receipt and byte-deletion tombstones commit with the relational cascade, and incomplete byte removal is reported as pending rather than complete.</li>
 </ul>
 <hr />
 <h2 id="non-all-redaction">Non-<code>all</code> redaction</h2>

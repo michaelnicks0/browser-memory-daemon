@@ -8,7 +8,6 @@ import urllib.error
 import urllib.request
 
 import pytest
-
 from browser_memory_daemon.app import make_server
 from browser_memory_daemon.config import load_config
 
@@ -62,6 +61,8 @@ def test_ui_dashboard_shell_serves_bootstrap_and_core_panels(server):
     assert "application/javascript" in content_type
     assert "test-token" not in js
     assert "bmd-bootstrap" in js
+    assert "dry_run: true" in js
+    assert "max_records: selectedRecords" in js
 
     status, content_type, css = raw_request("GET", f"{server}/ui/style.css", token=None)
     assert status == 200

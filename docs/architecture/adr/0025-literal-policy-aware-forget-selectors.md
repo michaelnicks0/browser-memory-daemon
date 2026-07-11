@@ -1,12 +1,13 @@
 ---
 id: ADR-0025
-status: accepted
+status: superseded
 date: 2026-07-10
 decision_date: 2026-07-10
 decider: Operator
 scope: repo
 supersedes: []
-superseded_by: []
+superseded_by:
+  - ADR-0057
 related:
   - docs/architecture/adr/0006-use-forget-cascade-with-deletion-receipts.md
   - docs/security-model.md
@@ -18,6 +19,8 @@ verification:
 ---
 
 # ADR-0025: Use literal and policy-aware forget selectors
+
+> **Superseded by ADR-0057.** Literal and policy-aware selector semantics remain, while preview counts and bounded execution now govern destructive application.
 
 ## Context
 

@@ -365,6 +365,10 @@ python3<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;<
 <td><code>daemon/src/browser_memory_daemon/blob_lifecycle.py</code>, <code>daemon/src/browser_memory_daemon/storage_reconcile.py</code>, <code>daemon/src/browser_memory_daemon/migration_steps/v0011_add_blob_lifecycle_records.sql</code>, ADR-0040</td>
 </tr>
 <tr>
+<td>Forget selection validates literal policy-aware URL/domain scope, previews cross-authority counts without mutation, and refuses execution above an explicit selected-record bound.</td>
+<td><code>daemon/src/browser_memory_daemon/forget.py</code>, <code>daemon/src/browser_memory_daemon/application.py</code>, <code>daemon/src/browser_memory_daemon/cli.py</code>, ADR-0057</td>
+</tr>
+<tr>
 <td>Text-first backup uses SQLite online backup plus a redaction-safe hash manifest and restores into an absent runtime root without media/spool/secrets.</td>
 <td><code>daemon/src/browser_memory_daemon/backup_ops.py</code>, <code>daemon/src/browser_memory_daemon/cli.py</code>, <code>daemon/tests/integration/test_backup_restore.py</code>, ADR-0041</td>
 </tr>

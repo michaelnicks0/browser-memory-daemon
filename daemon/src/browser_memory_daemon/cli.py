@@ -78,6 +78,11 @@ def main(argv: list[str] | None = None) -> int:
     forget = sub.add_parser("forget")
     forget.add_argument("--domain")
     forget.add_argument("--url")
+    forget_mode = forget.add_mutually_exclusive_group()
+    forget_mode.add_argument("--dry-run", dest="execute", action="store_false")
+    forget_mode.add_argument("--execute", dest="execute", action="store_true")
+    forget.set_defaults(execute=False)
+    forget.add_argument("--max-records", type=int, default=10_000)
     cap = sub.add_parser("capture-fixture")
     cap.add_argument("--url", required=True)
     cap.add_argument("--title", default="Fixture")
@@ -247,7 +252,22 @@ def main(argv: list[str] | None = None) -> int:
         has_url = args.url is not None and str(args.url).strip() != ""
         if has_domain == has_url:
             parser.error("forget accepts exactly one of --domain or --url")
-        print(json.dumps(_request("POST", f"{base}/forget", token=cfg.api_token, body={"domain": args.domain, "url": args.url}), indent=2))
+        print(
+            json.dumps(
+                _request(
+                    "POST",
+                    f"{base}/forget",
+                    token=cfg.api_token,
+                    body={
+                        "domain": args.domain,
+                        "url": args.url,
+                        "dry_run": not args.execute,
+                        "max_records": args.max_records,
+                    },
+                ),
+                indent=2,
+            )
+        )
         return 0
     if args.command == "media-worker":
         init_db(cfg)

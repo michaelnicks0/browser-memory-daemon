@@ -380,11 +380,11 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>REQ-030 — Destructive selectors shall be literal, validated, policy-aware, previewable, and bounded to the stated scope.</td>
-<td>—</td>
-<td><code>daemon/tests/integration/test_ingest_search_forget.py</code></td>
-<td>—</td>
-<td><code>docs/CLI_UX_CONTRACT.md</code></td>
-<td>—</td>
+<td><code>daemon/tests/unit/test_application.py::test_application_forget_preview_writes_no_audit_or_receipt</code><br><code>extension/tests/unit/popup.test.js</code></td>
+<td><code>daemon/tests/integration/test_ingest_search_forget.py::test_forget_rejects_malformed_literal_domains</code><br><code>daemon/tests/integration/test_ingest_search_forget.py::test_forget_domain_normalizes_equivalent_unicode_and_idna_forms</code><br><code>daemon/tests/integration/test_ingest_search_forget.py::test_forget_preview_is_non_mutating_and_execution_is_broad_scope_guarded</code><br><code>daemon/tests/integration/test_ingest_search_forget.py::test_forget_url_preview_includes_exact_document_alias_claim</code></td>
+<td><code>daemon/tests/e2e/test_http_api.py::test_http_capture_search_forget_round_trip</code><br><code>daemon/tests/e2e/test_cli_admin.py::test_cli_admin_commands</code><br><code>daemon/tests/e2e/test_ui_dashboard_smoke.py::test_ui_dashboard_shell_serves_bootstrap_and_core_panels</code></td>
+<td><code>docs/CLI_UX_CONTRACT.md</code><br><code>docs/api.md</code><br><code>docs/security-model.md</code><br><code>docs/architecture/adr/0057-preview-and-bound-forget-selection.md</code></td>
+<td><code>daemon/tests/integration/test_ingest_search_forget.py::test_forget_preview_is_non_mutating_and_execution_is_broad_scope_guarded</code><br><code>daemon/tests/e2e/test_http_api.py::test_http_capture_search_forget_round_trip</code></td>
 </tr>
 <tr>
 <td>REQ-031 — Deletion and eviction shall be crash-recoverable and shall not report full success while required bytes remain.</td>
