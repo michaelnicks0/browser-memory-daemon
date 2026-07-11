@@ -5,7 +5,7 @@
 > **Runtime:** Python **3.11+** (`pyproject.toml` requires `>=3.11`). Use `BMD_PYTHON=/path/to/python3.11` when the host `python3` is older.
 
 <!-- BEGIN GENERATED:inventory-summary -->
-> **Current inventory:** 315 static test functions across 55 files — 245 daemon pytest tests + 70 extension node:test tests.
+> **Current inventory:** 321 static test functions across 56 files — 251 daemon pytest tests + 70 extension node:test tests.
 <!-- END GENERATED:inventory-summary -->
 
 ---
@@ -79,7 +79,7 @@ Use `--runtime-root PATH` only for explicit fixture roots; do not point the stre
 ## Generated test inventory
 
 <!-- BEGIN GENERATED:audit-run -->
-Latest inventory: **315 static test functions** across **55 files** (245 daemon pytest; 70 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
+Latest inventory: **321 static test functions** across **56 files** (251 daemon pytest; 70 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
 <!-- END GENERATED:audit-run -->
 
 ## Requirements traceability gate
@@ -89,7 +89,7 @@ Traceability gate: **✅ pass**.
 
 | Check | Result |
 |---|---|
-| Catalog requirements | 43 (42 active; 1 planned) |
+| Catalog requirements | 43 (43 active; 0 planned) |
 | Duplicate stable IDs | none |
 | Invalid requirement definitions | none |
 | Duplicate plan/local aliases | none |
@@ -100,7 +100,7 @@ Traceability gate: **✅ pass**.
 | Normative changes without revision increment | none |
 | Requirements removed without catalog disposition | none |
 | Catalog load errors | none |
-| Static test inventory measured | 315 tests / 55 files |
+| Static test inventory measured | 321 tests / 56 files |
 <!-- END GENERATED:traceability-gate -->
 
 ### Per-file counts
@@ -113,6 +113,7 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/e2e/test_daily_driver_install.py` | pytest | 2 |
 | `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | 4 |
 | `daemon/tests/e2e/test_http_api.py` | pytest | 16 |
+| `daemon/tests/e2e/test_install_daily_driver.py` | pytest | 5 |
 | `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | 5 |
 | `daemon/tests/e2e/test_read_model_indexes.py` | pytest | 1 |
 | `daemon/tests/e2e/test_ui_dashboard_smoke.py` | pytest | 4 |
@@ -131,7 +132,7 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/unit/test_api_errors.py` | pytest | 3 |
 | `daemon/tests/unit/test_application.py` | pytest | 4 |
 | `daemon/tests/unit/test_blob_store.py` | pytest | 5 |
-| `daemon/tests/unit/test_config.py` | pytest | 6 |
+| `daemon/tests/unit/test_config.py` | pytest | 7 |
 | `daemon/tests/unit/test_daily_driver_health.py` | pytest | 6 |
 | `daemon/tests/unit/test_db.py` | pytest | 2 |
 | `daemon/tests/unit/test_http_server.py` | pytest | 3 |
@@ -162,7 +163,7 @@ Traceability gate: **✅ pass**.
 | `extension/tests/unit/service_worker.test.js` | node:test | 10 |
 | `extension/tests/unit/shared.test.js` | node:test | 2 |
 | `extension/tests/unit/visit_tracker.test.js` | node:test | 2 |
-| **Total** |  | **315** |
+| **Total** |  | **321** |
 <!-- END GENERATED:per-file-counts -->
 
 <details>
@@ -205,6 +206,11 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_maps_capture_identity_conflicts_to_stable_conflict_error` | 999 | Http maps capture identity conflicts to stable conflict error. |
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_maps_database_busy_and_unexpected_failures_without_leaking_internal_details` | 1032 | Http maps database busy and unexpected failures without leaking internal details. |
 | `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_policy_rule_duplicate_creation_returns_existing_semantic_rule` | 1070 | Http policy rule duplicate creation returns existing semantic rule. |
+| `daemon/tests/e2e/test_install_daily_driver.py` | pytest | `(module)` | `test_installer_stages_validates_swaps_and_restarts_services_in_order` | 158 | Installer stages validates swaps and restarts services in order. |
+| `daemon/tests/e2e/test_install_daily_driver.py` | pytest | `(module)` | `test_installer_readiness_failure_restores_prior_artifacts_and_service_state` | 196 | Installer readiness failure restores prior artifacts and service state. |
+| `daemon/tests/e2e/test_install_daily_driver.py` | pytest | `(module)` | `test_installer_blocks_incompatible_database_before_publication` | 217 | Installer blocks incompatible database before publication. |
+| `daemon/tests/e2e/test_install_daily_driver.py` | pytest | `(module)` | `test_installer_dry_run_rejects_unsafe_extension_destination_without_writes` | 233 | Installer dry run rejects unsafe extension destination without writes. |
+| `daemon/tests/e2e/test_install_daily_driver.py` | pytest | `(module)` | `test_installer_surfaces_incomplete_rollback_when_prior_service_cannot_restart` | 265 | Installer surfaces incomplete rollback when prior service cannot restart. |
 | `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_path_invariant_rejects_blob_escape` | 47 | Performance benchmark path invariant rejects blob escape. |
 | `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_subprocess_does_not_write_default_home_blob_root` | 64 | Performance benchmark subprocess does not write default home blob root. |
 | `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_temp_runtime_cleanup_stays_inside_tmp_home` | 100 | Performance benchmark temp runtime cleanup stays inside tmp home. |
@@ -361,12 +367,13 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/unit/test_blob_store.py` | pytest | `(module)` | `test_blob_store_rejects_traversal_symlink_escape_and_cross_root_stage` | 47 | Blob store rejects traversal symlink escape and cross root stage. |
 | `daemon/tests/unit/test_blob_store.py` | pytest | `(module)` | `test_blob_store_delete_reports_outcomes_without_touching_outside_paths` | 68 | Blob store delete reports outcomes without touching outside paths. |
 | `daemon/tests/unit/test_blob_store.py` | pytest | `(module)` | `test_blob_store_concurrent_writers_publish_whole_file_and_leave_no_stages` | 82 | Blob store concurrent writers publish whole file and leave no stages. |
-| `daemon/tests/unit/test_config.py` | pytest | `(module)` | `test_blob_root_can_be_moved_independently_from_runtime_root` | 7 | Blob root can be moved independently from runtime root. |
-| `daemon/tests/unit/test_config.py` | pytest | `(module)` | `test_required_blob_root_mount_degrades_media_without_blocking_local_sqlite` | 28 | Required blob root mount degrades media without blocking local sqlite. |
-| `daemon/tests/unit/test_config.py` | pytest | `(module)` | `test_required_blob_root_mount_allows_mounted_blob_root` | 41 | Required blob root mount allows mounted blob root. |
-| `daemon/tests/unit/test_config.py` | pytest | `(module)` | `test_explicit_external_media_root_requires_mount_identity_and_marker` | 59 | Explicit external media root requires mount identity and marker. |
-| `daemon/tests/unit/test_config.py` | pytest | `(module)` | `test_media_spool_requires_explicit_local_root_and_positive_cap` | 88 | Media spool requires explicit local root and positive cap. |
-| `daemon/tests/unit/test_config.py` | pytest | `(module)` | `test_global_media_resource_budgets_are_positive_and_fit_one_artifact` | 102 | Global media resource budgets are positive and fit one artifact. |
+| `daemon/tests/unit/test_config.py` | pytest | `(module)` | `test_default_runtime_roots_follow_xdg_environment` | 7 | Default runtime roots follow xdg environment. |
+| `daemon/tests/unit/test_config.py` | pytest | `(module)` | `test_blob_root_can_be_moved_independently_from_runtime_root` | 19 | Blob root can be moved independently from runtime root. |
+| `daemon/tests/unit/test_config.py` | pytest | `(module)` | `test_required_blob_root_mount_degrades_media_without_blocking_local_sqlite` | 40 | Required blob root mount degrades media without blocking local sqlite. |
+| `daemon/tests/unit/test_config.py` | pytest | `(module)` | `test_required_blob_root_mount_allows_mounted_blob_root` | 53 | Required blob root mount allows mounted blob root. |
+| `daemon/tests/unit/test_config.py` | pytest | `(module)` | `test_explicit_external_media_root_requires_mount_identity_and_marker` | 71 | Explicit external media root requires mount identity and marker. |
+| `daemon/tests/unit/test_config.py` | pytest | `(module)` | `test_media_spool_requires_explicit_local_root_and_positive_cap` | 100 | Media spool requires explicit local root and positive cap. |
+| `daemon/tests/unit/test_config.py` | pytest | `(module)` | `test_global_media_resource_budgets_are_positive_and_fit_one_artifact` | 114 | Global media resource budgets are positive and fit one artifact. |
 | `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_snapshot_is_aggregate_and_redaction_safe` | 81 | Daily driver health snapshot is aggregate and redaction safe. |
 | `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_media_queue_uses_datetime_comparisons_and_reports_worker_throughput` | 159 | Daily driver health media queue uses datetime comparisons and reports worker throughput. |
 | `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_missing_extension_token` | 240 | Daily driver health detects missing extension token. |

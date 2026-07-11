@@ -173,9 +173,12 @@ def load_config(
         config_root = selected_root / "config"
         state_root = selected_root / "state"
     else:
-        data_root = Path.home() / ".local" / "share" / APP_NAME
-        config_root = Path.home() / ".config" / APP_NAME
-        state_root = Path.home() / ".local" / "state" / APP_NAME
+        data_home = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share")).expanduser()
+        config_home = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")).expanduser()
+        state_home = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local" / "state")).expanduser()
+        data_root = data_home / APP_NAME
+        config_root = config_home / APP_NAME
+        state_root = state_home / APP_NAME
     blob_root_value = blob_root if blob_root is not None else env_blob_root
     selected_blob_root = Path(blob_root_value).expanduser() if blob_root_value else data_root / "blobs"
     derivative_root_value = derivative_root if derivative_root is not None else env_derivative_root

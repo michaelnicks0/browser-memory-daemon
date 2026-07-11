@@ -216,10 +216,10 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
                         containerInstance extensionBrowserStorage
                         containerInstance localWebUi
                     }
-                    extensionCopy = infrastructureNode "Windows unpacked extension copy" "Built extension copy under %LOCALAPPDATA%\\browser-memory-daemon\\extension containing the local daemon token." "Windows filesystem"
+                    extensionCopy = infrastructureNode "Windows unpacked extension copy" "Validated adjacent-stage artifact atomically swapped under %LOCALAPPDATA%\\browser-memory-daemon\\extension; prior bytes remain rollback authority until readiness passes." "Windows filesystem"
                 }
                 wslNode = deploymentNode "WSL2 Ubuntu" "WSL-owned services, config, and durable data paths." "Ubuntu + systemd --user" {
-                    systemdUser = deploymentNode "systemd --user services" "User services installed by scripts/install-daily-driver.sh." "systemd --user" {
+                    systemdUser = deploymentNode "systemd --user services" "Staged units installed by scripts/install-daily-driver.sh; daemon readiness precedes worker restart and failed readiness restores prior units/service state." "systemd --user" {
                         containerInstance wslLoopbackDaemon
                         containerInstance mediaWorker
                     }

@@ -117,6 +117,23 @@ Rotate token and refresh extension copy:
 BMD_ROTATE_TOKEN=1 BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
 ```
 
+The installer is a staged readiness transaction:
+
+1. `--dry-run` validates the media-root prerequisite and extension destination without creating config, data, state, or extension paths.
+2. Token/environment/unit files are prepared under a private state-directory stage. Existing files and absence markers are retained for rollback.
+3. The extension is built and patched in a uniquely named sibling of `%LOCALAPPDATA%\browser-memory-daemon\extension`; required files, Manifest V3 JSON, and destination headroom are validated before replacement.
+4. An existing database must pass read-only `migrate --check`. Pending migrations block install and must be reviewed/executed separately.
+5. The daemon is restarted and checked active plus healthy over loopback before the media worker is restarted and checked active. Windows loopback health is the final check when PowerShell is available.
+6. Any caught readiness failure restores the prior token, environment, units, extension artifact, enablement, and active/inactive service state. Failure to recover prior service readiness exits `70` with `ROLLBACK INCOMPLETE`.
+
+A successful install records redaction-safe artifact hashes/modes and extension counts under:
+
+```text
+~/.local/state/browser-memory-daemon/install-history/
+```
+
+The manifest does not contain the token value. Installer-owned stages/backups are removed after success or a caught failure. A `SIGKILL`, power loss, or cross-filesystem host failure is not transactionally recoverable; inspect uniquely named `install-stage.*`, `extension.stage.*`, or `extension.backup.*` paths rather than deleting broad globs.
+
 Then reload Chrome extension:
 
 ```text
@@ -223,7 +240,7 @@ Use `forget` after the fact if a domain should be removed:
 ```bash
 PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   --token "$(tr -d '\r\n' < ~/.config/browser-memory-daemon/token)" \
-  forget --domain example.com
+  forget --domain example.com --execute
 ```
 
 ---

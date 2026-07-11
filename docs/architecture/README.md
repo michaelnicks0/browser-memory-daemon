@@ -43,7 +43,7 @@ Windows Chrome MV3 extension
 
 The system boundary is **Browser Memory Daemon**, including the owned Chrome extension, WSL daemon, WSL media worker, local UI, CLI, database, and blob stores. Windows Chrome and web/media origins are modeled as external systems.
 
-Every implemented component in `workspace.dsl` carries the `Current` tag. Versioned migrations, capture observations, BlobStore, media decomposition, and the transactional capture/lifecycle outbox are current; remaining planned boundaries such as the thin HTTP application layer stay `planned` in [`../../requirements/catalog.toml`](../../requirements/catalog.toml) and are not presented as implemented C4 elements. When a target boundary is added for design review before implementation, it must carry the `Target` tag and remain visually distinct from the current system.
+Every implemented component in `workspace.dsl` carries the `Current` tag. Versioned migrations, capture observations, BlobStore, media decomposition, transactional capture/lifecycle outbox, thin HTTP application layer, backup/restore, and staged installer rollback are current. Any future design-review boundary added before implementation must carry the `Target` tag and remain visually distinct from the current system; requirement status is canonical in [`../../requirements/catalog.toml`](../../requirements/catalog.toml).
 
 ## Diagram ownership
 
@@ -143,13 +143,13 @@ Primary source evidence used for this model:
 | Forget selection validates literal policy-aware URL/domain scope, previews cross-authority counts without mutation, and refuses execution above an explicit selected-record bound. | `daemon/src/browser_memory_daemon/forget.py`, `daemon/src/browser_memory_daemon/application.py`, `daemon/src/browser_memory_daemon/cli.py`, ADR-0057 |
 | Text-first backup uses SQLite online backup plus a redaction-safe hash manifest and restores into an absent runtime root without media/spool/secrets. | `daemon/src/browser_memory_daemon/backup_ops.py`, `daemon/src/browser_memory_daemon/cli.py`, `daemon/tests/integration/test_backup_restore.py`, ADR-0041 |
 | Local UI and CLI are operator surfaces; CLI read/admin commands use daemon APIs, while media-worker/cache/spool/storage-reconcile/backup commands also run direct SQLite/filesystem paths. | `ui/app.js`, `daemon/src/browser_memory_daemon/cli.py`, `docs/daily-driver-deployment.md` |
-| Daily-driver deployment uses WSL systemd user services and Windows unpacked extension copy. | `scripts/install-daily-driver.sh`, `docs/daily-driver-deployment.md` |
+| Daily-driver deployment validates and atomically swaps a sibling extension stage, restarts daemon then worker through readiness gates, and restores prior artifacts/service state on caught failure. | `scripts/install-daily-driver.sh`, `daemon/tests/e2e/test_install_daily_driver.py`, `docs/daily-driver-deployment.md`, ADR-0058 |
 
 ## Assumptions and TBDs
 
 - Deployment view is limited to the documented **Daily-driver local** workstation topology. No separate staging/production topology is modeled.
 - Non-runtime deployment artifacts such as the Windows unpacked extension copy and protected token/env files are modeled in the DSL but excluded from the rendered deployment view to keep the runtime topology legible. Durable audit events live in SQLite; there is no separate `audit.jsonl` deployment node. The WSL CLI and in-browser extension storage are also excluded from the deployment render because their relationships are covered in C2/C3 views and made the deployment topology unreadable.
-- Semantic/vector search, MCP/Hermes integration, native messaging transport, full encrypted backup/restore, and multi-source importers are explicitly pending and are not modeled as current runtime containers. The narrower migration-only online backup boundary is current.
+- Semantic/vector search, MCP/Hermes integration, native messaging transport, encrypted/signed backup bundles, automated backup retention, and multi-source importers are explicitly pending and are not modeled as current runtime containers. Manifest-backed text-first backup/empty-root restore and migration-only online backup are current.
 - Chrome extension manual Load unpacked/Reload is an operational step, not a runtime container.
 - Final media blobs are modeled as a bounded disposable cache, and the local spool as bounded durable outage buffering; text/FTS/media refs remain authoritative.
 - Captured page text is untrusted evidence and must not be treated as agent instructions.

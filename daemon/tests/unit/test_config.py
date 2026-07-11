@@ -4,6 +4,18 @@ from browser_memory_daemon.config import load_config
 from browser_memory_daemon.media_storage import MEDIA_ROOT_MARKER, media_root_readiness
 
 
+def test_default_runtime_roots_follow_xdg_environment(tmp_path, monkeypatch):
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "data"))
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
+
+    cfg = load_config(test_mode=True, token="test-token", policy_mode="all")
+
+    assert cfg.config_root == tmp_path / "config" / "browser-memory-daemon"
+    assert cfg.data_root == tmp_path / "data" / "browser-memory-daemon"
+    assert cfg.state_root == tmp_path / "state" / "browser-memory-daemon"
+
+
 def test_blob_root_can_be_moved_independently_from_runtime_root(tmp_path):
     runtime_root = tmp_path / "runtime"
     blob_root = tmp_path / "nas-blobs"

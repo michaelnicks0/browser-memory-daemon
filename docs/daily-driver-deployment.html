@@ -269,6 +269,20 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">BMD_ROTATE_TOKEN</span><span style="color: #FF4689">=</span><span style="color: #AE81FF">1</span><span style="color: #F8F8F2"> BMD_POLICY_MODE</span><span style="color: #FF4689">=</span>all<span style="color: #F8F8F2"> </span>./scripts/install-daily-driver.sh
 </code></pre></div>
 
+<p>The installer is a staged readiness transaction:</p>
+<ol>
+<li><code>--dry-run</code> validates the media-root prerequisite and extension destination without creating config, data, state, or extension paths.</li>
+<li>Token/environment/unit files are prepared under a private state-directory stage. Existing files and absence markers are retained for rollback.</li>
+<li>The extension is built and patched in a uniquely named sibling of <code>%LOCALAPPDATA%\browser-memory-daemon\extension</code>; required files, Manifest V3 JSON, and destination headroom are validated before replacement.</li>
+<li>An existing database must pass read-only <code>migrate --check</code>. Pending migrations block install and must be reviewed/executed separately.</li>
+<li>The daemon is restarted and checked active plus healthy over loopback before the media worker is restarted and checked active. Windows loopback health is the final check when PowerShell is available.</li>
+<li>Any caught readiness failure restores the prior token, environment, units, extension artifact, enablement, and active/inactive service state. Failure to recover prior service readiness exits <code>70</code> with <code>ROLLBACK INCOMPLETE</code>.</li>
+</ol>
+<p>A successful install records redaction-safe artifact hashes/modes and extension counts under:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>~/.local/state/browser-memory-daemon/install-history/
+</code></pre></div>
+
+<p>The manifest does not contain the token value. Installer-owned stages/backups are removed after success or a caught failure. A <code>SIGKILL</code>, power loss, or cross-filesystem host failure is not transactionally recoverable; inspect uniquely named <code>install-stage.*</code>, <code>extension.stage.*</code>, or <code>extension.backup.*</code> paths rather than deleting broad globs.</p>
 <p>Then reload Chrome extension:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>chrome://extensions → Browser Memory Daemon → Reload
 </code></pre></div>
@@ -346,7 +360,7 @@ journalctl<span style="color: #F8F8F2"> </span>--user<span style="color: #F8F8F2
 <p>Use <code>forget</code> after the fact if a domain should be removed:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code><span style="color: #F8F8F2">PYTHONPATH</span><span style="color: #FF4689">=</span>daemon/src<span style="color: #F8F8F2"> </span>python3.11<span style="color: #F8F8F2"> </span>-m<span style="color: #F8F8F2"> </span>browser_memory_daemon<span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
 <span style="color: #F8F8F2">  </span>--token<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;</span><span style="color: #66D9EF">$(</span>tr<span style="color: #F8F8F2"> </span>-d<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&#39;\r\n&#39;</span><span style="color: #F8F8F2"> </span>&lt;<span style="color: #F8F8F2"> </span>~/.config/browser-memory-daemon/token<span style="color: #66D9EF">)</span><span style="color: #E6DB74">&quot;</span><span style="color: #F8F8F2"> </span><span style="color: #AE81FF">\</span>
-<span style="color: #F8F8F2">  </span>forget<span style="color: #F8F8F2"> </span>--domain<span style="color: #F8F8F2"> </span>example.com
+<span style="color: #F8F8F2">  </span>forget<span style="color: #F8F8F2"> </span>--domain<span style="color: #F8F8F2"> </span>example.com<span style="color: #F8F8F2"> </span>--execute
 </code></pre></div>
 
 <hr />
