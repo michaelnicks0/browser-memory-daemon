@@ -259,7 +259,7 @@ Compatibility JSON upload:
 
 If `content_base64` is omitted, the artifact is metadata-only.
 
-Raw `PUT` requires a non-negative `Content-Length`, rejects bodies above the configured artifact cap before consumption, and copies accepted bytes through a bounded spool. Media route capacity exhaustion returns HTTP `503` with the compatible top-level `error` field. Compatibility JSON remains bounded but can still require a base64 decode copy; raw upload is the preferred binary path.
+Raw `PUT` requires a non-negative `Content-Length`, rejects bodies above the configured artifact cap before consumption, and streams accepted bytes directly into contained `BlobStore` staging with reads capped at 64 KiB. Truncated or disconnected uploads abort staging, release cache and process reservations, and leave the prior artifact row authoritative. Media route capacity exhaustion returns HTTP `503` with the compatible top-level `error` field. Compatibility JSON remains bounded but can still require a base64 decode copy; raw upload is the preferred binary path.
 
 Public daemon backfill:
 
@@ -327,7 +327,7 @@ GET /media-artifacts/<artifact_id>
 Authorization: Bearer ***
 ```
 
-The daemon validates the tier-owned locator against the configured media/spool root before serving bytes and streams accepted responses from `BlobStore.open` in bounded chunks while holding a process byte/request lease. Missing, stale, invalid, out-of-root, `purging`, or `purged` artifacts return metadata/not-stored responses rather than reading arbitrary local files.
+The daemon validates the tier-owned locator against the configured media/spool root before serving bytes and streams accepted responses from `BlobStore.open` in 64 KiB chunks while holding a process byte/request lease. It checks the emitted length against the advertised length. A client disconnect closes the response without attempting a second HTTP response, emits only the safe `client_disconnected` telemetry code, and releases the lease. Missing, stale, invalid, out-of-root, `purging`, or `purged` artifacts return metadata/not-stored responses rather than reading arbitrary local files.
 
 Media metadata is not inserted into FTS; search results only expose `media_artifact_count`.
 

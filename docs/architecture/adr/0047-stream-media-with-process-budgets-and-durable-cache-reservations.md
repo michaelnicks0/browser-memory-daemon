@@ -4,7 +4,7 @@
 - Date: 2026-07-10
 - Amended: 2026-07-10 after late adversarial transport review
 - Decision owners: Browser Memory Daemon maintainers
-- Related: ADR-0014, ADR-0039, ADR-0043, ADR-0044, ADR-0045, ADR-0046, REQ-032, REQ-035, REQ-036
+- Related: ADR-0014, ADR-0039, ADR-0043, ADR-0044, ADR-0045, ADR-0046, REQ-032, REQ-035, REQ-036, REQ-040
 
 ## Context
 
@@ -15,8 +15,8 @@ Task callers could claim a batch before processing its first item. A task lease 
 ## Decision
 
 1. Media byte paths stream through bounded binary streams:
-   - raw HTTP uploads are copied into a bounded `SpooledTemporaryFile` in 64 KiB chunks;
-   - stored media responses stream from `BlobStore.open` in bounded chunks;
+   - known-length raw HTTP uploads stream directly into contained `BlobStore` staging through a reader capped at 64 KiB per read; legacy internal callers without a known length retain a bounded `SpooledTemporaryFile` compatibility path;
+   - stored media responses stream from `BlobStore.open` in bounded 64 KiB chunks, verify the emitted length against the advertised length, and stop without a second response when the client disconnects;
    - guarded HTTP responses write incrementally to a supplied stream;
    - HLS variants, init maps, and segments append to the same bounded output stream while retaining one aggregate HLS request/byte/depth/deadline budget;
    - artifact publication stages from a binary stream and verifies the expected size before SQLite publication.
@@ -68,4 +68,8 @@ No live database migration, service restart, media-root write, or daily-driver i
 - `daemon/tests/integration/test_migrations.py::test_version_thirteen_adds_cache_reservations_from_exact_prior_schema`
 - `daemon/tests/e2e/test_http_api.py::test_http_upload_get_and_purge_use_bounded_spool_during_media_root_outage`
 - `daemon/tests/e2e/test_http_api.py::test_http_raw_media_upload_returns_503_when_global_byte_budget_cannot_admit_body`
+- `daemon/tests/e2e/test_http_api.py::test_http_raw_media_upload_disconnect_cleans_staging_reservations_and_process_budget`
+- `daemon/tests/e2e/test_http_api.py::test_http_media_download_disconnect_stops_stream_and_releases_process_budget`
+- `daemon/tests/integration/test_ingest_search_forget.py::test_raw_blob_upload_streams_without_whole_artifact_spool_and_rejects_truncated_body`
+- `daemon/tests/unit/test_http_server.py`
 - `daemon/tests/e2e/test_concurrency_stress.py::test_concurrency_stress_harness_exercises_shared_sqlite_db`

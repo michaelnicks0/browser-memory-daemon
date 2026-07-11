@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from pathlib import Path
 
+import browser_memory_daemon.media as media_module
 import pytest
 from browser_memory_daemon.blob_migration import migrate_blob_root
 from browser_memory_daemon.blob_store import BlobStore
@@ -578,7 +579,7 @@ def test_media_domain_cache_rolls_oldest_blob_when_domain_limit_would_be_exceede
         assert rows[new["artifact_id"]]["capture_status"] == "stored"
 
 
-def test_raw_blob_upload_rejects_truncated_body_and_infers_mime_from_url(tmp_path):
+def test_raw_blob_upload_streams_without_whole_artifact_spool_and_rejects_truncated_body(tmp_path, monkeypatch):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", policy_mode="all")
     init_db(cfg)
     payload = CapturePayload.from_dict(
@@ -593,6 +594,11 @@ def test_raw_blob_upload_rejects_truncated_body_and_infers_mime_from_url(tmp_pat
     with connect(cfg.db_path) as conn:
         result = ingest_capture(conn, cfg, payload)
         artifact = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
+
+        def reject_whole_artifact_spool(*_args, **_kwargs):
+            raise AssertionError("known-length raw upload must stream directly to BlobStore staging")
+
+        monkeypatch.setattr(media_module.tempfile, "SpooledTemporaryFile", reject_whole_artifact_spool)
         with pytest.raises(ValueError, match="incomplete media upload"):
             store_media_blob_stream(
                 conn,
@@ -602,18 +608,29 @@ def test_raw_blob_upload_rejects_truncated_body_and_infers_mime_from_url(tmp_pat
                 headers={"Content-Type": "application/octet-stream"},
                 content_length=8,
             )
+        class RecordingBytesIO(io.BytesIO):
+            def __init__(self, content):
+                super().__init__(content)
+                self.read_sizes = []
+
+            def read(self, size: int | None = -1):
+                self.read_sizes.append(size)
+                return super().read(size)
+
+        valid_stream = RecordingBytesIO(b"x" * (128 * 1024 + 7))
         stored = store_media_blob_stream(
             conn,
             cfg,
             artifact["id"],
-            io.BytesIO(b"12345678"),
+            valid_stream,
             headers={"Content-Type": "application/octet-stream"},
-            content_length=8,
+            content_length=128 * 1024 + 7,
         )
         assert stored["stored"] is True
+        assert valid_stream.read_sizes == [64 * 1024, 64 * 1024, 7]
         media = media_artifacts_for_snapshot(conn, result["snapshot_id"])[0]
         assert media["mime_type"] == "image/png"
-        assert media["byte_size"] == 8
+        assert media["byte_size"] == 128 * 1024 + 7
 
 
 def test_posted_cdp_metadata_enqueues_daemon_fetch_task(tmp_path):

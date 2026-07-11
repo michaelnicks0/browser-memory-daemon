@@ -214,7 +214,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>Migration version 11 adds durable <code>blob_storage_records</code>. Forget, purge, eviction, spool drain, replacement, and blob migration register committed/tombstoned lifecycle state before filesystem deletion; <code>failed</code>/<code>blocked</code> work remains pending and visible until <code>storage reconcile --execute</code> converges it.</li>
 <li>Migration version 12 performs one-time historical media-state correction. The steady-state worker runs only bounded current-state CDP/task reconciliation plus due-task leasing; budget skips require an explicit scoped <code>media-cache requeue</code> preview/execute operation.</li>
 <li>Migration version 13 adds expiring SQLite cache reservations. Admission counts committed plus active reserved bytes transactionally across daemon and worker processes, and publication replaces its reservation with the committed artifact row in the same transaction.</li>
-<li><code>BMD_MAX_MEDIA_INFLIGHT_BYTES</code> and <code>BMD_MAX_MEDIA_CONCURRENT_REQUESTS</code> bound media bytes and active requests within each daemon or worker process. Raw upload, public HTTP/HLS fetch, artifact staging, and stored responses use bounded streams; queue status exposes aggregate lease counters.</li>
+<li><code>BMD_MAX_MEDIA_INFLIGHT_BYTES</code> and <code>BMD_MAX_MEDIA_CONCURRENT_REQUESTS</code> bound media bytes and active requests within each daemon or worker process. Known-length raw upload streams directly into contained BlobStore staging through 64 KiB reads; public HTTP/HLS fetch, artifact staging, and stored responses also use bounded streams. Upload/download disconnects abort incomplete staging or response work, release durable and process reservations, and never attempt a second HTTP response. Queue status exposes aggregate lease counters.</li>
 <li>Text-first backup uses SQLite's online backup API plus a redaction-safe SHA-256 manifest. Restore verifies into an absent runtime root; media/spool/secrets remain excluded by default.</li>
 </ul>
 <hr />
@@ -628,12 +628,12 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td>REQ-040</td>
 <td style="text-align: right;">1</td>
-<td>planned</td>
+<td>active</td>
 <td>HTTP behavior shall provide stable typed errors, request IDs, secure headers, and bounded streaming.</td>
 <td>WSL HTTP Transport</td>
 <td><code>HRD-015</code></td>
-<td><code>daemon/src/browser_memory_daemon/app.py</code><br><code>daemon/src/browser_memory_daemon/http_server.py</code><br><code>daemon/src/browser_memory_daemon/routes.py</code><br><code>daemon/src/browser_memory_daemon/api_errors.py</code></td>
-<td>—</td>
+<td><code>daemon/src/browser_memory_daemon/app.py</code><br><code>daemon/src/browser_memory_daemon/http_server.py</code><br><code>daemon/src/browser_memory_daemon/routes.py</code><br><code>daemon/src/browser_memory_daemon/api_errors.py</code><br><code>daemon/src/browser_memory_daemon/media.py</code><br><code>daemon/src/browser_memory_daemon/blob_store.py</code></td>
+<td><code>daemon/tests/e2e/test_http_api.py::test_http_raw_media_upload_disconnect_cleans_staging_reservations_and_process_budget</code><br><code>daemon/tests/e2e/test_http_api.py::test_http_media_download_disconnect_stops_stream_and_releases_process_budget</code></td>
 </tr>
 <tr>
 <td>REQ-041</td>

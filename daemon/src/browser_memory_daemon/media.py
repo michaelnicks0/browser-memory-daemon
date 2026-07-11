@@ -711,6 +711,28 @@ def _spool_limited_stream(stream: Any, spool: Any, max_bytes: int, expected_byte
     return total
 
 
+class _ExpectedLengthStream:
+    def __init__(self, stream: Any, expected_bytes: int, *, max_chunk_bytes: int = 64 * 1024) -> None:
+        if expected_bytes < 0:
+            raise ValueError("expected_bytes must be nonnegative")
+        self._stream = stream
+        self._remaining = expected_bytes
+        self._max_chunk_bytes = max_chunk_bytes
+
+    def read(self, size: int = -1) -> bytes:
+        if self._remaining == 0:
+            return b""
+        requested = self._remaining if size < 0 else min(size, self._remaining)
+        requested = min(requested, self._max_chunk_bytes)
+        chunk = self._stream.read(requested)
+        if not chunk:
+            raise ValueError("incomplete media upload")
+        if not isinstance(chunk, (bytes, bytearray, memoryview)) or len(chunk) > requested:
+            raise ValueError("invalid media upload stream")
+        self._remaining -= len(chunk)
+        return bytes(chunk)
+
+
 def store_media_blob_stream(
     conn: sqlite3.Connection,
     config: RuntimeConfig,
@@ -740,6 +762,18 @@ def store_media_blob_stream(
     if raw_content_type and not mime_type:
         capture_status = "referenced" if media_type == "video" else "skipped"
         return store_media_artifact(conn, config, _payload_from_media_row(artifact, capture_status=capture_status, status_reason="non-media-content-type"))
+    if content_length is not None:
+        payload = _payload_from_media_row(artifact, capture_status="stored", mime_type=mime_type)
+        return _persist_media_artifact(
+            conn,
+            config,
+            _build_media_artifact_write(
+                config,
+                payload,
+                content_stream=_ExpectedLengthStream(stream, content_length),
+                content_size=content_length,
+            ),
+        )
     with tempfile.SpooledTemporaryFile(max_size=1024 * 1024, mode="w+b") as content_stream:
         content_size = _spool_limited_stream(
             stream,

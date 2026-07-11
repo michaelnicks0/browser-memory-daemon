@@ -132,7 +132,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </blockquote>
 <!-- BEGIN GENERATED:inventory-summary -->
 <blockquote>
-<p><strong>Current inventory:</strong> 299 static test functions across 52 files — 230 daemon pytest tests + 69 extension node:test tests.</p>
+<p><strong>Current inventory:</strong> 305 static test functions across 53 files — 236 daemon pytest tests + 69 extension node:test tests.</p>
 </blockquote>
 <!-- END GENERATED:inventory-summary -->
 
@@ -190,7 +190,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <hr />
 <h2 id="generated-test-inventory">Generated test inventory</h2>
 <!-- BEGIN GENERATED:audit-run -->
-<p>Latest inventory: <strong>299 static test functions</strong> across <strong>52 files</strong> (230 daemon pytest; 69 extension node:test). Regenerate with <code>python3.11 scripts/generate_test_inventory.py --write</code>; enforce with <code>--check</code>. Counts are source-level test functions, not pytest parametrized case expansions.</p>
+<p>Latest inventory: <strong>305 static test functions</strong> across <strong>53 files</strong> (236 daemon pytest; 69 extension node:test). Regenerate with <code>python3.11 scripts/generate_test_inventory.py --write</code>; enforce with <code>--check</code>. Counts are source-level test functions, not pytest parametrized case expansions.</p>
 <!-- END GENERATED:audit-run -->
 
 <h2 id="requirements-traceability-gate">Requirements traceability gate</h2>
@@ -206,7 +206,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <tbody>
 <tr>
 <td>Catalog requirements</td>
-<td>43 (40 active; 3 planned)</td>
+<td>43 (41 active; 2 planned)</td>
 </tr>
 <tr>
 <td>Duplicate stable IDs</td>
@@ -250,7 +250,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 </tr>
 <tr>
 <td>Static test inventory measured</td>
-<td>299 tests / 52 files</td>
+<td>305 tests / 53 files</td>
 </tr>
 </tbody>
 </table>
@@ -295,7 +295,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <tr>
 <td><code>daemon/tests/e2e/test_http_api.py</code></td>
 <td>pytest</td>
-<td style="text-align: right;">12</td>
+<td style="text-align: right;">15</td>
 </tr>
 <tr>
 <td><code>daemon/tests/e2e/test_performance_benchmarks.py</code></td>
@@ -396,6 +396,11 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <td><code>daemon/tests/unit/test_db.py</code></td>
 <td>pytest</td>
 <td style="text-align: right;">2</td>
+</tr>
+<tr>
+<td><code>daemon/tests/unit/test_http_server.py</code></td>
+<td>pytest</td>
+<td style="text-align: right;">3</td>
 </tr>
 <tr>
 <td><code>daemon/tests/unit/test_media_fetch.py</code></td>
@@ -530,7 +535,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <tr>
 <td><strong>Total</strong></td>
 <td></td>
-<td style="text-align: right;"><strong>299</strong></td>
+<td style="text-align: right;"><strong>305</strong></td>
 </tr>
 </tbody>
 </table>
@@ -560,18 +565,21 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 | `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_generate_test_inventory_check_fails_for_catalog_gaps` | 162 | Generate test inventory check fails for catalog gaps. |
 | `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_catalog_rejects_duplicate_ids` | 188 | Catalog rejects duplicate ids. |
 | `daemon/tests/e2e/test_generate_test_inventory.py` | pytest | `(module)` | `test_catalog_statement_change_requires_revision_increment` | 202 | Catalog statement change requires revision increment. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_skips_request_time_db_initialization_after_startup` | 80 | Http capture skips request time db initialization after startup. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_upload_get_and_purge_use_bounded_spool_during_media_root_outage` | 112 | Http upload get and purge use bounded spool during media root outage. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_media_fetch_raw_upload_and_purge_rehydrate_controls` | 187 | Http media fetch raw upload and purge rehydrate controls. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_raw_media_upload_returns_503_when_global_byte_budget_cannot_admit_body` | 263 | Http raw media upload returns 503 when global byte budget cannot admit body. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_search_forget_round_trip` | 315 | Http capture search forget round trip. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_api_contract_errors_methods_and_limits_are_json` | 431 | Http api contract errors methods and limits are json. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_route_catalog_preserves_auth_unknown_route_and_ready_contracts` | 484 | Http route catalog preserves auth unknown route and ready contracts. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_request_envelope_adds_unique_ids_and_security_headers_to_every_response_kind` | 541 | Http request envelope adds unique ids and security headers to every response kind. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_structured_request_telemetry_contains_only_redaction_safe_fields` | 583 | Http structured request telemetry contains only redaction safe fields. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_maps_capture_identity_conflicts_to_stable_conflict_error` | 625 | Http maps capture identity conflicts to stable conflict error. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_maps_database_busy_and_unexpected_failures_without_leaking_internal_details` | 658 | Http maps database busy and unexpected failures without leaking internal details. |
-| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_policy_rule_duplicate_creation_returns_existing_semantic_rule` | 696 | Http policy rule duplicate creation returns existing semantic rule. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_skips_request_time_db_initialization_after_startup` | 100 | Http capture skips request time db initialization after startup. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_upload_get_and_purge_use_bounded_spool_during_media_root_outage` | 132 | Http upload get and purge use bounded spool during media root outage. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_media_fetch_raw_upload_and_purge_rehydrate_controls` | 207 | Http media fetch raw upload and purge rehydrate controls. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_raw_media_upload_requires_explicit_nonnegative_content_length` | 283 | Http raw media upload requires explicit nonnegative content length. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_raw_media_upload_disconnect_cleans_staging_reservations_and_process_budget` | 325 | Http raw media upload disconnect cleans staging reservations and process budget. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_media_download_disconnect_stops_stream_and_releases_process_budget` | 435 | Http media download disconnect stops stream and releases process budget. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_raw_media_upload_returns_503_when_global_byte_budget_cannot_admit_body` | 551 | Http raw media upload returns 503 when global byte budget cannot admit body. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_capture_search_forget_round_trip` | 603 | Http capture search forget round trip. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_api_contract_errors_methods_and_limits_are_json` | 719 | Http api contract errors methods and limits are json. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_route_catalog_preserves_auth_unknown_route_and_ready_contracts` | 772 | Http route catalog preserves auth unknown route and ready contracts. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_request_envelope_adds_unique_ids_and_security_headers_to_every_response_kind` | 829 | Http request envelope adds unique ids and security headers to every response kind. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_structured_request_telemetry_contains_only_redaction_safe_fields` | 871 | Http structured request telemetry contains only redaction safe fields. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_maps_capture_identity_conflicts_to_stable_conflict_error` | 913 | Http maps capture identity conflicts to stable conflict error. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_maps_database_busy_and_unexpected_failures_without_leaking_internal_details` | 946 | Http maps database busy and unexpected failures without leaking internal details. |
+| `daemon/tests/e2e/test_http_api.py` | pytest | `(module)` | `test_http_policy_rule_duplicate_creation_returns_existing_semantic_rule` | 984 | Http policy rule duplicate creation returns existing semantic rule. |
 | `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_path_invariant_rejects_blob_escape` | 47 | Performance benchmark path invariant rejects blob escape. |
 | `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_subprocess_does_not_write_default_home_blob_root` | 64 | Performance benchmark subprocess does not write default home blob root. |
 | `daemon/tests/e2e/test_performance_benchmarks.py` | pytest | `(module)` | `test_performance_benchmark_temp_runtime_cleanup_stays_inside_tmp_home` | 100 | Performance benchmark temp runtime cleanup stays inside tmp home. |
@@ -608,31 +616,31 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 | `daemon/tests/integration/test_capture_observations.py` | pytest | `(module)` | `test_observation_retry_is_idempotent_and_conflicting_reuse_fails` | 251 | Observation retry is idempotent and conflicting reuse fails. |
 | `daemon/tests/integration/test_capture_observations.py` | pytest | `(module)` | `test_cross_origin_canonical_is_a_non_authoritative_claim_and_visit_fk_survives_recapture` | 301 | Cross origin canonical is a non authoritative claim and visit fk survives recapture. |
 | `daemon/tests/integration/test_capture_observations.py` | pytest | `(module)` | `test_visit_id_cannot_be_reused_for_a_different_observed_navigation` | 378 | Visit id cannot be reused for a different observed navigation. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_ingest_search_redact_and_forget` | 31 | Ingest search redact and forget. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_metadata_redacted_before_fts_and_forget_by_original_url` | 58 | Metadata redacted before fts and forget by original url. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_url_path_secret_redacted_and_not_searchable` | 83 | Url path secret redacted and not searchable. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_url_userinfo_redacted_before_storage_and_fts` | 100 | Url userinfo redacted before storage and fts. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_all_mode_stores_without_redaction_and_accepts_file_urls` | 121 | All mode stores without redaction and accepts file urls. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_all_mode_forget_url_uses_literal_selector_but_redacts_receipt_scope` | 144 | All mode forget url uses literal selector but redacts receipt scope. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_forget_requires_one_literal_selector` | 171 | Forget requires one literal selector. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_artifacts_are_related_to_snapshot_not_fts_and_deleted_by_forget` | 187 | Media artifacts are related to snapshot not fts and deleted by forget. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_ingest_and_media_write_to_configured_blob_root` | 249 | Ingest and media write to configured blob root. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_blob_path_consumers_reject_db_paths_outside_configured_roots` | 306 | Blob path consumers reject db paths outside configured roots. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_blob_root_migration_copies_files_and_rewrites_db_paths` | 385 | Blob root migration copies files and rewrites db paths. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_artifact_size_gate_skips_oversized_blob` | 497 | Media artifact size gate skips oversized blob. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_global_cache_rolls_oldest_blob_when_limit_would_be_exceeded` | 533 | Media global cache rolls oldest blob when limit would be exceeded. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_domain_cache_rolls_oldest_blob_when_domain_limit_would_be_exceeded` | 560 | Media domain cache rolls oldest blob when domain limit would be exceeded. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_raw_blob_upload_rejects_truncated_body_and_infers_mime_from_url` | 581 | Raw blob upload rejects truncated body and infers mime from url. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_posted_cdp_metadata_enqueues_daemon_fetch_task` | 619 | Posted cdp metadata enqueues daemon fetch task. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_fetch_pending_media_artifacts_stores_data_url_without_indexing_media_metadata` | 657 | Fetch pending media artifacts stores data url without indexing media metadata. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_fetch_pending_media_artifacts_keeps_large_data_url_ref_intact` | 691 | Fetch pending media artifacts keeps large data url ref intact. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_fetch_reason_classification_keeps_remote_errors_out_of_failed_bucket` | 717 | Media fetch reason classification keeps remote errors out of failed bucket. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_forget_domain_includes_subdomains` | 724 | Forget domain includes subdomains. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_repeat_capture_dedupes_snapshot_but_adds_visit` | 740 | Repeat capture dedupes snapshot but adds visit. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_concurrent_duplicate_capture_is_idempotent_for_snapshot_chunks_and_fts` | 785 | Concurrent duplicate capture is idempotent for snapshot chunks and fts. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_changed_content_creates_new_snapshot_under_same_document` | 828 | Changed content creates new snapshot under same document. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_schema_has_planned_core_tables` | 871 | Schema has planned core tables. |
-| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_capture_payload_rejects_bad_timestamp` | 893 | Capture payload rejects bad timestamp. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_ingest_search_redact_and_forget` | 32 | Ingest search redact and forget. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_metadata_redacted_before_fts_and_forget_by_original_url` | 59 | Metadata redacted before fts and forget by original url. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_url_path_secret_redacted_and_not_searchable` | 84 | Url path secret redacted and not searchable. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_url_userinfo_redacted_before_storage_and_fts` | 101 | Url userinfo redacted before storage and fts. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_all_mode_stores_without_redaction_and_accepts_file_urls` | 122 | All mode stores without redaction and accepts file urls. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_all_mode_forget_url_uses_literal_selector_but_redacts_receipt_scope` | 145 | All mode forget url uses literal selector but redacts receipt scope. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_forget_requires_one_literal_selector` | 172 | Forget requires one literal selector. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_artifacts_are_related_to_snapshot_not_fts_and_deleted_by_forget` | 188 | Media artifacts are related to snapshot not fts and deleted by forget. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_ingest_and_media_write_to_configured_blob_root` | 250 | Ingest and media write to configured blob root. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_blob_path_consumers_reject_db_paths_outside_configured_roots` | 307 | Blob path consumers reject db paths outside configured roots. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_blob_root_migration_copies_files_and_rewrites_db_paths` | 386 | Blob root migration copies files and rewrites db paths. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_artifact_size_gate_skips_oversized_blob` | 498 | Media artifact size gate skips oversized blob. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_global_cache_rolls_oldest_blob_when_limit_would_be_exceeded` | 534 | Media global cache rolls oldest blob when limit would be exceeded. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_domain_cache_rolls_oldest_blob_when_domain_limit_would_be_exceeded` | 561 | Media domain cache rolls oldest blob when domain limit would be exceeded. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_raw_blob_upload_streams_without_whole_artifact_spool_and_rejects_truncated_body` | 582 | Raw blob upload streams without whole artifact spool and rejects truncated body. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_posted_cdp_metadata_enqueues_daemon_fetch_task` | 636 | Posted cdp metadata enqueues daemon fetch task. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_fetch_pending_media_artifacts_stores_data_url_without_indexing_media_metadata` | 674 | Fetch pending media artifacts stores data url without indexing media metadata. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_fetch_pending_media_artifacts_keeps_large_data_url_ref_intact` | 708 | Fetch pending media artifacts keeps large data url ref intact. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_media_fetch_reason_classification_keeps_remote_errors_out_of_failed_bucket` | 734 | Media fetch reason classification keeps remote errors out of failed bucket. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_forget_domain_includes_subdomains` | 741 | Forget domain includes subdomains. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_repeat_capture_dedupes_snapshot_but_adds_visit` | 757 | Repeat capture dedupes snapshot but adds visit. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_concurrent_duplicate_capture_is_idempotent_for_snapshot_chunks_and_fts` | 802 | Concurrent duplicate capture is idempotent for snapshot chunks and fts. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_changed_content_creates_new_snapshot_under_same_document` | 845 | Changed content creates new snapshot under same document. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_schema_has_planned_core_tables` | 888 | Schema has planned core tables. |
+| `daemon/tests/integration/test_ingest_search_forget.py` | pytest | `(module)` | `test_capture_payload_rejects_bad_timestamp` | 910 | Capture payload rejects bad timestamp. |
 | `daemon/tests/integration/test_media_ops.py` | pytest | `(module)` | `test_media_requeue_is_scoped_and_dry_run_first` | 33 | Media requeue is scoped and dry run first. |
 | `daemon/tests/integration/test_media_ops.py` | pytest | `(module)` | `test_media_requeue_requires_explicit_scope` | 123 | Media requeue requires explicit scope. |
 | `daemon/tests/integration/test_media_storage.py` | pytest | `(module)` | `test_unavailable_external_media_root_spools_then_drains_with_hash_verification` | 78 | Unavailable external media root spools then drains with hash verification. |
@@ -734,6 +742,9 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 | `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_low_headroom_and_service_start_churn` | 356 | Daily driver health detects low headroom and service start churn. |
 | `daemon/tests/unit/test_db.py` | pytest | `(module)` | `test_connect_uses_extended_busy_timeout` | 5 | Connect uses extended busy timeout. |
 | `daemon/tests/unit/test_db.py` | pytest | `(module)` | `test_init_db_enforces_wal_and_connection_pragmas` | 12 | Init db enforces wal and connection pragmas. |
+| `daemon/tests/unit/test_http_server.py` | pytest | `(module)` | `test_response_write_disconnect_is_swallowed_and_recorded_without_second_response` | 48 | Response write disconnect is swallowed and recorded without second response. |
+| `daemon/tests/unit/test_http_server.py` | pytest | `(module)` | `test_header_disconnect_is_swallowed_before_a_response_body_is_attempted` | 69 | Header disconnect is swallowed before a response body is attempted. |
+| `daemon/tests/unit/test_http_server.py` | pytest | `(module)` | `test_stream_response_bounds_reads_and_classifies_source_failure` | 81 | Stream response bounds reads and classifies source failure. |
 | `daemon/tests/unit/test_media_fetch.py` | pytest | `(module)` | `test_media_facade_preserves_guarded_fetch_api_identity` | 7 | Media facade preserves guarded fetch api identity. |
 | `daemon/tests/unit/test_media_fetch.py` | pytest | `(module)` | `test_guarded_fetch_layer_does_not_depend_on_hls_or_coordinator` | 14 | Guarded fetch layer does not depend on hls or coordinator. |
 | `daemon/tests/unit/test_media_hls.py` | pytest | `(module)` | `test_media_facade_preserves_hls_transport_api_identity` | 7 | Media facade preserves hls transport api identity. |

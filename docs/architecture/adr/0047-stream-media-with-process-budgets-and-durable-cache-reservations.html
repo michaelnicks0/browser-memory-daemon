@@ -130,7 +130,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>Date: 2026-07-10</li>
 <li>Amended: 2026-07-10 after late adversarial transport review</li>
 <li>Decision owners: Browser Memory Daemon maintainers</li>
-<li>Related: ADR-0014, ADR-0039, ADR-0043, ADR-0044, ADR-0045, ADR-0046, REQ-032, REQ-035, REQ-036</li>
+<li>Related: ADR-0014, ADR-0039, ADR-0043, ADR-0044, ADR-0045, ADR-0046, REQ-032, REQ-035, REQ-036, REQ-040</li>
 </ul>
 <h2 id="context">Context</h2>
 <p>Media paths still accumulated complete artifacts in memory at several daemon boundaries. HTTP uploads and downloads, guarded public fetch, HLS assembly, and artifact publication could each create another complete copy. Per-artifact size limits did not bound aggregate memory or simultaneous network requests. Cache admission also read committed byte totals before publication without reserving capacity, so concurrent daemon and worker processes could each admit candidates against the same apparent headroom.</p>
@@ -138,8 +138,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <h2 id="decision">Decision</h2>
 <ol>
 <li>Media byte paths stream through bounded binary streams:
-   - raw HTTP uploads are copied into a bounded <code>SpooledTemporaryFile</code> in 64 KiB chunks;
-   - stored media responses stream from <code>BlobStore.open</code> in bounded chunks;
+   - known-length raw HTTP uploads stream directly into contained <code>BlobStore</code> staging through a reader capped at 64 KiB per read; legacy internal callers without a known length retain a bounded <code>SpooledTemporaryFile</code> compatibility path;
+   - stored media responses stream from <code>BlobStore.open</code> in bounded 64 KiB chunks, verify the emitted length against the advertised length, and stop without a second response when the client disconnects;
    - guarded HTTP responses write incrementally to a supplied stream;
    - HLS variants, init maps, and segments append to the same bounded output stream while retaining one aggregate HLS request/byte/depth/deadline budget;
    - artifact publication stages from a binary stream and verifies the expected size before SQLite publication.</li>
@@ -189,6 +189,10 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li><code>daemon/tests/integration/test_migrations.py::test_version_thirteen_adds_cache_reservations_from_exact_prior_schema</code></li>
 <li><code>daemon/tests/e2e/test_http_api.py::test_http_upload_get_and_purge_use_bounded_spool_during_media_root_outage</code></li>
 <li><code>daemon/tests/e2e/test_http_api.py::test_http_raw_media_upload_returns_503_when_global_byte_budget_cannot_admit_body</code></li>
+<li><code>daemon/tests/e2e/test_http_api.py::test_http_raw_media_upload_disconnect_cleans_staging_reservations_and_process_budget</code></li>
+<li><code>daemon/tests/e2e/test_http_api.py::test_http_media_download_disconnect_stops_stream_and_releases_process_budget</code></li>
+<li><code>daemon/tests/integration/test_ingest_search_forget.py::test_raw_blob_upload_streams_without_whole_artifact_spool_and_rejects_truncated_body</code></li>
+<li><code>daemon/tests/unit/test_http_server.py</code></li>
 <li><code>daemon/tests/e2e/test_concurrency_stress.py::test_concurrency_stress_harness_exercises_shared_sqlite_db</code></li>
 </ul>
   </article>

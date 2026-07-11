@@ -1,17 +1,23 @@
 import json
 import re
+import socket
 import sqlite3
+import struct
 import threading
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import replace
 
 import browser_memory_daemon.app as app_module
+import browser_memory_daemon.http_server as http_server_module
 import browser_memory_daemon.media_storage as media_storage_module
 from browser_memory_daemon.app import make_server
 from browser_memory_daemon.blob_store import BlobStore
 from browser_memory_daemon.config import load_config
+from browser_memory_daemon.db import connect
+from browser_memory_daemon.media_resources import media_resource_budget
 from browser_memory_daemon.routes import ROUTES
 
 
@@ -64,6 +70,20 @@ def assert_common_security_headers(headers):
     request_id = headers.get("X-Request-ID", "")
     assert re.fullmatch(r"req_[0-9a-f]{32}", request_id)
     return request_id
+
+
+def abort_socket(sock):
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0))
+    sock.close()
+
+
+def wait_until(predicate, *, timeout=5.0):
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if predicate():
+            return
+        time.sleep(0.02)
+    raise AssertionError("condition did not converge before timeout")
 
 
 def binary_request(method, url, token="test-token", body=b"", content_type="application/octet-stream", headers=None):
@@ -258,6 +278,274 @@ def test_http_media_fetch_raw_upload_and_purge_rehydrate_controls(tmp_path):
     finally:
         server.shutdown()
         thread.join(timeout=5)
+
+
+def test_http_raw_media_upload_requires_explicit_nonnegative_content_length(tmp_path):
+    cfg = load_config(
+        runtime_root=tmp_path,
+        test_mode=True,
+        token="test-token",
+        host="127.0.0.1",
+        port=0,
+        policy_mode="all",
+    )
+    server = make_server(cfg)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        for content_length, expected_error in [(None, "content length is required"), ("-1", "invalid content length")]:
+            sock = socket.create_connection(server.server_address, timeout=5)
+            length_header = "" if content_length is None else f"Content-Length: {content_length}\r\n"
+            sock.sendall(
+                (
+                    "PUT /media-artifacts/not-an-artifact/blob HTTP/1.0\r\n"
+                    "Host: 127.0.0.1\r\n"
+                    "Authorization: Bearer test-token\r\n"
+                    f"{length_header}"
+                    "\r\n"
+                ).encode("ascii")
+            )
+            response = b""
+            while True:
+                chunk = sock.recv(64 * 1024)
+                if not chunk:
+                    break
+                response += chunk
+            sock.close()
+            head, body = response.split(b"\r\n\r\n", 1)
+            assert b"HTTP/1.0 400 Bad Request" in head
+            payload = json.loads(body)
+            assert payload["error"] == expected_error
+            assert payload["error_code"] == "invalid_request"
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+
+
+def test_http_raw_media_upload_disconnect_cleans_staging_reservations_and_process_budget(tmp_path, monkeypatch, capsys):
+    cfg = load_config(
+        runtime_root=tmp_path,
+        test_mode=True,
+        token="test-token",
+        host="127.0.0.1",
+        port=0,
+        policy_mode="all",
+    )
+    cfg = replace(
+        cfg,
+        media_fetch_on_capture=False,
+        max_media_artifact_bytes=1_000_003,
+        max_media_inflight_bytes=1_000_003,
+    )
+    server = make_server(cfg)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        status, captured = request(
+            "POST",
+            f"{base}/capture",
+            body={
+                "url": "https://example.org/disconnected-upload",
+                "title": "Disconnected upload",
+                "text": "Searchable text is already committed before media upload.",
+                "media_artifacts": [
+                    {
+                        "media_type": "image",
+                        "source_url": "https://example.org/disconnected.png",
+                        "mime_type": "image/png",
+                    }
+                ],
+            },
+        )
+        assert status == 201
+        artifact_id = captured["media_artifacts"][0]["artifact_id"]
+        capsys.readouterr()
+
+        stage_started = threading.Event()
+        response_completed = threading.Event()
+        original_stage = BlobStore.stage
+        original_complete_request = http_server_module.complete_request
+
+        def observed_stage(self, source, **kwargs):
+            stage_started.set()
+            return original_stage(self, source, **kwargs)
+
+        def observed_complete_request(handler, *, status, error_code=None):
+            original_complete_request(handler, status=status, error_code=error_code)
+            response_completed.set()
+
+        monkeypatch.setattr(BlobStore, "stage", observed_stage)
+        monkeypatch.setattr(http_server_module, "complete_request", observed_complete_request)
+        sock = socket.create_connection(server.server_address, timeout=5)
+        request_head = (
+            f"PUT /media-artifacts/{artifact_id}/blob HTTP/1.0\r\n"
+            "Host: 127.0.0.1\r\n"
+            "Authorization: Bearer test-token\r\n"
+            "Content-Type: image/png\r\n"
+            f"X-BMD-Document-ID: {captured['document_id']}\r\n"
+            f"X-BMD-Snapshot-ID: {captured['snapshot_id']}\r\n"
+            "Content-Length: 524288\r\n"
+            "\r\n"
+        ).encode("ascii")
+        sock.sendall(request_head + b"x" * (64 * 1024))
+        assert stage_started.wait(timeout=5)
+        abort_socket(sock)
+        assert response_completed.wait(timeout=5)
+
+        def upload_cleanup_converged():
+            budget = media_resource_budget(cfg).snapshot()
+            try:
+                with connect(cfg.db_path) as conn:
+                    cache_reservations = conn.execute("SELECT COUNT(*) FROM media_cache_reservations").fetchone()[0]
+                    spool_reservations = conn.execute("SELECT COUNT(*) FROM media_spool_reservations").fetchone()[0]
+            except sqlite3.OperationalError:
+                return False
+            staged_files = list(tmp_path.rglob("stage_*.tmp"))
+            return (
+                budget["inflight_bytes"] == 0
+                and budget["active_requests"] == 0
+                and cache_reservations == 0
+                and spool_reservations == 0
+                and not staged_files
+            )
+
+        wait_until(upload_cleanup_converged)
+        with connect(cfg.db_path) as conn:
+            artifact = conn.execute(
+                "SELECT capture_status, file_path, blob_locator, spool_locator FROM media_artifacts WHERE id = ?",
+                (artifact_id,),
+            ).fetchone()
+        assert artifact["capture_status"] == "referenced"
+        assert not artifact["file_path"]
+        assert not artifact["blob_locator"]
+        assert not artifact["spool_locator"]
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+
+    stderr = capsys.readouterr().err
+    events = [json.loads(line) for line in stderr.splitlines() if line.startswith("{")]
+    disconnects = [event for event in events if event.get("route") == "media-blob-put"]
+    assert disconnects and disconnects[-1]["status"] == 499
+    assert disconnects[-1]["error_code"] == "client_disconnected"
+    assert "Traceback" not in stderr
+
+
+def test_http_media_download_disconnect_stops_stream_and_releases_process_budget(tmp_path, monkeypatch, capsys):
+    cfg = load_config(
+        runtime_root=tmp_path,
+        test_mode=True,
+        token="test-token",
+        host="127.0.0.1",
+        port=0,
+        policy_mode="all",
+    )
+    cfg = replace(
+        cfg,
+        media_fetch_on_capture=False,
+        max_media_artifact_bytes=1_000_019,
+        max_media_inflight_bytes=1_000_019,
+    )
+    server = make_server(cfg)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base = f"http://127.0.0.1:{server.server_address[1]}"
+    allow_second_read = threading.Event()
+    try:
+        status, captured = request(
+            "POST",
+            f"{base}/capture",
+            body={
+                "url": "https://example.org/disconnected-download",
+                "title": "Disconnected download",
+                "text": "Searchable text remains independent from media delivery.",
+                "media_artifacts": [
+                    {
+                        "media_type": "image",
+                        "source_url": "https://example.org/disconnected-download.png",
+                        "mime_type": "image/png",
+                    }
+                ],
+            },
+        )
+        assert status == 201
+        artifact_id = captured["media_artifacts"][0]["artifact_id"]
+        status, uploaded = binary_request(
+            "PUT",
+            f"{base}/media-artifacts/{artifact_id}/blob",
+            body=b"z" * (256 * 1024 + 7),
+            content_type="image/png",
+            headers={
+                "X-BMD-Document-ID": captured["document_id"],
+                "X-BMD-Snapshot-ID": captured["snapshot_id"],
+            },
+        )
+        assert status == 201
+        assert uploaded["stored"] is True
+        capsys.readouterr()
+
+        second_read_started = threading.Event()
+        response_completed = threading.Event()
+        completed_responses = []
+        original_open = BlobStore.open
+        original_complete_request = http_server_module.complete_request
+
+        class CoordinatedReader:
+            def __init__(self, handle):
+                self._handle = handle
+                self._reads = 0
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, traceback):
+                self._handle.close()
+
+            def read(self, size=-1):
+                self._reads += 1
+                if self._reads == 2:
+                    second_read_started.set()
+                    assert allow_second_read.wait(timeout=5)
+                return self._handle.read(size)
+
+        def coordinated_open(self, locator, mode="rb"):
+            return CoordinatedReader(original_open(self, locator, mode))
+
+        def observed_complete_request(handler, *, status, error_code=None):
+            original_complete_request(handler, status=status, error_code=error_code)
+            completed_responses.append((status, error_code))
+            response_completed.set()
+
+        monkeypatch.setattr(BlobStore, "open", coordinated_open)
+        monkeypatch.setattr(http_server_module, "complete_request", observed_complete_request)
+        sock = socket.create_connection(server.server_address, timeout=5)
+        sock.sendall(
+            (
+                f"GET /media-artifacts/{artifact_id} HTTP/1.0\r\n"
+                "Host: 127.0.0.1\r\n"
+                "Authorization: Bearer test-token\r\n"
+                "\r\n"
+            ).encode("ascii")
+        )
+        response_prefix = sock.recv(128 * 1024)
+        assert b"HTTP/1.0 200 OK" in response_prefix
+        assert second_read_started.wait(timeout=5)
+        abort_socket(sock)
+        allow_second_read.set()
+        assert response_completed.wait(timeout=5)
+        assert completed_responses[-1] == (499, "client_disconnected")
+        wait_until(
+            lambda: media_resource_budget(cfg).snapshot()["inflight_bytes"] == 0
+            and media_resource_budget(cfg).snapshot()["active_requests"] == 0
+        )
+    finally:
+        allow_second_read.set()
+        server.shutdown()
+        thread.join(timeout=5)
+
+    stderr = capsys.readouterr().err
+    assert "Traceback" not in stderr
 
 
 def test_http_raw_media_upload_returns_503_when_global_byte_budget_cannot_admit_body(tmp_path):

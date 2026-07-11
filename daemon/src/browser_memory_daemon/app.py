@@ -21,7 +21,14 @@ from .api_errors import (
 from .config import RuntimeConfig
 from .db import audit, connect, init_db
 from .forget import forget
-from .http_server import begin_request, complete_request, request_id, send_security_headers, set_request_route
+from .http_server import (
+    begin_request,
+    request_id,
+    send_response_headers,
+    set_request_route,
+    stream_response_body,
+    write_response_bytes,
+)
 from .ingest import ingest_capture
 from .lifecycle import record_visit_event
 from .media import (
@@ -76,22 +83,24 @@ def _origin_allowed(origin: str) -> bool:
 def _json_response(handler: BaseHTTPRequestHandler, status: int, payload: dict | list) -> None:
     body = json.dumps(payload, sort_keys=True).encode("utf-8")
     origin = handler.headers.get("Origin", "")
-    handler.send_response(status)
-    handler.send_header("Content-Type", "application/json")
-    handler.send_header("Content-Length", str(len(body)))
-    send_security_headers(handler)
+    headers = [
+        ("Content-Type", "application/json"),
+        ("Content-Length", str(len(body))),
+        ("Access-Control-Allow-Headers", "authorization, content-type, x-bmd-document-id, x-bmd-snapshot-id, x-bmd-source-url"),
+        ("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS"),
+        ("Access-Control-Expose-Headers", "X-Request-ID"),
+    ]
     if _origin_allowed(origin):
-        handler.send_header("Access-Control-Allow-Origin", origin)
-        handler.send_header("Vary", "Origin")
-    handler.send_header("Access-Control-Allow-Headers", "authorization, content-type, x-bmd-document-id, x-bmd-snapshot-id, x-bmd-source-url")
-    handler.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-    handler.send_header("Access-Control-Expose-Headers", "X-Request-ID")
-    handler.end_headers()
+        headers.extend([("Access-Control-Allow-Origin", origin), ("Vary", "Origin")])
+    if not send_response_headers(handler, status, headers):
+        return
     error_code = payload.get("error_code") if isinstance(payload, dict) else None
-    try:
-        handler.wfile.write(body)
-    finally:
-        complete_request(handler, status=status, error_code=error_code if isinstance(error_code, str) else None)
+    write_response_bytes(
+        handler,
+        body,
+        status=status,
+        error_code=error_code if isinstance(error_code, str) else None,
+    )
 
 
 def _api_error_response(handler: BaseHTTPRequestHandler, error: Exception, *, extra: dict[str, object] | None = None) -> None:
@@ -102,15 +111,10 @@ def _api_error_response(handler: BaseHTTPRequestHandler, error: Exception, *, ex
 
 
 def _text_response(handler: BaseHTTPRequestHandler, status: int, body: bytes, *, content_type: str) -> None:
-    handler.send_response(status)
-    handler.send_header("Content-Type", content_type)
-    handler.send_header("Content-Length", str(len(body)))
-    send_security_headers(handler, ui=True)
-    handler.end_headers()
-    try:
-        handler.wfile.write(body)
-    finally:
-        complete_request(handler, status=status)
+    headers = [("Content-Type", content_type), ("Content-Length", str(len(body)))]
+    if not send_response_headers(handler, status, headers, ui=True):
+        return
+    write_response_bytes(handler, body, status=status)
 
 
 def _ui_bootstrap_script(config: RuntimeConfig) -> str:
@@ -148,21 +152,15 @@ def _binary_stream_response(
     content_type: str,
     filename: str | None = None,
 ) -> None:
-    handler.send_response(status)
-    handler.send_header("Content-Type", content_type or "application/octet-stream")
-    handler.send_header("Content-Length", str(content_length))
-    send_security_headers(handler)
+    headers = [
+        ("Content-Type", content_type or "application/octet-stream"),
+        ("Content-Length", str(content_length)),
+    ]
     if filename:
-        handler.send_header("Content-Disposition", f'inline; filename="{filename}"')
-    handler.end_headers()
-    try:
-        while True:
-            chunk = stream.read(64 * 1024)
-            if not chunk:
-                break
-            handler.wfile.write(chunk)
-    finally:
-        complete_request(handler, status=status)
+        headers.append(("Content-Disposition", f'inline; filename="{filename}"'))
+    if not send_response_headers(handler, status, headers):
+        return
+    stream_response_body(handler, stream, status=status, expected_bytes=content_length)
 
 
 def _read_json(handler: BaseHTTPRequestHandler, max_bytes: int) -> dict:
@@ -511,8 +509,12 @@ def make_handler(config: RuntimeConfig):
                 return
             if route_match and route_match.route.name == "media-blob-put":
                 artifact_id = unquote(parsed.path.removeprefix("/media-artifacts/").removesuffix("/blob").strip("/"))
+                raw_content_length = self.headers.get("Content-Length")
+                if raw_content_length is None:
+                    _api_error_response(self, ValidationError("content length is required"))
+                    return
                 try:
-                    content_length = int(self.headers.get("Content-Length", "0") or 0)
+                    content_length = int(raw_content_length or 0)
                 except ValueError:
                     _api_error_response(self, ValidationError("invalid content length"))
                     return

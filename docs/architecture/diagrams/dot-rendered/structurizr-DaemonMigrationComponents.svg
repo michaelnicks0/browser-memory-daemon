@@ -25,21 +25,23 @@
 <!-- 23 -->
 <g id="23" class="node">
 <title>23</title>
-<polygon fill="#85bbf0" stroke="#1168bd" points="552,-692.5 58,-692.5 58,-293.5 552,-293.5 552,-692.5"/>
-<text text-anchor="start" x="136.5" y="-644.3" font-family="Arial" font-size="34.00" fill="#000000">HTTP Request Router</text>
-<text text-anchor="start" x="87" y="-622.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python http.server + route descriptors]</text>
-<text text-anchor="start" x="129" y="-585.3" font-family="Arial" font-size="24.00" fill="#000000">Matches immutable method/path</text>
-<text text-anchor="start" x="189" y="-561.3" font-family="Arial" font-size="24.00" fill="#000000">descriptors with static</text>
-<text text-anchor="start" x="172" y="-537.3" font-family="Arial" font-size="24.00" fill="#000000">precedence, maps typed</text>
-<text text-anchor="start" x="166" y="-513.3" font-family="Arial" font-size="24.00" fill="#000000">compatible errors, applies</text>
-<text text-anchor="start" x="125.5" y="-489.3" font-family="Arial" font-size="24.00" fill="#000000">opaque request IDs and common</text>
-<text text-anchor="start" x="180" y="-465.3" font-family="Arial" font-size="24.00" fill="#000000">security headers, emits</text>
-<text text-anchor="start" x="228" y="-441.3" font-family="Arial" font-size="24.00" fill="#000000">redaction&#45;safe</text>
-<text text-anchor="start" x="199.5" y="-417.3" font-family="Arial" font-size="24.00" fill="#000000">route/status/latency</text>
-<text text-anchor="start" x="156" y="-393.3" font-family="Arial" font-size="24.00" fill="#000000">telemetry, serves UI assets,</text>
-<text text-anchor="start" x="175" y="-369.3" font-family="Arial" font-size="24.00" fill="#000000">enforces bearer auth for</text>
-<text text-anchor="start" x="128" y="-345.3" font-family="Arial" font-size="24.00" fill="#000000">memory/admin APIs, and applies</text>
-<text text-anchor="start" x="166" y="-321.3" font-family="Arial" font-size="24.00" fill="#000000">CORS for allowed origins.</text>
+<polygon fill="#85bbf0" stroke="#1168bd" points="552,-716.5 58,-716.5 58,-269.5 552,-269.5 552,-716.5"/>
+<text text-anchor="start" x="136.5" y="-668.3" font-family="Arial" font-size="34.00" fill="#000000">HTTP Request Router</text>
+<text text-anchor="start" x="87" y="-646.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python http.server + route descriptors]</text>
+<text text-anchor="start" x="129" y="-609.3" font-family="Arial" font-size="24.00" fill="#000000">Matches immutable method/path</text>
+<text text-anchor="start" x="189" y="-585.3" font-family="Arial" font-size="24.00" fill="#000000">descriptors with static</text>
+<text text-anchor="start" x="172" y="-561.3" font-family="Arial" font-size="24.00" fill="#000000">precedence, maps typed</text>
+<text text-anchor="start" x="166" y="-537.3" font-family="Arial" font-size="24.00" fill="#000000">compatible errors, applies</text>
+<text text-anchor="start" x="125.5" y="-513.3" font-family="Arial" font-size="24.00" fill="#000000">opaque request IDs and common</text>
+<text text-anchor="start" x="180" y="-489.3" font-family="Arial" font-size="24.00" fill="#000000">security headers, emits</text>
+<text text-anchor="start" x="228" y="-465.3" font-family="Arial" font-size="24.00" fill="#000000">redaction&#45;safe</text>
+<text text-anchor="start" x="199.5" y="-441.3" font-family="Arial" font-size="24.00" fill="#000000">route/status/latency</text>
+<text text-anchor="start" x="156.5" y="-417.3" font-family="Arial" font-size="24.00" fill="#000000">telemetry, streams media in</text>
+<text text-anchor="start" x="130" y="-393.3" font-family="Arial" font-size="24.00" fill="#000000">bounded chunks with disconnect</text>
+<text text-anchor="start" x="163" y="-369.3" font-family="Arial" font-size="24.00" fill="#000000">cleanup, serves UI assets,</text>
+<text text-anchor="start" x="175" y="-345.3" font-family="Arial" font-size="24.00" fill="#000000">enforces bearer auth for</text>
+<text text-anchor="start" x="128" y="-321.3" font-family="Arial" font-size="24.00" fill="#000000">memory/admin APIs, and applies</text>
+<text text-anchor="start" x="166" y="-297.3" font-family="Arial" font-size="24.00" fill="#000000">CORS for allowed origins.</text>
 </g>
 <!-- 24 -->
 <g id="24" class="node">
