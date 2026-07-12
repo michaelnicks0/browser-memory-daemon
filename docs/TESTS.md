@@ -5,7 +5,7 @@
 > **Runtime:** Python **3.11+** (`pyproject.toml` requires `>=3.11`). Use `BMD_PYTHON=/path/to/python3.11` when the host `python3` is older.
 
 <!-- BEGIN GENERATED:inventory-summary -->
-> **Current inventory:** 332 static test functions across 60 files — 259 daemon pytest tests + 73 extension node:test tests.
+> **Current inventory:** 333 static test functions across 60 files — 260 daemon pytest tests + 73 extension node:test tests.
 <!-- END GENERATED:inventory-summary -->
 
 ---
@@ -79,7 +79,7 @@ Use `--runtime-root PATH` only for explicit fixture roots; do not point the stre
 ## Generated test inventory
 
 <!-- BEGIN GENERATED:audit-run -->
-Latest inventory: **332 static test functions** across **60 files** (259 daemon pytest; 73 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
+Latest inventory: **333 static test functions** across **60 files** (260 daemon pytest; 73 extension node:test). Regenerate with `python3.11 scripts/generate_test_inventory.py --write`; enforce with `--check`. Counts are source-level test functions, not pytest parametrized case expansions.
 <!-- END GENERATED:audit-run -->
 
 ## Requirements traceability gate
@@ -100,7 +100,7 @@ Traceability gate: **✅ pass**.
 | Normative changes without revision increment | none |
 | Requirements removed without catalog disposition | none |
 | Catalog load errors | none |
-| Static test inventory measured | 332 tests / 60 files |
+| Static test inventory measured | 333 tests / 60 files |
 <!-- END GENERATED:traceability-gate -->
 
 ### Per-file counts
@@ -137,7 +137,7 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/unit/test_blob_store.py` | pytest | 5 |
 | `daemon/tests/unit/test_config.py` | pytest | 7 |
 | `daemon/tests/unit/test_daily_driver_health.py` | pytest | 6 |
-| `daemon/tests/unit/test_db.py` | pytest | 2 |
+| `daemon/tests/unit/test_db.py` | pytest | 3 |
 | `daemon/tests/unit/test_http_server.py` | pytest | 3 |
 | `daemon/tests/unit/test_media_fetch.py` | pytest | 2 |
 | `daemon/tests/unit/test_media_hls.py` | pytest | 2 |
@@ -167,7 +167,7 @@ Traceability gate: **✅ pass**.
 | `extension/tests/unit/service_worker.test.js` | node:test | 10 |
 | `extension/tests/unit/shared.test.js` | node:test | 2 |
 | `extension/tests/unit/visit_tracker.test.js` | node:test | 2 |
-| **Total** |  | **332** |
+| **Total** |  | **333** |
 <!-- END GENERATED:per-file-counts -->
 
 <details>
@@ -392,8 +392,9 @@ Traceability gate: **✅ pass**.
 | `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_reports_required_blob_mount_failure` | 274 | Daily driver health reports required blob mount failure. |
 | `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_insecure_token_permissions_and_process_args` | 314 | Daily driver health detects insecure token permissions and process args. |
 | `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_low_headroom_and_service_start_churn` | 356 | Daily driver health detects low headroom and service start churn. |
-| `daemon/tests/unit/test_db.py` | pytest | `(module)` | `test_connect_uses_extended_busy_timeout` | 5 | Connect uses extended busy timeout. |
-| `daemon/tests/unit/test_db.py` | pytest | `(module)` | `test_init_db_enforces_wal_and_connection_pragmas` | 12 | Init db enforces wal and connection pragmas. |
+| `daemon/tests/unit/test_db.py` | pytest | `(module)` | `test_connect_uses_extended_busy_timeout` | 9 | Connect uses extended busy timeout. |
+| `daemon/tests/unit/test_db.py` | pytest | `(module)` | `test_connect_closes_connection_after_context` | 16 | Connect closes connection after context. |
+| `daemon/tests/unit/test_db.py` | pytest | `(module)` | `test_init_db_enforces_wal_and_connection_pragmas` | 27 | Init db enforces wal and connection pragmas. |
 | `daemon/tests/unit/test_http_server.py` | pytest | `(module)` | `test_response_write_disconnect_is_swallowed_and_recorded_without_second_response` | 48 | Response write disconnect is swallowed and recorded without second response. |
 | `daemon/tests/unit/test_http_server.py` | pytest | `(module)` | `test_header_disconnect_is_swallowed_before_a_response_body_is_attempted` | 69 | Header disconnect is swallowed before a response body is attempted. |
 | `daemon/tests/unit/test_http_server.py` | pytest | `(module)` | `test_stream_response_bounds_reads_and_classifies_source_failure` | 81 | Stream response bounds reads and classifies source failure. |

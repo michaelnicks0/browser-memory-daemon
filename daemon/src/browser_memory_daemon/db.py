@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import sqlite3
 import uuid
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -13,13 +15,18 @@ SQLITE_BUSY_TIMEOUT_MS = 30_000
 SQLITE_SYNCHRONOUS = "NORMAL"
 
 
-def connect(db_path: Path) -> sqlite3.Connection:
+@contextmanager
+def connect(db_path: Path) -> Iterator[sqlite3.Connection]:
     conn = sqlite3.connect(db_path, timeout=SQLITE_BUSY_TIMEOUT_MS / 1000)
-    conn.row_factory = sqlite3.Row
-    conn.execute(f"PRAGMA busy_timeout = {SQLITE_BUSY_TIMEOUT_MS}")
-    conn.execute("PRAGMA foreign_keys = ON")
-    conn.execute(f"PRAGMA synchronous = {SQLITE_SYNCHRONOUS}")
-    return conn
+    try:
+        conn.row_factory = sqlite3.Row
+        conn.execute(f"PRAGMA busy_timeout = {SQLITE_BUSY_TIMEOUT_MS}")
+        conn.execute("PRAGMA foreign_keys = ON")
+        conn.execute(f"PRAGMA synchronous = {SQLITE_SYNCHRONOUS}")
+        with conn:
+            yield conn
+    finally:
+        conn.close()
 
 
 def init_db(config: RuntimeConfig) -> None:

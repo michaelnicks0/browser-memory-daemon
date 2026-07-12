@@ -132,7 +132,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </blockquote>
 <!-- BEGIN GENERATED:inventory-summary -->
 <blockquote>
-<p><strong>Current inventory:</strong> 332 static test functions across 60 files — 259 daemon pytest tests + 73 extension node:test tests.</p>
+<p><strong>Current inventory:</strong> 333 static test functions across 60 files — 260 daemon pytest tests + 73 extension node:test tests.</p>
 </blockquote>
 <!-- END GENERATED:inventory-summary -->
 
@@ -190,7 +190,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <hr />
 <h2 id="generated-test-inventory">Generated test inventory</h2>
 <!-- BEGIN GENERATED:audit-run -->
-<p>Latest inventory: <strong>332 static test functions</strong> across <strong>60 files</strong> (259 daemon pytest; 73 extension node:test). Regenerate with <code>python3.11 scripts/generate_test_inventory.py --write</code>; enforce with <code>--check</code>. Counts are source-level test functions, not pytest parametrized case expansions.</p>
+<p>Latest inventory: <strong>333 static test functions</strong> across <strong>60 files</strong> (260 daemon pytest; 73 extension node:test). Regenerate with <code>python3.11 scripts/generate_test_inventory.py --write</code>; enforce with <code>--check</code>. Counts are source-level test functions, not pytest parametrized case expansions.</p>
 <!-- END GENERATED:audit-run -->
 
 <h2 id="requirements-traceability-gate">Requirements traceability gate</h2>
@@ -250,7 +250,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 </tr>
 <tr>
 <td>Static test inventory measured</td>
-<td>332 tests / 60 files</td>
+<td>333 tests / 60 files</td>
 </tr>
 </tbody>
 </table>
@@ -420,7 +420,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <tr>
 <td><code>daemon/tests/unit/test_db.py</code></td>
 <td>pytest</td>
-<td style="text-align: right;">2</td>
+<td style="text-align: right;">3</td>
 </tr>
 <tr>
 <td><code>daemon/tests/unit/test_http_server.py</code></td>
@@ -570,7 +570,7 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 <tr>
 <td><strong>Total</strong></td>
 <td></td>
-<td style="text-align: right;"><strong>332</strong></td>
+<td style="text-align: right;"><strong>333</strong></td>
 </tr>
 </tbody>
 </table>
@@ -798,8 +798,9 @@ git<span style="color: #F8F8F2"> </span>diff<span style="color: #F8F8F2"> </span
 | `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_reports_required_blob_mount_failure` | 274 | Daily driver health reports required blob mount failure. |
 | `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_insecure_token_permissions_and_process_args` | 314 | Daily driver health detects insecure token permissions and process args. |
 | `daemon/tests/unit/test_daily_driver_health.py` | pytest | `(module)` | `test_daily_driver_health_detects_low_headroom_and_service_start_churn` | 356 | Daily driver health detects low headroom and service start churn. |
-| `daemon/tests/unit/test_db.py` | pytest | `(module)` | `test_connect_uses_extended_busy_timeout` | 5 | Connect uses extended busy timeout. |
-| `daemon/tests/unit/test_db.py` | pytest | `(module)` | `test_init_db_enforces_wal_and_connection_pragmas` | 12 | Init db enforces wal and connection pragmas. |
+| `daemon/tests/unit/test_db.py` | pytest | `(module)` | `test_connect_uses_extended_busy_timeout` | 9 | Connect uses extended busy timeout. |
+| `daemon/tests/unit/test_db.py` | pytest | `(module)` | `test_connect_closes_connection_after_context` | 16 | Connect closes connection after context. |
+| `daemon/tests/unit/test_db.py` | pytest | `(module)` | `test_init_db_enforces_wal_and_connection_pragmas` | 27 | Init db enforces wal and connection pragmas. |
 | `daemon/tests/unit/test_http_server.py` | pytest | `(module)` | `test_response_write_disconnect_is_swallowed_and_recorded_without_second_response` | 48 | Response write disconnect is swallowed and recorded without second response. |
 | `daemon/tests/unit/test_http_server.py` | pytest | `(module)` | `test_header_disconnect_is_swallowed_before_a_response_body_is_attempted` | 69 | Header disconnect is swallowed before a response body is attempted. |
 | `daemon/tests/unit/test_http_server.py` | pytest | `(module)` | `test_stream_response_bounds_reads_and_classifies_source_failure` | 81 | Stream response bounds reads and classifies source failure. |
