@@ -27,7 +27,7 @@ The daemon is persistent in WSL. Chrome still requires **Load unpacked** / **Rel
 
 | Item | Path |
 |---|---|
-| Source repo | `~/repos/workstation/browser-memory-daemon/` |
+| Source repo | `~/repos/tools/browser-memory-daemon/` |
 | Windows extension copy | `%LOCALAPPDATA%\browser-memory-daemon\extension\` |
 | WSL token file | `~/.config/browser-memory-daemon/token` |
 | WSL service env | `~/.config/browser-memory-daemon/env` |
@@ -47,7 +47,7 @@ The daemon is persistent in WSL. Chrome still requires **Load unpacked** / **Rel
 ## Install / refresh
 
 ```bash
-cd ~/repos/workstation/browser-memory-daemon
+cd ~/repos/tools/browser-memory-daemon
 BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
 ```
 

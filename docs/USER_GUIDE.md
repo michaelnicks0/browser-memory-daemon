@@ -97,7 +97,7 @@ Expected health includes:
 ## Install or refresh daily Chrome integration
 
 ```bash
-cd ~/repos/workstation/browser-memory-daemon
+cd ~/repos/tools/browser-memory-daemon
 BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
 ```
 
