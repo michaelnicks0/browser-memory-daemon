@@ -664,6 +664,21 @@ system_evidence = ["daemon/tests/e2e/test_x_observation_export_cli.py", "daemon/
 operational_evidence = ["docs/api.md", "docs/architecture/adr/0060-export-versioned-body-safe-x-observations.md"]
 validation_evidence = ["daemon/tests/integration/test_x_observation_export.py::test_export_is_query_only_body_safe_and_losslessly_pages_late_delivery", "daemon/tests/integration/test_x_observation_export.py::test_export_cursor_survives_deleted_sequence_gap_and_replay_is_stable", "daemon/tests/integration/test_x_observation_export.py::test_export_fails_closed_for_malformed_cursor_and_schema_drift", "daemon/tests/integration/test_x_observation_export.py::test_producer_golden_fixture_matches_current_contract_output", "daemon/tests/e2e/test_x_observation_export_cli.py::test_cli_export_queries_existing_database_without_init_migration_or_token", "daemon/tests/e2e/test_http_api.py::test_authenticated_x_observation_export_uses_query_only_contract_without_audit_write"]
 
+[[requirements]]
+id = "REQ-045"
+revision = 1
+statement = "During guarded final-media-root outages, BMD shall continue local text capture, buffer eligible media within a hard local cap, start without the remote mount, and automatically drain verified bytes after recovery before deleting local sources."
+rationale = "A remote media cache must fail over and recover unattended without becoming an unbounded local shadow or weakening transfer and deletion authority."
+owner = "Media Storage Recovery"
+status = "active"
+aliases = []
+implementation = ["daemon/src/browser_memory_daemon/config.py", "daemon/src/browser_memory_daemon/media_storage.py", "daemon/src/browser_memory_daemon/media_worker.py", "daemon/src/browser_memory_daemon/daily_driver_health.py", "scripts/install-daily-driver.sh"]
+unit_evidence = ["daemon/tests/unit/test_daily_driver_health.py::test_daily_driver_health_scores_spool_capacity_and_partial_drain"]
+integration_evidence = ["daemon/tests/integration/test_media_storage.py::test_unavailable_external_media_root_spools_then_drains_with_hash_verification", "daemon/tests/integration/test_media_worker.py::test_media_worker_auto_drains_spool_after_guarded_media_root_recovers"]
+system_evidence = ["daemon/tests/e2e/test_install_daily_driver.py::test_installer_stages_validates_swaps_and_restarts_services_in_order", "daemon/tests/e2e/test_http_api.py::test_http_upload_get_and_purge_use_bounded_spool_during_media_root_outage"]
+operational_evidence = ["docs/architecture/adr/0061-automatically-drain-bounded-media-spool-after-root-recovery.md", "docs/daily-driver-deployment.md", "docs/USER_GUIDE.md"]
+validation_evidence = ["daemon/tests/integration/test_media_worker.py::test_media_worker_auto_drains_spool_after_guarded_media_root_recovers", "daemon/tests/integration/test_media_storage.py::test_unavailable_external_media_root_spools_then_drains_with_hash_verification"]
+
 # Explicit reconciliation of pre-catalog test-plan aliases and meanings that
 # collided with architecture-owned REQ-009 through REQ-017 meanings.
 

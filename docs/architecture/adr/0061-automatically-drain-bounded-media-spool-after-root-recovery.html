@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>0039-Split-Media-Root-And-Add-Bounded-Durable-Spool — browser-memory-daemon</title>
+<title>0061-Automatically-Drain-Bounded-Media-Spool-After-Root-Recovery — browser-memory-daemon</title>
 <style>
 :root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
@@ -121,97 +121,126 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <div class="wrap">
   <div class="docbar">
     <a class="home" href="../../../browser-memory-daemon-high-level-doc.html">⌂ browser-memory-daemon overview</a>
-    <span class="crumb">/ <b>docs/architecture/adr/0039-split-media-root-and-add-bounded-durable-spool.md</b></span>
+    <span class="crumb">/ <b>docs/architecture/adr/0061-automatically-drain-bounded-media-spool-after-root-recovery.md</b></span>
   </div>
   <article class="md-body">
 <hr />
-<p>status: superseded
-superseded_by: [ADR-0061]
-date: 2026-07-10
-decision-makers: [Michael]
-consulted: [TARS]
-informed: []</p>
+<p>id: ADR-0061
+status: accepted
+date: 2026-07-14
+decider: Michael
+scope: repo
+backfilled: false
+supersedes: [ADR-0039]
+superseded_by: []
+related: [ADR-0036, ADR-0040, ADR-0046, REQ-035, REQ-036, REQ-045]
+verification:
+  - daemon/tests/integration/test_media_worker.py::test_media_worker_auto_drains_spool_after_guarded_media_root_recovers
+  - daemon/tests/integration/test_media_storage.py::test_unavailable_external_media_root_spools_then_drains_with_hash_verification
+  - daemon/tests/e2e/test_install_daily_driver.py::test_installer_stages_validates_swaps_and_restarts_services_in_order</p>
 <hr />
-<h1 id="adr-0039-split-derivative-and-media-roots-with-a-bounded-durable-spool">ADR-0039: Split derivative and media roots with a bounded durable spool</h1>
-<h2 id="context-and-problem-statement">Context and problem statement</h2>
-<p>A common blob root coupled local text recall to external media availability and made a missing mount capable of becoming a writable shadow directory. SQLite now owns complete cleaned text, so text derivatives and media bytes can have distinct availability and retention characteristics. Media uploads still need a durable, bounded path during an external-root outage without silently falling back to an unbounded local directory.</p>
+<h1 id="adr-0061-automatically-drain-the-bounded-media-spool-after-guarded-root-recovery">ADR-0061: Automatically drain the bounded media spool after guarded-root recovery</h1>
+<h2 id="context">Context</h2>
+<p>ADR-0039 separated final media from local SQLite and introduced an explicit, bounded local outage spool. Its drain was deliberately operator-executed while storage-tier safety matured. The production NAS is now a guarded SSHFS media root, but two gaps prevent unattended fault tolerance:</p>
+<ul>
+<li>the steady-state worker does not drain spooled media after the guarded root recovers;</li>
+<li>a hard systemd <code>Requires=</code> edge from BMD to the NAS mount prevents BMD from starting during a NAS outage, defeating local text/provenance availability.</li>
+</ul>
+<p>The existing drain already streams bytes, verifies expected size and SHA-256, commits a compare-and-switch SQLite tier transition, tombstones the spool locator, and only then removes the local source. The missing behavior is bounded automatic orchestration, not a second transfer path.</p>
+<h2 id="decision">Decision</h2>
+<p>We will operate BMD as a guarded final media root plus bounded local durable spool:</p>
+<ol>
+<li><code>BMD_MEDIA_ROOT</code> remains the final disposable-media tier. Every read, write, and drain requires a mounted non-root ancestor and an exact <code>.bmd-media-root-id</code> match.</li>
+<li><code>BMD_MEDIA_SPOOL_ROOT</code> remains local, beneath the BMD data root, and must be paired with a positive hard byte cap. Production uses a 20 GiB cap.</li>
+<li>When the guarded root is unavailable or has the wrong identity, new eligible media writes go only to the bounded spool. Local SQLite text/provenance capture continues.</li>
+<li>At the start of each bounded media-worker pass, the worker checks guarded-root readiness. If ready, it drains at most the worker batch limit before claiming new fetch work. If unavailable, it defers without failing the worker loop.</li>
+<li>Automatic drain uses the existing <code>drain_media_spool</code> state transition. It streams and verifies destination bytes, commits the <code>spool</code> to <code>media-root</code> authority switch, persists deletion intent, and removes the local source only after the switch commits.</li>
+<li>A mid-copy, verification, transaction, or cleanup failure remains retryable. The authoritative local source is preserved until transfer authority commits; failed cleanup remains filesystem-accounted and visible to health/reconciliation.</li>
+<li>The worker records redaction-safe drain status, selected/moved byte counts, errors, and cleanup failures. Daily-driver health reports current spool accounting, warns at 80% capacity, errors at the hard cap, and surfaces partial drain results.</li>
+<li>BMD daemon and worker units must not hard-require an external media mount. A host-managed mount unit may be a soft <code>Wants=</code> plus <code>After=</code> dependency so startup tries the mount first but local capture and spool service remain available when it fails.</li>
+<li>The manual <code>media-spool status</code> and dry-run-first <code>media-spool drain</code> commands remain available for inspection and bounded operator recovery.</li>
+<li>Existing local final-tier media is migrated copy-first to the guarded NAS root. Source removal is a separate post-verification action after path counts, hashes, live reads, and health pass.</li>
+</ol>
 <h2 id="decision-drivers">Decision drivers</h2>
 <ul>
-<li>text/provenance capture must remain local when media or NAS storage is unavailable;</li>
-<li>external media writes must prove the intended mount and identity;</li>
-<li>outage buffering must be explicit, local, durable, and hard-capped under concurrency;</li>
-<li>stored media must remain readable while it is spooled;</li>
-<li>draining must stream and verify bytes before changing authority;</li>
-<li>legacy <code>BMD_BLOB_ROOT</code> deployments need a compatibility path;</li>
-<li>every mutation needs a dry-run or reversible boundary.</li>
+<li>preserve local searchable text and provenance through NAS outages;</li>
+<li>never create an unmounted shadow media directory;</li>
+<li>keep outage growth bounded under concurrent writers;</li>
+<li>recover automatically without weakening size/hash/identity checks;</li>
+<li>remove local copies only after durable remote authority is committed;</li>
+<li>keep automatic work bounded per worker pass and observable without logging content.</li>
 </ul>
-<h2 id="considered-options">Considered options</h2>
-<h3 id="keep-one-blob-root-and-rely-on-startup-mount-checks">Keep one blob root and rely on startup mount checks</h3>
-<p>Rejected. It blocks text recall during media outages and does not protect a long-running daemon after a mount disappears.</p>
-<h3 id="fall-back-automatically-to-an-uncapped-local-media-directory">Fall back automatically to an uncapped local media directory</h3>
-<p>Rejected. It can fill local storage and hides the loss of the intended media root.</p>
-<h3 id="split-roots-and-use-an-explicitly-configured-bounded-spool">Split roots and use an explicitly configured bounded spool</h3>
-<p>Accepted. It preserves local text authority while making degraded media behavior visible and bounded.</p>
-<h2 id="decision">Decision</h2>
-<ol>
-<li><strong>Separate roots</strong>
-   - <code>BMD_DERIVATIVE_ROOT</code> owns reconstructible local derivatives such as legacy clean-text sidecars.
-   - <code>BMD_MEDIA_ROOT</code> owns final disposable media bytes.
-   - <code>BMD_BLOB_ROOT</code> remains a compatibility parent when <code>BMD_MEDIA_ROOT</code> is absent.</li>
-<li><strong>Do not create external roots during startup.</strong> Config initialization creates only local config/data/state directories. Derivative, media, and spool roots are opened lazily by the operations that need them.</li>
-<li><strong>Guard external media roots on every media access.</strong> Explicit external roots and mount-guarded legacy roots require a non-root mount plus <code>.bmd-media-root-id</code> whose content exactly matches <code>BMD_MEDIA_ROOT_IDENTITY</code>. A failed guard never writes a shadow media tree.</li>
-<li><strong>Make the spool opt-in and bounded.</strong> <code>BMD_MEDIA_SPOOL_ROOT</code> and positive <code>BMD_MAX_MEDIA_SPOOL_BYTES</code> must be configured together. The spool must be contained under the local data root and may not overlap the media root.</li>
-<li><strong>Serialize spool capacity with distinct SQLite reservations.</strong> Migration v10 adds <code>media_spool_reservations</code>, <code>media_artifacts.storage_tier</code>, and <code>media_artifacts.spool_locator</code>. Every in-flight writer receives a unique reservation ID, including concurrent writers for the same artifact. Admission counts final/orphaned files already present beneath the spool plus all reservations; existing bytes are preserved when the cap rejects a new write.</li>
-<li><strong>Serve spooled artifacts as stored media.</strong> <code>storage_tier='spool'</code> selects the spool root and <code>spool_locator</code>; <code>storage_tier='media-root'</code> selects the guarded media root and <code>blob_locator</code>. Raw locators remain internal.</li>
-<li><strong>Drain explicitly.</strong> <code>memory media-spool status</code> is read-only. <code>memory media-spool drain</code> is dry-run by default; <code>--execute</code> streams each file into the verified media root with expected size and SHA-256, performs a compare-and-switch SQLite transition to <code>media-root</code>, then removes the spool source only when the transition committed. A failed cleanup remains visible in filesystem capacity accounting.</li>
-<li><strong>Verify migration targets.</strong> Blob-root migration now targets configured derivative/media roots separately, excludes spooled artifacts, and refuses to adopt an existing destination whose size or SHA-256 mismatches SQLite evidence.</li>
-<li><strong>Degrade media without disabling text capture.</strong> Daemon startup no longer fails solely because a guarded media root is unavailable. Health reports the degraded media-root status; an enabled spool makes it a warning, while no spool makes it an error.</li>
-</ol>
+<h2 id="options-considered">Options considered</h2>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Pros</th>
+<th>Cons</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Keep explicit operator drain</td>
+<td>Strong approval boundary</td>
+<td>Requires manual recovery and leaves the spool occupied after ordinary outages</td>
+<td>Rejected for steady-state recovery; CLI retained as override</td>
+</tr>
+<tr>
+<td>Add a separate systemd drain timer</td>
+<td>Process isolation</td>
+<td>Duplicates scheduling, connection, audit, and concurrency boundaries</td>
+<td>Rejected</td>
+</tr>
+<tr>
+<td>Drain a bounded batch in the existing media worker</td>
+<td>Reuses one state machine, interval, DB connection, and batch limit</td>
+<td>Adds current-state storage recovery to each worker pass</td>
+<td>Chosen</td>
+</tr>
+<tr>
+<td>Make NAS mandatory with <code>Requires=</code></td>
+<td>Simple final-tier availability assumption</td>
+<td>Prevents local capture during startup outages</td>
+<td>Rejected</td>
+</tr>
+</tbody>
+</table>
 <h2 id="consequences">Consequences</h2>
-<h3 id="positive">Positive</h3>
 <ul>
-<li>local SQLite text/provenance commits do not touch media or NAS roots;</li>
-<li>an absent or wrong external mount cannot become a silent media shadow tree;</li>
-<li>local outage buffering has a transactional hard cap;</li>
-<li>spooled bytes remain retrievable and can be drained without loading whole files into memory;</li>
-<li>operators can distinguish final and spooled bytes from SQLite and health output;</li>
-<li>existing legacy blob-root layouts remain readable and migratable.</li>
+<li>Positive: ordinary NAS disconnect/reconnect cycles recover without operator action.</li>
+<li>Positive: the transfer and deletion safety contract remains single-path and hash verified.</li>
+<li>Positive: BMD starts and preserves local text even when the NAS mount service is failed.</li>
+<li>Negative: an idle worker performs one guarded-root readiness check per interval.</li>
+<li>Negative: a prolonged outage eventually reaches the spool cap and rejects additional media while preserving existing bytes and text capture.</li>
+<li>Operational: a full or repeatedly partial spool drain is a health fault requiring mount, identity, capacity, or reconciliation diagnosis.</li>
 </ul>
-<h3 id="negative">Negative</h3>
+<h2 id="verification-validation">Verification / validation</h2>
 <ul>
-<li>external media-root deployments must provision and preserve an identity marker;</li>
-<li>spool capacity can reject new media while preserving old bytes;</li>
-<li>the schema and every media read/delete path must understand storage tiers;</li>
-<li>crash-left reservations and orphaned files require the reconciliation slice in ADR-0040.</li>
+<li>Verification: guarded root absent at write time stores media in the local spool.</li>
+<li>Verification: wrong identity defers drain and preserves the local source.</li>
+<li>Verification: corrected identity causes the next worker pass to stream, verify, switch authority, and clean the source.</li>
+<li>Verification: existing failure-injection tests preserve local bytes on hash or compare-and-switch failure.</li>
+<li>Verification: installer-generated daemon and worker units contain no hard NAS <code>Requires=</code> dependency.</li>
+<li>Validation: live service startup with the NAS unit stopped keeps daemon and worker active and reports degraded guarded-root status with spool enabled.</li>
+<li>Validation: live remount causes the worker to drain a bounded canary from spool to NAS and return health to ready.</li>
 </ul>
-<h3 id="neutral">Neutral</h3>
+<h2 id="revisit-triggers">Revisit triggers</h2>
 <ul>
-<li>this decision does not change media eligibility, cache, or URL policy;</li>
-<li>the spool is durable buffering, not an additional source of truth for searchable text;</li>
-<li>no live daily-driver environment or external root is changed by this repository slice.</li>
+<li>Split drain into its own service if transfer latency prevents worker fetch SLAs.</li>
+<li>Replace SSHFS-specific operations if a stable WSL NFS mount becomes available.</li>
+<li>Raise or lower the 20 GiB production cap only from measured ingest rate and local headroom.</li>
 </ul>
-<h2 id="verification">Verification</h2>
-<p>Required evidence:</p>
+<h2 id="references">References</h2>
 <ul>
-<li>fresh and v9 migration coverage for schema v10;</li>
-<li>external-root marker and wrong-mount rejection tests;</li>
-<li>media writes during root outage land in the local spool and remain readable;</li>
-<li>concurrent distinct-artifact and same-artifact reservations prove the cap cannot be exceeded;</li>
-<li>orphan spool files consume capacity, and a lost drain transition preserves the source;</li>
-<li>dry-run and execute drain tests prove streamed size/hash verification and DB tier switch;</li>
-<li>existing corrupted migration destinations are rejected without DB rewrites;</li>
-<li>focused media, forget, API, CLI, health, installer, and concurrency gates;</li>
-<li>real Windows Chrome e2e confirms normal media lands in the final media tier.</li>
-</ul>
-<h2 id="related-decisions">Related decisions</h2>
-<ul>
-<li><a href="0036-route-blob-operations-through-contained-blobstore.html">ADR-0036</a></li>
-<li><a href="0037-expand-blob-references-with-relative-locators.html">ADR-0037</a></li>
-<li><a href="0038-make-sqlite-authoritative-for-cleaned-snapshot-text.html">ADR-0038</a></li>
+<li><a href="0039-split-media-root-and-add-bounded-durable-spool.html">ADR-0039</a></li>
+<li><a href="0040-use-durable-deletion-intents-and-reconciliation.html">ADR-0040</a></li>
+<li><a href="0046-move-historical-media-correction-out-of-worker-loop.html">ADR-0046</a></li>
 </ul>
   </article>
   <div class="md-footer">
-    Rendered from <code>docs/architecture/adr/0039-split-media-root-and-add-bounded-durable-spool.md</code> — the Markdown file is the canonical,
+    Rendered from <code>docs/architecture/adr/0061-automatically-drain-bounded-media-spool-after-root-recovery.md</code> — the Markdown file is the canonical,
     version-controlled source. This HTML is generated (regenerate with
     <code>scripts/render_docs.py</code>); do not hand-edit.
   </div>

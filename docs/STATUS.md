@@ -32,7 +32,7 @@
 ## Requirement posture
 
 <!-- BEGIN GENERATED:requirement-posture -->
-The canonical catalog contains **44 stable requirements**: **44 active** and **0 planned**. Normative statements, implementation links, V-model evidence, and legacy aliases are owned by [`requirements/catalog.toml`](../requirements/catalog.toml); generated tables in this doc set must not be hand-edited.
+The canonical catalog contains **45 stable requirements**: **45 active** and **0 planned**. Normative statements, implementation links, V-model evidence, and legacy aliases are owned by [`requirements/catalog.toml`](../requirements/catalog.toml); generated tables in this doc set must not be hand-edited.
 <!-- END GENERATED:requirement-posture -->
 
 ---

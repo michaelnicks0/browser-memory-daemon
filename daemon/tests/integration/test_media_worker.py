@@ -12,6 +12,7 @@ from pathlib import Path
 
 import browser_memory_daemon.media_fetch as media_fetch_module
 import browser_memory_daemon.media_hls as media_hls_module
+import browser_memory_daemon.media_storage as media_storage_module
 import browser_memory_daemon.media_transport as media_transport_module
 from browser_memory_daemon.app import make_server
 from browser_memory_daemon.config import load_config
@@ -392,6 +393,96 @@ def test_media_worker_processes_data_url_task_and_marks_success(tmp_path):
         assert media["capture_status"] == "stored"
         task = conn.execute("SELECT status FROM media_fetch_tasks").fetchone()
         assert task["status"] == "succeeded"
+
+
+def test_media_worker_auto_drains_spool_after_guarded_media_root_recovers(tmp_path, monkeypatch):
+    runtime_root = tmp_path / "runtime"
+    media_root = tmp_path / "mounted-media"
+    spool_root = runtime_root / "media-spool"
+    monkeypatch.setenv("BMD_MEDIA_ROOT_IDENTITY", "media-test-root")
+    monkeypatch.setenv("BMD_MAX_MEDIA_SPOOL_BYTES", "1024")
+    cfg = load_config(
+        runtime_root=runtime_root,
+        media_root=media_root,
+        media_spool_root=spool_root,
+        test_mode=True,
+        token="test-token",
+        policy_mode="all",
+    )
+    init_db(cfg)
+    monkeypatch.setattr(media_storage_module, "has_non_root_mount_ancestor", lambda _path: False)
+    payload = CapturePayload.from_dict(
+        {
+            "url": "https://example.com/worker-spool-recovery",
+            "title": "Worker spool recovery",
+            "text": "Searchable text remains local while media waits for the guarded root.",
+            "media_artifacts": [
+                {
+                    "media_type": "image",
+                    "source_url": "data:image/png;base64,iVBORw0KGgo=",
+                    "mime_type": "image/png",
+                }
+            ],
+        },
+        allow_any_url=True,
+    )
+
+    with connect(cfg.db_path) as conn:
+        capture = ingest_capture(conn, cfg, payload)
+        outage = run_once(conn, cfg, worker_id="recovery-worker", limit=10)
+        spooled = conn.execute(
+            "SELECT storage_tier, spool_locator, file_path FROM media_artifacts WHERE snapshot_id = ?",
+            (capture["snapshot_id"],),
+        ).fetchone()
+
+    assert outage["spool_drain"]["status"] == "deferred"
+    assert outage["spool_drain"]["media_root_status"] == "mount-missing"
+    assert spooled["storage_tier"] == "spool"
+    source_path = Path(spooled["file_path"])
+    assert source_path.is_file()
+
+    media_root.mkdir(parents=True)
+    media_root.joinpath(media_storage_module.MEDIA_ROOT_MARKER).write_text("wrong-root\n", encoding="utf-8")
+    monkeypatch.setattr(media_storage_module, "has_non_root_mount_ancestor", lambda _path: True)
+    with connect(cfg.db_path) as conn:
+        wrong_identity = run_once(conn, cfg, worker_id="recovery-worker", limit=10)
+        tier_during_mismatch = conn.execute(
+            "SELECT storage_tier FROM media_artifacts WHERE snapshot_id = ?",
+            (capture["snapshot_id"],),
+        ).fetchone()["storage_tier"]
+
+    assert wrong_identity["spool_drain"]["status"] == "deferred"
+    assert wrong_identity["spool_drain"]["media_root_status"] == "identity-mismatch"
+    assert tier_during_mismatch == "spool"
+    assert source_path.is_file()
+
+    media_root.joinpath(media_storage_module.MEDIA_ROOT_MARKER).write_text("media-test-root\n", encoding="utf-8")
+    with connect(cfg.db_path) as conn:
+        recovered = run_once(conn, cfg, worker_id="recovery-worker", limit=10)
+        drained = conn.execute(
+            "SELECT storage_tier, spool_locator, blob_locator, file_path FROM media_artifacts WHERE snapshot_id = ?",
+            (capture["snapshot_id"],),
+        ).fetchone()
+
+    assert recovered["spool_drain"] == {
+        "enabled": True,
+        "attempted": True,
+        "status": "complete",
+        "media_root_status": "ready",
+        "selected": 1,
+        "selected_bytes": 8,
+        "moved": 1,
+        "moved_bytes": 8,
+        "missing": 0,
+        "invalid": 0,
+        "source_cleanup_failed": 0,
+        "errors": 0,
+    }
+    assert recovered["attempted"] == 0
+    assert drained["storage_tier"] == "media-root"
+    assert drained["spool_locator"] is None
+    assert media_root.joinpath(drained["blob_locator"]).read_bytes() == b"\x89PNG\r\n\x1a\n"
+    assert not source_path.exists()
 
 
 def test_media_resource_pressure_does_not_roll_back_searchable_text(tmp_path, monkeypatch):

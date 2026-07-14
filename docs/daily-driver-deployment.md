@@ -79,11 +79,11 @@ Database compatibility is separately inspectable with `memory migrate --check`; 
 To place only disposable media on a WSL-mounted NAS dataset while keeping SQLite/WAL and derivatives local, first provision the external root and `.bmd-media-root-id` marker, then configure:
 
 ```bash
-BMD_MEDIA_ROOT=/mnt/nas/browser-memory-daemon/media \
+BMD_MEDIA_ROOT=/mnt/nas/browser-memory-daemon/blobs/media \
   BMD_MEDIA_ROOT_IDENTITY=bmd-media-prod \
   BMD_REQUIRE_MEDIA_ROOT_MOUNT=1 \
   BMD_MEDIA_SPOOL_ROOT="$HOME/.local/share/browser-memory-daemon/media-spool" \
-  BMD_MAX_MEDIA_SPOOL_BYTES=1073741824 \
+  BMD_MAX_MEDIA_SPOOL_BYTES=21474836480 \
   BMD_MAX_MEDIA_INFLIGHT_BYTES=524288000 \
   BMD_MAX_MEDIA_CONCURRENT_REQUESTS=4 \
   BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
@@ -91,21 +91,33 @@ BMD_MEDIA_ROOT=/mnt/nas/browser-memory-daemon/media \
 
 `BMD_MEDIA_ROOT` affects only disposable media bytes. The SQLite DB, complete cleaned text, WAL/SHM sidecars, derivatives, SQLite audit events, token/env files, and systemd units remain under WSL XDG paths. `BMD_BLOB_ROOT` remains a legacy parent when no explicit media root is configured. `BMD_RAW_HTML_ENABLED` and `BMD_AUDIT_LOG` are currently parsed compatibility fields only: the daemon does not persist raw HTML or write an `audit.jsonl` side log.
 
-The mount only needs to be a normal WSL-visible filesystem path. Prefer NFS for simple kernel-mounted NAS storage when it works in the local WSL/network boundary; SSHFS is an acceptable fallback for media payloads because SQLite/WAL stays local. Explicit external media roots require both a non-root mount and an exact identity marker. The installer never creates the external root. If it later becomes unavailable, text capture continues; media uses only an explicitly configured bounded local spool or fails visibly.
+The mount only needs to be a normal WSL-visible filesystem path. Prefer NFS for simple kernel-mounted NAS storage when it works in the local WSL/network boundary; SSHFS is an acceptable fallback for media payloads because SQLite/WAL stays local. Explicit external media roots require both a non-root mount and an exact identity marker. The installer never creates the external root. If it later becomes unavailable, text capture continues and media uses only the explicitly configured bounded local spool. Once the guarded root recovers, each media-worker pass drains at most its configured batch limit before fetching new work. Destination size and SHA-256 are verified, SQLite authority switches to the final tier, and only then is the local source removed.
+
+If a user systemd unit owns the external mount, make it a soft startup preference rather than a failure-propagating dependency. Apply the following drop-in to both BMD units, substituting the actual mount unit:
+
+```ini
+[Unit]
+Wants=browser-memory-nas-blobs.service
+After=browser-memory-nas-blobs.service
+```
+
+Do not use `Requires=` or `BindsTo=` for the media mount. BMD must remain active and spool locally when that unit is failed.
 
 For an existing install, migrate DB-referenced blob paths after copying/writing to the new root:
 
 ```bash
 systemctl --user stop browser-memory-media-worker.service browser-memory-daemon.service
 BMD_DERIVATIVE_ROOT="$HOME/.local/share/browser-memory-daemon/derivatives" \
-  BMD_MEDIA_ROOT=/mnt/nas/browser-memory-daemon/media \
+  BMD_MEDIA_ROOT=/mnt/nas/browser-memory-daemon/blobs/media \
   BMD_MEDIA_ROOT_IDENTITY=bmd-media-prod \
   BMD_REQUIRE_MEDIA_ROOT_MOUNT=1 \
   PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   blob-root migrate --from-root "$HOME/.local/share/browser-memory-daemon/blobs" --execute
-BMD_MEDIA_ROOT=/mnt/nas/browser-memory-daemon/media \
+BMD_MEDIA_ROOT=/mnt/nas/browser-memory-daemon/blobs/media \
   BMD_MEDIA_ROOT_IDENTITY=bmd-media-prod \
   BMD_REQUIRE_MEDIA_ROOT_MOUNT=1 \
+  BMD_MEDIA_SPOOL_ROOT="$HOME/.local/share/browser-memory-daemon/media-spool" \
+  BMD_MAX_MEDIA_SPOOL_BYTES=21474836480 \
   BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
 ```
 
@@ -179,7 +191,7 @@ Expected health includes:
 {"ok": true, "capture_enabled": true, "policy_mode": "all"}
 ```
 
-The aggregate health JSON also checks storage headroom thresholds, required blob-root mount state, systemd restart budgets, recent service-start failure churn, that `~/.config/browser-memory-daemon/token` and `env` are owner-only, that the environment file token matches the token file, that the unit files use the protected `EnvironmentFile`, that service process arguments do not expose token material, and that the Windows extension artifact token defaults match the token file. Token values are not printed. Defaults warn below 5 GB free or 90% used and hard-fail below 1 GB free or 98% used; restart/start-failure budgets warn at 3 and hard-fail at 10. Override with `BMD_HEALTH_HEADROOM_*` / `BMD_HEALTH_SERVICE_*` only for intentionally small local runtimes.
+The aggregate health JSON also checks storage headroom thresholds, required blob-root mount state, media-spool accounting and latest automatic-drain outcome, systemd restart budgets, recent service-start failure churn, that `~/.config/browser-memory-daemon/token` and `env` are owner-only, that the environment file token matches the token file, that the unit files use the protected `EnvironmentFile`, that service process arguments do not expose token material, and that the Windows extension artifact token defaults match the token file. Token values are not printed. Spool use warns at 80% and errors at the hard cap. Storage defaults warn below 5 GB free or 90% used and hard-fail below 1 GB free or 98% used; restart/start-failure budgets warn at 3 and hard-fail at 10. Override with `BMD_HEALTH_HEADROOM_*` / `BMD_HEALTH_SERVICE_*` only for intentionally small local runtimes.
 
 ---
 

@@ -190,6 +190,11 @@ def test_installer_stages_validates_swaps_and_restarts_services_in_order(tmp_pat
     worker_restart = commands.index("--user restart browser-memory-media-worker.service")
     worker_ready = commands.index("--user is-active --quiet browser-memory-media-worker.service", worker_restart)
     assert daemon_restart < daemon_ready < worker_restart < worker_ready
+    unit_dir = Path(env["HOME"]) / ".config" / "systemd" / "user"
+    for unit in ("browser-memory-daemon.service", "browser-memory-media-worker.service"):
+        unit_text = unit_dir.joinpath(unit).read_text(encoding="utf-8")
+        assert "Requires=" not in unit_text
+        assert "BindsTo=" not in unit_text
     _assert_no_installer_staging(extension, env)
 
 

@@ -113,21 +113,21 @@ Check the current installed stack without rebuilding/copying/restarting:
 ./scripts/install-daily-driver.sh --check
 ```
 
-To place only disposable media on a WSL-mounted NAS dataset while keeping derivatives local, pre-provision `/mnt/nas/browser-memory-daemon/media/.bmd-media-root-id` with the exact single-line identity `bmd-media-prod`, then configure:
+To place only disposable media on a WSL-mounted NAS dataset while keeping derivatives local, pre-provision `/mnt/nas/browser-memory-daemon/blobs/media/.bmd-media-root-id` with the exact single-line identity `bmd-media-prod`, then configure a bounded 20 GiB local outage spool:
 
 ```bash
 BMD_DERIVATIVE_ROOT="$HOME/.local/share/browser-memory-daemon/derivatives" \
-  BMD_MEDIA_ROOT=/mnt/nas/browser-memory-daemon/media \
+  BMD_MEDIA_ROOT=/mnt/nas/browser-memory-daemon/blobs/media \
   BMD_MEDIA_ROOT_IDENTITY=bmd-media-prod \
   BMD_REQUIRE_MEDIA_ROOT_MOUNT=1 \
   BMD_MEDIA_SPOOL_ROOT="$HOME/.local/share/browser-memory-daemon/media-spool" \
-  BMD_MAX_MEDIA_SPOOL_BYTES=1073741824 \
+  BMD_MAX_MEDIA_SPOOL_BYTES=21474836480 \
   BMD_MAX_MEDIA_INFLIGHT_BYTES=524288000 \
   BMD_MAX_MEDIA_CONCURRENT_REQUESTS=4 \
   BMD_POLICY_MODE=all ./scripts/install-daily-driver.sh
 ```
 
-Explicit external `BMD_MEDIA_ROOT` values are intentionally strict: media access requires a non-root mounted ancestor and an exact identity marker. The installer does not create the external media root or marker. A failed guard degrades media handling but does not block local SQLite text/provenance capture. The spool is optional, must remain under the local data root, and is enabled only when both its path and a positive byte cap are configured. `BMD_MAX_MEDIA_INFLIGHT_BYTES` must be positive and at least `BMD_MAX_MEDIA_ARTIFACT_BYTES`; `BMD_MAX_MEDIA_CONCURRENT_REQUESTS` must also be positive. These caps apply independently inside the daemon and worker processes, while SQLite cache reservations coordinate persistent cache admission across them. `BMD_BLOB_ROOT` and `BMD_REQUIRE_BLOB_ROOT_MOUNT` remain compatibility inputs for legacy layouts.
+Explicit external `BMD_MEDIA_ROOT` values are intentionally strict: media access requires a non-root mounted ancestor and an exact identity marker. The installer does not create the external media root or marker. A failed guard degrades media handling but does not block local SQLite text/provenance capture. The spool is optional, must remain under the local data root, and is enabled only when both its path and a positive byte cap are configured. When the guard recovers, the worker automatically drains a bounded batch before claiming new media fetches; local bytes are removed only after streamed size/hash verification and a committed SQLite tier transition. `BMD_MAX_MEDIA_INFLIGHT_BYTES` must be positive and at least `BMD_MAX_MEDIA_ARTIFACT_BYTES`; `BMD_MAX_MEDIA_CONCURRENT_REQUESTS` must also be positive. These caps apply independently inside the daemon and worker processes, while SQLite cache reservations coordinate persistent cache admission across them. `BMD_BLOB_ROOT` and `BMD_REQUIRE_BLOB_ROOT_MOUNT` remain compatibility inputs for legacy layouts.
 
 Then reload the unpacked extension in Chrome:
 
@@ -225,7 +225,7 @@ PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \
   media-spool status
 ```
 
-Preview a bounded drain, review the JSON, then add `--execute` only after the expected media mount and marker are verified:
+Automatic drain is the normal recovery path. To inspect or manually retry a bounded batch, preview the operator override, review the JSON, then add `--execute` only after the expected media mount and marker are verified:
 
 ```bash
 PYTHONPATH=daemon/src python3.11 -m browser_memory_daemon \

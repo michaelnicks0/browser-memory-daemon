@@ -210,7 +210,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li><code>BMD_DERIVATIVE_ROOT</code> owns reconstructible artifacts such as legacy clean-text sidecars. When unset, it remains at the legacy-compatible <code>BMD_BLOB_ROOT</code>; moving unresolved sidecars requires explicit migration.</li>
 <li><code>BMD_MEDIA_ROOT</code> owns final media bytes. Explicit external roots require both a non-root mount and <code>.bmd-media-root-id</code> matching <code>BMD_MEDIA_ROOT_IDENTITY</code> before reads or writes.</li>
 <li><code>BMD_MEDIA_SPOOL_ROOT</code> plus positive <code>BMD_MAX_MEDIA_SPOOL_BYTES</code> enables a local durable outage spool contained under the WSL data root. SQLite reservations count distinct in-flight writers while filesystem census counts committed and orphaned spool files.</li>
-<li>Migration version 10 records each artifact's <code>media-root</code> or <code>spool</code> tier. Dry-run-first spool draining streams and hash-verifies the destination, commits the tier transition, and only then removes the source.</li>
+<li>Migration version 10 records each artifact's <code>media-root</code> or <code>spool</code> tier. Each media-worker pass automatically drains a bounded batch when the guarded final root is ready; transfer streams and hash-verifies the destination, commits the tier transition, and only then removes the source. The manual drain CLI remains dry-run first.</li>
 <li>Migration version 11 adds durable <code>blob_storage_records</code>. Forget, purge, eviction, spool drain, replacement, and blob migration register committed/tombstoned lifecycle state before filesystem deletion; <code>failed</code>/<code>blocked</code> work remains pending and visible until <code>storage reconcile --execute</code> converges it.</li>
 <li>Migration version 12 performs one-time historical media-state correction. The steady-state worker runs only bounded current-state CDP/task reconciliation plus due-task leasing; budget skips require an explicit scoped <code>media-cache requeue</code> preview/execute operation.</li>
 <li>Migration version 13 adds expiring SQLite cache reservations. Admission counts committed plus active reserved bytes transactionally across daemon and worker processes, and publication replaces its reservation with the committed artifact row in the same transaction.</li>
@@ -675,6 +675,16 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td><code>daemon/src/browser_memory_daemon/x_observation_export.py</code><br><code>daemon/src/browser_memory_daemon/ingest.py</code><br><code>daemon/src/browser_memory_daemon/migration_steps/v0014_add_observation_ingest_sequences.py</code><br><code>daemon/src/browser_memory_daemon/routes.py</code><br><code>daemon/src/browser_memory_daemon/http_server.py</code><br><code>daemon/src/browser_memory_daemon/cli.py</code><br><code>contracts/bmd.x-observations.v1.schema.json</code></td>
 <td><code>daemon/tests/integration/test_x_observation_export.py::test_export_is_query_only_body_safe_and_losslessly_pages_late_delivery</code><br><code>daemon/tests/integration/test_x_observation_export.py::test_export_cursor_survives_deleted_sequence_gap_and_replay_is_stable</code><br><code>daemon/tests/integration/test_x_observation_export.py::test_export_fails_closed_for_malformed_cursor_and_schema_drift</code><br><code>daemon/tests/integration/test_x_observation_export.py::test_producer_golden_fixture_matches_current_contract_output</code><br><code>daemon/tests/e2e/test_x_observation_export_cli.py::test_cli_export_queries_existing_database_without_init_migration_or_token</code><br><code>daemon/tests/e2e/test_http_api.py::test_authenticated_x_observation_export_uses_query_only_contract_without_audit_write</code></td>
 </tr>
+<tr>
+<td>REQ-045</td>
+<td style="text-align: right;">1</td>
+<td>active</td>
+<td>During guarded final-media-root outages, BMD shall continue local text capture, buffer eligible media within a hard local cap, start without the remote mount, and automatically drain verified bytes after recovery before deleting local sources.</td>
+<td>Media Storage Recovery</td>
+<td>—</td>
+<td><code>daemon/src/browser_memory_daemon/config.py</code><br><code>daemon/src/browser_memory_daemon/media_storage.py</code><br><code>daemon/src/browser_memory_daemon/media_worker.py</code><br><code>daemon/src/browser_memory_daemon/daily_driver_health.py</code><br><code>scripts/install-daily-driver.sh</code></td>
+<td><code>daemon/tests/integration/test_media_worker.py::test_media_worker_auto_drains_spool_after_guarded_media_root_recovers</code><br><code>daemon/tests/integration/test_media_storage.py::test_unavailable_external_media_root_spools_then_drains_with_hash_verification</code></td>
+</tr>
 </tbody>
 </table>
 <h3 id="legacy-alias-reconciliation">Legacy alias reconciliation</h3>
@@ -888,12 +898,12 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Daemon media worker</td>
-<td>Durable public-media backfill with leases/backoff/retry, process request/byte budgets, and streamed HLS/audio sidecar assembly.</td>
-<td>Does not receive or export Chrome cookies; claims one due task immediately before work; final and spool-backed media remain storage-tier aware.</td>
+<td>Durable public-media backfill with leases/backoff/retry, bounded automatic spool recovery, process request/byte budgets, and streamed HLS/audio sidecar assembly.</td>
+<td>Checks guarded-root readiness and drains at most one worker batch before claiming new work; does not receive or export Chrome cookies; final and spool-backed media remain storage-tier aware.</td>
 </tr>
 <tr>
 <td>Media cache manager</td>
-<td>Applies size gates, transactional committed-plus-reserved cache admission, manual purge/rehydrate, oldest-first domain/global rolling eviction, guarded final-root selection, bounded local spool admission/drain, and retryable byte deletion.</td>
+<td>Applies size gates, transactional committed-plus-reserved cache admission, manual purge/rehydrate, oldest-first domain/global rolling eviction, guarded final-root selection, bounded local spool admission/automatic drain, and retryable byte deletion.</td>
 <td>Blob bytes are disposable; text, refs, hashes, and provenance remain durable. Failed purge/eviction stays unreadable, retryable, and included in admission accounting.</td>
 </tr>
 <tr>

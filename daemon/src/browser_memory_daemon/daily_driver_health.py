@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any
 
 from .config import RuntimeConfig
-from .media_storage import media_root_readiness
+from .media_storage import media_root_readiness, media_spool_status
 
 DAILY_DRIVER_UNITS = (
     "browser-memory-daemon.service",
@@ -400,6 +400,7 @@ def _database_status(config: RuntimeConfig) -> dict[str, Any]:
             output["counts"] = {table: _safe_table_count(conn, table) for table in _RUNTIME_TABLES}
             output["freshness"] = _freshness(conn)
             output["media_queue"] = _media_queue_aggregates(conn)
+            output["media_spool"] = media_spool_status(conn, config)
             output["chunks_missing_fts"] = _safe_scalar(
                 conn,
                 "SELECT COUNT(*) FROM chunks WHERE id NOT IN (SELECT chunk_id FROM chunks_fts)",
@@ -549,6 +550,7 @@ def _latest_media_worker_run(conn: sqlite3.Connection) -> dict[str, Any] | None:
         "already_stored",
         "reconciled_stored_tasks",
         "reconciled_cdp_blob_coverage",
+        "spool_drain",
     ):
         if key in metadata:
             output[key] = metadata[key]
@@ -572,6 +574,10 @@ def _media_worker_window(conn: sqlite3.Connection, sqlite_modifier: str) -> dict
         "already_stored": 0,
         "reconciled_stored_tasks": 0,
         "reconciled_cdp_blob_coverage": 0,
+        "spool_drain_moved": 0,
+        "spool_drain_moved_bytes": 0,
+        "spool_drain_errors": 0,
+        "spool_drain_source_cleanup_failed": 0,
     }
     try:
         rows = conn.execute(
@@ -598,6 +604,14 @@ def _media_worker_window(conn: sqlite3.Connection, sqlite_modifier: str) -> dict
             "reconciled_cdp_blob_coverage",
         ):
             totals[key] += _safe_int(metadata.get(key)) or 0
+        spool_drain = metadata.get("spool_drain")
+        if isinstance(spool_drain, dict):
+            totals["spool_drain_moved"] += _safe_int(spool_drain.get("moved")) or 0
+            totals["spool_drain_moved_bytes"] += _safe_int(spool_drain.get("moved_bytes")) or 0
+            totals["spool_drain_errors"] += _safe_int(spool_drain.get("errors")) or 0
+            totals["spool_drain_source_cleanup_failed"] += (
+                _safe_int(spool_drain.get("source_cleanup_failed")) or 0
+            )
     return totals
 
 
@@ -910,6 +924,22 @@ def _score_database(database: dict[str, Any], errors: list[str], warnings: list[
         errors.append(f"media queue has {media_queue['stale_leases']} stale leases")
     if media_queue.get("due_pending_or_retrying", 0) > 0:
         warnings.append(f"media queue has {media_queue['due_pending_or_retrying']} due pending/retrying tasks")
+    media_spool = database.get("media_spool") or {}
+    if media_spool.get("enabled"):
+        accounted = int(media_spool.get("accounted_bytes") or 0)
+        limit = int(media_spool.get("limit_bytes") or 0)
+        if limit > 0 and accounted >= limit:
+            errors.append(f"media spool is full: {accounted} of {limit} bytes accounted")
+        elif limit > 0 and accounted * 100 >= limit * 80:
+            warnings.append(f"media spool is at least 80% full: {accounted} of {limit} bytes accounted")
+    latest_worker = media_queue.get("latest_worker_run") or {}
+    spool_drain = latest_worker.get("spool_drain") or {}
+    if spool_drain.get("status") == "partial":
+        warnings.append(
+            "latest media spool drain was partial: "
+            f"errors={spool_drain.get('errors', 0)} "
+            f"cleanup_failed={spool_drain.get('source_cleanup_failed', 0)}"
+        )
 
 
 def _score_storage(storage: dict[str, Any], errors: list[str], warnings: list[str]) -> None:

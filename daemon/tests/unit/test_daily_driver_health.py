@@ -214,7 +214,21 @@ def test_daily_driver_health_media_queue_uses_datetime_comparisons_and_reports_w
             VALUES ('audit_worker_health', 'media.worker.run_once', ?, ?)
             """,
             (
-                json.dumps({"attempted": 25, "stored": 16, "failed": 0, "skipped": 5}),
+                json.dumps(
+                    {
+                        "attempted": 25,
+                        "stored": 16,
+                        "failed": 0,
+                        "skipped": 5,
+                        "spool_drain": {
+                            "status": "complete",
+                            "moved": 2,
+                            "moved_bytes": 4096,
+                            "errors": 0,
+                            "source_cleanup_failed": 0,
+                        },
+                    }
+                ),
                 current_utc.strftime("%Y-%m-%d %H:%M:%S"),
             ),
         )
@@ -232,9 +246,39 @@ def test_daily_driver_health_media_queue_uses_datetime_comparisons_and_reports_w
     assert queue["oldest_stale_lease_age_seconds"] > 0
     assert queue["latest_worker_run"]["attempted"] == 25
     assert queue["latest_worker_run"]["stored"] == 16
+    assert queue["latest_worker_run"]["spool_drain"]["moved"] == 2
     assert queue["latest_worker_run"]["age_seconds"] >= 0
     assert queue["worker_throughput"]["1h"]["runs"] == 1
     assert queue["worker_throughput"]["1h"]["attempted"] == 25
+    assert queue["worker_throughput"]["1h"]["spool_drain_moved"] == 2
+    assert queue["worker_throughput"]["1h"]["spool_drain_moved_bytes"] == 4096
+
+
+def test_daily_driver_health_scores_spool_capacity_and_partial_drain():
+    database = {
+        "ok": True,
+        "media_spool": {"enabled": True, "accounted_bytes": 80, "limit_bytes": 100},
+        "media_queue": {
+            "latest_worker_run": {
+                "spool_drain": {"status": "partial", "errors": 1, "source_cleanup_failed": 2}
+            }
+        },
+    }
+    errors: list[str] = []
+    warnings: list[str] = []
+
+    health._score_database(database, errors, warnings)
+
+    assert errors == []
+    assert "media spool is at least 80% full: 80 of 100 bytes accounted" in warnings
+    assert "latest media spool drain was partial: errors=1 cleanup_failed=2" in warnings
+
+    errors.clear()
+    warnings.clear()
+    database["media_spool"]["accounted_bytes"] = 100
+    health._score_database(database, errors, warnings)
+
+    assert "media spool is full: 100 of 100 bytes accounted" in errors
 
 
 def test_daily_driver_health_detects_missing_extension_token(tmp_path):

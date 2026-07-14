@@ -46,7 +46,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0036](0036-route-blob-operations-through-contained-blobstore.md) | accepted | Route staged streaming writes, contained reads, stats, and deletes through one BlobStore while legacy locators remain compatible. |
 | [ADR-0037](0037-expand-blob-references-with-relative-locators.md) | accepted | Dual-write root-relative blob locators, prefer them on reads, and retain a contained legacy absolute fallback during expansion. |
 | [ADR-0038](0038-make-sqlite-authoritative-for-cleaned-snapshot-text.md) | accepted | Commit complete cleaned text to SQLite, stop creating new text sidecars, and hash-verify legacy promotion. |
-| [ADR-0039](0039-split-media-root-and-add-bounded-durable-spool.md) | accepted | Split derivative and media roots, guard external identity, and bound local outage buffering. |
+| [ADR-0039](0039-split-media-root-and-add-bounded-durable-spool.md) | superseded by ADR-0061 | Split derivative and media roots, guard external identity, and bound local outage buffering. |
 | [ADR-0040](0040-use-durable-deletion-intents-and-reconciliation.md) | accepted | Persist blob deletion intent before cascades and reconcile failures through contained retryable operations. |
 | [ADR-0041](0041-use-manifest-backed-text-first-backup-and-empty-root-restore.md) | accepted | Create manifest-backed text-first online backups and restore only into an absent explicit runtime root. |
 | [ADR-0042](0042-separate-media-state-and-task-repository.md) | accepted | Separate media status/transition authority and durable task leasing/retry workflow from the compatibility facade. |
@@ -68,6 +68,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0058](0058-stage-daily-driver-install-and-rollback-failed-readiness.md) | accepted | Stage daily-driver artifacts and restore the prior generation after failed forward readiness. |
 | [ADR-0059](0059-pin-and-verify-chrome-for-testing-release.md) | accepted | Pin and checksum-verify Chrome for Testing as isolated release authority. |
 | [ADR-0060](0060-export-versioned-body-safe-x-observations.md) | accepted | Export versioned body-safe X observations through a mutation-free producer contract. |
+| [ADR-0061](0061-automatically-drain-bounded-media-spool-after-root-recovery.md) | accepted | Automatically drain the bounded local media spool after the guarded final root recovers. |
 
 ## Backfilled decision history
 
