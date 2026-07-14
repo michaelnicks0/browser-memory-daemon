@@ -232,7 +232,8 @@ def _origin_allowed(origin: str) -> bool:
 
 def _json_response(handler: BaseHTTPRequestHandler, status: int, payload: dict[str, Any] | list[Any]) -> None:
     body = json.dumps(payload, sort_keys=True).encode("utf-8")
-    origin = handler.headers.get("Origin", "")
+    request_headers = getattr(handler, "headers", None)
+    origin = request_headers.get("Origin", "") if request_headers is not None else ""
     headers = [
         ("Content-Type", "application/json"),
         ("Content-Length", str(len(body))),

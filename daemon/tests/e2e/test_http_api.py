@@ -98,6 +98,34 @@ def binary_request(method, url, token="test-token", body=b"", content_type="appl
         return response.status, json.loads(response.read().decode() or "{}")
 
 
+def test_malformed_request_line_does_not_crash_error_handling(tmp_path, capsys):
+    cfg = load_config(
+        runtime_root=tmp_path,
+        test_mode=True,
+        token="test-token",
+        host="127.0.0.1",
+        port=0,
+        policy_mode="all",
+    )
+    server = make_server(cfg)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        address = ("127.0.0.1", int(server.server_address[1]))
+        with socket.create_connection(address, timeout=3) as sock:
+            sock.sendall(b"not-http\r\n\r\n")
+            sock.shutdown(socket.SHUT_WR)
+            response = sock.recv(4096)
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+
+    diagnostic = capsys.readouterr().err
+    assert b'"error_code": "http_error"' in response
+    assert "Traceback" not in diagnostic
+    assert "object has no attribute 'headers'" not in diagnostic
+
+
 def test_http_capture_skips_request_time_db_initialization_after_startup(tmp_path, monkeypatch):
     cfg = load_config(runtime_root=tmp_path, test_mode=True, token="test-token", host="127.0.0.1", port=0, policy_mode="all")
     cfg = replace(cfg, media_fetch_on_capture=False)
