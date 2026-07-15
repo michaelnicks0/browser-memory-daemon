@@ -11,14 +11,14 @@
 <polygon fill="white" stroke="transparent" points="-4,4 -4,-577 2906,-577 2906,4 -4,4"/>
 <text text-anchor="start" x="893" y="-11.8" font-family="Arial" font-size="34.00">Browser Memory Daemon &#45; WSL Loopback HTTP Daemon &#45; Components</text>
 <g id="clust1" class="cluster">
-<title>cluster_22</title>
+<title>cluster_23</title>
 <polygon fill="none" stroke="#444444" points="8,-64 8,-565 2192,-565 2192,-64 8,-64"/>
 <text text-anchor="start" x="934.5" y="-92.8" font-family="Arial" font-size="24.00" fill="#444444">WSL Loopback HTTP Daemon</text>
 <text text-anchor="start" x="898" y="-72.8" font-family="Arial" font-size="19.00" fill="#444444">[Container: Python 3.11, ThreadingHTTPServer]</text>
 </g>
-<!-- 49 -->
-<g id="49" class="node">
-<title>49</title>
+<!-- 57 -->
+<g id="57" class="node">
+<title>57</title>
 <path fill="#2f95c8" stroke="#20688c" d="M2902,-501.22C2902,-519.51 2819.08,-534.38 2717,-534.38 2614.92,-534.38 2532,-519.51 2532,-501.22 2532,-501.22 2532,-202.78 2532,-202.78 2532,-184.49 2614.92,-169.62 2717,-169.62 2819.08,-169.62 2902,-184.49 2902,-202.78 2902,-202.78 2902,-501.22 2902,-501.22"/>
 <path fill="none" stroke="#20688c" d="M2902,-501.22C2902,-482.92 2819.08,-468.06 2717,-468.06 2614.92,-468.06 2532,-482.92 2532,-501.22"/>
 <text text-anchor="start" x="2604" y="-436.3" font-family="Arial" font-size="34.00" fill="#ffffff">SQLite + FTS5</text>
@@ -30,9 +30,9 @@
 <text text-anchor="start" x="2571" y="-271.3" font-family="Arial" font-size="24.00" fill="#ffffff">and immutable observation</text>
 <text text-anchor="start" x="2619" y="-247.3" font-family="Arial" font-size="24.00" fill="#ffffff">ingest sequences.</text>
 </g>
-<!-- 23 -->
-<g id="23" class="node">
-<title>23</title>
+<!-- 24 -->
+<g id="24" class="node">
+<title>24</title>
 <polygon fill="#85bbf0" stroke="#1168bd" points="527,-539.5 33,-539.5 33,-164.5 527,-164.5 527,-539.5"/>
 <text text-anchor="start" x="111.5" y="-491.3" font-family="Arial" font-size="34.00" fill="#000000">HTTP Request Router</text>
 <text text-anchor="start" x="62" y="-469.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python http.server + route descriptors]</text>
@@ -48,9 +48,9 @@
 <text text-anchor="start" x="113" y="-216.3" font-family="Arial" font-size="24.00" fill="#000000">streaming, disconnect cleanup,</text>
 <text text-anchor="start" x="132.5" y="-192.3" font-family="Arial" font-size="24.00" fill="#000000">CORS, and finite UI assets.</text>
 </g>
-<!-- 24 -->
-<g id="24" class="node">
-<title>24</title>
+<!-- 25 -->
+<g id="25" class="node">
+<title>25</title>
 <polygon fill="#85bbf0" stroke="#1168bd" points="1277,-527.5 876,-527.5 876,-176.5 1277,-176.5 1277,-527.5"/>
 <text text-anchor="start" x="905" y="-479.3" font-family="Arial" font-size="34.00" fill="#000000">Application Use Cases</text>
 <text text-anchor="start" x="987.5" y="-457.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python]</text>
@@ -65,9 +65,9 @@
 <text text-anchor="start" x="911.5" y="-228.3" font-family="Arial" font-size="24.00" fill="#000000">leases without importing HTTP</text>
 <text text-anchor="start" x="932.5" y="-204.3" font-family="Arial" font-size="24.00" fill="#000000">request or response types.</text>
 </g>
-<!-- 23&#45;&gt;24 -->
-<g id="115" class="edge">
-<title>23&#45;&gt;24</title>
+<!-- 24&#45;&gt;25 -->
+<g id="134" class="edge">
+<title>24&#45;&gt;25</title>
 <path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M527.22,-352C635.59,-352 761.59,-352 865.45,-352"/>
 <polygon fill="#707070" stroke="#707070" points="865.75,-355.5 875.75,-352 865.75,-348.5 865.75,-355.5"/>
 <polygon fill="white" stroke="transparent" points="563,-352 563,-438 840,-438 840,-352 563,-352"/>
@@ -75,9 +75,9 @@
 <text text-anchor="start" x="567.5" y="-388.8" font-family="Arial" font-size="24.00" fill="#707070">request&#45;independent use</text>
 <text text-anchor="start" x="625.5" y="-362.8" font-family="Arial" font-size="24.00" fill="#707070">cases through</text>
 </g>
-<!-- 28 -->
-<g id="28" class="node">
-<title>28</title>
+<!-- 29 -->
+<g id="29" class="node">
+<title>29</title>
 <polygon fill="#85bbf0" stroke="#1168bd" points="2167,-515.5 1658,-515.5 1658,-188.5 2167,-188.5 2167,-515.5"/>
 <text text-anchor="start" x="1801" y="-467.3" font-family="Arial" font-size="34.00" fill="#000000">Ingest Pipeline</text>
 <text text-anchor="start" x="1784.5" y="-445.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python + sqlite3]</text>
@@ -91,18 +91,18 @@
 <text text-anchor="start" x="1767.5" y="-240.3" font-family="Arial" font-size="24.00" fill="#000000">and links media references</text>
 <text text-anchor="start" x="1751.5" y="-216.3" font-family="Arial" font-size="24.00" fill="#000000">without touching blob storage.</text>
 </g>
-<!-- 24&#45;&gt;28 -->
-<g id="120" class="edge">
-<title>24&#45;&gt;28</title>
+<!-- 25&#45;&gt;29 -->
+<g id="139" class="edge">
+<title>25&#45;&gt;29</title>
 <path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M1277.26,-352C1388.35,-352 1527.97,-352 1647.92,-352"/>
 <polygon fill="#707070" stroke="#707070" points="1647.99,-355.5 1657.99,-352 1647.99,-348.5 1647.99,-355.5"/>
 <polygon fill="white" stroke="transparent" points="1313,-352 1313,-412 1622,-412 1622,-352 1313,-352"/>
 <text text-anchor="start" x="1317.5" y="-388.8" font-family="Arial" font-size="24.00" fill="#707070">Commits accepted captures</text>
 <text text-anchor="start" x="1426.5" y="-362.8" font-family="Arial" font-size="24.00" fill="#707070">through</text>
 </g>
-<!-- 28&#45;&gt;49 -->
-<g id="130" class="edge">
-<title>28&#45;&gt;49</title>
+<!-- 29&#45;&gt;57 -->
+<g id="148" class="edge">
+<title>29&#45;&gt;57</title>
 <path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M2167.14,-352C2281.81,-352 2415.18,-352 2521.73,-352"/>
 <polygon fill="#707070" stroke="#707070" points="2521.95,-355.5 2531.95,-352 2521.95,-348.5 2521.95,-355.5"/>
 <polygon fill="white" stroke="transparent" points="2203,-352 2203,-451 2496,-451 2496,-352 2203,-352"/>

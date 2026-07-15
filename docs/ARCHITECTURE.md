@@ -164,11 +164,14 @@ The canonical C4 model lives in [`architecture/workspace.dsl`](architecture/work
 | What is the system boundary? | `SystemContext` |
 | How does fast capture move from Chrome to WSL storage? | `CaptureContainers`, `ExtensionCaptureComponents`, `DaemonIngestComponents`, `FastCaptureFlow` |
 | How do browser-side media sidecars work at architecture level? | `BrowserMediaContainers`, `ExtensionMediaComponents`, `CredentialedMediaSidecarFlow` |
-| How does daemon-public media backfill and bounded streaming work? | `DaemonMediaWorkerContainers`, `DaemonMediaComponents`, `DaemonMediaTransportComponents`, `DaemonMediaResourceComponents`, `DaemonPublicMediaWorkerFlow` |
-| How does a recovered guarded media root drain the bounded local spool safely? | `AutomaticSpoolRecoveryFlow`, `DaemonMediaWorkerContainers`, `DaemonMediaComponents` |
+| How does daemon-public media backfill and bounded streaming work? | `DaemonMediaWorkerContainers`, `MediaWorkerComponents`, `DaemonMediaComponents`, `DaemonMediaTransportComponents`, `DaemonMediaResourceComponents`, `DaemonPublicMediaWorkerFlow` |
+| How does a recovered guarded media root drain the bounded local spool safely? | `AutomaticSpoolRecoveryFlow`, `DaemonMediaWorkerContainers`, `MediaWorkerComponents` |
 | How do read/search/forget/doctor operations reach storage? | `OpsContainers`, `DaemonReadComponents`, `DaemonForgetComponents`, `DaemonDoctorComponents` |
+| How does direct storage reconciliation converge durable lifecycle and filesystem state? | `CliStorageReconcileComponents` |
 | How is SQLite version compatibility and migration recovery controlled? | `DaemonMigrationComponents` |
 | How are text-first backup bundles created and restored? | `CliBackupRestoreComponents` |
+| How do HTTP and CLI export the same body-safe X observations without mutation authority? | `DaemonReadComponents`, `CliXObservationExportComponents`, `XObservationExportFlow` |
+| What does daily-driver health verify across services, storage, and protected artifacts? | `DailyDriverHealthFlow`, `DailyDriverDeployment` |
 | What runs where on the daily-driver workstation? | `DailyDriverDeployment` |
 
 Hand-authored Mermaid diagrams for behavior that C4 intentionally omits — policy ladders, redaction branches, state machines, dedupe formulas, endpoint maps, media status/cache semantics, and delete cascades — live in [`DIAGRAMS.md`](DIAGRAMS.md).
@@ -205,9 +208,10 @@ Media status vocabulary and ordinary transition matrices live in `media_models.p
 
 | Need | Diagram/doc |
 |---|---|
-| Architecture-level media topology | [`architecture/c4-diagrams.md`](architecture/c4-diagrams.md): `BrowserMediaContainers`, `ExtensionMediaComponents`, `DaemonMediaWorkerContainers`, `DaemonMediaComponents` |
+| Architecture-level media topology | [`architecture/c4-diagrams.md`](architecture/c4-diagrams.md): `BrowserMediaContainers`, `ExtensionMediaComponents`, `DaemonMediaWorkerContainers`, `MediaWorkerComponents`, `DaemonMediaComponents` |
 | Browser credentialed sidecar scenario | [`architecture/c4-diagrams.md`](architecture/c4-diagrams.md): `CredentialedMediaSidecarFlow` |
 | Daemon-public worker scenario | [`architecture/c4-diagrams.md`](architecture/c4-diagrams.md): `DaemonPublicMediaWorkerFlow` |
+| Guarded-root automatic recovery scenario | [`architecture/c4-diagrams.md`](architecture/c4-diagrams.md): `AutomaticSpoolRecoveryFlow` |
 | Parallel browser/daemon sidecar sequence, status reasons, HLS/CDP details | [`media-artifacts.md`](media-artifacts.md#capture-flow) |
 | Cache/status behavior and provenance-preserving purge | [`DIAGRAMS.md`](DIAGRAMS.md#4-durable-media-sidecars-and-cache-outcomes) |
 

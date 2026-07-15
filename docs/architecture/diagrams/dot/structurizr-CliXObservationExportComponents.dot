@@ -1,0 +1,24 @@
+digraph {
+  compound=true
+  graph [fontname="Arial", rankdir=LR, ranksep=1.0, nodesep=1.0]
+  node [fontname="Arial", shape=box, margin="0.4,0.3"]
+  edge [fontname="Arial"]
+  label=<<br /><font point-size="34">Browser Memory Daemon - CLI - Components</font>>
+
+  4 [id=4,shape=rect, label=<<font point-size="34">Passive X Observation<br />Consumer</font><br /><font point-size="19">[Software System]</font><br /><br /><font point-size="24">A downstream local integration<br />that reads versioned body-safe<br />observation pages without<br />gaining capture, migration, or<br />mutation authority.</font>>, style=filled, color="#6b6b6b", fillcolor="#999999", fontcolor="#ffffff"]
+  57 [id=57,shape=cylinder, label=<<font point-size="34">SQLite + FTS5<br />Database</font><br /><font point-size="19">[Container: SQLite with FTS5]</font><br /><br /><font point-size="24">Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+
+  subgraph cluster_51 {
+    margin=25
+    label=<<font point-size="24"><br />CLI</font><br /><font point-size="19">[Container: Python argparse]</font>>
+    labelloc=b
+    color="#444444"
+    fontcolor="#444444"
+    fillcolor="#444444"
+
+    52 [id=52,shape=rect, label=<<font point-size="34">CLI X Observation<br />Export Adapter</font><br /><font point-size="19">[Component: Python + sqlite3]</font><br /><br /><font point-size="24">Opens the existing database<br />directly through the shared<br />query-only export core without<br />daemon readiness, migrations,<br />token requirements, or audit<br />writes.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
+  }
+
+  52 -> 57 [id=193, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Reads validated<br />observation/evidence pages<br />without writes or audit</font><br /><font point-size="19">[SQLite mode=ro + query_only]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  52 -> 4 [id=194, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Emits losslessly<br />cursorable body-safe pages<br />for</font><br /><font point-size="19">[JSON stdout]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+}

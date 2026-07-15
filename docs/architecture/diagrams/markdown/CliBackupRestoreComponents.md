@@ -20,23 +20,26 @@ graph LR
   subgraph diagram ["Browser Memory Daemon - CLI - Components"]
     style diagram fill:#ffffff,stroke:#ffffff
 
-    49[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
-    style 49 fill:#2f95c8,stroke:#20688c,color:#ffffff
-    50[("<div style='font-weight: bold'>Local Derivative Store</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Reconstructible compatibility<br />evidence such as<br />pre-version-9 clean-text<br />sidecars; new captures create<br />no text sidecars.</div>")]
-    style 50 fill:#2f95c8,stroke:#20688c,color:#ffffff
-    53[("<div style='font-weight: bold'>Local Backup Bundles</div><div style='font-size: 70%; margin-top: 0px'>[Container: Local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Operator-selected local<br />directories containing an<br />online SQLite snapshot,<br />redaction-safe hash manifest,<br />and optional referenced<br />derivatives; media, spool,<br />and secrets excluded by<br />default.</div>")]
-    style 53 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    57[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+    style 57 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    58[("<div style='font-weight: bold'>Local Derivative Store</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Reconstructible compatibility<br />evidence such as<br />pre-version-9 clean-text<br />sidecars; new captures create<br />no text sidecars.</div>")]
+    style 58 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    61[("<div style='font-weight: bold'>Local Backup Bundles</div><div style='font-size: 70%; margin-top: 0px'>[Container: Local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Operator-selected local<br />directories containing an<br />online SQLite snapshot,<br />redaction-safe hash manifest,<br />and optional referenced<br />derivatives; media, spool,<br />and secrets excluded by<br />default.</div>")]
+    style 61 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    62[("<div style='font-weight: bold'>Restored Runtime Root</div><div style='font-size: 70%; margin-top: 0px'>[Container: Local filesystem]</div><div style='font-size: 80%; margin-top:10px'>An explicit absent<br />destination that is privately<br />staged,<br />manifest/schema/semantic<br />verified, and atomically<br />published with restored<br />SQLite authority and optional<br />referenced derivatives only.</div>")]
+    style 62 fill:#2f95c8,stroke:#20688c,color:#ffffff
 
-    subgraph 47 ["CLI"]
-      style 47 fill:#ffffff,stroke:#2e6295,color:#2e6295
+    subgraph 51 ["CLI"]
+      style 51 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
-      48["<div style='font-weight: bold'>Backup and Restore Operator</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python sqlite3 + filesystem]</div><div style='font-size: 80%; margin-top:10px'>Creates dry-run-first SQLite<br />online backup bundles with<br />redaction-safe SHA-256<br />manifests and verifies them<br />into absent runtime roots;<br />optionally carries referenced<br />derivatives and excludes<br />media/spool/secrets.</div>"]
-      style 48 fill:#85bbf0,stroke:#1168bd,color:#000000
+      56["<div style='font-weight: bold'>Backup and Restore Operator</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python sqlite3 + filesystem]</div><div style='font-size: 80%; margin-top:10px'>Creates dry-run-first SQLite<br />online backup bundles with<br />redaction-safe SHA-256<br />manifests and verifies them<br />into absent runtime roots;<br />optionally carries referenced<br />derivatives and excludes API<br />token/config, Chrome<br />profile/extension copy, media<br />cache, and spool.</div>"]
+      style 56 fill:#85bbf0,stroke:#1168bd,color:#000000
     end
 
-    48-. "<div>Creates and validates online<br />SQLite snapshots from</div><div style='font-size: 70%'>[sqlite3 backup API]</div>" .->49
-    48-. "<div>Optionally copies referenced<br />contained derivatives from</div><div style='font-size: 70%'>[Filesystem]</div>" .->50
-    48-. "<div>Atomically publishes and<br />verifies manifests/files in</div><div style='font-size: 70%'>[Filesystem + SHA-256]</div>" .->53
+    56-. "<div>Creates and validates online<br />SQLite snapshots from</div><div style='font-size: 70%'>[sqlite3 backup API]</div>" .->57
+    56-. "<div>Optionally copies referenced<br />contained derivatives from</div><div style='font-size: 70%'>[Filesystem]</div>" .->58
+    56-. "<div>Atomically publishes and<br />verifies manifests/files in</div><div style='font-size: 70%'>[Filesystem + SHA-256]</div>" .->61
+    56-. "<div>Stages, validates, and<br />atomically publishes verified<br />restore output in</div><div style='font-size: 70%'>[Filesystem + SHA-256]</div>" .->62
   end
 ```
 

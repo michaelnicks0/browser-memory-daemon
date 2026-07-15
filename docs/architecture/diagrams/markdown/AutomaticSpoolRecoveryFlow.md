@@ -20,23 +20,23 @@ graph LR
   subgraph diagram ["Browser Memory Daemon - Dynamic"]
     style diagram fill:#ffffff,stroke:#ffffff
 
-    subgraph 4 ["Browser Memory Daemon"]
-      style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
+    subgraph 5 ["Browser Memory Daemon"]
+      style 5 fill:#ffffff,stroke:#0b4884,color:#0b4884
 
-      45["<div style='font-weight: bold'>WSL Media Worker</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11 CLI loop]</div><div style='font-size: 80%; margin-top:10px'>Long-running systemd user<br />worker that first drains one<br />bounded spool-recovery batch<br />when the guarded final root<br />is ready, then leases<br />daemon-public media fetch<br />tasks, fetches public<br />media/HLS without Chrome<br />cookies, classifies terminal<br />states, and updates artifact<br />rows.</div>"]
+      45["<div style='font-weight: bold'>WSL Media Worker</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11 CLI loop]</div><div style='font-size: 80%; margin-top:10px'>Long-running systemd user<br />worker that loads<br />storage/media modules<br />in-process, first drains one<br />bounded spool-recovery batch<br />when the guarded final root<br />is ready, then leases<br />daemon-public media fetch<br />tasks without calling the<br />HTTP daemon.</div>"]
       style 45 fill:#438dd5,stroke:#2e6295,color:#ffffff
-      49[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
-      style 49 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      51[("<div style='font-weight: bold'>Guarded Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL-visible local or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</div>")]
-      style 51 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      52[("<div style='font-weight: bold'>Bounded Local Media Spool</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Opt-in durable outage buffer<br />beneath the local WSL data<br />root; admission counts<br />committed files and distinct<br />in-flight SQLite<br />reservations, and drain<br />verifies bytes before tier<br />transition/source cleanup.</div>")]
-      style 52 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      57[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+      style 57 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      59[("<div style='font-weight: bold'>Guarded Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL-visible local or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</div>")]
+      style 59 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      60[("<div style='font-weight: bold'>Bounded Local Media Spool</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Opt-in durable outage buffer<br />beneath the local WSL data<br />root; admission counts<br />committed files and distinct<br />in-flight SQLite<br />reservations, and drain<br />verifies bytes before tier<br />transition/source cleanup.</div>")]
+      style 60 fill:#2f95c8,stroke:#20688c,color:#ffffff
     end
 
-    45-. "<div>1. After guarded-root<br />readiness, selects one<br />bounded batch of<br />authoritative spooled bytes</div><div style='font-size: 70%'>[Filesystem]</div>" .->52
-    45-. "<div>2. Streams and atomically<br />commits destination bytes<br />after size and SHA-256<br />verification</div><div style='font-size: 70%'>[Filesystem]</div>" .->51
-    45-. "<div>3. Commits the storage-tier<br />switch and spool deletion<br />intent</div><div style='font-size: 70%'>[sqlite3]</div>" .->49
-    45-. "<div>4. Removes the local source<br />only after the tier switch<br />commits</div><div style='font-size: 70%'>[Filesystem]</div>" .->52
+    45-. "<div>1. After guarded-root<br />readiness, selects one<br />bounded batch of<br />authoritative spooled bytes</div><div style='font-size: 70%'>[Filesystem]</div>" .->60
+    45-. "<div>2. Streams and atomically<br />commits destination bytes<br />after size and SHA-256<br />verification</div><div style='font-size: 70%'>[Filesystem]</div>" .->59
+    45-. "<div>3. Commits the storage-tier<br />switch and spool deletion<br />intent</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+    45-. "<div>4. Removes the local source<br />only after the tier switch<br />commits</div><div style='font-size: 70%'>[Filesystem]</div>" .->60
   end
 ```
 

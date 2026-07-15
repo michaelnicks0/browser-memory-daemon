@@ -17,7 +17,7 @@
     {"n": "60", "l": "Test files"},
     {"n": "21", "l": "Top-level CLI commands"},
     {"n": "22", "l": "API route descriptors"},
-    {"n": "26", "l": "C4 views"},
+    {"n": "30", "l": "C4 views"},
     {"n": "0", "l": "Cloud deps"}
   ],
   "features_intro": "The repo is a complete local browser-memory implementation, not a mockup: capture, policy, storage, search, UI, deletion, media sidecars, and real Chrome verification are all present.",

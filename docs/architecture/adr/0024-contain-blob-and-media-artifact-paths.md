@@ -1,12 +1,12 @@
 ---
 id: ADR-0024
-status: accepted
+status: superseded
 date: 2026-07-10
 decision_date: 2026-07-10
 decider: Operator
 scope: repo
 supersedes: []
-superseded_by: []
+superseded_by: [ADR-0037]
 related:
   - docs/security-model.md
   - docs/media-artifacts.md

@@ -187,6 +187,11 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Daemon-public media worker path: worker, SQLite tasks, media cache, and public web/media origins.</td>
 </tr>
 <tr>
+<td><code>MediaWorkerComponents</code></td>
+<td>C3 Component</td>
+<td>In-process worker ordering: bounded automatic spool recovery first, then guarded public-media task leasing/fetch/publication without an HTTP-daemon hop.</td>
+</tr>
+<tr>
 <td><code>OpsContainers</code></td>
 <td>C2 Container</td>
 <td>Operator surfaces and stores: local UI, CLI, daemon, SQLite/FTS, legacy derivatives, guarded media cache, and bounded spool.</td>
@@ -237,14 +242,14 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Process request/byte leases plus persistent cache reservations across upload, fetch, assembly, publication, and response paths.</td>
 </tr>
 <tr>
-<td><code>DaemonMediaOpsComponents</code></td>
+<td><code>CliMediaOpsComponents</code></td>
 <td>C3 Component</td>
-<td>Scoped budget requeue and bounded current-state media reconciliation shared by CLI and worker.</td>
+<td>Direct CLI scoped dry-run-first budget requeue; worker current-state reconciliation is shown inside <code>MediaWorkerComponents</code>.</td>
 </tr>
 <tr>
 <td><code>DaemonReadComponents</code></td>
 <td>C3 Component</td>
-<td>WSL daemon read internals: router, search/read model, query-only X export, SQLite/FTS, legacy derivatives, guarded media cache, and spool.</td>
+<td>WSL daemon read internals: router, search/read model, authenticated query-only HTTP X export adapter, SQLite/FTS, legacy derivatives, guarded media cache, and spool.</td>
 </tr>
 <tr>
 <td><code>DaemonForgetComponents</code></td>
@@ -257,14 +262,24 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>WSL daemon diagnostics internals: router, doctor/audit, SQLite checks, lifecycle health, and derivative/media/spool counts.</td>
 </tr>
 <tr>
-<td><code>DaemonStorageReconcileComponents</code></td>
+<td><code>CliStorageReconcileComponents</code></td>
 <td>C3 Component</td>
-<td>Durable tombstone retry, missing/corrupt/recovered references, contained orphan detection, and stale-stage cleanup.</td>
+<td>Direct CLI durable tombstone retry, missing/corrupt/recovered references, contained orphan detection, and stale-stage cleanup without an HTTP-daemon dependency.</td>
 </tr>
 <tr>
 <td><code>CliBackupRestoreComponents</code></td>
 <td>C3 Component</td>
-<td>CLI online SQLite backup, redaction-safe manifest, optional derivative inclusion, and absent-root restore path.</td>
+<td>CLI online SQLite backup, redaction-safe manifest, optional derivative inclusion, and verified absent-root restore publication.</td>
+</tr>
+<tr>
+<td><code>CliXObservationExportComponents</code></td>
+<td>C3 Component</td>
+<td>Standalone query-only X observation export adapter, SQLite source authority, and downstream body-safe consumer boundary.</td>
+</tr>
+<tr>
+<td><code>DailyDriverHealthFlow</code></td>
+<td>Dynamic</td>
+<td>Daily-driver readiness, database, guarded-root, spool, service/journal, protected artifact, and Windows extension-copy checks without unrelated daemon-store edges.</td>
 </tr>
 <tr>
 <td><code>DaemonMigrationComponents</code></td>
@@ -290,6 +305,11 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td><code>AutomaticSpoolRecoveryFlow</code></td>
 <td>Dynamic</td>
 <td>Guarded-root recovery path that verifies destination bytes, commits the tier switch, and only then removes the local source.</td>
+</tr>
+<tr>
+<td><code>XObservationExportFlow</code></td>
+<td>Dynamic</td>
+<td>Authenticated HTTP and standalone CLI paths to the same query-only, versioned body-safe observation export contract.</td>
 </tr>
 <tr>
 <td><code>DailyDriverDeployment</code></td>
@@ -375,8 +395,8 @@ python3<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;<
 <td><code>docs/media-artifacts.md</code>, <code>extension/src/service_worker.js</code>, <code>daemon/src/browser_memory_daemon/media.py</code></td>
 </tr>
 <tr>
-<td>Daemon media worker leases public media tasks and writes blob/status updates.</td>
-<td><code>daemon/src/browser_memory_daemon/media_worker.py</code>, <code>daemon/src/browser_memory_daemon/media.py</code></td>
+<td>Daemon media worker loads media/storage modules in-process, performs one bounded automatic spool-recovery batch before public task work, and never calls the HTTP daemon for that workflow.</td>
+<td><code>daemon/src/browser_memory_daemon/media_worker.py</code>, <code>daemon/src/browser_memory_daemon/media_storage.py</code>, <code>daemon/src/browser_memory_daemon/media.py</code></td>
 </tr>
 <tr>
 <td>SQLite schema evolution uses an exact version-1 fingerprint, contiguous ledger checksums, and backup-gated destructive steps.</td>
@@ -395,7 +415,11 @@ python3<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;<
 <td><code>daemon/src/browser_memory_daemon/forget.py</code>, <code>daemon/src/browser_memory_daemon/application.py</code>, <code>daemon/src/browser_memory_daemon/cli.py</code>, ADR-0057</td>
 </tr>
 <tr>
-<td>Text-first backup uses SQLite online backup plus a redaction-safe hash manifest and restores into an absent runtime root without media/spool/secrets.</td>
+<td>HTTP and standalone CLI adapters expose the same query-only, versioned body-safe X observation contract; the consumer receives no capture, migration, or mutation authority.</td>
+<td><code>daemon/src/browser_memory_daemon/x_observation_export.py</code>, <code>daemon/src/browser_memory_daemon/http_server.py</code>, <code>daemon/src/browser_memory_daemon/cli.py</code>, ADR-0060</td>
+</tr>
+<tr>
+<td>Text-first backup uses SQLite online backup plus a redaction-safe hash manifest and restores into an absent runtime root without API token/config, Chrome profile/extension copy, media cache, or spool.</td>
 <td><code>daemon/src/browser_memory_daemon/backup_ops.py</code>, <code>daemon/src/browser_memory_daemon/cli.py</code>, <code>daemon/tests/integration/test_backup_restore.py</code>, ADR-0041</td>
 </tr>
 <tr>
@@ -403,15 +427,19 @@ python3<span style="color: #F8F8F2"> </span><span style="color: #E6DB74">&quot;<
 <td><code>ui/app.js</code>, <code>daemon/src/browser_memory_daemon/cli.py</code>, <code>docs/daily-driver-deployment.md</code></td>
 </tr>
 <tr>
-<td>Daily-driver deployment validates and atomically swaps a sibling extension stage, restarts daemon then worker through readiness gates, and restores prior artifacts/service state on caught failure.</td>
-<td><code>scripts/install-daily-driver.sh</code>, <code>daemon/tests/e2e/test_install_daily_driver.py</code>, <code>docs/daily-driver-deployment.md</code>, ADR-0058</td>
+<td>Daily-driver health checks daemon/worker readiness, database and spool state, guarded-root identity/headroom, systemd restart/journal budgets, protected token/env/unit artifacts, and Windows extension-copy consistency without exposing secrets.</td>
+<td><code>daemon/src/browser_memory_daemon/daily_driver_health.py</code>, <code>daemon/tests/unit/test_daily_driver_health.py</code>, <code>docs/daily-driver-deployment.md</code></td>
+</tr>
+<tr>
+<td>Daily-driver deployment validates and atomically swaps a sibling extension stage, restarts daemon then worker through readiness gates without a hard external-media-mount dependency, and restores prior artifacts/service state on caught failure.</td>
+<td><code>scripts/install-daily-driver.sh</code>, <code>daemon/tests/e2e/test_install_daily_driver.py</code>, <code>docs/daily-driver-deployment.md</code>, ADR-0058, ADR-0061</td>
 </tr>
 </tbody>
 </table>
 <h2 id="assumptions-and-tbds">Assumptions and TBDs</h2>
 <ul>
 <li>Deployment view is limited to the documented <strong>Daily-driver local</strong> workstation topology. No separate staging/production topology is modeled.</li>
-<li>Non-runtime deployment artifacts such as the Windows unpacked extension copy and protected token/env files are modeled in the DSL but excluded from the rendered deployment view to keep the runtime topology legible. Durable audit events live in SQLite; there is no separate <code>audit.jsonl</code> deployment node. The WSL CLI and in-browser extension storage are also excluded from the deployment render because their relationships are covered in C2/C3 views and made the deployment topology unreadable.</li>
+<li>Non-runtime deployment artifacts such as the Windows unpacked extension copy and protected token/env files are modeled in the DSL but excluded from the rendered deployment view to keep the runtime topology legible. Durable audit events live in SQLite; there is no separate <code>audit.jsonl</code> deployment node. The WSL CLI and in-browser extension storage are also excluded from the deployment render because their relationships are covered in focused C2/C3/dynamic views and made the deployment topology unreadable. <code>DailyDriverHealthFlow</code> records systemd and protected-artifact checks without pretending those files are independent runtime services.</li>
 <li>Semantic/vector search, MCP/Hermes integration, native messaging transport, encrypted/signed backup bundles, automated backup retention, and multi-source importers are explicitly pending and are not modeled as current runtime containers. Manifest-backed text-first backup/empty-root restore and migration-only online backup are current.</li>
 <li>Chrome extension manual Load unpacked/Reload is an operational step, not a runtime container.</li>
 <li>Final media blobs are modeled as a bounded disposable cache, and the local spool as bounded durable outage buffering; text/FTS/media refs remain authoritative.</li>

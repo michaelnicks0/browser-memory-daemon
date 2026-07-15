@@ -11,14 +11,14 @@
 <polygon fill="white" stroke="transparent" points="-4,4 -4,-637 2754,-637 2754,4 -4,4"/>
 <text text-anchor="start" x="817" y="-11.8" font-family="Arial" font-size="34.00">Browser Memory Daemon &#45; WSL Loopback HTTP Daemon &#45; Components</text>
 <g id="clust1" class="cluster">
-<title>cluster_22</title>
+<title>cluster_23</title>
 <polygon fill="none" stroke="#444444" points="8,-64 8,-625 2742,-625 2742,-64 8,-64"/>
 <text text-anchor="start" x="1209.5" y="-92.8" font-family="Arial" font-size="24.00" fill="#444444">WSL Loopback HTTP Daemon</text>
 <text text-anchor="start" x="1173" y="-72.8" font-family="Arial" font-size="19.00" fill="#444444">[Container: Python 3.11, ThreadingHTTPServer]</text>
 </g>
-<!-- 23 -->
-<g id="23" class="node">
-<title>23</title>
+<!-- 24 -->
+<g id="24" class="node">
+<title>24</title>
 <polygon fill="#85bbf0" stroke="#1168bd" points="527,-569.5 33,-569.5 33,-194.5 527,-194.5 527,-569.5"/>
 <text text-anchor="start" x="111.5" y="-521.3" font-family="Arial" font-size="34.00" fill="#000000">HTTP Request Router</text>
 <text text-anchor="start" x="62" y="-499.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python http.server + route descriptors]</text>
@@ -34,9 +34,9 @@
 <text text-anchor="start" x="113" y="-246.3" font-family="Arial" font-size="24.00" fill="#000000">streaming, disconnect cleanup,</text>
 <text text-anchor="start" x="132.5" y="-222.3" font-family="Arial" font-size="24.00" fill="#000000">CORS, and finite UI assets.</text>
 </g>
-<!-- 24 -->
-<g id="24" class="node">
-<title>24</title>
+<!-- 25 -->
+<g id="25" class="node">
+<title>25</title>
 <polygon fill="#85bbf0" stroke="#1168bd" points="1277,-557.5 876,-557.5 876,-206.5 1277,-206.5 1277,-557.5"/>
 <text text-anchor="start" x="905" y="-509.3" font-family="Arial" font-size="34.00" fill="#000000">Application Use Cases</text>
 <text text-anchor="start" x="987.5" y="-487.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python]</text>
@@ -51,9 +51,9 @@
 <text text-anchor="start" x="911.5" y="-258.3" font-family="Arial" font-size="24.00" fill="#000000">leases without importing HTTP</text>
 <text text-anchor="start" x="932.5" y="-234.3" font-family="Arial" font-size="24.00" fill="#000000">request or response types.</text>
 </g>
-<!-- 23&#45;&gt;24 -->
-<g id="115" class="edge">
-<title>23&#45;&gt;24</title>
+<!-- 24&#45;&gt;25 -->
+<g id="134" class="edge">
+<title>24&#45;&gt;25</title>
 <path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M527.22,-382C635.59,-382 761.59,-382 865.45,-382"/>
 <polygon fill="#707070" stroke="#707070" points="865.75,-385.5 875.75,-382 865.75,-378.5 865.75,-385.5"/>
 <polygon fill="white" stroke="transparent" points="563,-382 563,-468 840,-468 840,-382 563,-382"/>
@@ -61,9 +61,9 @@
 <text text-anchor="start" x="567.5" y="-418.8" font-family="Arial" font-size="24.00" fill="#707070">request&#45;independent use</text>
 <text text-anchor="start" x="625.5" y="-392.8" font-family="Arial" font-size="24.00" fill="#707070">cases through</text>
 </g>
-<!-- 26 -->
-<g id="26" class="node">
-<title>26</title>
+<!-- 27 -->
+<g id="27" class="node">
+<title>27</title>
 <polygon fill="#85bbf0" stroke="#1168bd" points="1966,-395.5 1604,-395.5 1604,-164.5 1966,-164.5 1966,-395.5"/>
 <text text-anchor="start" x="1682" y="-347.3" font-family="Arial" font-size="34.00" fill="#000000">Policy Engine</text>
 <text text-anchor="start" x="1696" y="-325.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python]</text>
@@ -73,18 +73,18 @@
 <text text-anchor="start" x="1643" y="-216.3" font-family="Arial" font-size="24.00" fill="#000000">redacts URL/title/body text</text>
 <text text-anchor="start" x="1693" y="-192.3" font-family="Arial" font-size="24.00" fill="#000000">outside all mode.</text>
 </g>
-<!-- 24&#45;&gt;26 -->
-<g id="117" class="edge">
-<title>24&#45;&gt;26</title>
+<!-- 25&#45;&gt;27 -->
+<g id="136" class="edge">
+<title>25&#45;&gt;27</title>
 <path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M1277.12,-353.18C1376.44,-338.84 1495.87,-321.6 1593.86,-307.45"/>
 <polygon fill="#707070" stroke="#707070" points="1594.48,-310.9 1603.87,-306.01 1593.48,-303.97 1594.48,-310.9"/>
 <polygon fill="white" stroke="transparent" points="1313,-346 1313,-406 1568,-406 1568,-346 1313,-346"/>
 <text text-anchor="start" x="1317.5" y="-382.8" font-family="Arial" font-size="24.00" fill="#707070">Gets capture decisions</text>
 <text text-anchor="start" x="1416.5" y="-356.8" font-family="Arial" font-size="24.00" fill="#707070">from</text>
 </g>
-<!-- 27 -->
-<g id="27" class="node">
-<title>27</title>
+<!-- 28 -->
+<g id="28" class="node">
+<title>28</title>
 <polygon fill="#85bbf0" stroke="#1168bd" points="2717,-545.5 2335,-545.5 2335,-338.5 2717,-338.5 2717,-545.5"/>
 <text text-anchor="start" x="2435" y="-497.3" font-family="Arial" font-size="34.00" fill="#000000">Policy Store</text>
 <text text-anchor="start" x="2396.5" y="-475.3" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python + SQLite]</text>
@@ -93,18 +93,18 @@
 <text text-anchor="start" x="2364" y="-390.3" font-family="Arial" font-size="24.00" fill="#000000">and URL&#45;prefix rules for every</text>
 <text text-anchor="start" x="2458" y="-366.3" font-family="Arial" font-size="24.00" fill="#000000">policy mode.</text>
 </g>
-<!-- 24&#45;&gt;27 -->
-<g id="119" class="edge">
-<title>24&#45;&gt;27</title>
+<!-- 25&#45;&gt;28 -->
+<g id="138" class="edge">
+<title>25&#45;&gt;28</title>
 <path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M1277.05,-419.21C1289.19,-420.97 1301.25,-422.59 1313,-424 1748.52,-476.25 1861.03,-491.15 2299,-467 2307.43,-466.54 2316.03,-465.97 2324.7,-465.33"/>
 <polygon fill="#707070" stroke="#707070" points="2325.22,-468.81 2334.92,-464.55 2324.69,-461.83 2325.22,-468.81"/>
 <polygon fill="white" stroke="transparent" points="1667,-478 1667,-538 1903,-538 1903,-478 1667,-478"/>
 <text text-anchor="start" x="1671" y="-514.8" font-family="Arial" font-size="24.00" fill="#707070">Manages policy rules</text>
 <text text-anchor="start" x="1743.5" y="-488.8" font-family="Arial" font-size="24.00" fill="#707070">through</text>
 </g>
-<!-- 26&#45;&gt;27 -->
-<g id="129" class="edge">
-<title>26&#45;&gt;27</title>
+<!-- 27&#45;&gt;28 -->
+<g id="147" class="edge">
+<title>27&#45;&gt;28</title>
 <path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M1966.31,-319.53C2074.77,-343.3 2213.01,-373.61 2324.84,-398.12"/>
 <polygon fill="#707070" stroke="#707070" points="2324.37,-401.6 2334.89,-400.33 2325.87,-394.77 2324.37,-401.6"/>
 <polygon fill="white" stroke="transparent" points="2002,-389 2002,-449 2299,-449 2299,-389 2002,-389"/>

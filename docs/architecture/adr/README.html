@@ -166,8 +166,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td><a href="0006-use-forget-cascade-with-deletion-receipts.html">ADR-0006</a></td>
-<td>superseded by ADR-0040</td>
-<td>Use forget/delete cascades with deletion receipts.</td>
+<td>superseded</td>
+<td>Use forget/delete cascades with deletion receipts. Superseded by <a href="0040-use-durable-deletion-intents-and-reconciliation.html">ADR-0040</a>.</td>
 </tr>
 <tr>
 <td><a href="0007-use-real-chrome-e2e-as-verification-authority.html">ADR-0007</a></td>
@@ -236,13 +236,13 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td><a href="0020-enforce-static-requirement-traceability-gate.html">ADR-0020</a></td>
-<td>superseded by ADR-0027</td>
-<td>Enforce static requirement traceability in the generated test inventory gate.</td>
+<td>superseded</td>
+<td>Enforce static requirement traceability in the generated test inventory gate. Superseded by <a href="0027-use-canonical-semantic-requirement-catalog.html">ADR-0027</a>.</td>
 </tr>
 <tr>
 <td><a href="0021-use-configurable-nas-blob-root-with-local-sqlite.html">ADR-0021</a></td>
-<td>superseded by ADR-0039</td>
-<td>Use a configurable NAS-capable blob root while keeping SQLite/WAL local.</td>
+<td>superseded</td>
+<td>Use a configurable NAS-capable blob root while keeping SQLite/WAL local. Superseded by <a href="0039-split-media-root-and-add-bounded-durable-spool.html">ADR-0039</a>.</td>
 </tr>
 <tr>
 <td><a href="0022-use-fast-doctor-and-media-queue-health-telemetry.html">ADR-0022</a></td>
@@ -251,18 +251,18 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td><a href="0023-guard-daemon-public-media-egress.html">ADR-0023</a></td>
-<td>superseded by ADR-0045</td>
-<td>Guard daemon-public media egress.</td>
+<td>superseded</td>
+<td>Guard daemon-public media egress. Superseded by <a href="0045-isolate-guarded-media-fetch-and-hls.html">ADR-0045</a>.</td>
 </tr>
 <tr>
 <td><a href="0024-contain-blob-and-media-artifact-paths.html">ADR-0024</a></td>
-<td>accepted</td>
-<td>Contain blob and media artifact paths.</td>
+<td>superseded</td>
+<td>Contain blob and media artifact paths. Superseded by <a href="0037-expand-blob-references-with-relative-locators.html">ADR-0037</a>.</td>
 </tr>
 <tr>
 <td><a href="0025-literal-policy-aware-forget-selectors.html">ADR-0025</a></td>
-<td>superseded by ADR-0057</td>
-<td>Use literal and policy-aware forget selectors.</td>
+<td>superseded</td>
+<td>Use literal and policy-aware forget selectors. Superseded by <a href="0057-preview-and-bound-forget-selection.html">ADR-0057</a>.</td>
 </tr>
 <tr>
 <td><a href="0026-harden-loopback-ui-and-required-blob-mounts.html">ADR-0026</a></td>
@@ -331,8 +331,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td><a href="0039-split-media-root-and-add-bounded-durable-spool.html">ADR-0039</a></td>
-<td>superseded by ADR-0061</td>
-<td>Split derivative and media roots, guard external identity, and bound local outage buffering.</td>
+<td>superseded</td>
+<td>Split derivative and media roots, guard external identity, and bound local outage buffering. Superseded by <a href="0061-automatically-drain-bounded-media-spool-after-root-recovery.html">ADR-0061</a>.</td>
 </tr>
 <tr>
 <td><a href="0040-use-durable-deletion-intents-and-reconciliation.html">ADR-0040</a></td>
@@ -444,10 +444,153 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>accepted</td>
 <td>Automatically drain the bounded local media spool after the guarded final root recovers.</td>
 </tr>
+<tr>
+<td><a href="0062-reject-ambiguous-or-truncated-http-request-bodies.html">ADR-0062</a></td>
+<td>accepted</td>
+<td>Reject ambiguous, oversized, missing-required, or truncated HTTP request bodies before application use cases.</td>
+</tr>
 </tbody>
 </table>
 <h2 id="backfilled-decision-history">Backfilled decision history</h2>
 <p>ADR-0002 through ADR-0008 are historical backfills recorded on 2026-06-14 from repo docs, code, tests, and git history. They did not introduce new runtime behavior; they document already-accepted architecture decisions so future changes can cite, comply with, or supersede them.</p>
+<p>ADR-0062 was backfilled on 2026-07-14 to record the strict HTTP request-body framing contract implemented and tested by commit <code>5161aa8a</code>; it likewise introduces no new runtime behavior.</p>
+<p>The repository history was later rewritten while preserving those changes. The accepted ADR bodies retain their originally recorded short hashes; use this immutable errata map when resolving them against current history:</p>
+<table>
+<thead>
+<tr>
+<th>Recorded hash</th>
+<th>Current hash</th>
+<th>Current commit subject</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>2ba4373</code></td>
+<td><code>27468b6</code></td>
+<td><code>feat: bootstrap browser memory daemon</code></td>
+</tr>
+<tr>
+<td><code>2c2b76b</code></td>
+<td><code>1ca4e00</code></td>
+<td><code>test: add real Windows Chrome extension e2e</code></td>
+</tr>
+<tr>
+<td><code>fb025df</code></td>
+<td><code>4921b61</code></td>
+<td><code>ops: add daily-driver Chrome deployment helper</code></td>
+</tr>
+<tr>
+<td><code>29410de</code></td>
+<td><code>aa560ec</code></td>
+<td><code>feat: add local memory UI and ops APIs</code></td>
+</tr>
+<tr>
+<td><code>26f0202</code></td>
+<td><code>2b010ee</code></td>
+<td><code>feat: add adjustable capture policy modes</code></td>
+</tr>
+<tr>
+<td><code>39fced1</code></td>
+<td><code>21d19b6</code></td>
+<td><code>feat: add capture dedupe and URL normalization tests</code></td>
+</tr>
+<tr>
+<td><code>a1ff667</code></td>
+<td><code>0824266</code></td>
+<td><code>docs: model browser memory storage growth</code></td>
+</tr>
+<tr>
+<td><code>b6446d6</code></td>
+<td><code>6b7349b</code></td>
+<td><code>feat: store related media artifacts</code></td>
+</tr>
+<tr>
+<td><code>d8eea55</code></td>
+<td><code>320d87c</code></td>
+<td><code>feat: fetch pending media artifacts in daemon</code></td>
+</tr>
+<tr>
+<td><code>fa6dc26</code></td>
+<td><code>e4b9368</code></td>
+<td><code>docs: plan durable media sidecars</code></td>
+</tr>
+<tr>
+<td><code>04e6482</code></td>
+<td><code>c0510e5</code></td>
+<td><code>feat: add durable media sidecars</code></td>
+</tr>
+<tr>
+<td><code>ab38213</code></td>
+<td><code>cef7cc5</code></td>
+<td><code>Harden media sidecar retrieval</code></td>
+</tr>
+<tr>
+<td><code>77d8f3d</code></td>
+<td><code>ce97633</code></td>
+<td><code>Add HLS media backfill and normalize video skips</code></td>
+</tr>
+<tr>
+<td><code>061e490</code></td>
+<td><code>0ccf2bc</code></td>
+<td><code>Add CDP recorder for X video media</code></td>
+</tr>
+<tr>
+<td><code>97b0e81</code></td>
+<td><code>a31b3c7</code></td>
+<td><code>Store HLS audio sidecars and classify blob video refs</code></td>
+</tr>
+<tr>
+<td><code>969a20d</code></td>
+<td><code>f875779</code></td>
+<td><code>Raise media cache caps and add rolling eviction</code></td>
+</tr>
+<tr>
+<td><code>e85da5b</code></td>
+<td><code>0b05dc3</code></td>
+<td><code>Fold media sidecar design into architecture</code></td>
+</tr>
+<tr>
+<td><code>a384d41</code></td>
+<td><code>43d4af1</code></td>
+<td><code>docs: note Chrome CDP profile caveat</code></td>
+</tr>
+<tr>
+<td><code>dfeb585</code></td>
+<td><code>0811045</code></td>
+<td><code>docs: record daily-driver Chrome install results</code></td>
+</tr>
+<tr>
+<td><code>2ee7dd1</code></td>
+<td><code>4e88ee4</code></td>
+<td><code>docs: add C4 architecture model</code></td>
+</tr>
+<tr>
+<td><code>ae36fbf</code></td>
+<td><code>8b7697a</code></td>
+<td><code>docs: add markdown C4 diagram wrappers</code></td>
+</tr>
+<tr>
+<td><code>3e4df5c</code></td>
+<td><code>b054b49</code></td>
+<td><code>docs: clean C4 diagram renders</code></td>
+</tr>
+<tr>
+<td><code>cbef41c</code></td>
+<td><code>7ae5427</code></td>
+<td><code>docs: add combined C4 diagram atlas</code></td>
+</tr>
+<tr>
+<td><code>a25289f</code></td>
+<td><code>9ce7feb</code></td>
+<td><code>docs: reconcile C4 and behavioral diagrams</code></td>
+</tr>
+<tr>
+<td><code>23cd82d</code></td>
+<td><code>3b44e33</code></td>
+<td><code>docs: move C4 architecture under docs</code></td>
+</tr>
+</tbody>
+</table>
 <p>Backfill verification run on 2026-06-14:</p>
 <ul>
 <li>ADR lint and repo Markdown fence check passed.</li>
@@ -455,6 +598,13 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li><code>./scripts/secret-scan.sh</code> passed.</li>
 <li><code>BMD_SKIP_REAL_CHROME_E2E=1 ./scripts/run-e2e.sh</code> passed using a temporary Python 3.11 shim because the host <code>python3</code> is Python 3.8 while this repo declares <code>requires-python = "&gt;=3.11"</code>.</li>
 </ul>
+<h2 id="metadata-compatibility">Metadata compatibility</h2>
+<p>New ADRs must use the YAML frontmatter in <a href="template.html"><code>template.md</code></a>, including an <code>ADR-NNNN</code> ID and explicit supersession arrays. The historical ledger also contains two readable legacy encodings that tooling must preserve rather than mass-rewrite:</p>
+<ul>
+<li>ADR-0028 through ADR-0039 use legacy YAML without an <code>id</code> field.</li>
+<li>ADR-0042 through ADR-0056 use a short inline metadata list below the title.</li>
+</ul>
+<p>Status/index checks may read those encodings, but accepted decision bodies remain immutable except for status, supersession, references, verification metadata, and explicit errata in this index.</p>
 <h2 id="when-to-create-or-supersede-an-adr">When to create or supersede an ADR</h2>
 <p>Create or supersede an ADR when a change affects:</p>
 <ul>

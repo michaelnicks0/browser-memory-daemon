@@ -11,14 +11,14 @@
 <polygon fill="white" stroke="transparent" points="-4,4 -4,-2099.69 3810,-2099.69 3810,4 -4,4"/>
 <text text-anchor="start" x="1345" y="-11.8" font-family="Arial" font-size="34.00">Browser Memory Daemon &#45; WSL Loopback HTTP Daemon &#45; Components</text>
 <g id="clust1" class="cluster">
-<title>cluster_22</title>
+<title>cluster_23</title>
 <polygon fill="none" stroke="#444444" points="8,-1586.69 8,-2087.69 3065,-2087.69 3065,-1586.69 8,-1586.69"/>
 <text text-anchor="start" x="1371" y="-1615.49" font-family="Arial" font-size="24.00" fill="#444444">WSL Loopback HTTP Daemon</text>
 <text text-anchor="start" x="1334.5" y="-1595.49" font-family="Arial" font-size="19.00" fill="#444444">[Container: Python 3.11, ThreadingHTTPServer]</text>
 </g>
-<!-- 49 -->
-<g id="49" class="node">
-<title>49</title>
+<!-- 57 -->
+<g id="57" class="node">
+<title>57</title>
 <path fill="#2f95c8" stroke="#20688c" d="M3806,-1854.9C3806,-1873.2 3723.08,-1888.06 3621,-1888.06 3518.92,-1888.06 3436,-1873.2 3436,-1854.9 3436,-1854.9 3436,-1556.47 3436,-1556.47 3436,-1538.17 3518.92,-1523.31 3621,-1523.31 3723.08,-1523.31 3806,-1538.17 3806,-1556.47 3806,-1556.47 3806,-1854.9 3806,-1854.9"/>
 <path fill="none" stroke="#20688c" d="M3806,-1854.9C3806,-1836.61 3723.08,-1821.74 3621,-1821.74 3518.92,-1821.74 3436,-1836.61 3436,-1854.9"/>
 <text text-anchor="start" x="3508" y="-1789.99" font-family="Arial" font-size="34.00" fill="#ffffff">SQLite + FTS5</text>
@@ -30,9 +30,9 @@
 <text text-anchor="start" x="3475" y="-1624.99" font-family="Arial" font-size="24.00" fill="#ffffff">and immutable observation</text>
 <text text-anchor="start" x="3523" y="-1600.99" font-family="Arial" font-size="24.00" fill="#ffffff">ingest sequences.</text>
 </g>
-<!-- 50 -->
-<g id="50" class="node">
-<title>50</title>
+<!-- 58 -->
+<g id="58" class="node">
+<title>58</title>
 <path fill="#2f95c8" stroke="#20688c" d="M2921,-1424.9C2921,-1443.2 2832.48,-1458.06 2723.5,-1458.06 2614.52,-1458.06 2526,-1443.2 2526,-1424.9 2526,-1424.9 2526,-1126.47 2526,-1126.47 2526,-1108.17 2614.52,-1093.31 2723.5,-1093.31 2832.48,-1093.31 2921,-1108.17 2921,-1126.47 2921,-1126.47 2921,-1424.9 2921,-1424.9"/>
 <path fill="none" stroke="#20688c" d="M2921,-1424.9C2921,-1406.61 2832.48,-1391.74 2723.5,-1391.74 2614.52,-1391.74 2526,-1406.61 2526,-1424.9"/>
 <text text-anchor="start" x="2602" y="-1359.99" font-family="Arial" font-size="34.00" fill="#ffffff">Local Derivative</text>
@@ -44,9 +44,9 @@
 <text text-anchor="start" x="2600" y="-1194.99" font-family="Arial" font-size="24.00" fill="#ffffff">captures create no text</text>
 <text text-anchor="start" x="2675" y="-1170.99" font-family="Arial" font-size="24.00" fill="#ffffff">sidecars.</text>
 </g>
-<!-- 51 -->
-<g id="51" class="node">
-<title>51</title>
+<!-- 59 -->
+<g id="59" class="node">
+<title>59</title>
 <path fill="#2f95c8" stroke="#20688c" d="M2995.5,-982.9C2995.5,-1004.51 2873.59,-1022.06 2723.5,-1022.06 2573.41,-1022.06 2451.5,-1004.51 2451.5,-982.9 2451.5,-982.9 2451.5,-630.47 2451.5,-630.47 2451.5,-608.86 2573.41,-591.31 2723.5,-591.31 2873.59,-591.31 2995.5,-608.86 2995.5,-630.47 2995.5,-630.47 2995.5,-982.9 2995.5,-982.9"/>
 <path fill="none" stroke="#20688c" d="M2995.5,-982.9C2995.5,-961.3 2873.59,-943.74 2723.5,-943.74 2573.41,-943.74 2451.5,-961.3 2451.5,-982.9"/>
 <text text-anchor="start" x="2568" y="-914.99" font-family="Arial" font-size="34.00" fill="#ffffff">Guarded Media Blob</text>
@@ -60,9 +60,9 @@
 <text text-anchor="start" x="2574" y="-701.99" font-family="Arial" font-size="24.00" fill="#ffffff">identity&#45;marker proof before</text>
 <text text-anchor="start" x="2682.5" y="-677.99" font-family="Arial" font-size="24.00" fill="#ffffff">access.</text>
 </g>
-<!-- 52 -->
-<g id="52" class="node">
-<title>52</title>
+<!-- 60 -->
+<g id="60" class="node">
+<title>60</title>
 <path fill="#2f95c8" stroke="#20688c" d="M2916.5,-477.4C2916.5,-500.67 2829.99,-519.56 2723.5,-519.56 2617.01,-519.56 2530.5,-500.67 2530.5,-477.4 2530.5,-477.4 2530.5,-97.97 2530.5,-97.97 2530.5,-74.71 2617.01,-55.81 2723.5,-55.81 2829.99,-55.81 2916.5,-74.71 2916.5,-97.97 2916.5,-97.97 2916.5,-477.4 2916.5,-477.4"/>
 <path fill="none" stroke="#20688c" d="M2916.5,-477.4C2916.5,-454.14 2829.99,-435.24 2723.5,-435.24 2617.01,-435.24 2530.5,-454.14 2530.5,-477.4"/>
 <text text-anchor="start" x="2559.5" y="-407.99" font-family="Arial" font-size="34.00" fill="#ffffff">Bounded Local Media</text>
@@ -77,9 +77,9 @@
 <text text-anchor="start" x="2576" y="-170.99" font-family="Arial" font-size="24.00" fill="#ffffff">before tier transition/source</text>
 <text text-anchor="start" x="2677.5" y="-146.99" font-family="Arial" font-size="24.00" fill="#ffffff">cleanup.</text>
 </g>
-<!-- 23 -->
-<g id="23" class="node">
-<title>23</title>
+<!-- 24 -->
+<g id="24" class="node">
+<title>24</title>
 <polygon fill="#85bbf0" stroke="#1168bd" points="527,-2062.19 33,-2062.19 33,-1687.19 527,-1687.19 527,-2062.19"/>
 <text text-anchor="start" x="111.5" y="-2013.99" font-family="Arial" font-size="34.00" fill="#000000">HTTP Request Router</text>
 <text text-anchor="start" x="62" y="-1991.99" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python http.server + route descriptors]</text>
@@ -95,9 +95,9 @@
 <text text-anchor="start" x="113" y="-1738.99" font-family="Arial" font-size="24.00" fill="#000000">streaming, disconnect cleanup,</text>
 <text text-anchor="start" x="132.5" y="-1714.99" font-family="Arial" font-size="24.00" fill="#000000">CORS, and finite UI assets.</text>
 </g>
-<!-- 24 -->
-<g id="24" class="node">
-<title>24</title>
+<!-- 25 -->
+<g id="25" class="node">
+<title>25</title>
 <polygon fill="#85bbf0" stroke="#1168bd" points="1277,-2044.19 876,-2044.19 876,-1693.19 1277,-1693.19 1277,-2044.19"/>
 <text text-anchor="start" x="905" y="-1995.99" font-family="Arial" font-size="34.00" fill="#000000">Application Use Cases</text>
 <text text-anchor="start" x="987.5" y="-1973.99" font-family="Arial" font-size="19.00" fill="#000000">[Component: Python]</text>
@@ -112,9 +112,9 @@
 <text text-anchor="start" x="911.5" y="-1744.99" font-family="Arial" font-size="24.00" fill="#000000">leases without importing HTTP</text>
 <text text-anchor="start" x="932.5" y="-1720.99" font-family="Arial" font-size="24.00" fill="#000000">request or response types.</text>
 </g>
-<!-- 23&#45;&gt;24 -->
-<g id="115" class="edge">
-<title>23&#45;&gt;24</title>
+<!-- 24&#45;&gt;25 -->
+<g id="134" class="edge">
+<title>24&#45;&gt;25</title>
 <path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M527.22,-1872.83C635.59,-1872.01 761.59,-1871.06 865.45,-1870.27"/>
 <polygon fill="#707070" stroke="#707070" points="865.78,-1873.77 875.75,-1870.2 865.72,-1866.77 865.78,-1873.77"/>
 <polygon fill="white" stroke="transparent" points="563,-1871.69 563,-1957.69 840,-1957.69 840,-1871.69 563,-1871.69"/>
@@ -136,9 +136,9 @@
 <text text-anchor="start" x="1665" y="-1738.99" font-family="Arial" font-size="24.00" fill="#000000">and writes metadata&#45;only audit</text>
 <text text-anchor="start" x="1737.5" y="-1714.99" font-family="Arial" font-size="24.00" fill="#000000">events to SQLite.</text>
 </g>
-<!-- 24&#45;&gt;44 -->
-<g id="128" class="edge">
-<title>24&#45;&gt;44</title>
+<!-- 25&#45;&gt;44 -->
+<g id="146" class="edge">
+<title>25&#45;&gt;44</title>
 <path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M1277.05,-1857.54C1384.75,-1851.53 1517.44,-1844.12 1625.77,-1838.07"/>
 <polygon fill="#707070" stroke="#707070" points="1626.06,-1841.56 1635.85,-1837.5 1625.67,-1834.57 1626.06,-1841.56"/>
 <polygon fill="white" stroke="transparent" points="1313,-1854.69 1313,-1914.69 1600,-1914.69 1600,-1854.69 1313,-1854.69"/>
@@ -160,9 +160,9 @@
 <text text-anchor="start" x="2575" y="-1800.99" font-family="Arial" font-size="24.00" fill="#000000">detects missing refs, in&#45;root</text>
 <text text-anchor="start" x="2581" y="-1776.99" font-family="Arial" font-size="24.00" fill="#000000">orphans, and stale stages.</text>
 </g>
-<!-- 40&#45;&gt;49 -->
-<g id="160" class="edge">
-<title>40&#45;&gt;49</title>
+<!-- 40&#45;&gt;57 -->
+<g id="176" class="edge">
+<title>40&#45;&gt;57</title>
 <path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M3040.22,-1835.17C3168.9,-1806.43 3313.57,-1774.13 3426.2,-1748.97"/>
 <polygon fill="#707070" stroke="#707070" points="3426.97,-1752.39 3435.97,-1746.79 3425.44,-1745.55 3426.97,-1752.39"/>
 <polygon fill="white" stroke="transparent" points="3076,-1822.69 3076,-1897.69 3400,-1897.69 3400,-1822.69 3076,-1822.69"/>
@@ -170,9 +170,9 @@
 <text text-anchor="start" x="3112" y="-1850.99" font-family="Arial" font-size="24.00" fill="#707070">blob lifecycle records in</text>
 <text text-anchor="start" x="3204.5" y="-1830.99" font-family="Arial" font-size="19.00" fill="#707070">[sqlite3]</text>
 </g>
-<!-- 44&#45;&gt;49 -->
-<g id="165" class="edge">
-<title>44&#45;&gt;49</title>
+<!-- 44&#45;&gt;57 -->
+<g id="181" class="edge">
+<title>44&#45;&gt;57</title>
 <path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M2025.14,-1746.47C2135.03,-1705.29 2276.34,-1659.49 2407,-1638.69 2763.44,-1581.94 3185.37,-1631 3425.96,-1669.77"/>
 <polygon fill="#707070" stroke="#707070" points="3425.43,-1673.23 3435.86,-1671.37 3426.55,-1666.32 3425.43,-1673.23"/>
 <polygon fill="white" stroke="transparent" points="2609.5,-1638.69 2609.5,-1713.69 2837.5,-1713.69 2837.5,-1638.69 2609.5,-1638.69"/>
@@ -180,27 +180,27 @@
 <text text-anchor="start" x="2675" y="-1666.99" font-family="Arial" font-size="24.00" fill="#707070">counts in</text>
 <text text-anchor="start" x="2690" y="-1646.99" font-family="Arial" font-size="19.00" fill="#707070">[sqlite3]</text>
 </g>
-<!-- 44&#45;&gt;50 -->
-<g id="167" class="edge">
-<title>44&#45;&gt;50</title>
+<!-- 44&#45;&gt;58 -->
+<g id="183" class="edge">
+<title>44&#45;&gt;58</title>
 <path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M1900.86,-1687.03C1939.89,-1620.91 1994.25,-1545.67 2061,-1495.69 2194.74,-1395.52 2376.63,-1339.41 2515.83,-1308.97"/>
 <polygon fill="#707070" stroke="#707070" points="2516.74,-1312.35 2525.77,-1306.82 2515.26,-1305.51 2516.74,-1312.35"/>
 <polygon fill="white" stroke="transparent" points="2087,-1495.69 2087,-1546.69 2345,-1546.69 2345,-1495.69 2087,-1495.69"/>
 <text text-anchor="start" x="2091" y="-1523.99" font-family="Arial" font-size="24.00" fill="#707070">Counts text blob files in</text>
 <text text-anchor="start" x="2164.5" y="-1503.99" font-family="Arial" font-size="19.00" fill="#707070">[Filesystem]</text>
 </g>
-<!-- 44&#45;&gt;51 -->
-<g id="168" class="edge">
-<title>44&#45;&gt;51</title>
+<!-- 44&#45;&gt;59 -->
+<g id="184" class="edge">
+<title>44&#45;&gt;59</title>
 <path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M1866.78,-1687.16C1901.68,-1569.42 1964.07,-1401.12 2061,-1279.69 2164.64,-1149.85 2312.75,-1039.44 2442.57,-958.03"/>
 <polygon fill="#707070" stroke="#707070" points="2444.46,-960.98 2451.09,-952.71 2440.75,-955.04 2444.46,-960.98"/>
 <polygon fill="white" stroke="transparent" points="2073.5,-1279.69 2073.5,-1330.69 2358.5,-1330.69 2358.5,-1279.69 2073.5,-1279.69"/>
 <text text-anchor="start" x="2078" y="-1307.99" font-family="Arial" font-size="24.00" fill="#707070">Counts media blob files in</text>
 <text text-anchor="start" x="2165" y="-1287.99" font-family="Arial" font-size="19.00" fill="#707070">[Filesystem]</text>
 </g>
-<!-- 44&#45;&gt;52 -->
-<g id="169" class="edge">
-<title>44&#45;&gt;52</title>
+<!-- 44&#45;&gt;60 -->
+<g id="185" class="edge">
+<title>44&#45;&gt;60</title>
 <path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M1842.37,-1687.09C1862.2,-1497.56 1916.55,-1153.28 2061,-898.69 2173.25,-700.85 2371.59,-530.52 2521.9,-420.35"/>
 <polygon fill="#707070" stroke="#707070" points="2524.36,-422.88 2530.37,-414.16 2520.23,-417.23 2524.36,-422.88"/>
 <polygon fill="white" stroke="transparent" points="2071,-898.69 2071,-997.69 2361,-997.69 2361,-898.69 2071,-898.69"/>
@@ -210,7 +210,7 @@
 <text text-anchor="start" x="2164.5" y="-906.99" font-family="Arial" font-size="19.00" fill="#707070">[Filesystem]</text>
 </g>
 <!-- 44&#45;&gt;40 -->
-<g id="166" class="edge">
+<g id="182" class="edge">
 <title>44&#45;&gt;40</title>
 <path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M2025.11,-1843.85C2133.63,-1853.48 2271.85,-1865.73 2396.58,-1876.79"/>
 <polygon fill="#707070" stroke="#707070" points="2396.41,-1880.29 2406.68,-1877.69 2397.03,-1873.32 2396.41,-1880.29"/>

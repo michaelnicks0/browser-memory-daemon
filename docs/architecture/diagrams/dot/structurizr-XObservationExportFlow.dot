@@ -1,0 +1,29 @@
+digraph {
+  compound=true
+  graph [fontname="Arial", rankdir=LR, ranksep=1.0, nodesep=1.0]
+  node [fontname="Arial", shape=box, margin="0.4,0.3"]
+  edge [fontname="Arial"]
+  label=<<br /><font point-size="34">Browser Memory Daemon - Dynamic</font>>
+
+  subgraph cluster_5 {
+    margin=25
+    label=<<font point-size="24"><br />Browser Memory Daemon</font><br /><font point-size="19">[Software System]</font>>
+    labelloc=b
+    color="#444444"
+    fontcolor="#444444"
+    fillcolor="#444444"
+
+    23 [id=23,shape=rect, label=<<font point-size="34">WSL Loopback HTTP<br />Daemon</font><br /><font point-size="19">[Container: Python 3.11, ThreadingHTTPServer]</font><br /><br /><font point-size="24">Authenticated loopback API for<br />capture, read/admin/media<br />operations, and query-only<br />bmd.x-observations v1 export.</font>>, style=filled, color="#2e6295", fillcolor="#438dd5", fontcolor="#ffffff"]
+    51 [id=51,shape=rect, label=<<font point-size="34">CLI</font><br /><font point-size="19">[Container: Python argparse]</font><br /><br /><font point-size="24">Command-line interface for<br />serving/admin operations,<br />direct storage/health<br />workflows, and standalone<br />mutation-free X observation<br />export.</font>>, style=filled, color="#2e6295", fillcolor="#438dd5", fontcolor="#ffffff"]
+    57 [id=57,shape=cylinder, label=<<font point-size="34">SQLite + FTS5<br />Database</font><br /><font point-size="19">[Container: SQLite with FTS5]</font><br /><br /><font point-size="24">Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+  }
+
+  1 [id=1,shape=rect, label=<<font point-size="34">Operator</font><br /><font point-size="19">[Person]</font><br /><br /><font point-size="24">Sole local operator who<br />browses with Windows<br />Chrome and searches,<br />reviews, and deletes local<br />browser-memory records.</font>>, style=filled, color="#052e56", fillcolor="#08427b", fontcolor="#ffffff"]
+  4 [id=4,shape=rect, label=<<font point-size="34">Passive X Observation<br />Consumer</font><br /><font point-size="19">[Software System]</font><br /><br /><font point-size="24">A downstream local integration<br />that reads versioned body-safe<br />observation pages without<br />gaining capture, migration, or<br />mutation authority.</font>>, style=filled, color="#6b6b6b", fillcolor="#999999", fontcolor="#ffffff"]
+
+  4 -> 23 [id=67, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">1. Requests one<br />authenticated cursor page<br />over HTTP</font><br /><font point-size="19">[HTTP/JSON]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  23 -> 57 [id=83, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">2. Reads through the<br />query-only export core<br />without audit writes</font><br /><font point-size="19">[sqlite3]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  1 -> 51 [id=65, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">3. Runs standalone export<br />without daemon readiness<br />or token bootstrap</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  51 -> 57 [id=77, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">4. Opens the existing<br />database<br />mode=ro/query_only</font><br /><font point-size="19">[sqlite3]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  51 -> 4 [id=81, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">5. Emits the same<br />schema-versioned body-safe<br />page on stdout</font><br /><font point-size="19">[JSON stdout]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+}

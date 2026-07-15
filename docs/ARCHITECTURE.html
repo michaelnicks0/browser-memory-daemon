@@ -953,15 +953,19 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>How does daemon-public media backfill and bounded streaming work?</td>
-<td><code>DaemonMediaWorkerContainers</code>, <code>DaemonMediaComponents</code>, <code>DaemonMediaTransportComponents</code>, <code>DaemonMediaResourceComponents</code>, <code>DaemonPublicMediaWorkerFlow</code></td>
+<td><code>DaemonMediaWorkerContainers</code>, <code>MediaWorkerComponents</code>, <code>DaemonMediaComponents</code>, <code>DaemonMediaTransportComponents</code>, <code>DaemonMediaResourceComponents</code>, <code>DaemonPublicMediaWorkerFlow</code></td>
 </tr>
 <tr>
 <td>How does a recovered guarded media root drain the bounded local spool safely?</td>
-<td><code>AutomaticSpoolRecoveryFlow</code>, <code>DaemonMediaWorkerContainers</code>, <code>DaemonMediaComponents</code></td>
+<td><code>AutomaticSpoolRecoveryFlow</code>, <code>DaemonMediaWorkerContainers</code>, <code>MediaWorkerComponents</code></td>
 </tr>
 <tr>
 <td>How do read/search/forget/doctor operations reach storage?</td>
 <td><code>OpsContainers</code>, <code>DaemonReadComponents</code>, <code>DaemonForgetComponents</code>, <code>DaemonDoctorComponents</code></td>
+</tr>
+<tr>
+<td>How does direct storage reconciliation converge durable lifecycle and filesystem state?</td>
+<td><code>CliStorageReconcileComponents</code></td>
 </tr>
 <tr>
 <td>How is SQLite version compatibility and migration recovery controlled?</td>
@@ -970,6 +974,14 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <tr>
 <td>How are text-first backup bundles created and restored?</td>
 <td><code>CliBackupRestoreComponents</code></td>
+</tr>
+<tr>
+<td>How do HTTP and CLI export the same body-safe X observations without mutation authority?</td>
+<td><code>DaemonReadComponents</code>, <code>CliXObservationExportComponents</code>, <code>XObservationExportFlow</code></td>
+</tr>
+<tr>
+<td>What does daily-driver health verify across services, storage, and protected artifacts?</td>
+<td><code>DailyDriverHealthFlow</code>, <code>DailyDriverDeployment</code></td>
 </tr>
 <tr>
 <td>What runs where on the daily-driver workstation?</td>
@@ -1042,7 +1054,7 @@ text/FTS/media refs remain authoritative
 <tbody>
 <tr>
 <td>Architecture-level media topology</td>
-<td><a href="architecture/c4-diagrams.html"><code>architecture/c4-diagrams.md</code></a>: <code>BrowserMediaContainers</code>, <code>ExtensionMediaComponents</code>, <code>DaemonMediaWorkerContainers</code>, <code>DaemonMediaComponents</code></td>
+<td><a href="architecture/c4-diagrams.html"><code>architecture/c4-diagrams.md</code></a>: <code>BrowserMediaContainers</code>, <code>ExtensionMediaComponents</code>, <code>DaemonMediaWorkerContainers</code>, <code>MediaWorkerComponents</code>, <code>DaemonMediaComponents</code></td>
 </tr>
 <tr>
 <td>Browser credentialed sidecar scenario</td>
@@ -1051,6 +1063,10 @@ text/FTS/media refs remain authoritative
 <tr>
 <td>Daemon-public worker scenario</td>
 <td><a href="architecture/c4-diagrams.html"><code>architecture/c4-diagrams.md</code></a>: <code>DaemonPublicMediaWorkerFlow</code></td>
+</tr>
+<tr>
+<td>Guarded-root automatic recovery scenario</td>
+<td><a href="architecture/c4-diagrams.html"><code>architecture/c4-diagrams.md</code></a>: <code>AutomaticSpoolRecoveryFlow</code></td>
 </tr>
 <tr>
 <td>Parallel browser/daemon sidecar sequence, status reasons, HLS/CDP details</td>

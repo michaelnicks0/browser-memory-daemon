@@ -11,7 +11,7 @@
 <polygon fill="white" stroke="transparent" points="-4,4 -4,-1885.5 1371,-1885.5 1371,4 -4,4"/>
 <text text-anchor="start" x="388" y="-11.8" font-family="Arial" font-size="34.00">Browser Memory Daemon &#45; Containers</text>
 <g id="clust1" class="cluster">
-<title>cluster_4</title>
+<title>cluster_5</title>
 <polygon fill="none" stroke="#444444" points="8,-346.5 8,-1873.5 1359,-1873.5 1359,-346.5 8,-346.5"/>
 <text text-anchor="start" x="542.5" y="-375.3" font-family="Arial" font-size="24.00" fill="#444444">Browser Memory Daemon</text>
 <text text-anchor="start" x="606.5" y="-355.3" font-family="Arial" font-size="19.00" fill="#444444">[Software System]</text>
@@ -32,34 +32,33 @@
 <!-- 45 -->
 <g id="45" class="node">
 <title>45</title>
-<polygon fill="#438dd5" stroke="#2e6295" points="418,-895 33,-895 33,-520 418,-520 418,-895"/>
-<text text-anchor="start" x="78.5" y="-846.8" font-family="Arial" font-size="34.00" fill="#ffffff">WSL Media Worker</text>
-<text text-anchor="start" x="85.5" y="-824.8" font-family="Arial" font-size="19.00" fill="#ffffff">[Container: Python 3.11 CLI loop]</text>
-<text text-anchor="start" x="78" y="-787.8" font-family="Arial" font-size="24.00" fill="#ffffff">Long&#45;running systemd user</text>
-<text text-anchor="start" x="82.5" y="-763.8" font-family="Arial" font-size="24.00" fill="#ffffff">worker that first drains one</text>
-<text text-anchor="start" x="62" y="-739.8" font-family="Arial" font-size="24.00" fill="#ffffff">bounded spool&#45;recovery batch</text>
-<text text-anchor="start" x="66" y="-715.8" font-family="Arial" font-size="24.00" fill="#ffffff">when the guarded final root is</text>
-<text text-anchor="start" x="127" y="-691.8" font-family="Arial" font-size="24.00" fill="#ffffff">ready, then leases</text>
-<text text-anchor="start" x="79.5" y="-667.8" font-family="Arial" font-size="24.00" fill="#ffffff">daemon&#45;public media fetch</text>
-<text text-anchor="start" x="116.5" y="-643.8" font-family="Arial" font-size="24.00" fill="#ffffff">tasks, fetches public</text>
-<text text-anchor="start" x="77.5" y="-619.8" font-family="Arial" font-size="24.00" fill="#ffffff">media/HLS without Chrome</text>
-<text text-anchor="start" x="82.5" y="-595.8" font-family="Arial" font-size="24.00" fill="#ffffff">cookies, classifies terminal</text>
-<text text-anchor="start" x="79.5" y="-571.8" font-family="Arial" font-size="24.00" fill="#ffffff">states, and updates artifact</text>
-<text text-anchor="start" x="196.5" y="-547.8" font-family="Arial" font-size="24.00" fill="#ffffff">rows.</text>
+<polygon fill="#438dd5" stroke="#2e6295" points="418,-959 33,-959 33,-608 418,-608 418,-959"/>
+<text text-anchor="start" x="78.5" y="-910.8" font-family="Arial" font-size="34.00" fill="#ffffff">WSL Media Worker</text>
+<text text-anchor="start" x="85.5" y="-888.8" font-family="Arial" font-size="19.00" fill="#ffffff">[Container: Python 3.11 CLI loop]</text>
+<text text-anchor="start" x="78" y="-851.8" font-family="Arial" font-size="24.00" fill="#ffffff">Long&#45;running systemd user</text>
+<text text-anchor="start" x="133" y="-827.8" font-family="Arial" font-size="24.00" fill="#ffffff">worker that loads</text>
+<text text-anchor="start" x="99" y="-803.8" font-family="Arial" font-size="24.00" fill="#ffffff">storage/media modules</text>
+<text text-anchor="start" x="83" y="-779.8" font-family="Arial" font-size="24.00" fill="#ffffff">in&#45;process, first drains one</text>
+<text text-anchor="start" x="62" y="-755.8" font-family="Arial" font-size="24.00" fill="#ffffff">bounded spool&#45;recovery batch</text>
+<text text-anchor="start" x="66" y="-731.8" font-family="Arial" font-size="24.00" fill="#ffffff">when the guarded final root is</text>
+<text text-anchor="start" x="127" y="-707.8" font-family="Arial" font-size="24.00" fill="#ffffff">ready, then leases</text>
+<text text-anchor="start" x="79.5" y="-683.8" font-family="Arial" font-size="24.00" fill="#ffffff">daemon&#45;public media fetch</text>
+<text text-anchor="start" x="63" y="-659.8" font-family="Arial" font-size="24.00" fill="#ffffff">tasks without calling the HTTP</text>
+<text text-anchor="start" x="178" y="-635.8" font-family="Arial" font-size="24.00" fill="#ffffff">daemon.</text>
 </g>
 <!-- 45&#45;&gt;3 -->
-<g id="81" class="edge">
+<g id="88" class="edge">
 <title>45&#45;&gt;3</title>
-<path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M418.2,-570.53C525.58,-495.87 663.05,-403.64 790,-328.5 809.64,-316.88 830.34,-305.2 851.2,-293.81"/>
-<polygon fill="#707070" stroke="#707070" points="853.03,-296.8 860.15,-288.95 849.69,-290.65 853.03,-296.8"/>
-<polygon fill="white" stroke="transparent" points="461.5,-537.5 461.5,-612.5 746.5,-612.5 746.5,-537.5 461.5,-537.5"/>
-<text text-anchor="start" x="466" y="-589.8" font-family="Arial" font-size="24.00" fill="#707070">Fetches public media and</text>
-<text text-anchor="start" x="553" y="-565.8" font-family="Arial" font-size="24.00" fill="#707070">HLS from</text>
-<text text-anchor="start" x="512.5" y="-545.8" font-family="Arial" font-size="19.00" fill="#707070">[HTTP(S), data URLs]</text>
+<path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M418.25,-611.69C523.8,-521.58 659.53,-412.72 790,-328.5 809.55,-315.88 830.38,-303.46 851.46,-291.56"/>
+<polygon fill="#707070" stroke="#707070" points="853.18,-294.61 860.19,-286.67 849.75,-288.5 853.18,-294.61"/>
+<polygon fill="white" stroke="transparent" points="461.5,-575.5 461.5,-650.5 746.5,-650.5 746.5,-575.5 461.5,-575.5"/>
+<text text-anchor="start" x="466" y="-627.8" font-family="Arial" font-size="24.00" fill="#707070">Fetches public media and</text>
+<text text-anchor="start" x="553" y="-603.8" font-family="Arial" font-size="24.00" fill="#707070">HLS from</text>
+<text text-anchor="start" x="512.5" y="-583.8" font-family="Arial" font-size="19.00" fill="#707070">[HTTP(S), data URLs]</text>
 </g>
-<!-- 49 -->
-<g id="49" class="node">
-<title>49</title>
+<!-- 57 -->
+<g id="57" class="node">
+<title>57</title>
 <path fill="#2f95c8" stroke="#20688c" d="M1247,-777.72C1247,-796.01 1164.08,-810.88 1062,-810.88 959.92,-810.88 877,-796.01 877,-777.72 877,-777.72 877,-479.28 877,-479.28 877,-460.99 959.92,-446.12 1062,-446.12 1164.08,-446.12 1247,-460.99 1247,-479.28 1247,-479.28 1247,-777.72 1247,-777.72"/>
 <path fill="none" stroke="#20688c" d="M1247,-777.72C1247,-759.42 1164.08,-744.56 1062,-744.56 959.92,-744.56 877,-759.42 877,-777.72"/>
 <text text-anchor="start" x="949" y="-712.8" font-family="Arial" font-size="34.00" fill="#ffffff">SQLite + FTS5</text>
@@ -71,19 +70,19 @@
 <text text-anchor="start" x="916" y="-547.8" font-family="Arial" font-size="24.00" fill="#ffffff">and immutable observation</text>
 <text text-anchor="start" x="964" y="-523.8" font-family="Arial" font-size="24.00" fill="#ffffff">ingest sequences.</text>
 </g>
-<!-- 45&#45;&gt;49 -->
-<g id="75" class="edge">
-<title>45&#45;&gt;49</title>
-<path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M418.21,-689.35C552.6,-676.63 731.62,-659.68 866.6,-646.9"/>
-<polygon fill="#707070" stroke="#707070" points="867.02,-650.38 876.65,-645.95 866.36,-643.41 867.02,-650.38"/>
-<polygon fill="white" stroke="transparent" points="454,-683.5 454,-758.5 754,-758.5 754,-683.5 454,-683.5"/>
-<text text-anchor="start" x="458" y="-735.8" font-family="Arial" font-size="24.00" fill="#707070">Leases and updates media</text>
-<text text-anchor="start" x="563" y="-711.8" font-family="Arial" font-size="24.00" fill="#707070">tasks in</text>
-<text text-anchor="start" x="570.5" y="-691.8" font-family="Arial" font-size="19.00" fill="#707070">[sqlite3]</text>
+<!-- 45&#45;&gt;57 -->
+<g id="87" class="edge">
+<title>45&#45;&gt;57</title>
+<path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M418.21,-747.89C552.6,-722.93 731.62,-689.68 866.6,-664.61"/>
+<polygon fill="#707070" stroke="#707070" points="867.46,-668.01 876.65,-662.74 866.18,-661.13 867.46,-668.01"/>
+<polygon fill="white" stroke="transparent" points="454,-737.5 454,-812.5 754,-812.5 754,-737.5 454,-737.5"/>
+<text text-anchor="start" x="458" y="-789.8" font-family="Arial" font-size="24.00" fill="#707070">Leases and updates media</text>
+<text text-anchor="start" x="563" y="-765.8" font-family="Arial" font-size="24.00" fill="#707070">tasks in</text>
+<text text-anchor="start" x="570.5" y="-745.8" font-family="Arial" font-size="19.00" fill="#707070">[sqlite3]</text>
 </g>
-<!-- 51 -->
-<g id="51" class="node">
-<title>51</title>
+<!-- 59 -->
+<g id="59" class="node">
+<title>59</title>
 <path fill="#2f95c8" stroke="#20688c" d="M1334,-1273.72C1334,-1295.32 1212.09,-1312.88 1062,-1312.88 911.91,-1312.88 790,-1295.32 790,-1273.72 790,-1273.72 790,-921.28 790,-921.28 790,-899.68 911.91,-882.12 1062,-882.12 1212.09,-882.12 1334,-899.68 1334,-921.28 1334,-921.28 1334,-1273.72 1334,-1273.72"/>
 <path fill="none" stroke="#20688c" d="M1334,-1273.72C1334,-1252.11 1212.09,-1234.56 1062,-1234.56 911.91,-1234.56 790,-1252.11 790,-1273.72"/>
 <text text-anchor="start" x="906.5" y="-1205.8" font-family="Arial" font-size="34.00" fill="#ffffff">Guarded Media Blob</text>
@@ -97,19 +96,19 @@
 <text text-anchor="start" x="912.5" y="-992.8" font-family="Arial" font-size="24.00" fill="#ffffff">identity&#45;marker proof before</text>
 <text text-anchor="start" x="1021" y="-968.8" font-family="Arial" font-size="24.00" fill="#ffffff">access.</text>
 </g>
-<!-- 45&#45;&gt;51 -->
-<g id="82" class="edge">
-<title>45&#45;&gt;51</title>
-<path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M418.21,-797.1C525.62,-847.29 661.53,-910.81 780.68,-966.49"/>
-<polygon fill="#707070" stroke="#707070" points="779.41,-969.77 789.96,-970.83 782.38,-963.42 779.41,-969.77"/>
-<polygon fill="white" stroke="transparent" points="454,-948.5 454,-1023.5 754,-1023.5 754,-948.5 454,-948.5"/>
-<text text-anchor="start" x="458" y="-1000.8" font-family="Arial" font-size="24.00" fill="#707070">Writes fetched media blobs</text>
-<text text-anchor="start" x="593.5" y="-976.8" font-family="Arial" font-size="24.00" fill="#707070">to</text>
-<text text-anchor="start" x="552.5" y="-956.8" font-family="Arial" font-size="19.00" fill="#707070">[Filesystem]</text>
+<!-- 45&#45;&gt;59 -->
+<g id="89" class="edge">
+<title>45&#45;&gt;59</title>
+<path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M418.21,-855.64C525.51,-896.01 661.25,-947.09 780.32,-991.89"/>
+<polygon fill="#707070" stroke="#707070" points="779.36,-995.27 789.96,-995.51 781.83,-988.72 779.36,-995.27"/>
+<polygon fill="white" stroke="transparent" points="454,-977.5 454,-1052.5 754,-1052.5 754,-977.5 454,-977.5"/>
+<text text-anchor="start" x="458" y="-1029.8" font-family="Arial" font-size="24.00" fill="#707070">Writes fetched media blobs</text>
+<text text-anchor="start" x="593.5" y="-1005.8" font-family="Arial" font-size="24.00" fill="#707070">to</text>
+<text text-anchor="start" x="552.5" y="-985.8" font-family="Arial" font-size="19.00" fill="#707070">[Filesystem]</text>
 </g>
-<!-- 52 -->
-<g id="52" class="node">
-<title>52</title>
+<!-- 60 -->
+<g id="60" class="node">
+<title>60</title>
 <path fill="#2f95c8" stroke="#20688c" d="M1255,-1806.22C1255,-1829.48 1168.49,-1848.38 1062,-1848.38 955.51,-1848.38 869,-1829.48 869,-1806.22 869,-1806.22 869,-1426.78 869,-1426.78 869,-1403.52 955.51,-1384.62 1062,-1384.62 1168.49,-1384.62 1255,-1403.52 1255,-1426.78 1255,-1426.78 1255,-1806.22 1255,-1806.22"/>
 <path fill="none" stroke="#20688c" d="M1255,-1806.22C1255,-1782.95 1168.49,-1764.06 1062,-1764.06 955.51,-1764.06 869,-1782.95 869,-1806.22"/>
 <text text-anchor="start" x="898" y="-1736.8" font-family="Arial" font-size="34.00" fill="#ffffff">Bounded Local Media</text>
@@ -124,16 +123,16 @@
 <text text-anchor="start" x="914.5" y="-1499.8" font-family="Arial" font-size="24.00" fill="#ffffff">before tier transition/source</text>
 <text text-anchor="start" x="1016" y="-1475.8" font-family="Arial" font-size="24.00" fill="#ffffff">cleanup.</text>
 </g>
-<!-- 45&#45;&gt;52 -->
-<g id="83" class="edge">
-<title>45&#45;&gt;52</title>
-<path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M343.97,-895.14C377.5,-944.32 415.46,-996.22 454,-1041.5 578.88,-1188.2 737.42,-1337.34 861.16,-1446.96"/>
-<polygon fill="#707070" stroke="#707070" points="859.08,-1449.79 868.89,-1453.79 863.71,-1444.54 859.08,-1449.79"/>
-<polygon fill="white" stroke="transparent" points="486,-1336.5 486,-1435.5 722,-1435.5 722,-1336.5 486,-1336.5"/>
-<text text-anchor="start" x="490" y="-1412.8" font-family="Arial" font-size="24.00" fill="#707070">Writes fetched media</text>
-<text text-anchor="start" x="497" y="-1388.8" font-family="Arial" font-size="24.00" fill="#707070">during guarded&#45;root</text>
-<text text-anchor="start" x="547" y="-1364.8" font-family="Arial" font-size="24.00" fill="#707070">outages to</text>
-<text text-anchor="start" x="552.5" y="-1344.8" font-family="Arial" font-size="19.00" fill="#707070">[Filesystem]</text>
+<!-- 45&#45;&gt;60 -->
+<g id="90" class="edge">
+<title>45&#45;&gt;60</title>
+<path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M358.2,-959.29C388.52,-996.98 421.46,-1035.86 454,-1070.5 581.87,-1206.59 738.88,-1347.21 861.18,-1451.65"/>
+<polygon fill="#707070" stroke="#707070" points="858.93,-1454.34 868.81,-1458.17 863.48,-1449.01 858.93,-1454.34"/>
+<polygon fill="white" stroke="transparent" points="486,-1348.5 486,-1447.5 722,-1447.5 722,-1348.5 486,-1348.5"/>
+<text text-anchor="start" x="490" y="-1424.8" font-family="Arial" font-size="24.00" fill="#707070">Writes fetched media</text>
+<text text-anchor="start" x="497" y="-1400.8" font-family="Arial" font-size="24.00" fill="#707070">during guarded&#45;root</text>
+<text text-anchor="start" x="547" y="-1376.8" font-family="Arial" font-size="24.00" fill="#707070">outages to</text>
+<text text-anchor="start" x="552.5" y="-1356.8" font-family="Arial" font-size="19.00" fill="#707070">[Filesystem]</text>
 </g>
 </g>
 </svg>

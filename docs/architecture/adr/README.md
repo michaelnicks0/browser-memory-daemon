@@ -13,7 +13,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0003](0003-use-all-policy-mode-as-daily-driver-default.md) | superseded | Use `all` policy mode as the daily-driver default. Superseded by ADR-0009. |
 | [ADR-0004](0004-use-text-first-sqlite-fts5-and-blob-storage.md) | superseded | Use text-first SQLite/FTS5 and WSL-local blob storage. Superseded by ADR-0021 for blob placement. |
 | [ADR-0005](0005-use-durable-lazy-media-sidecars-with-bounded-cache.md) | accepted | Use durable lazy media sidecars with a bounded disposable cache. |
-| [ADR-0006](0006-use-forget-cascade-with-deletion-receipts.md) | superseded by ADR-0040 | Use forget/delete cascades with deletion receipts. |
+| [ADR-0006](0006-use-forget-cascade-with-deletion-receipts.md) | superseded | Use forget/delete cascades with deletion receipts. Superseded by [ADR-0040](0040-use-durable-deletion-intents-and-reconciliation.md). |
 | [ADR-0007](0007-use-real-chrome-e2e-as-verification-authority.md) | accepted | Use real Chrome / Chrome for Testing e2e as the verification authority. |
 | [ADR-0008](0008-use-c4-structurizr-as-canonical-architecture-model.md) | accepted | Use C4/Structurizr under `docs/architecture/` as the canonical architecture model. |
 | [ADR-0009](0009-apply-explicit-block-rules-in-all-mode.md) | accepted | Apply explicit local block rules in `all` mode while preserving the daily-driver default. |
@@ -27,12 +27,12 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0017](0017-add-read-model-composite-indexes.md) | accepted | Add composite SQLite indexes for measured read-model ordering paths. |
 | [ADR-0018](0018-enforce-daily-driver-headroom-and-start-budgets.md) | accepted | Enforce daily-driver headroom and service-start failure budgets in local health checks. |
 | [ADR-0019](0019-use-durable-text-retention-with-wal-aware-local-backup.md) | accepted | Use durable text retention with WAL-aware local backup and disposable media cache. |
-| [ADR-0020](0020-enforce-static-requirement-traceability-gate.md) | superseded by ADR-0027 | Enforce static requirement traceability in the generated test inventory gate. |
-| [ADR-0021](0021-use-configurable-nas-blob-root-with-local-sqlite.md) | superseded by ADR-0039 | Use a configurable NAS-capable blob root while keeping SQLite/WAL local. |
+| [ADR-0020](0020-enforce-static-requirement-traceability-gate.md) | superseded | Enforce static requirement traceability in the generated test inventory gate. Superseded by [ADR-0027](0027-use-canonical-semantic-requirement-catalog.md). |
+| [ADR-0021](0021-use-configurable-nas-blob-root-with-local-sqlite.md) | superseded | Use a configurable NAS-capable blob root while keeping SQLite/WAL local. Superseded by [ADR-0039](0039-split-media-root-and-add-bounded-durable-spool.md). |
 | [ADR-0022](0022-use-fast-doctor-and-media-queue-health-telemetry.md) | accepted | Use fast doctor and media-queue health telemetry. |
-| [ADR-0023](0023-guard-daemon-public-media-egress.md) | superseded by ADR-0045 | Guard daemon-public media egress. |
-| [ADR-0024](0024-contain-blob-and-media-artifact-paths.md) | accepted | Contain blob and media artifact paths. |
-| [ADR-0025](0025-literal-policy-aware-forget-selectors.md) | superseded by ADR-0057 | Use literal and policy-aware forget selectors. |
+| [ADR-0023](0023-guard-daemon-public-media-egress.md) | superseded | Guard daemon-public media egress. Superseded by [ADR-0045](0045-isolate-guarded-media-fetch-and-hls.md). |
+| [ADR-0024](0024-contain-blob-and-media-artifact-paths.md) | superseded | Contain blob and media artifact paths. Superseded by [ADR-0037](0037-expand-blob-references-with-relative-locators.md). |
+| [ADR-0025](0025-literal-policy-aware-forget-selectors.md) | superseded | Use literal and policy-aware forget selectors. Superseded by [ADR-0057](0057-preview-and-bound-forget-selection.md). |
 | [ADR-0026](0026-harden-loopback-ui-and-required-blob-mounts.md) | accepted | Harden loopback UI and required blob mounts. |
 | [ADR-0027](0027-use-canonical-semantic-requirement-catalog.md) | accepted | Use one machine-readable semantic requirement catalog with explicit legacy aliases and generated V-model traceability. |
 | [ADR-0028](0028-use-versioned-restore-backed-sqlite-migrations.md) | accepted | Use versioned restore-backed SQLite migrations with exact schema fingerprints, ordered checksums, and backup-gated destructive steps. |
@@ -46,7 +46,7 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0036](0036-route-blob-operations-through-contained-blobstore.md) | accepted | Route staged streaming writes, contained reads, stats, and deletes through one BlobStore while legacy locators remain compatible. |
 | [ADR-0037](0037-expand-blob-references-with-relative-locators.md) | accepted | Dual-write root-relative blob locators, prefer them on reads, and retain a contained legacy absolute fallback during expansion. |
 | [ADR-0038](0038-make-sqlite-authoritative-for-cleaned-snapshot-text.md) | accepted | Commit complete cleaned text to SQLite, stop creating new text sidecars, and hash-verify legacy promotion. |
-| [ADR-0039](0039-split-media-root-and-add-bounded-durable-spool.md) | superseded by ADR-0061 | Split derivative and media roots, guard external identity, and bound local outage buffering. |
+| [ADR-0039](0039-split-media-root-and-add-bounded-durable-spool.md) | superseded | Split derivative and media roots, guard external identity, and bound local outage buffering. Superseded by [ADR-0061](0061-automatically-drain-bounded-media-spool-after-root-recovery.md). |
 | [ADR-0040](0040-use-durable-deletion-intents-and-reconciliation.md) | accepted | Persist blob deletion intent before cascades and reconcile failures through contained retryable operations. |
 | [ADR-0041](0041-use-manifest-backed-text-first-backup-and-empty-root-restore.md) | accepted | Create manifest-backed text-first online backups and restore only into an absent explicit runtime root. |
 | [ADR-0042](0042-separate-media-state-and-task-repository.md) | accepted | Separate media status/transition authority and durable task leasing/retry workflow from the compatibility facade. |
@@ -69,10 +69,43 @@ ADRs live in this repo because Browser Memory Daemon is architecture-heavy and a
 | [ADR-0059](0059-pin-and-verify-chrome-for-testing-release.md) | accepted | Pin and checksum-verify Chrome for Testing as isolated release authority. |
 | [ADR-0060](0060-export-versioned-body-safe-x-observations.md) | accepted | Export versioned body-safe X observations through a mutation-free producer contract. |
 | [ADR-0061](0061-automatically-drain-bounded-media-spool-after-root-recovery.md) | accepted | Automatically drain the bounded local media spool after the guarded final root recovers. |
+| [ADR-0062](0062-reject-ambiguous-or-truncated-http-request-bodies.md) | accepted | Reject ambiguous, oversized, missing-required, or truncated HTTP request bodies before application use cases. |
 
 ## Backfilled decision history
 
 ADR-0002 through ADR-0008 are historical backfills recorded on 2026-06-14 from repo docs, code, tests, and git history. They did not introduce new runtime behavior; they document already-accepted architecture decisions so future changes can cite, comply with, or supersede them.
+
+ADR-0062 was backfilled on 2026-07-14 to record the strict HTTP request-body framing contract implemented and tested by commit `5161aa8a`; it likewise introduces no new runtime behavior.
+
+The repository history was later rewritten while preserving those changes. The accepted ADR bodies retain their originally recorded short hashes; use this immutable errata map when resolving them against current history:
+
+| Recorded hash | Current hash | Current commit subject |
+|---|---|---|
+| `2ba4373` | `27468b6` | `feat: bootstrap browser memory daemon` |
+| `2c2b76b` | `1ca4e00` | `test: add real Windows Chrome extension e2e` |
+| `fb025df` | `4921b61` | `ops: add daily-driver Chrome deployment helper` |
+| `29410de` | `aa560ec` | `feat: add local memory UI and ops APIs` |
+| `26f0202` | `2b010ee` | `feat: add adjustable capture policy modes` |
+| `39fced1` | `21d19b6` | `feat: add capture dedupe and URL normalization tests` |
+| `a1ff667` | `0824266` | `docs: model browser memory storage growth` |
+| `b6446d6` | `6b7349b` | `feat: store related media artifacts` |
+| `d8eea55` | `320d87c` | `feat: fetch pending media artifacts in daemon` |
+| `fa6dc26` | `e4b9368` | `docs: plan durable media sidecars` |
+| `04e6482` | `c0510e5` | `feat: add durable media sidecars` |
+| `ab38213` | `cef7cc5` | `Harden media sidecar retrieval` |
+| `77d8f3d` | `ce97633` | `Add HLS media backfill and normalize video skips` |
+| `061e490` | `0ccf2bc` | `Add CDP recorder for X video media` |
+| `97b0e81` | `a31b3c7` | `Store HLS audio sidecars and classify blob video refs` |
+| `969a20d` | `f875779` | `Raise media cache caps and add rolling eviction` |
+| `e85da5b` | `0b05dc3` | `Fold media sidecar design into architecture` |
+| `a384d41` | `43d4af1` | `docs: note Chrome CDP profile caveat` |
+| `dfeb585` | `0811045` | `docs: record daily-driver Chrome install results` |
+| `2ee7dd1` | `4e88ee4` | `docs: add C4 architecture model` |
+| `ae36fbf` | `8b7697a` | `docs: add markdown C4 diagram wrappers` |
+| `3e4df5c` | `b054b49` | `docs: clean C4 diagram renders` |
+| `cbef41c` | `7ae5427` | `docs: add combined C4 diagram atlas` |
+| `a25289f` | `9ce7feb` | `docs: reconcile C4 and behavioral diagrams` |
+| `23cd82d` | `3b44e33` | `docs: move C4 architecture under docs` |
 
 Backfill verification run on 2026-06-14:
 
@@ -80,6 +113,15 @@ Backfill verification run on 2026-06-14:
 - `git diff --check -- .` passed.
 - `./scripts/secret-scan.sh` passed.
 - `BMD_SKIP_REAL_CHROME_E2E=1 ./scripts/run-e2e.sh` passed using a temporary Python 3.11 shim because the host `python3` is Python 3.8 while this repo declares `requires-python = ">=3.11"`.
+
+## Metadata compatibility
+
+New ADRs must use the YAML frontmatter in [`template.md`](template.md), including an `ADR-NNNN` ID and explicit supersession arrays. The historical ledger also contains two readable legacy encodings that tooling must preserve rather than mass-rewrite:
+
+- ADR-0028 through ADR-0039 use legacy YAML without an `id` field.
+- ADR-0042 through ADR-0056 use a short inline metadata list below the title.
+
+Status/index checks may read those encodings, but accepted decision bodies remain immutable except for status, supersession, references, verification metadata, and explicit errata in this index.
 
 ## When to create or supersede an ADR
 

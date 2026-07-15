@@ -1,0 +1,18 @@
+graph LR
+  linkStyle default fill:#ffffff
+
+  subgraph diagram ["Browser Memory Daemon - CLI - Components"]
+    style diagram fill:#ffffff,stroke:#ffffff
+
+    57[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+    style 57 fill:#2f95c8,stroke:#20688c,color:#ffffff
+
+    subgraph 51 ["CLI"]
+      style 51 fill:#ffffff,stroke:#2e6295,color:#2e6295
+
+      54["<div style='font-weight: bold'>Media Cache Requeue Operator</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Previews or executes<br />explicitly scoped<br />dry-run-first budget requeue<br />through in-process media<br />repository functions.</div>"]
+      style 54 fill:#85bbf0,stroke:#1168bd,color:#000000
+    end
+
+    54-. "<div>Reads and updates explicitly<br />scoped media artifact/task<br />state in</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+  end

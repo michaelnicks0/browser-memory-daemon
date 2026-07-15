@@ -11,14 +11,14 @@
 <polygon fill="white" stroke="transparent" points="-4,4 -4,-1325.5 2266,-1325.5 2266,4 -4,4"/>
 <text text-anchor="start" x="851.5" y="-11.8" font-family="Arial" font-size="34.00">Browser Memory Daemon &#45; Dynamic</text>
 <g id="clust1" class="cluster">
-<title>cluster_4</title>
+<title>cluster_5</title>
 <polygon fill="none" stroke="#444444" points="8,-312.5 8,-1313.5 2254,-1313.5 2254,-312.5 8,-312.5"/>
 <text text-anchor="start" x="990" y="-341.3" font-family="Arial" font-size="24.00" fill="#444444">Browser Memory Daemon</text>
 <text text-anchor="start" x="1054" y="-321.3" font-family="Arial" font-size="19.00" fill="#444444">[Software System]</text>
 </g>
-<!-- 21 -->
-<g id="21" class="node">
-<title>21</title>
+<!-- 22 -->
+<g id="22" class="node">
+<title>22</title>
 <path fill="#2f95c8" stroke="#20688c" d="M1491.5,-1237.72C1491.5,-1265.94 1389.98,-1288.88 1265,-1288.88 1140.02,-1288.88 1038.5,-1265.94 1038.5,-1237.72 1038.5,-1237.72 1038.5,-777.28 1038.5,-777.28 1038.5,-749.06 1140.02,-726.12 1265,-726.12 1389.98,-726.12 1491.5,-749.06 1491.5,-777.28 1491.5,-777.28 1491.5,-1237.72 1491.5,-1237.72"/>
 <path fill="none" stroke="#20688c" d="M1491.5,-1237.72C1491.5,-1209.49 1389.98,-1186.56 1265,-1186.56 1140.02,-1186.56 1038.5,-1209.49 1038.5,-1237.72"/>
 <text text-anchor="start" x="1123" y="-1163.8" font-family="Arial" font-size="34.00" fill="#ffffff">Extension Browser</text>
@@ -36,9 +36,9 @@
 <text text-anchor="start" x="1096.5" y="-854.8" font-family="Arial" font-size="24.00" fill="#ffffff">and one&#45;version queue fallback</text>
 <text text-anchor="start" x="1240" y="-830.8" font-family="Arial" font-size="24.00" fill="#ffffff">only.</text>
 </g>
-<!-- 22 -->
-<g id="22" class="node">
-<title>22</title>
+<!-- 23 -->
+<g id="23" class="node">
+<title>23</title>
 <polygon fill="#438dd5" stroke="#2e6295" points="1496,-654 1034,-654 1034,-413 1496,-413 1496,-654"/>
 <text text-anchor="start" x="1100.5" y="-605.8" font-family="Arial" font-size="34.00" fill="#ffffff">WSL Loopback HTTP</text>
 <text text-anchor="start" x="1200.5" y="-571.8" font-family="Arial" font-size="34.00" fill="#ffffff">Daemon</text>
@@ -48,9 +48,9 @@
 <text text-anchor="start" x="1121" y="-464.8" font-family="Arial" font-size="24.00" fill="#ffffff">operations, and query&#45;only</text>
 <text text-anchor="start" x="1102.5" y="-440.8" font-family="Arial" font-size="24.00" fill="#ffffff">bmd.x&#45;observations v1 export.</text>
 </g>
-<!-- 49 -->
-<g id="49" class="node">
-<title>49</title>
+<!-- 57 -->
+<g id="57" class="node">
+<title>57</title>
 <path fill="#2f95c8" stroke="#20688c" d="M2229,-743.72C2229,-762.01 2146.08,-776.88 2044,-776.88 1941.92,-776.88 1859,-762.01 1859,-743.72 1859,-743.72 1859,-445.28 1859,-445.28 1859,-426.99 1941.92,-412.12 2044,-412.12 2146.08,-412.12 2229,-426.99 2229,-445.28 2229,-445.28 2229,-743.72 2229,-743.72"/>
 <path fill="none" stroke="#20688c" d="M2229,-743.72C2229,-725.42 2146.08,-710.56 2044,-710.56 1941.92,-710.56 1859,-725.42 1859,-743.72"/>
 <text text-anchor="start" x="1931" y="-678.8" font-family="Arial" font-size="34.00" fill="#ffffff">SQLite + FTS5</text>
@@ -62,9 +62,9 @@
 <text text-anchor="start" x="1898" y="-513.8" font-family="Arial" font-size="24.00" fill="#ffffff">and immutable observation</text>
 <text text-anchor="start" x="1946" y="-489.8" font-family="Arial" font-size="24.00" fill="#ffffff">ingest sequences.</text>
 </g>
-<!-- 22&#45;&gt;49 -->
-<g id="71" class="edge">
-<title>22&#45;&gt;49</title>
+<!-- 23&#45;&gt;57 -->
+<g id="83" class="edge">
+<title>23&#45;&gt;57</title>
 <path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M1496.23,-551.58C1608.29,-560.37 1741.53,-570.83 1848.43,-579.22"/>
 <polygon fill="#707070" stroke="#707070" points="1848.44,-582.74 1858.69,-580.03 1848.99,-575.76 1848.44,-582.74"/>
 <polygon fill="white" stroke="transparent" points="1532,-575.5 1532,-698.5 1823,-698.5 1823,-575.5 1532,-575.5"/>
@@ -74,9 +74,9 @@
 <text text-anchor="start" x="1562.5" y="-603.8" font-family="Arial" font-size="24.00" fill="#707070">media refs, and tasks</text>
 <text text-anchor="start" x="1644.5" y="-583.8" font-family="Arial" font-size="19.00" fill="#707070">[sqlite3]</text>
 </g>
-<!-- 5 -->
-<g id="5" class="node">
-<title>5</title>
+<!-- 6 -->
+<g id="6" class="node">
+<title>6</title>
 <polygon fill="#438dd5" stroke="#2e6295" points="467,-746 33,-746 33,-467 467,-467 467,-746"/>
 <text text-anchor="start" x="70" y="-697.8" font-family="Arial" font-size="34.00" fill="#ffffff">Chrome MV3 Extension</text>
 <text text-anchor="start" x="62" y="-675.8" font-family="Arial" font-size="19.00" fill="#ffffff">[Container: JavaScript, Chrome Manifest V3]</text>
@@ -88,9 +88,9 @@
 <text text-anchor="start" x="91" y="-518.8" font-family="Arial" font-size="24.00" fill="#ffffff">durably and posts to the WSL</text>
 <text text-anchor="start" x="202.5" y="-494.8" font-family="Arial" font-size="24.00" fill="#ffffff">daemon.</text>
 </g>
-<!-- 22&#45;&gt;5 -->
-<g id="62" class="edge">
-<title>22&#45;&gt;5</title>
+<!-- 23&#45;&gt;6 -->
+<g id="74" class="edge">
+<title>23&#45;&gt;6</title>
 <path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M1033.77,-602.55C1021.74,-604.86 1009.76,-606.87 998,-608.5 824.39,-632.51 625.9,-630.61 477.18,-623.47"/>
 <polygon fill="#707070" stroke="#707070" points="477.17,-619.96 467.01,-622.97 476.82,-626.95 477.17,-619.96"/>
 <polygon fill="white" stroke="transparent" points="503,-627.5 503,-750.5 998,-750.5 998,-627.5 503,-627.5"/>
@@ -100,9 +100,9 @@
 <text text-anchor="start" x="722" y="-655.8" font-family="Arial" font-size="24.00" fill="#707070">bytes</text>
 <text text-anchor="start" x="507.5" y="-635.8" font-family="Arial" font-size="19.00" fill="#707070">[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</text>
 </g>
-<!-- 5&#45;&gt;21 -->
-<g id="61" class="edge">
-<title>5&#45;&gt;21</title>
+<!-- 6&#45;&gt;22 -->
+<g id="73" class="edge">
+<title>6&#45;&gt;22</title>
 <path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M458.97,-746.11C473.64,-754.11 488.4,-761.66 503,-768.5 672.36,-847.78 874.79,-909.92 1028.28,-950.95"/>
 <polygon fill="#707070" stroke="#707070" points="1027.75,-954.43 1038.32,-953.62 1029.55,-947.66 1027.75,-954.43"/>
 <polygon fill="white" stroke="transparent" points="595,-938.5 595,-1037.5 906,-1037.5 906,-938.5 595,-938.5"/>
@@ -111,9 +111,9 @@
 <text text-anchor="start" x="684.5" y="-966.8" font-family="Arial" font-size="24.00" fill="#707070">fetch/upload</text>
 <text text-anchor="start" x="599.5" y="-946.8" font-family="Arial" font-size="19.00" fill="#707070">[chrome.storage.local + IndexedDB]</text>
 </g>
-<!-- 5&#45;&gt;22 -->
-<g id="62" class="edge">
-<title>5&#45;&gt;22</title>
+<!-- 6&#45;&gt;23 -->
+<g id="74" class="edge">
+<title>6&#45;&gt;23</title>
 <path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M467.34,-504.59C479.25,-501.06 491.19,-497.99 503,-495.5 674.62,-459.38 872.58,-470.86 1023.58,-490.33"/>
 <polygon fill="#707070" stroke="#707070" points="1023.54,-493.86 1033.91,-491.69 1024.45,-486.92 1023.54,-493.86"/>
 <polygon fill="white" stroke="transparent" points="503,-495.5 503,-594.5 998,-594.5 998,-495.5 503,-495.5"/>
@@ -134,9 +134,9 @@
 <text text-anchor="start" x="1106" y="-107.8" font-family="Arial" font-size="24.00" fill="#ffffff">local UI in a tab, and exposes</text>
 <text text-anchor="start" x="1135.5" y="-83.8" font-family="Arial" font-size="24.00" fill="#ffffff">Chrome extension APIs.</text>
 </g>
-<!-- 5&#45;&gt;2 -->
-<g id="59" class="edge">
-<title>5&#45;&gt;2</title>
+<!-- 6&#45;&gt;2 -->
+<g id="71" class="edge">
+<title>6&#45;&gt;2</title>
 <path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M363.8,-466.94C403.8,-425.34 451.72,-383.23 503,-354.5 597.6,-301.5 870.03,-243.46 1061.78,-207.26"/>
 <polygon fill="#707070" stroke="#707070" points="1062.53,-210.68 1071.71,-205.39 1061.24,-203.8 1062.53,-210.68"/>
 <polygon fill="white" stroke="transparent" points="605.5,-354.5 605.5,-453.5 895.5,-453.5 895.5,-354.5 605.5,-354.5"/>
@@ -158,7 +158,7 @@
 <text text-anchor="start" x="111.5" y="-83.8" font-family="Arial" font-size="24.00" fill="#ffffff">browser&#45;memory records.</text>
 </g>
 <!-- 1&#45;&gt;2 -->
-<g id="54" class="edge">
+<g id="63" class="edge">
 <title>1&#45;&gt;2</title>
 <path fill="none" stroke="#707070" stroke-dasharray="5,2" d="M417.71,-171.5C594.13,-171.5 872.64,-171.5 1061.55,-171.5"/>
 <polygon fill="#707070" stroke="#707070" points="1061.6,-175 1071.6,-171.5 1061.6,-168 1061.6,-175"/>

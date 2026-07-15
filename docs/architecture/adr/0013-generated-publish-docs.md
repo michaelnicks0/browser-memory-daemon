@@ -1,5 +1,5 @@
 ---
-id: 0013
+id: ADR-0013
 title: Use generated high-level docs and HTML companions for publish-ready documentation
 status: accepted
 date: 2026-06-28
