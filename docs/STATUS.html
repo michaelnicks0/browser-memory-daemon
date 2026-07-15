@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Status — browser-memory-daemon</title>
 <style>
-:root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
+:root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#6f82a0;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
 body{margin:0;color:var(--text);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,ui-sans-serif,system-ui,sans-serif;background:radial-gradient(1100px 520px at 78% -8%,rgba(59,130,246,.22),transparent 60%),radial-gradient(820px 480px at 6% 4%,rgba(82,212,255,.12),transparent 55%),radial-gradient(700px 700px at 92% 96%,rgba(91,225,156,.08),transparent 55%),var(--bg);-webkit-font-smoothing:antialiased}
 .wrap{max-width:1180px;margin:0 auto;padding:30px 22px 70px}
@@ -58,7 +58,7 @@ tr:last-child td{border-bottom:0}td b{color:#fff}
 .note{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line2);border-left:3px solid var(--cyan);border-radius:12px;padding:14px 16px;background:rgba(10,20,38,.5);color:#cfe0f7;font-size:.9rem;margin-top:14px}
 .note .i{font-size:1.1rem;line-height:1.2}
 footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);color:var(--dim);font-size:.82rem}
-.prov{margin-top:8px;color:#8aa0bd}.prov code{font-size:11.5px}
+.prov{margin-top:8px;color:#5e7193}.prov code{font-size:11.5px}
 .featgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px}
 .feat{background:linear-gradient(180deg,rgba(20,32,54,.7),rgba(12,21,38,.6));border:1px solid var(--line);border-radius:16px;padding:18px}
 .feat .fic{font-size:1.4rem;margin-bottom:8px}
@@ -153,8 +153,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>SQLite/FTS/media storage</td>
-<td>✅ Documents/visits/snapshots/chunks/FTS/media/audit/deletion receipts plus version-4 through version-8 provenance/locator expansion, version-9 complete cleaned-text authority, version-10 media storage tiers/spool reservations, version-11 blob lifecycle records, version-12 historical media-state correction, and version-13 transactional cache reservations. New text/provenance commits locally without media-root access; recent/timeline/detail reads are observation-first with explicit legacy fallback.</td>
-<td><code>schema.sql</code>, <code>migration_steps/</code>, <code>migrations.py</code>, <code>text_authority.py</code>, <code>media_storage.py</code>, <code>blob_lifecycle.py</code>, migration/text/read tests, ADR-0028, ADR-0030 through ADR-0040, ADR-0046, ADR-0047.</td>
+<td>✅ Documents/visits/snapshots/chunks/FTS/media/audit/deletion receipts plus version-4 through version-8 provenance/locator expansion, version-9 complete cleaned-text authority, version-10 media storage tiers/spool reservations, version-11 blob lifecycle records, version-12 historical media-state correction, version-13 transactional cache reservations, and version-14 immutable observation ingest sequences. New text/provenance commits locally without media-root access; recent/timeline/detail reads are observation-first with explicit legacy fallback.</td>
+<td><code>schema.sql</code>, <code>migration_steps/</code>, <code>migrations.py</code>, <code>text_authority.py</code>, <code>media_storage.py</code>, <code>blob_lifecycle.py</code>, migration/text/read tests, ADR-0028, ADR-0030 through ADR-0040, ADR-0046, ADR-0047, ADR-0060.</td>
 </tr>
 <tr>
 <td>Blob filesystem boundary</td>
@@ -178,8 +178,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>Media artifacts</td>
-<td>✅ Durable image/video refs and streamed binaries: fast text/manifest capture, browser IndexedDB lazy queue, credentialed raw upload, enabled-by-default X/Twitter CDP recorder, guarded public transport, acyclic direct/HLS coordination, total request budgeting from the first open, bounded path/MIME/magic playlist detection, per-read deadlines, bounded streamed HLS/audio assembly, process request/byte budgets, transactional cross-process cache reservations, just-in-time task claiming, explicit state/task stores, bounded current-state reconciliation, scoped dry-run-first budget requeue, and failed-write compensation; no OCR/media indexing.</td>
-<td><code>media_models.py</code>, <code>media_tasks.py</code>, <code>media_store.py</code>, <code>media_transport.py</code>, <code>media_fetch.py</code>, <code>media_hls.py</code>, <code>media_resources.py</code>, <code>media_ops.py</code>, worker/extension tests, ADR-0042 through ADR-0047.</td>
+<td>✅ Durable image/video refs and streamed binaries: fast text/manifest capture, browser IndexedDB lazy queue, credentialed raw upload, enabled-by-default X/Twitter CDP recorder, guarded public transport, acyclic direct/HLS coordination, total request budgeting from the first open, bounded path/MIME/magic playlist detection, per-read deadlines, bounded streamed HLS/audio assembly, process request/byte budgets, transactional cross-process cache reservations, guarded-root outage spooling with bounded automatic recovery, just-in-time task claiming, explicit state/task stores, bounded current-state reconciliation, scoped dry-run-first budget requeue, and failed-write compensation; no OCR/media indexing.</td>
+<td><code>media_models.py</code>, <code>media_tasks.py</code>, <code>media_store.py</code>, <code>media_transport.py</code>, <code>media_fetch.py</code>, <code>media_hls.py</code>, <code>media_resources.py</code>, <code>media_ops.py</code>, <code>media_worker.py</code>, worker/extension tests, ADR-0042 through ADR-0047, ADR-0061.</td>
 </tr>
 <tr>
 <td>Local UI</td>
@@ -188,8 +188,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>CLI</td>
-<td>✅ serve/health/migrate/doctor/daily-driver-health/search/recent/timeline/detail/policy/forget/capture-fixture/media-worker/media-cache/media-spool/blob-root migration/snapshot-text reconciliation/storage reconciliation/backup create/restore.</td>
-<td><code>cli.py</code>, CLI and backup integration tests.</td>
+<td>✅ serve/health/migrate/doctor/daily-driver-health/search/recent/timeline/detail/query-only X observation export/policy/forget/capture-fixture/media-worker/media-cache/media-spool/blob-root migration/snapshot-text reconciliation/storage reconciliation/backup create/restore.</td>
+<td><code>cli.py</code>, CLI/export/backup integration tests.</td>
 </tr>
 <tr>
 <td>Dedupe/versioning</td>
@@ -313,7 +313,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td>SQLite can grow over time.</td>
-<td>Media blobs have size/cache gates plus purge/rehydrate controls; ADR-0019 keeps text durable by default and splits maintenance/backup/export implementation into follow-up tickets.</td>
+<td>Media blobs have size/cache gates plus purge/rehydrate controls; ADR-0019 keeps text durable by default, while automatic retention, compaction, and backup-pruning remain follow-up work.</td>
 </tr>
 <tr>
 <td>Captured text may contain prompt injection.</td>

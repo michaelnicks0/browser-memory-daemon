@@ -165,6 +165,7 @@ The canonical C4 model lives in [`architecture/workspace.dsl`](architecture/work
 | How does fast capture move from Chrome to WSL storage? | `CaptureContainers`, `ExtensionCaptureComponents`, `DaemonIngestComponents`, `FastCaptureFlow` |
 | How do browser-side media sidecars work at architecture level? | `BrowserMediaContainers`, `ExtensionMediaComponents`, `CredentialedMediaSidecarFlow` |
 | How does daemon-public media backfill and bounded streaming work? | `DaemonMediaWorkerContainers`, `DaemonMediaComponents`, `DaemonMediaTransportComponents`, `DaemonMediaResourceComponents`, `DaemonPublicMediaWorkerFlow` |
+| How does a recovered guarded media root drain the bounded local spool safely? | `AutomaticSpoolRecoveryFlow`, `DaemonMediaWorkerContainers`, `DaemonMediaComponents` |
 | How do read/search/forget/doctor operations reach storage? | `OpsContainers`, `DaemonReadComponents`, `DaemonForgetComponents`, `DaemonDoctorComponents` |
 | How is SQLite version compatibility and migration recovery controlled? | `DaemonMigrationComponents` |
 | How are text-first backup bundles created and restored? | `CliBackupRestoreComponents` |
@@ -327,6 +328,6 @@ Retention/backup posture is governed by [`retention-compaction-backup.md`](reten
 |---|---|
 | Native messaging hardening | Planned. HTTP loopback remains current transport. |
 | Semantic search | Planned only after explicit approval. |
-| Retention/export/backup | Planned. |
+| Retention/compaction/backup pruning | Planned. Query-only X observation export and manifest-backed local backup/restore are current; automatic retention, compaction, encryption/signing, and backup pruning remain future work. |
 | MCP/Hermes tool integration | Planned. |
 | Rich allow/redact/quarantine policies | Planned; current explicit rules are block-only and applied in every mode. |

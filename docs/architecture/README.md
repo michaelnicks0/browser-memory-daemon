@@ -18,8 +18,10 @@ flowchart TB
   Web["Web + media origins"] --> Chrome["Windows Chrome"]
   Chrome --> Ext["MV3 extension"]
   Ext --> Daemon["WSL loopback daemon"]
-  Daemon --> DB[("SQLite + FTS5")]
-  Daemon --> Blobs[("Text + media blobs")]
+  Daemon --> DB[("SQLite + FTS5<br/>complete text authority")]
+  Daemon --> Media[("Guarded final<br/>media cache")]
+  Daemon --> Spool[("Bounded local<br/>media spool")]
+  Spool --> Drain["Automatic verified drain"] --> Media
   Daemon --> Ops["Local UI + CLI"]
 
   classDef external fill:#fdd9e1,stroke:#d34d77,color:#3a0c1c;
@@ -27,7 +29,7 @@ flowchart TB
   classDef local fill:#d6f5e6,stroke:#2f9e68,color:#0b2f22;
   class Web external;
   class Chrome,Ext browser;
-  class Daemon,DB,Blobs,Ops local;
+  class Daemon,DB,Media,Spool,Drain,Ops local;
 ```
 
 ## Scope
@@ -37,11 +39,12 @@ The model covers the current local daily-driver architecture:
 ```text
 Windows Chrome MV3 extension
   -> WSL loopback HTTP daemon
-  -> SQLite + FTS5 + text/media blob stores
+  -> SQLite + FTS5 complete-text authority
+  -> guarded media cache + bounded local recovery spool
   -> local UI / CLI / media worker
 ```
 
-The system boundary is **Browser Memory Daemon**, including the owned Chrome extension, WSL daemon, WSL media worker, local UI, CLI, database, and blob stores. Windows Chrome and web/media origins are modeled as external systems.
+The system boundary is **Browser Memory Daemon**, including the owned Chrome extension, WSL daemon, WSL media worker, local UI, CLI, database, legacy derivative store, guarded media cache, and bounded local spool. Windows Chrome and web/media origins are modeled as external systems.
 
 Every implemented component in `workspace.dsl` carries the `Current` tag. Versioned migrations through schema 14, immutable observation ingest sequence, query-only X observation export, capture observations, BlobStore, media decomposition, transactional capture/lifecycle outbox, thin HTTP application layer, backup/restore, and staged installer rollback are current. Any future design-review boundary added before implementation must carry the `Target` tag and remain visually distinct from the current system; requirement status is canonical in [`../../requirements/catalog.toml`](../../requirements/catalog.toml).
 
@@ -57,25 +60,30 @@ Every implemented component in `workspace.dsl` carries the `Current` tag. Versio
 | View key | C4 level | Purpose |
 |---|---|---|
 | `SystemContext` | C1 System Context | Operator, Chrome runtime, web/media origins, and the Browser Memory Daemon boundary. |
-| `CaptureContainers` | C2 Container | Fast capture/storage path: Chrome, extension, extension browser storage, daemon, SQLite/FTS, and clean-text blob store. |
+| `CaptureContainers` | C2 Container | Fast capture/storage path: Chrome, extension, extension browser storage, daemon, SQLite/FTS complete-text authority, and legacy derivative compatibility. |
 | `BrowserMediaContainers` | C2 Container | Browser-side media path: extension browser storage, daemon media APIs, SQLite artifact rows, media cache, and web/media origins. |
 | `DaemonMediaWorkerContainers` | C2 Container | Daemon-public media worker path: worker, SQLite tasks, media cache, and public web/media origins. |
-| `OpsContainers` | C2 Container | Operator surfaces and stores: local UI, CLI, daemon, SQLite/FTS, text blobs, and media cache. |
+| `OpsContainers` | C2 Container | Operator surfaces and stores: local UI, CLI, daemon, SQLite/FTS, legacy derivatives, guarded media cache, and bounded spool. |
 | `ExtensionCaptureComponents` | C3 Component | MV3 extension capture internals: manifest, extractor, content script, service worker, popup/options controls, daemon delivery, and browser queue. |
+| `ExtensionOutboxComponents` | C3 Component | Transactional capture/lifecycle outbox admission, checkpoint, retry, telemetry, and browser storage boundaries. |
 | `ExtensionMediaComponents` | C3 Component | MV3 extension media internals: service worker, media queue adapter, CDP recorder, Chrome APIs, browser queue, and daemon upload. |
 | `DaemonPolicyComponents` | C3 Component | WSL daemon policy internals: router/auth, static policy engine, and persistent block rules. |
-| `DaemonIngestComponents` | C3 Component | WSL daemon ingest internals: router, ingest pipeline, SQLite/FTS rows, and text blobs. |
+| `DaemonIngestComponents` | C3 Component | WSL daemon ingest internals: router, application use case, ingest pipeline, and SQLite/FTS complete-text authority. |
 | `DaemonLifecycleComponents` | C3 Component | WSL daemon lifecycle internals: router, lifecycle pipeline, and SQLite dwell/event rows. |
 | `DaemonMediaComponents` | C3 Component | WSL daemon media internals: router, compatibility manager, state model, durable task repository, artifact admission/eviction store, SQLite rows, BlobStore, reconciliation, and guarded media cache/spool. |
-| `DaemonReadComponents` | C3 Component | WSL daemon read internals: router, search/read model, SQLite/FTS, text blobs, and media cache. |
-| `DaemonForgetComponents` | C3 Component | WSL daemon deletion internals: router, forget pipeline, SQLite receipts, text blobs, and media cache. |
-| `DaemonDoctorComponents` | C3 Component | WSL daemon diagnostics internals: router, doctor/audit, SQLite checks, and storage counts. |
+| `DaemonMediaTransportComponents` | C3 Component | Direct/HLS transport coordination, guarded network fetch, request budgeting, and bounded assembly. |
+| `DaemonMediaResourceComponents` | C3 Component | Process request/byte leases plus persistent cache reservations across upload, fetch, assembly, publication, and response paths. |
+| `DaemonMediaOpsComponents` | C3 Component | Scoped budget requeue and bounded current-state media reconciliation shared by CLI and worker. |
+| `DaemonReadComponents` | C3 Component | WSL daemon read internals: router, search/read model, query-only X export, SQLite/FTS, legacy derivatives, guarded media cache, and spool. |
+| `DaemonForgetComponents` | C3 Component | WSL daemon deletion internals: router, forget pipeline, SQLite receipts, durable reconciliation, legacy derivatives, guarded media cache, and spool. |
+| `DaemonDoctorComponents` | C3 Component | WSL daemon diagnostics internals: router, doctor/audit, SQLite checks, lifecycle health, and derivative/media/spool counts. |
 | `DaemonStorageReconcileComponents` | C3 Component | Durable tombstone retry, missing/corrupt/recovered references, contained orphan detection, and stale-stage cleanup. |
 | `CliBackupRestoreComponents` | C3 Component | CLI online SQLite backup, redaction-safe manifest, optional derivative inclusion, and absent-root restore path. |
 | `DaemonMigrationComponents` | C3 Component | WSL daemon migration internals: exact fingerprint, ordered checksum ledger, transactional steps, and SQLite backup boundary. |
 | `FastCaptureFlow` | Dynamic | Fast text/ref capture path that stores FTS recall, returns IDs, and queues lazy media work before media bytes arrive. |
 | `CredentialedMediaSidecarFlow` | Dynamic | Browser-side media fetch/upload path that keeps Chrome cookies inside Chrome. |
 | `DaemonPublicMediaWorkerFlow` | Dynamic | Public no-cookie daemon media backfill path. |
+| `AutomaticSpoolRecoveryFlow` | Dynamic | Guarded-root recovery path that verifies destination bytes, commits the tier switch, and only then removes the local source. |
 | `DailyDriverDeployment` | Deployment | Local daily-driver topology: Windows Chrome, WSL systemd user services, and WSL XDG data paths. |
 
 ## Render and validate
@@ -138,7 +146,7 @@ Primary source evidence used for this model:
 | Credentialed media fetch stays inside Chrome; raw blobs upload to WSL. | `docs/media-artifacts.md`, `extension/src/service_worker.js`, `daemon/src/browser_memory_daemon/media.py` |
 | Daemon media worker leases public media tasks and writes blob/status updates. | `daemon/src/browser_memory_daemon/media_worker.py`, `daemon/src/browser_memory_daemon/media.py` |
 | SQLite schema evolution uses an exact version-1 fingerprint, contiguous ledger checksums, and backup-gated destructive steps. | `daemon/src/browser_memory_daemon/migrations.py`, `daemon/src/browser_memory_daemon/migration_steps/`, `docs/database-migrations.md` |
-| Final media uses an independently guarded root; an opt-in local spool uses per-writer SQLite reservations, tier-aware reads/deletes, and verified dry-run-first draining. | `daemon/src/browser_memory_daemon/media_storage.py`, `daemon/src/browser_memory_daemon/migration_steps/v0010_split_media_root_and_add_spool.sql`, ADR-0039 |
+| Final media uses an independently guarded root; an opt-in bounded local spool uses per-writer SQLite reservations, tier-aware reads/deletes, dry-run-first operator draining, and automatic verified worker recovery after the root returns. | `daemon/src/browser_memory_daemon/media_storage.py`, `daemon/src/browser_memory_daemon/media_worker.py`, `daemon/src/browser_memory_daemon/migration_steps/v0010_split_media_root_and_add_spool.sql`, ADR-0061 |
 | Blob deletion intent is durable before filesystem side effects; failed/blocked work is unreadable, capacity-accounted, and retryable through dry-run-first reconciliation. | `daemon/src/browser_memory_daemon/blob_lifecycle.py`, `daemon/src/browser_memory_daemon/storage_reconcile.py`, `daemon/src/browser_memory_daemon/migration_steps/v0011_add_blob_lifecycle_records.sql`, ADR-0040 |
 | Forget selection validates literal policy-aware URL/domain scope, previews cross-authority counts without mutation, and refuses execution above an explicit selected-record bound. | `daemon/src/browser_memory_daemon/forget.py`, `daemon/src/browser_memory_daemon/application.py`, `daemon/src/browser_memory_daemon/cli.py`, ADR-0057 |
 | Text-first backup uses SQLite online backup plus a redaction-safe hash manifest and restores into an absent runtime root without media/spool/secrets. | `daemon/src/browser_memory_daemon/backup_ops.py`, `daemon/src/browser_memory_daemon/cli.py`, `daemon/tests/integration/test_backup_restore.py`, ADR-0041 |

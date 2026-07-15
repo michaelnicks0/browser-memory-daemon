@@ -15,7 +15,7 @@ Windows Chrome extension
   → fast /capture sidecar: text + media manifest refs
   → browser lazy media sidecar: credentialed fetch + raw blob upload
   → CDP/HLS media sidecar: X/Twitter video manifests + segment backfill
-  → WSL daemon policy mode + durable public media worker
+  → WSL daemon policy mode + durable public media worker + bounded automatic spool recovery
   → SQLite-authoritative text under WSL runtime paths + guarded media root + optional bounded local spool
   → CLI / local UI / search / timeline / detail / forget / doctor
 ```
@@ -134,7 +134,7 @@ The daemon embeds the current bearer token into the local `/ui` HTML bootstrap s
 - Delayed SPA capture and History API hooks.
 - Tab lifecycle events, dwell seconds, and max-scroll metadata.
 - Local web UI and MV3 extension popup/options controls.
-- Image/video media refs, durable browser IndexedDB media queue, raw blob upload, X/Twitter CDP recorder, HLS/audio sidecar storage, public daemon media worker, rolling media cache gates, purge/rehydrate controls.
+- Image/video media refs, durable browser IndexedDB media queue, raw blob upload, X/Twitter CDP recorder, HLS/audio sidecar storage, public daemon media worker, rolling media cache gates, guarded-root outage spooling with bounded automatic recovery, and purge/rehydrate controls.
 - Real Windows Chrome for Testing e2e harness.
 - Daily-driver install helper for WSL daemon/media-worker systemd services and Windows unpacked extension artifact.
 
@@ -145,6 +145,6 @@ The daemon embeds the current bearer token into the local `/ui` HTML bootstrap s
 - Semantic/vector search.
 - MCP/Hermes tools.
 - Native messaging fallback/hardening.
-- Encrypted backups/restore.
+- Encrypted or signed backup bundles and automatic backup pruning; manifest-backed local backup/restore is implemented.
 - Multi-source importers.
 - Rich allow/redact/quarantine policy editing and retention jobs beyond explicit block rules.

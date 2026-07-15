@@ -58,7 +58,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
                 opsDoctor = component "Ops Doctor and Audit" "Reports health, DB integrity, FTS consistency, blob lifecycle/pending deletion state, runtime paths, storage counts, media queue status, and writes metadata-only audit events to SQLite." "Python + sqlite3" "Current"
             }
 
-            mediaWorker = container "WSL Media Worker" "Long-running systemd user worker that leases daemon-public media fetch tasks, fetches public media/HLS without Chrome cookies, classifies terminal states, and updates artifact rows." "Python 3.11 CLI loop"
+            mediaWorker = container "WSL Media Worker" "Long-running systemd user worker that first drains one bounded spool-recovery batch when the guarded final root is ready, then leases daemon-public media fetch tasks, fetches public media/HLS without Chrome cookies, classifies terminal states, and updates artifact rows." "Python 3.11 CLI loop"
 
             localWebUi = container "Local Web UI" "Static browser UI for exact search, recent/timeline views, document/snapshot detail, media artifact opening, policy rules, doctor, and forget-domain operations." "HTML/CSS/JavaScript served by daemon"
 
@@ -114,7 +114,7 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
         wslLoopbackDaemon -> mediaSpool "Stores and serves media during guarded-root outages in" "Filesystem"
         mediaWorker -> sqliteDatabase "Leases and updates media tasks in" "sqlite3"
         mediaWorker -> mediaTaskRepository "Runs bounded lease/retry task workflow through"
-        mediaWorker -> mediaManager "Fetches and stores claimed artifacts through"
+        mediaWorker -> mediaManager "Runs bounded automatic spool recovery and fetches/stores claimed artifacts through"
         mediaWorker -> mediaOps "Runs bounded current-state reconciliation through"
         mediaWorker -> mediaResourceBudget "Uses an independent process-local request/byte budget through"
         mediaWorker -> webSites "Fetches public media and HLS from" "HTTP(S), data URLs"
@@ -509,6 +509,14 @@ workspace "Browser Memory Daemon" "Current-state C4 architecture for the local-f
             mediaWorker -> webSites "Fetches public media or HLS assets without Chrome cookies"
             mediaWorker -> mediaBlobCache "Writes fetched or assembled blob when gates allow"
             mediaWorker -> sqliteDatabase "Marks task/artifact stored, retrying, skipped, expired, or failed with reason"
+            autoLayout lr
+        }
+
+        dynamic browserMemoryDaemon "AutomaticSpoolRecoveryFlow" {
+            mediaWorker -> mediaSpool "After guarded-root readiness, selects one bounded batch of authoritative spooled bytes"
+            mediaWorker -> mediaBlobCache "Streams and atomically commits destination bytes after size and SHA-256 verification"
+            mediaWorker -> sqliteDatabase "Commits the storage-tier switch and spool deletion intent"
+            mediaWorker -> mediaSpool "Removes the local source only after the tier switch commits"
             autoLayout lr
         }
 
