@@ -3,105 +3,103 @@ digraph {
   graph [fontname="Arial", rankdir=TB, ranksep=1.0, nodesep=1.0]
   node [fontname="Arial", shape=box, margin="0.4,0.3"]
   edge [fontname="Arial"]
-  label=<<br /><font point-size="34">Deployment View: Browser Memory Daemon - Daily-driver local</font>>
+  label=<<br /><font point-size="34">Browser Memory Daemon - Deployment - Daily-driver local</font>>
 
-  subgraph cluster_171 {
+  subgraph cluster_203 {
     margin=25
     label=<<font point-size="24">Local workstation</font><br /><font point-size="19">[Deployment Node: Windows + WSL2]</font>>
     labelloc=b
-    color="#444444"
-    fontcolor="#444444"
+    color="#888888"
+    fontcolor="#000000"
     fillcolor="#ffffff"
 
-    subgraph cluster_172 {
+    subgraph cluster_204 {
       margin=25
       label=<<font point-size="24">Windows user profile</font><br /><font point-size="19">[Deployment Node: Windows profile]</font>>
       labelloc=b
-      color="#444444"
-      fontcolor="#444444"
+      color="#888888"
+      fontcolor="#000000"
       fillcolor="#ffffff"
 
-      subgraph cluster_173 {
+      subgraph cluster_205 {
         margin=25
         label=<<font point-size="24">Windows Chrome daily-driver profile</font><br /><font point-size="19">[Deployment Node: Google Chrome MV3]</font>>
         labelloc=b
-        color="#444444"
-        fontcolor="#444444"
+        color="#888888"
+        fontcolor="#000000"
         fillcolor="#ffffff"
 
-        174 [id=174,shape=rect, label=<<font point-size="34">Chrome MV3 Extension</font><br /><font point-size="19">[Container: JavaScript, Chrome Manifest V3]</font><br /><br /><font point-size="24">Captures visible page text,<br />media references, tab<br />lifecycle events, and<br />browser-side media bytes from<br />Windows Chrome; queues work<br />durably and posts to the WSL<br />daemon.</font>>, style=filled, color="#2e6295", fillcolor="#438dd5", fontcolor="#ffffff"]
-        177 [id=177,shape=rect, label=<<font point-size="34">Local Web UI</font><br /><font point-size="19">[Container: HTML/CSS/JavaScript served by daemon]</font><br /><br /><font point-size="24">Static browser UI for exact<br />search, recent/timeline views,<br />document/snapshot detail,<br />media artifact opening, policy<br />rules, doctor, and<br />forget-domain operations.</font>>, style=filled, color="#2e6295", fillcolor="#438dd5", fontcolor="#ffffff"]
+        206 [id=206,shape=rect, label=<<font point-size="34">Chrome MV3 Extension</font><br /><font point-size="19">[Container: JavaScript, Chrome Manifest V3]</font><br /><br /><font point-size="24">Captures visible page text,<br />media references, tab<br />lifecycle events, and<br />browser-side media bytes from<br />Windows Chrome; queues work<br />durably and posts to the WSL<br />daemon.</font>>, style=filled, color="#2e6295", fillcolor="#438dd5", fontcolor="#ffffff"]
+        209 [id=209,shape=rect, label=<<font point-size="34">Local Web UI</font><br /><font point-size="19">[Container: HTML/CSS/JavaScript served by daemon]</font><br /><br /><font point-size="24">Static browser UI for exact<br />search, recent/timeline views,<br />document/snapshot detail,<br />media artifact opening, policy<br />rules, doctor, and<br />forget-domain operations.</font>>, style=filled, color="#2e6295", fillcolor="#438dd5", fontcolor="#ffffff"]
       }
 
     }
 
-    subgraph cluster_179 {
+    subgraph cluster_211 {
       margin=25
       label=<<font point-size="24">WSL2 Ubuntu</font><br /><font point-size="19">[Deployment Node: Ubuntu + systemd --user]</font>>
       labelloc=b
-      color="#444444"
-      fontcolor="#444444"
+      color="#888888"
+      fontcolor="#000000"
       fillcolor="#ffffff"
 
-      subgraph cluster_180 {
+      subgraph cluster_212 {
         margin=25
         label=<<font point-size="24">systemd --user services</font><br /><font point-size="19">[Deployment Node: systemd --user]</font>>
         labelloc=b
-        color="#444444"
-        fontcolor="#444444"
+        color="#888888"
+        fontcolor="#000000"
         fillcolor="#ffffff"
 
-        181 [id=181,shape=rect, label=<<font point-size="34">WSL Loopback HTTP<br />Daemon</font><br /><font point-size="19">[Container: Python 3.11, ThreadingHTTPServer]</font><br /><br /><font point-size="24">Authenticated loopback HTTP<br />API that handles capture,<br />visit events, media artifact<br />upload/fetch/purge, exact<br />search,<br />recent/timeline/detail, policy<br />rules, doctor, durable forget,<br />and static UI serving.</font>>, style=filled, color="#2e6295", fillcolor="#438dd5", fontcolor="#ffffff"]
-        184 [id=184,shape=rect, label=<<font point-size="34">WSL Media Worker</font><br /><font point-size="19">[Container: Python 3.11 CLI loop]</font><br /><br /><font point-size="24">Long-running systemd user<br />worker that leases<br />daemon-public media fetch<br />tasks, fetches public<br />media/HLS without Chrome<br />cookies, classifies terminal<br />states, and updates artifact<br />rows.</font>>, style=filled, color="#2e6295", fillcolor="#438dd5", fontcolor="#ffffff"]
+        213 [id=213,shape=rect, label=<<font point-size="34">WSL Loopback HTTP<br />Daemon</font><br /><font point-size="19">[Container: Python 3.11, ThreadingHTTPServer]</font><br /><br /><font point-size="24">Authenticated loopback API for<br />capture, read/admin/media<br />operations, and query-only<br />bmd.x-observations v1 export.</font>>, style=filled, color="#2e6295", fillcolor="#438dd5", fontcolor="#ffffff"]
+        216 [id=216,shape=rect, label=<<font point-size="34">WSL Media Worker</font><br /><font point-size="19">[Container: Python 3.11 CLI loop]</font><br /><br /><font point-size="24">Long-running systemd user<br />worker that loads<br />storage/media modules<br />in-process, first drains one<br />bounded spool-recovery batch<br />when the guarded final root is<br />ready, then leases<br />daemon-public media fetch<br />tasks without calling the HTTP<br />daemon.</font>>, style=filled, color="#2e6295", fillcolor="#438dd5", fontcolor="#ffffff"]
       }
 
-      subgraph cluster_186 {
+      subgraph cluster_217 {
         margin=25
         label=<<font point-size="24">WSL shell</font><br /><font point-size="19">[Deployment Node: Bash + Python]</font>>
         labelloc=b
-        color="#444444"
-        fontcolor="#444444"
+        color="#888888"
+        fontcolor="#000000"
         fillcolor="#ffffff"
 
       }
 
-      subgraph cluster_189 {
+      subgraph cluster_220 {
         margin=25
         label=<<font point-size="24">WSL XDG runtime data paths</font><br /><font point-size="19">[Deployment Node: WSL filesystem]</font>>
         labelloc=b
-        color="#444444"
-        fontcolor="#444444"
+        color="#888888"
+        fontcolor="#000000"
         fillcolor="#ffffff"
 
-        190 [id=190,shape=cylinder, label=<<font point-size="34">SQLite + FTS5<br />Database</font><br /><font point-size="19">[Container: SQLite with FTS5]</font><br /><br /><font point-size="24">Durable complete cleaned-text,<br />relational, and full-text<br />authority for migration<br />ledger, sources, documents,<br />visits, capture observations,<br />URL claims, visit events,<br />snapshots, chunks, chunks_fts,<br />media provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
-        194 [id=194,shape=cylinder, label=<<font point-size="34">Local Derivative<br />Store</font><br /><font point-size="19">[Container: WSL local filesystem]</font><br /><br /><font point-size="24">Reconstructible compatibility<br />evidence such as pre-version-9<br />clean-text sidecars; new<br />captures create no text<br />sidecars.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
-        197 [id=197,shape=cylinder, label=<<font point-size="34">Bounded Local Media<br />Spool</font><br /><font point-size="19">[Container: WSL local filesystem]</font><br /><br /><font point-size="24">Opt-in durable outage buffer<br />beneath the local WSL data<br />root; admission counts<br />committed files and distinct<br />in-flight SQLite reservations,<br />and drain verifies bytes<br />before tier transition/source<br />cleanup.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+        221 [id=221,shape=cylinder, label=<<font point-size="34">SQLite + FTS5<br />Database</font><br /><font point-size="19">[Container: SQLite with FTS5]</font><br /><br /><font point-size="24">Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+        225 [id=225,shape=cylinder, label=<<font point-size="34">Local Derivative<br />Store</font><br /><font point-size="19">[Container: WSL local filesystem]</font><br /><br /><font point-size="24">Reconstructible compatibility<br />evidence such as pre-version-9<br />clean-text sidecars; new<br />captures create no text<br />sidecars.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+        228 [id=228,shape=cylinder, label=<<font point-size="34">Bounded Local Media<br />Spool</font><br /><font point-size="19">[Container: WSL local filesystem]</font><br /><br /><font point-size="24">Opt-in durable outage buffer<br />beneath the local WSL data<br />root; admission counts<br />committed files and distinct<br />in-flight SQLite reservations,<br />and drain verifies bytes<br />before tier transition/source<br />cleanup.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
       }
 
-      subgraph cluster_202 {
+      subgraph cluster_233 {
         margin=25
         label=<<font point-size="24">WSL-mounted guarded media root</font><br /><font point-size="19">[Deployment Node: NAS mount of TrueNAS ZFS dataset]</font>>
         labelloc=b
-        color="#444444"
-        fontcolor="#444444"
+        color="#888888"
+        fontcolor="#000000"
         fillcolor="#ffffff"
 
-        203 [id=203,shape=cylinder, label=<<font point-size="34">Guarded Media Blob<br />Cache</font><br /><font point-size="19">[Container: WSL-visible local or NAS-mounted filesystem]</font><br /><br /><font point-size="24">Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+        234 [id=234,shape=cylinder, label=<<font point-size="34">Guarded Media Blob<br />Cache</font><br /><font point-size="19">[Container: WSL-visible local or NAS-mounted filesystem]</font><br /><br /><font point-size="24">Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
       }
 
     }
 
   }
 
-  174 -> 181 [id=182, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Posts /capture,<br />/visit-events, media<br />metadata, and raw blob<br />uploads to</font><br /><font point-size="19">[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-  177 -> 181 [id=183, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Calls authenticated read,<br />admin, media, and forget<br />APIs on</font><br /><font point-size="19">[HTTP/JSON]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-  184 -> 181 [id=185, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Runs bounded lease/retry<br />task workflow through</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-  181 -> 190 [id=191, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Reads and writes metadata,<br />FTS, tasks, audit, and<br />receipts in</font><br /><font point-size="19">[sqlite3]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-  184 -> 190 [id=192, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Leases and updates media<br />tasks in</font><br /><font point-size="19">[sqlite3]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-  181 -> 194 [id=195, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Reads or deletes legacy<br />text sidecars when<br />required</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-  181 -> 197 [id=198, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Stores and serves media<br />during guarded-root<br />outages in</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-  184 -> 197 [id=199, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Writes fetched media<br />during guarded-root<br />outages to</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-  181 -> 203 [id=204, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Stores, serves, purges,<br />and rehydrates media blobs<br />in</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-  184 -> 203 [id=205, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Writes fetched media blobs<br />to</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-
+  206 -> 213 [id=214, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Posts /capture,<br />/visit-events, media<br />metadata, and raw blob<br />uploads to</font><br /><font point-size="19">[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  209 -> 213 [id=215, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Calls authenticated read,<br />admin, media, and forget<br />APIs on</font><br /><font point-size="19">[HTTP/JSON]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  213 -> 221 [id=222, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Reads and writes metadata,<br />FTS, tasks, audit, and<br />receipts in</font><br /><font point-size="19">[sqlite3]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  216 -> 221 [id=223, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Leases and updates media<br />tasks in</font><br /><font point-size="19">[sqlite3]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  213 -> 225 [id=226, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Reads or deletes legacy<br />text sidecars when<br />required</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  213 -> 228 [id=229, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Stores and serves media<br />during guarded-root<br />outages in</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  216 -> 228 [id=230, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Writes fetched media<br />during guarded-root<br />outages to</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  213 -> 234 [id=235, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Stores, serves, purges,<br />and rehydrates media blobs<br />in</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  216 -> 234 [id=236, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Writes fetched media blobs<br />to</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
 }

@@ -365,7 +365,7 @@ def _replace_c4_graphviz_with_showcase_mermaid(body_html: str, raw: str) -> str:
 
     The generated C4 Markdown intentionally prefers committed Graphviz SVG artifacts for
     GitHub/Markdown readability and retains Mermaid source in a details block. For the
-    polished HTML companions, Operator wants the visible C4 diagrams to use the same
+    polished HTML companions, the visible C4 diagrams use the same
     showcase Mermaid theme as the rest of the high-level docs. Do that at render time:
     replace the visible Graphviz image paragraphs with inline themed Mermaid figures, but
     leave the Markdown files, generated Graphviz artifacts, and collapsible source blocks
@@ -393,11 +393,11 @@ def _replace_c4_graphviz_with_showcase_mermaid(body_html: str, raw: str) -> str:
 def render_doc(doc_path: Path, repo: Path, slug: str, rendered: set) -> str:
     raw = doc_path.read_text()
 
-    # C4/Structurizr artifact pages get an HTML-only display swap below: visible
-    # Graphviz images become themed Mermaid figures, while the Mermaid source fences
-    # remain code inside <details>. Other architecture docs (README, ADRs, etc.)
-    # follow normal Markdown rendering so intentional Mermaid front-door diagrams
-    # render as diagrams instead of code blocks.
+    # C4/Structurizr generated artifact pages get an HTML-only display swap below:
+    # visible Graphviz images become themed Mermaid figures, while Mermaid source
+    # fences remain code inside <details>. Other architecture docs (README, ADRs,
+    # narrative docs) follow normal Markdown rendering so their intentional Mermaid
+    # diagrams render as diagrams instead of code blocks.
     rel_doc = doc_path.relative_to(repo).as_posix()
     architecture_artifact_doc = (
         rel_doc == "docs/architecture/c4-diagrams.md"
@@ -471,9 +471,10 @@ def collect_docs(repo: Path) -> list:
     docs_dir = repo / "docs"
     if docs_dir.is_dir():
         docs += sorted(docs_dir.rglob("*.md"))
-    readme = repo / "README.md"
-    if readme.exists():
-        docs.append(readme)
+    for root_doc_name in ("README.md", "AGENTS.md", "SKILL.md"):
+        root_doc = repo / root_doc_name
+        if root_doc.exists():
+            docs.append(root_doc)
     # exclude build/dep dirs AND internal work-log dirs (process receipts, not docs)
     excluded_parts = {".venv", "venv", "node_modules", ".git",
                       "plans", "review", "archive", "scratch", "drafts"}

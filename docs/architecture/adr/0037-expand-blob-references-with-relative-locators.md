@@ -1,5 +1,7 @@
 ---
 status: accepted
+supersedes: [ADR-0024]
+superseded_by: []
 date: 2026-07-10
 decision-makers: [Michael]
 consulted: [TARS]

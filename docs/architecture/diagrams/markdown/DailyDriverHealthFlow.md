@@ -1,0 +1,60 @@
+# Daily Driver Health Flow
+
+> Generated Markdown wrapper for C4 view `DailyDriverHealthFlow`. Canonical model: [`workspace.dsl`](../../workspace.dsl).
+
+<!-- Generated from Structurizr exports; refresh from docs/architecture/workspace.dsl. -->
+
+## Diagram
+
+![Daily Driver Health Flow](../dot-rendered/structurizr-DailyDriverHealthFlow.svg)
+
+_Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for text review._
+
+<details>
+<summary>Mermaid source</summary>
+
+```mermaid
+graph LR
+  linkStyle default fill:#ffffff
+
+  subgraph diagram ["Browser Memory Daemon - Dynamic"]
+    style diagram fill:#ffffff,stroke:#ffffff
+
+    subgraph 5 ["Browser Memory Daemon"]
+      style 5 fill:#ffffff,stroke:#0b4884,color:#0b4884
+
+      23["<div style='font-weight: bold'>WSL Loopback HTTP Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11, ThreadingHTTPServer]</div><div style='font-size: 80%; margin-top:10px'>Authenticated loopback API<br />for capture, read/admin/media<br />operations, and query-only<br />bmd.x-observations v1 export.</div>"]
+      style 23 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      51["<div style='font-weight: bold'>CLI</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python argparse]</div><div style='font-size: 80%; margin-top:10px'>Command-line interface for<br />serving/admin operations,<br />direct storage/health<br />workflows, and standalone<br />mutation-free X observation<br />export.</div>"]
+      style 51 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      57[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+      style 57 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      59[("<div style='font-weight: bold'>Guarded Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL-visible local or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</div>")]
+      style 59 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      60[("<div style='font-weight: bold'>Bounded Local Media Spool</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Opt-in durable outage buffer<br />beneath the local WSL data<br />root; admission counts<br />committed files and distinct<br />in-flight SQLite<br />reservations, and drain<br />verifies bytes before tier<br />transition/source cleanup.</div>")]
+      style 60 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    end
+
+    1["<div style='font-weight: bold'>Operator</div><div style='font-size: 70%; margin-top: 0px'>[Person]</div><div style='font-size: 80%; margin-top:10px'>Sole local operator who<br />browses with Windows Chrome<br />and searches, reviews, and<br />deletes local browser-memory<br />records.</div>"]
+    style 1 fill:#08427b,stroke:#052e56,color:#ffffff
+
+    1-. "<div>1. Runs daily-driver health<br />to inspect protected<br />artifacts plus systemd<br />restart and journal budgets</div><div style='font-size: 70%'></div>" .->51
+    51-. "<div>2. Checks authenticated<br />daemon readiness over HTTP</div><div style='font-size: 70%'>[HTTP/JSON]</div>" .->23
+    51-. "<div>3. Checks schema, integrity,<br />counts, and storage headroom</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+    51-. "<div>4. Checks guarded-root<br />identity, readiness, and<br />capacity</div><div style='font-size: 70%'>[Filesystem]</div>" .->59
+    51-. "<div>5. Checks reservations,<br />filesystem accounting,<br />capacity, and latest<br />automatic drain</div><div style='font-size: 70%'>[Filesystem]</div>" .->60
+  end
+```
+
+</details>
+
+## Derived artifacts
+
+| Artifact | Link |
+|---|---|
+| Mermaid source | [`structurizr-DailyDriverHealthFlow.mmd`](../structurizr-DailyDriverHealthFlow.mmd) |
+| Mermaid SVG | [`structurizr-DailyDriverHealthFlow.svg`](../structurizr-DailyDriverHealthFlow.svg) |
+| Mermaid PNG | [`structurizr-DailyDriverHealthFlow.png`](../structurizr-DailyDriverHealthFlow.png) |
+| DOT source | [`structurizr-DailyDriverHealthFlow.dot`](../dot/structurizr-DailyDriverHealthFlow.dot) |
+| Graphviz SVG | [`structurizr-DailyDriverHealthFlow.svg`](../dot-rendered/structurizr-DailyDriverHealthFlow.svg) |
+| Graphviz PNG | [`structurizr-DailyDriverHealthFlow.png`](../dot-rendered/structurizr-DailyDriverHealthFlow.png) |

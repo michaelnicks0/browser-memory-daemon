@@ -1,0 +1,38 @@
+digraph {
+  compound=true
+  graph [fontname="Arial", rankdir=LR, ranksep=1.0, nodesep=1.0]
+  node [fontname="Arial", shape=box, margin="0.4,0.3"]
+  edge [fontname="Arial"]
+  label=<<br /><font point-size="34">Browser Memory Daemon - WSL Media Worker - Components</font>>
+
+  3 [id=3,shape=rect, label=<<font point-size="34">Web Sites and Media<br />Origins</font><br /><font point-size="19">[Software System]</font><br /><br /><font point-size="24">External web pages,<br />image/video URLs, and media<br />CDNs that Chrome loads or that<br />sidecars fetch as page-related<br />media.</font>>, style=filled, color="#6b6b6b", fillcolor="#999999", fontcolor="#ffffff"]
+  57 [id=57,shape=cylinder, label=<<font point-size="34">SQLite + FTS5<br />Database</font><br /><font point-size="19">[Container: SQLite with FTS5]</font><br /><br /><font point-size="24">Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+  59 [id=59,shape=cylinder, label=<<font point-size="34">Guarded Media Blob<br />Cache</font><br /><font point-size="19">[Container: WSL-visible local or NAS-mounted filesystem]</font><br /><br /><font point-size="24">Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+  60 [id=60,shape=cylinder, label=<<font point-size="34">Bounded Local Media<br />Spool</font><br /><font point-size="19">[Container: WSL local filesystem]</font><br /><br /><font point-size="24">Opt-in durable outage buffer<br />beneath the local WSL data<br />root; admission counts<br />committed files and distinct<br />in-flight SQLite reservations,<br />and drain verifies bytes<br />before tier transition/source<br />cleanup.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+
+  subgraph cluster_45 {
+    margin=25
+    label=<<font point-size="24"><br />WSL Media Worker</font><br /><font point-size="19">[Container: Python 3.11 CLI loop]</font>>
+    labelloc=b
+    color="#444444"
+    fontcolor="#444444"
+    fillcolor="#444444"
+
+    46 [id=46,shape=rect, label=<<font point-size="34">Media Worker Loop</font><br /><font point-size="19">[Component: Python]</font><br /><br /><font point-size="24">Orders one bounded automatic<br />spool-recovery pass, bounded<br />current-state reconciliation,<br />and one bounded public-media<br />task pass; records<br />redaction-safe outcomes.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
+    47 [id=47,shape=rect, label=<<font point-size="34">Automatic Spool<br />Recovery</font><br /><font point-size="19">[Component: Python + sqlite3 + filesystem]</font><br /><br /><font point-size="24">Checks guarded-root readiness,<br />streams and hash-verifies<br />destination bytes, commits the<br />SQLite tier switch and<br />deletion intent, then removes<br />the local source.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
+    48 [id=48,shape=rect, label=<<font point-size="34">Current-State Media<br />Reconciliation</font><br /><font point-size="19">[Component: Python + sqlite3]</font><br /><br /><font point-size="24">Closes bounded stale stored<br />work and reconciles current<br />CDP/blob coverage through<br />in-process repository<br />functions before due-task<br />leasing.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
+    49 [id=49,shape=rect, label=<<font point-size="34">Public Media Task<br />Runner</font><br /><font point-size="19">[Component: Python + sqlite3]</font><br /><br /><font point-size="24">Leases due daemon-public<br />tasks, runs guarded direct/HLS<br />fetch without Chrome cookies,<br />applies process budgets, and<br />records terminal or retry<br />state.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
+  }
+
+  49 -> 60 [id=100, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Publishes admitted outage<br />bytes in</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  48 -> 57 [id=101, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Reads and advances current<br />artifact/task state in</font><br /><font point-size="19">[sqlite3]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  46 -> 47 [id=91, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Runs one bounded recovery<br />batch before new fetch<br />work through</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  46 -> 48 [id=92, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Runs bounded current-state<br />cleanup before due-task<br />leasing through</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  46 -> 49 [id=93, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Runs one bounded due-task<br />batch through</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  47 -> 57 [id=94, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Commits tier transitions<br />and durable deletion<br />intent in</font><br /><font point-size="19">[sqlite3]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  47 -> 60 [id=95, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Reads and removes<br />authoritative local outage<br />bytes from</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  47 -> 59 [id=96, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Streams and verifies<br />recovered destination<br />bytes in</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  49 -> 57 [id=97, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Leases tasks and records<br />artifact outcomes in</font><br /><font point-size="19">[sqlite3]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  49 -> 3 [id=98, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Fetches guarded direct/HLS<br />media from</font><br /><font point-size="19">[HTTP(S), data URLs]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  49 -> 59 [id=99, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Publishes admitted final<br />bytes in</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+}

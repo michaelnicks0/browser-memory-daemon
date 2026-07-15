@@ -1,7 +1,7 @@
 graph LR
   linkStyle default fill:#ffffff
 
-  subgraph diagram ["System Context View: Browser Memory Daemon"]
+  subgraph diagram ["Browser Memory Daemon - System Context"]
     style diagram fill:#ffffff,stroke:#ffffff
 
     1["<div style='font-weight: bold'>Operator</div><div style='font-size: 70%; margin-top: 0px'>[Person]</div><div style='font-size: 80%; margin-top:10px'>Sole local operator who<br />browses with Windows Chrome<br />and searches, reviews, and<br />deletes local browser-memory<br />records.</div>"]
@@ -10,13 +10,16 @@ graph LR
     style 2 fill:#999999,stroke:#6b6b6b,color:#ffffff
     3["<div style='font-weight: bold'>Web Sites and Media Origins</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>External web pages,<br />image/video URLs, and media<br />CDNs that Chrome loads or<br />that sidecars fetch as<br />page-related media.</div>"]
     style 3 fill:#999999,stroke:#6b6b6b,color:#ffffff
-    4["<div style='font-weight: bold'>Browser Memory Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>Local-first personal recall<br />system that captures Windows<br />Chrome page text and media<br />references, stores them in<br />WSL, and exposes exact<br />search, timeline, detail,<br />deletion, diagnostics, and<br />media cache operations.</div>"]
-    style 4 fill:#1168bd,stroke:#0b4884,color:#ffffff
+    4["<div style='font-weight: bold'>Passive X Observation Consumer</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>A downstream local<br />integration that reads<br />versioned body-safe<br />observation pages without<br />gaining capture, migration,<br />or mutation authority.</div>"]
+    style 4 fill:#999999,stroke:#6b6b6b,color:#ffffff
+    5["<div style='font-weight: bold'>Browser Memory Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>Local-first personal recall<br />system that captures Windows<br />Chrome page text/media and<br />exports versioned body-safe X<br />observations.</div>"]
+    style 5 fill:#1168bd,stroke:#0b4884,color:#ffffff
 
     1-. "<div>Browses web pages with</div><div style='font-size: 70%'></div>" .->2
-    1-. "<div>Searches, reviews, and<br />deletes local browser memory<br />through</div><div style='font-size: 70%'></div>" .->4
+    1-. "<div>Searches, reviews, and<br />deletes local browser memory<br />through</div><div style='font-size: 70%'></div>" .->5
     2-. "<div>Loads pages and media from</div><div style='font-size: 70%'>[HTTPS]</div>" .->3
-    4-. "<div>Runs its MV3 extension inside<br />and uses APIs from</div><div style='font-size: 70%'></div>" .->2
-    4-. "<div>Captures page refs and<br />fetches browser-side or<br />public media from</div><div style='font-size: 70%'>[Chrome DOM/fetch; WSL HTTP(S), data URLs; no Chrome cookies in WSL]</div>" .->3
-
+    4-. "<div>Reads authenticated versioned<br />body-safe observation pages<br />from</div><div style='font-size: 70%'>[HTTP/JSON]</div>" .->5
+    5-. "<div>Runs its MV3 extension inside<br />and uses APIs from</div><div style='font-size: 70%'></div>" .->2
+    5-. "<div>Captures page refs and<br />fetches browser-side or<br />public media from</div><div style='font-size: 70%'>[Chrome DOM/fetch; WSL HTTP(S), data URLs; no Chrome cookies in WSL]</div>" .->3
+    5-. "<div>Emits versioned body-safe<br />observation pages for</div><div style='font-size: 70%'>[JSON stdout]</div>" .->4
   end

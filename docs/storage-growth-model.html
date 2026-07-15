@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Storage-Growth-Model — browser-memory-daemon</title>
 <style>
-:root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#8da0bd;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
+:root{--bg:#060d18;--bg2:#0a1426;--panel:#0e1a30;--card:#111f38;--line:#21324f;--line2:#2c4060;--text:#eaf2ff;--muted:#9fb1cc;--dim:#6f82a0;--blue:#5aa6ff;--blue2:#3b82f6;--cyan:#52d4ff;--green:#5be19c;--amber:#ffb454;--rose:#ff6f9c;--violet:#b79bff;--ink:#04122a}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
 body{margin:0;color:var(--text);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,ui-sans-serif,system-ui,sans-serif;background:radial-gradient(1100px 520px at 78% -8%,rgba(59,130,246,.22),transparent 60%),radial-gradient(820px 480px at 6% 4%,rgba(82,212,255,.12),transparent 55%),radial-gradient(700px 700px at 92% 96%,rgba(91,225,156,.08),transparent 55%),var(--bg);-webkit-font-smoothing:antialiased}
 .wrap{max-width:1180px;margin:0 auto;padding:30px 22px 70px}
@@ -58,7 +58,7 @@ tr:last-child td{border-bottom:0}td b{color:#fff}
 .note{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line2);border-left:3px solid var(--cyan);border-radius:12px;padding:14px 16px;background:rgba(10,20,38,.5);color:#cfe0f7;font-size:.9rem;margin-top:14px}
 .note .i{font-size:1.1rem;line-height:1.2}
 footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);color:var(--dim);font-size:.82rem}
-.prov{margin-top:8px;color:#8aa0bd}.prov code{font-size:11.5px}
+.prov{margin-top:8px;color:#5e7193}.prov code{font-size:11.5px}
 .featgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px}
 .feat{background:linear-gradient(180deg,rgba(20,32,54,.7),rgba(12,21,38,.6));border:1px solid var(--line);border-radius:16px;padding:18px}
 .feat .fic{font-size:1.4rem;margin-bottom:8px}
@@ -133,7 +133,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <hr />
 <h2 id="tldr">TL;DR</h2>
 <p>The implementation is <strong>text-first</strong> with optional bounded media blobs. Text/FTS growth remains manageable; media is intentionally cache-like and now has explicit size gates plus purge/rehydrate controls. Final media bytes can use a guarded WSL-visible NAS <code>BMD_MEDIA_ROOT</code> while SQLite/FTS and reconstructible derivatives stay local; an opt-in local spool has an independent hard byte cap for mount outages.</p>
-<p>Using a representative daily-driver baseline and the daemon's current storage multiplier, the most realistic planning range is:</p>
+<p>Using a representative daily-driver baseline and a conservative planning multiplier retained from early measurements, the most realistic planning range is:</p>
 <table>
 <thead>
 <tr>
@@ -209,9 +209,9 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Drives <code>chunks</code> and FTS storage growth.</td>
 </tr>
 <tr>
-<td>Runtime multiplier</td>
+<td>Conservative runtime multiplier</td>
 <td style="text-align: right;">~6.5x extracted text</td>
-<td>Accounts for clean text blobs, SQLite chunk text, FTS shadow/index tables, metadata, and audit/lifecycle rows.</td>
+<td>Planning upper bound derived before schema version 9 moved complete cleaned text into SQLite. It now covers <code>snapshots.cleaned_text</code>, chunk text, FTS shadow/index tables, metadata, and audit/lifecycle rows; remeasure before capacity procurement.</td>
 </tr>
 </tbody>
 </table>
@@ -254,8 +254,8 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 </tr>
 <tr>
 <td><code>snapshots</code></td>
-<td style="text-align: right;">Low</td>
-<td>Snapshot metadata.</td>
+<td style="text-align: right;">High</td>
+<td>Snapshot metadata plus complete authoritative <code>cleaned_text</code> for new and promoted rows.</td>
 </tr>
 <tr>
 <td><code>visits</code></td>
@@ -273,9 +273,9 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%;"><span></span><code>runtime bytes / clean extracted text bytes ≈ 6.5x
 </code></pre></div>
 
-<p>That multiplier is high because the system stores text multiple ways:</p>
+<p>That multiplier is conservative because the system stores text multiple ways:</p>
 <ol>
-<li>clean snapshot blob;</li>
+<li>complete authoritative <code>snapshots.cleaned_text</code> in SQLite;</li>
 <li>chunk text in SQLite;</li>
 <li>FTS content shadow table;</li>
 <li>FTS index data;</li>
@@ -283,7 +283,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <li>audit/lifecycle rows;</li>
 <li>early fixed SQLite overhead.</li>
 </ol>
-<p>As the DB grows, fixed overhead will amortize, but <strong>5–7x extracted text</strong> is the right planning range unless the schema is optimized.</p>
+<p>Schema version 9 stopped creating new clean-text filesystem sidecars, so the early multiplier is no longer a measured decomposition of the current layout. Fixed overhead should amortize as the DB grows, but <strong>5–7x extracted text</strong> remains a conservative planning range until current SQLite/WAL measurements replace it.</p>
 <hr />
 <h2 id="planning-usage-baseline">Planning usage baseline</h2>
 <p>Interpretation for any daily-driver browser profile:</p>
@@ -544,16 +544,16 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <td>Removes <code>chunks_fts_content</code> duplication.</td>
 </tr>
 <tr>
-<td>Stop storing both full clean blob and chunk text</td>
-<td>Low if detail view reconstructs from chunks</td>
+<td>Stop storing both complete SQLite snapshot text and chunk text</td>
+<td>Low only if exact reconstruction is proven</td>
 <td style="text-align: right;">Save ~10–25% total</td>
-<td>Need verify exact reconstruction.</td>
+<td>Requires a new authority contract and migration; do not weaken current exact detail/backup behavior casually.</td>
 </tr>
 <tr>
-<td>Compress clean-text blobs with zstd/gzip</td>
+<td>Compress authoritative snapshot text or chunk payloads</td>
 <td>None if transparent</td>
 <td style="text-align: right;">Small/moderate</td>
-<td>Blob is currently smaller than DB text+FTS.</td>
+<td>Requires an explicit SQLite/schema/read-path design; new filesystem clean-text sidecars are no longer written.</td>
 </tr>
 <tr>
 <td>Bound audit retention or compact audit to summaries</td>
@@ -574,12 +574,12 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <h2 id="recommended-operating-plan">Recommended operating plan</h2>
 <h3 id="short-term">Short term</h3>
 <ul>
-<li>Add a <code>storage stats</code> CLI/API endpoint:</li>
+<li>Extend the existing <code>doctor</code> / daily-driver health storage telemetry with a trend-oriented stats surface:</li>
 <li>DB bytes / WAL bytes / blob bytes;</li>
 <li>documents / visits / snapshots / chunks / events;</li>
 <li>daily growth slope;</li>
 <li>top domains by snapshot count and text bytes.</li>
-<li>Add local warning thresholds for durable text/DB growth:</li>
+<li>Keep the implemented filesystem headroom warnings and add durable text/DB growth thresholds:</li>
 <li>warn at 10 GB, 25 GB, 50 GB;</li>
 <li>do not auto-delete text/FTS memories. Media blobs are already a rolling cache under the configured domain/global media caps.</li>
 </ul>
@@ -587,7 +587,7 @@ table.cmdtable code{font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
 <ul>
 <li>Migrate FTS to external-content mode if the DB grows beyond ~10 GB.</li>
 <li>Add <code>sqlite optimize</code> / <code>VACUUM</code> maintenance command.</li>
-<li>Add optional export/backup before any compaction work.</li>
+<li>Require the current manifest-backed <code>backup create</code> / <code>backup restore</code> path before any compaction work; automated backup retention/pruning remains future work.</li>
 </ul>
 <h3 id="long-term">Long term</h3>
 <ul>

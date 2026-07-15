@@ -3,9 +3,9 @@ digraph {
   graph [fontname="Arial", rankdir=LR, ranksep=1.0, nodesep=1.0]
   node [fontname="Arial", shape=box, margin="0.4,0.3"]
   edge [fontname="Arial"]
-  label=<<br /><font point-size="34">Dynamic View: Browser Memory Daemon</font>>
+  label=<<br /><font point-size="34">Browser Memory Daemon - Dynamic</font>>
 
-  subgraph cluster_4 {
+  subgraph cluster_5 {
     margin=25
     label=<<font point-size="24"><br />Browser Memory Daemon</font><br /><font point-size="19">[Software System]</font>>
     labelloc=b
@@ -13,16 +13,15 @@ digraph {
     fontcolor="#444444"
     fillcolor="#444444"
 
-    44 [id=44,shape=rect, label=<<font point-size="34">WSL Media Worker</font><br /><font point-size="19">[Container: Python 3.11 CLI loop]</font><br /><br /><font point-size="24">Long-running systemd user<br />worker that leases<br />daemon-public media fetch<br />tasks, fetches public<br />media/HLS without Chrome<br />cookies, classifies terminal<br />states, and updates artifact<br />rows.</font>>, style=filled, color="#2e6295", fillcolor="#438dd5", fontcolor="#ffffff"]
-    48 [id=48,shape=cylinder, label=<<font point-size="34">SQLite + FTS5<br />Database</font><br /><font point-size="19">[Container: SQLite with FTS5]</font><br /><br /><font point-size="24">Durable complete cleaned-text,<br />relational, and full-text<br />authority for migration<br />ledger, sources, documents,<br />visits, capture observations,<br />URL claims, visit events,<br />snapshots, chunks, chunks_fts,<br />media provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
-    50 [id=50,shape=cylinder, label=<<font point-size="34">Guarded Media Blob<br />Cache</font><br /><font point-size="19">[Container: WSL-visible local or NAS-mounted filesystem]</font><br /><br /><font point-size="24">Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+    45 [id=45,shape=rect, label=<<font point-size="34">WSL Media Worker</font><br /><font point-size="19">[Container: Python 3.11 CLI loop]</font><br /><br /><font point-size="24">Long-running systemd user<br />worker that loads<br />storage/media modules<br />in-process, first drains one<br />bounded spool-recovery batch<br />when the guarded final root is<br />ready, then leases<br />daemon-public media fetch<br />tasks without calling the HTTP<br />daemon.</font>>, style=filled, color="#2e6295", fillcolor="#438dd5", fontcolor="#ffffff"]
+    57 [id=57,shape=cylinder, label=<<font point-size="34">SQLite + FTS5<br />Database</font><br /><font point-size="19">[Container: SQLite with FTS5]</font><br /><br /><font point-size="24">Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+    59 [id=59,shape=cylinder, label=<<font point-size="34">Guarded Media Blob<br />Cache</font><br /><font point-size="19">[Container: WSL-visible local or NAS-mounted filesystem]</font><br /><br /><font point-size="24">Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
   }
 
   3 [id=3,shape=rect, label=<<font point-size="34">Web Sites and Media<br />Origins</font><br /><font point-size="19">[Software System]</font><br /><br /><font point-size="24">External web pages,<br />image/video URLs, and media<br />CDNs that Chrome loads or that<br />sidecars fetch as page-related<br />media.</font>>, style=filled, color="#6b6b6b", fillcolor="#999999", fontcolor="#ffffff"]
 
-  44 -> 48 [id=74, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">1. Claims due<br />daemon-public<br />media_fetch_tasks</font><br /><font point-size="19">[sqlite3]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-  44 -> 3 [id=80, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">2. Fetches public media or<br />HLS assets without Chrome<br />cookies</font><br /><font point-size="19">[HTTP(S), data URLs]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-  44 -> 50 [id=81, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">3. Writes fetched or<br />assembled blob when gates<br />allow</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-  44 -> 48 [id=74, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">4. Marks task/artifact<br />stored, retrying, skipped,<br />expired, or failed with<br />reason</font><br /><font point-size="19">[sqlite3]</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-
+  45 -> 57 [id=87, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">1. Claims due<br />daemon-public<br />media_fetch_tasks</font><br /><font point-size="19">[sqlite3]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  45 -> 3 [id=88, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">2. Fetches public media or<br />HLS assets without Chrome<br />cookies</font><br /><font point-size="19">[HTTP(S), data URLs]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  45 -> 59 [id=89, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">3. Writes fetched or<br />assembled blob when gates<br />allow</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  45 -> 57 [id=87, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">4. Marks task/artifact<br />stored, retrying, skipped,<br />expired, or failed with<br />reason</font><br /><font point-size="19">[sqlite3]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
 }

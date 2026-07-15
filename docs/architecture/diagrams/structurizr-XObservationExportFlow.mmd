@@ -1,0 +1,28 @@
+graph LR
+  linkStyle default fill:#ffffff
+
+  subgraph diagram ["Browser Memory Daemon - Dynamic"]
+    style diagram fill:#ffffff,stroke:#ffffff
+
+    subgraph 5 ["Browser Memory Daemon"]
+      style 5 fill:#ffffff,stroke:#0b4884,color:#0b4884
+
+      23["<div style='font-weight: bold'>WSL Loopback HTTP Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11, ThreadingHTTPServer]</div><div style='font-size: 80%; margin-top:10px'>Authenticated loopback API<br />for capture, read/admin/media<br />operations, and query-only<br />bmd.x-observations v1 export.</div>"]
+      style 23 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      51["<div style='font-weight: bold'>CLI</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python argparse]</div><div style='font-size: 80%; margin-top:10px'>Command-line interface for<br />serving/admin operations,<br />direct storage/health<br />workflows, and standalone<br />mutation-free X observation<br />export.</div>"]
+      style 51 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      57[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+      style 57 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    end
+
+    1["<div style='font-weight: bold'>Operator</div><div style='font-size: 70%; margin-top: 0px'>[Person]</div><div style='font-size: 80%; margin-top:10px'>Sole local operator who<br />browses with Windows Chrome<br />and searches, reviews, and<br />deletes local browser-memory<br />records.</div>"]
+    style 1 fill:#08427b,stroke:#052e56,color:#ffffff
+    4["<div style='font-weight: bold'>Passive X Observation Consumer</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>A downstream local<br />integration that reads<br />versioned body-safe<br />observation pages without<br />gaining capture, migration,<br />or mutation authority.</div>"]
+    style 4 fill:#999999,stroke:#6b6b6b,color:#ffffff
+
+    4-. "<div>1. Requests one authenticated<br />cursor page over HTTP</div><div style='font-size: 70%'>[HTTP/JSON]</div>" .->23
+    23-. "<div>2. Reads through the<br />query-only export core<br />without audit writes</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+    1-. "<div>3. Runs standalone export<br />without daemon readiness or<br />token bootstrap</div><div style='font-size: 70%'></div>" .->51
+    51-. "<div>4. Opens the existing<br />database mode=ro/query_only</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+    51-. "<div>5. Emits the same<br />schema-versioned body-safe<br />page on stdout</div><div style='font-size: 70%'>[JSON stdout]</div>" .->4
+  end

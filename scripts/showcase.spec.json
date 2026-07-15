@@ -10,14 +10,14 @@
     {"kind": "local", "label": "<b>Local-first</b> · WSL storage"},
     {"kind": "blue", "label": "<b>all</b> default policy"},
     {"kind": "priv", "label": "<b>Bearer auth</b> · loopback"},
-    {"kind": "live", "label": "<b>80</b> tests"}
+    {"kind": "live", "label": "<b>336</b> tests"}
   ],
   "metrics": [
-    {"n": "80", "l": "Test functions"},
-    {"n": "14", "l": "Test files"},
-    {"n": "13", "l": "CLI commands"},
-    {"n": "24", "l": "API route patterns"},
-    {"n": "18", "l": "C4 views"},
+    {"n": "336", "l": "Test functions"},
+    {"n": "60", "l": "Test files"},
+    {"n": "21", "l": "Top-level CLI commands"},
+    {"n": "22", "l": "API route descriptors"},
+    {"n": "30", "l": "C4 views"},
     {"n": "0", "l": "Cloud deps"}
   ],
   "features_intro": "The repo is a complete local browser-memory implementation, not a mockup: capture, policy, storage, search, UI, deletion, media sidecars, and real Chrome verification are all present.",
@@ -40,7 +40,7 @@
     {
       "icon": "🎞️",
       "title": "Durable media sidecars",
-      "body": "Browser IndexedDB queues, raw blob upload, X/Twitter CDP recovery, daemon public fetch, HLS handling, and rolling cache gates preserve media provenance without blocking text capture."
+      "body": "Browser IndexedDB queues, raw blob upload, X/Twitter CDP recovery, daemon public fetch, HLS handling, rolling cache gates, and bounded automatic spool recovery preserve media provenance without blocking text capture."
     },
     {
       "icon": "🖥️",
@@ -69,7 +69,7 @@
     },
     {
       "title": "Text is stored first",
-      "body": "The ingest path normalizes URLs, hashes text snapshots, writes clean-text blobs, chunks, and FTS rows, then returns stable IDs."
+      "body": "The ingest path normalizes URLs, hashes text snapshots, writes complete cleaned text, provenance, chunks, and FTS rows to SQLite, then returns stable IDs."
     },
     {
       "title": "Media sidecars fill in",
@@ -98,7 +98,7 @@
     },
     {
       "label": "🗄️ WSL store",
-      "sub": "SQLite, FTS5, NAS-ready blobs",
+      "sub": "SQLite text, FTS5, guarded media",
       "tone": "local"
     },
     {
@@ -113,7 +113,7 @@
     }
   ],
   "model_cap": "Chrome captures; WSL remembers. Media sidecars are asynchronous; exact text recall remains the source of truth.",
-  "commands_intro": "The operator surface is intentionally small: start/verify the daemon, search/inspect memory, narrow capture with block rules, delete with receipts, and manage media cache pressure.",
+  "commands_intro": "The operator surface covers daemon health, exact recall, policy and deletion, media/cache recovery, passive export, and dry-run-first backup/restore.",
   "commands_col3": "Primary surface",
   "commands": [
     {
@@ -134,12 +134,22 @@
     {
       "group": "Deletion",
       "cmds": "<code>forget --domain</code> <code>forget --url</code>",
-      "touches": "Documents, visits, chunks, FTS, text blobs, media rows/blobs, receipts"
+      "touches": "Documents, visits, SQLite text/chunks/FTS, legacy derivatives, media rows/blobs, receipts"
     },
     {
       "group": "Media cache",
       "cmds": "<code>media-worker</code> <code>media-cache purge</code> <code>media-cache rehydrate</code>",
       "touches": "Daemon-public fetch tasks, blob cache, purge/rehydrate controls"
+    },
+    {
+      "group": "Storage recovery",
+      "cmds": "<code>media-spool status</code> <code>media-spool drain</code> <code>storage reconcile</code>",
+      "touches": "Guarded-root recovery, bounded spool transfer, durable tombstone convergence"
+    },
+    {
+      "group": "Export / backup",
+      "cmds": "<code>export x-observations</code> <code>backup create</code> <code>backup restore</code>",
+      "touches": "Query-only body-safe observation pages and manifest-verified local bundles"
     },
     {
       "group": "Install / verify",
@@ -193,8 +203,8 @@
         "tone": "local"
       },
       {
-        "title": "SQLite/FTS",
-        "sub": "text blobs\nmedia cache\nNAS-ready",
+        "title": "SQLite + FTS5",
+        "sub": "complete text + refs\nmedia cache + spool",
         "tone": "local"
       }
     ],
@@ -262,6 +272,6 @@
       "altitude": "Verify"
     }
   ],
-  "footer_provenance": "Metrics grounded in checked-in source: 80 static test functions from scripts/generate_test_inventory.py; 13 top-level CLI commands from cli.py --help; 24 route patterns from app.py; 18 C4 .mmd views under docs/architecture/diagrams; zero cloud runtime dependencies in current architecture docs/code.",
+  "footer_provenance": "Metrics grounded in checked-in source: 336 static test functions across 60 files from scripts/generate_test_inventory.py; 21 top-level CLI commands from cli.py; 22 route descriptors from routes.py; 26 C4 .mmd views generated from docs/architecture/workspace.dsl; zero cloud runtime dependencies in current architecture docs/code.",
   "out": "browser-memory-daemon-high-level-doc.html"
 }

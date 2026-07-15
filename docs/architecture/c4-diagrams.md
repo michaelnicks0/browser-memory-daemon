@@ -15,16 +15,19 @@
 
 | View | Section | Preferred render | Per-view page |
 |---|---|---|---|
+| `AutomaticSpoolRecoveryFlow` | [`AutomaticSpoolRecoveryFlow`](#automatic-spool-recovery-flow) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-AutomaticSpoolRecoveryFlow.svg) | [`AutomaticSpoolRecoveryFlow.md`](diagrams/markdown/AutomaticSpoolRecoveryFlow.md) |
 | `BrowserMediaContainers` | [`BrowserMediaContainers`](#browser-media-containers) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-BrowserMediaContainers.svg) | [`BrowserMediaContainers.md`](diagrams/markdown/BrowserMediaContainers.md) |
 | `CaptureContainers` | [`CaptureContainers`](#capture-containers) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-CaptureContainers.svg) | [`CaptureContainers.md`](diagrams/markdown/CaptureContainers.md) |
 | `CliBackupRestoreComponents` | [`CliBackupRestoreComponents`](#cli-backup-restore-components) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-CliBackupRestoreComponents.svg) | [`CliBackupRestoreComponents.md`](diagrams/markdown/CliBackupRestoreComponents.md) |
+| `CliMediaOpsComponents` | [`CliMediaOpsComponents`](#cli-media-ops-components) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-CliMediaOpsComponents.svg) | [`CliMediaOpsComponents.md`](diagrams/markdown/CliMediaOpsComponents.md) |
+| `CliStorageReconcileComponents` | [`CliStorageReconcileComponents`](#cli-storage-reconcile-components) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-CliStorageReconcileComponents.svg) | [`CliStorageReconcileComponents.md`](diagrams/markdown/CliStorageReconcileComponents.md) |
+| `CliXObservationExportComponents` | [`CliXObservationExportComponents`](#cli-x-observation-export-components) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-CliXObservationExportComponents.svg) | [`CliXObservationExportComponents.md`](diagrams/markdown/CliXObservationExportComponents.md) |
 | `CredentialedMediaSidecarFlow` | [`CredentialedMediaSidecarFlow`](#credentialed-media-sidecar-flow) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-CredentialedMediaSidecarFlow.svg) | [`CredentialedMediaSidecarFlow.md`](diagrams/markdown/CredentialedMediaSidecarFlow.md) |
 | `DaemonDoctorComponents` | [`DaemonDoctorComponents`](#daemon-doctor-components) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-DaemonDoctorComponents.svg) | [`DaemonDoctorComponents.md`](diagrams/markdown/DaemonDoctorComponents.md) |
 | `DaemonForgetComponents` | [`DaemonForgetComponents`](#daemon-forget-components) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-DaemonForgetComponents.svg) | [`DaemonForgetComponents.md`](diagrams/markdown/DaemonForgetComponents.md) |
 | `DaemonIngestComponents` | [`DaemonIngestComponents`](#daemon-ingest-components) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-DaemonIngestComponents.svg) | [`DaemonIngestComponents.md`](diagrams/markdown/DaemonIngestComponents.md) |
 | `DaemonLifecycleComponents` | [`DaemonLifecycleComponents`](#daemon-lifecycle-components) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-DaemonLifecycleComponents.svg) | [`DaemonLifecycleComponents.md`](diagrams/markdown/DaemonLifecycleComponents.md) |
 | `DaemonMediaComponents` | [`DaemonMediaComponents`](#daemon-media-components) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-DaemonMediaComponents.svg) | [`DaemonMediaComponents.md`](diagrams/markdown/DaemonMediaComponents.md) |
-| `DaemonMediaOpsComponents` | [`DaemonMediaOpsComponents`](#daemon-media-ops-components) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-DaemonMediaOpsComponents.svg) | [`DaemonMediaOpsComponents.md`](diagrams/markdown/DaemonMediaOpsComponents.md) |
 | `DaemonMediaResourceComponents` | [`DaemonMediaResourceComponents`](#daemon-media-resource-components) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-DaemonMediaResourceComponents.svg) | [`DaemonMediaResourceComponents.md`](diagrams/markdown/DaemonMediaResourceComponents.md) |
 | `DaemonMediaTransportComponents` | [`DaemonMediaTransportComponents`](#daemon-media-transport-components) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-DaemonMediaTransportComponents.svg) | [`DaemonMediaTransportComponents.md`](diagrams/markdown/DaemonMediaTransportComponents.md) |
 | `DaemonMediaWorkerContainers` | [`DaemonMediaWorkerContainers`](#daemon-media-worker-containers) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-DaemonMediaWorkerContainers.svg) | [`DaemonMediaWorkerContainers.md`](diagrams/markdown/DaemonMediaWorkerContainers.md) |
@@ -32,14 +35,72 @@
 | `DaemonPolicyComponents` | [`DaemonPolicyComponents`](#daemon-policy-components) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-DaemonPolicyComponents.svg) | [`DaemonPolicyComponents.md`](diagrams/markdown/DaemonPolicyComponents.md) |
 | `DaemonPublicMediaWorkerFlow` | [`DaemonPublicMediaWorkerFlow`](#daemon-public-media-worker-flow) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-DaemonPublicMediaWorkerFlow.svg) | [`DaemonPublicMediaWorkerFlow.md`](diagrams/markdown/DaemonPublicMediaWorkerFlow.md) |
 | `DaemonReadComponents` | [`DaemonReadComponents`](#daemon-read-components) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-DaemonReadComponents.svg) | [`DaemonReadComponents.md`](diagrams/markdown/DaemonReadComponents.md) |
-| `DaemonStorageReconcileComponents` | [`DaemonStorageReconcileComponents`](#daemon-storage-reconcile-components) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-DaemonStorageReconcileComponents.svg) | [`DaemonStorageReconcileComponents.md`](diagrams/markdown/DaemonStorageReconcileComponents.md) |
 | `DailyDriverDeployment` | [`DailyDriverDeployment`](#daily-driver-deployment) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-DailyDriverDeployment.svg) | [`DailyDriverDeployment.md`](diagrams/markdown/DailyDriverDeployment.md) |
+| `DailyDriverHealthFlow` | [`DailyDriverHealthFlow`](#daily-driver-health-flow) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-DailyDriverHealthFlow.svg) | [`DailyDriverHealthFlow.md`](diagrams/markdown/DailyDriverHealthFlow.md) |
 | `ExtensionCaptureComponents` | [`ExtensionCaptureComponents`](#extension-capture-components) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-ExtensionCaptureComponents.svg) | [`ExtensionCaptureComponents.md`](diagrams/markdown/ExtensionCaptureComponents.md) |
 | `ExtensionMediaComponents` | [`ExtensionMediaComponents`](#extension-media-components) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-ExtensionMediaComponents.svg) | [`ExtensionMediaComponents.md`](diagrams/markdown/ExtensionMediaComponents.md) |
 | `ExtensionOutboxComponents` | [`ExtensionOutboxComponents`](#extension-outbox-components) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-ExtensionOutboxComponents.svg) | [`ExtensionOutboxComponents.md`](diagrams/markdown/ExtensionOutboxComponents.md) |
 | `FastCaptureFlow` | [`FastCaptureFlow`](#fast-capture-flow) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-FastCaptureFlow.svg) | [`FastCaptureFlow.md`](diagrams/markdown/FastCaptureFlow.md) |
+| `MediaWorkerComponents` | [`MediaWorkerComponents`](#media-worker-components) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-MediaWorkerComponents.svg) | [`MediaWorkerComponents.md`](diagrams/markdown/MediaWorkerComponents.md) |
 | `OpsContainers` | [`OpsContainers`](#ops-containers) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-OpsContainers.svg) | [`OpsContainers.md`](diagrams/markdown/OpsContainers.md) |
 | `SystemContext` | [`SystemContext`](#system-context) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-SystemContext.svg) | [`SystemContext.md`](diagrams/markdown/SystemContext.md) |
+| `XObservationExportFlow` | [`XObservationExportFlow`](#x-observation-export-flow) | [`Graphviz SVG`](diagrams/dot-rendered/structurizr-XObservationExportFlow.svg) | [`XObservationExportFlow.md`](diagrams/markdown/XObservationExportFlow.md) |
+
+---
+
+## Automatic Spool Recovery Flow
+
+> C4 view `AutomaticSpoolRecoveryFlow`.
+
+### Diagram
+
+![Automatic Spool Recovery Flow](diagrams/dot-rendered/structurizr-AutomaticSpoolRecoveryFlow.svg)
+
+_Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for text review._
+
+<details>
+<summary>Mermaid source</summary>
+
+```mermaid
+graph LR
+  linkStyle default fill:#ffffff
+
+  subgraph diagram ["Browser Memory Daemon - Dynamic"]
+    style diagram fill:#ffffff,stroke:#ffffff
+
+    subgraph 5 ["Browser Memory Daemon"]
+      style 5 fill:#ffffff,stroke:#0b4884,color:#0b4884
+
+      45["<div style='font-weight: bold'>WSL Media Worker</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11 CLI loop]</div><div style='font-size: 80%; margin-top:10px'>Long-running systemd user<br />worker that loads<br />storage/media modules<br />in-process, first drains one<br />bounded spool-recovery batch<br />when the guarded final root<br />is ready, then leases<br />daemon-public media fetch<br />tasks without calling the<br />HTTP daemon.</div>"]
+      style 45 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      57[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+      style 57 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      59[("<div style='font-weight: bold'>Guarded Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL-visible local or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</div>")]
+      style 59 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      60[("<div style='font-weight: bold'>Bounded Local Media Spool</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Opt-in durable outage buffer<br />beneath the local WSL data<br />root; admission counts<br />committed files and distinct<br />in-flight SQLite<br />reservations, and drain<br />verifies bytes before tier<br />transition/source cleanup.</div>")]
+      style 60 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    end
+
+    45-. "<div>1. After guarded-root<br />readiness, selects one<br />bounded batch of<br />authoritative spooled bytes</div><div style='font-size: 70%'>[Filesystem]</div>" .->60
+    45-. "<div>2. Streams and atomically<br />commits destination bytes<br />after size and SHA-256<br />verification</div><div style='font-size: 70%'>[Filesystem]</div>" .->59
+    45-. "<div>3. Commits the storage-tier<br />switch and spool deletion<br />intent</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+    45-. "<div>4. Removes the local source<br />only after the tier switch<br />commits</div><div style='font-size: 70%'>[Filesystem]</div>" .->60
+  end
+```
+
+</details>
+
+### Derived artifacts
+
+| Artifact | Link |
+|---|---|
+| Mermaid source | [`structurizr-AutomaticSpoolRecoveryFlow.mmd`](diagrams/structurizr-AutomaticSpoolRecoveryFlow.mmd) |
+| Mermaid SVG | [`structurizr-AutomaticSpoolRecoveryFlow.svg`](diagrams/structurizr-AutomaticSpoolRecoveryFlow.svg) |
+| Mermaid PNG | [`structurizr-AutomaticSpoolRecoveryFlow.png`](diagrams/structurizr-AutomaticSpoolRecoveryFlow.png) |
+| DOT source | [`structurizr-AutomaticSpoolRecoveryFlow.dot`](diagrams/dot/structurizr-AutomaticSpoolRecoveryFlow.dot) |
+| Graphviz SVG | [`structurizr-AutomaticSpoolRecoveryFlow.svg`](diagrams/dot-rendered/structurizr-AutomaticSpoolRecoveryFlow.svg) |
+| Graphviz PNG | [`structurizr-AutomaticSpoolRecoveryFlow.png`](diagrams/dot-rendered/structurizr-AutomaticSpoolRecoveryFlow.png) |
+
 
 ---
 
@@ -60,37 +121,36 @@ _Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for 
 graph TB
   linkStyle default fill:#ffffff
 
-  subgraph diagram ["Container View: Browser Memory Daemon"]
+  subgraph diagram ["Browser Memory Daemon - Containers"]
     style diagram fill:#ffffff,stroke:#ffffff
 
     3["<div style='font-weight: bold'>Web Sites and Media Origins</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>External web pages,<br />image/video URLs, and media<br />CDNs that Chrome loads or<br />that sidecars fetch as<br />page-related media.</div>"]
     style 3 fill:#999999,stroke:#6b6b6b,color:#ffffff
 
-    subgraph 4 ["Browser Memory Daemon"]
-      style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
+    subgraph 5 ["Browser Memory Daemon"]
+      style 5 fill:#ffffff,stroke:#0b4884,color:#0b4884
 
-      21[("<div style='font-weight: bold'>Extension Browser Storage</div><div style='font-size: 70%; margin-top: 0px'>[Container: chrome.storage.local + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Browser-side IndexedDB<br />storage for transactional<br />capture/lifecycle outbox rows<br />plus specialized durable<br />media tasks/blobs;<br />chrome.storage.local retains<br />typed configuration,<br />lifecycle tab state, minimal<br />CDP capture context,<br />aggregate telemetry, and<br />one-version queue fallback<br />only.</div>")]
-      style 21 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      22["<div style='font-weight: bold'>WSL Loopback HTTP Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11, ThreadingHTTPServer]</div><div style='font-size: 80%; margin-top:10px'>Authenticated loopback HTTP<br />API that handles capture,<br />visit events, media artifact<br />upload/fetch/purge, exact<br />search,<br />recent/timeline/detail,<br />policy rules, doctor, durable<br />forget, and static UI<br />serving.</div>"]
-      style 22 fill:#438dd5,stroke:#2e6295,color:#ffffff
-      48[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable complete<br />cleaned-text, relational, and<br />full-text authority for<br />migration ledger, sources,<br />documents, visits, capture<br />observations, URL claims,<br />visit events, snapshots,<br />chunks, chunks_fts, media<br />provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
-      style 48 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      5["<div style='font-weight: bold'>Chrome MV3 Extension</div><div style='font-size: 70%; margin-top: 0px'>[Container: JavaScript, Chrome Manifest V3]</div><div style='font-size: 80%; margin-top:10px'>Captures visible page text,<br />media references, tab<br />lifecycle events, and<br />browser-side media bytes from<br />Windows Chrome; queues work<br />durably and posts to the WSL<br />daemon.</div>"]
-      style 5 fill:#438dd5,stroke:#2e6295,color:#ffffff
-      50[("<div style='font-weight: bold'>Guarded Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL-visible local or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</div>")]
-      style 50 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      51[("<div style='font-weight: bold'>Bounded Local Media Spool</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Opt-in durable outage buffer<br />beneath the local WSL data<br />root; admission counts<br />committed files and distinct<br />in-flight SQLite<br />reservations, and drain<br />verifies bytes before tier<br />transition/source cleanup.</div>")]
-      style 51 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      22[("<div style='font-weight: bold'>Extension Browser Storage</div><div style='font-size: 70%; margin-top: 0px'>[Container: chrome.storage.local + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Browser-side IndexedDB<br />storage for transactional<br />capture/lifecycle outbox rows<br />plus specialized durable<br />media tasks/blobs;<br />chrome.storage.local retains<br />typed configuration,<br />lifecycle tab state, minimal<br />CDP capture context,<br />aggregate telemetry, and<br />one-version queue fallback<br />only.</div>")]
+      style 22 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      23["<div style='font-weight: bold'>WSL Loopback HTTP Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11, ThreadingHTTPServer]</div><div style='font-size: 80%; margin-top:10px'>Authenticated loopback API<br />for capture, read/admin/media<br />operations, and query-only<br />bmd.x-observations v1 export.</div>"]
+      style 23 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      57[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+      style 57 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      59[("<div style='font-weight: bold'>Guarded Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL-visible local or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</div>")]
+      style 59 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      6["<div style='font-weight: bold'>Chrome MV3 Extension</div><div style='font-size: 70%; margin-top: 0px'>[Container: JavaScript, Chrome Manifest V3]</div><div style='font-size: 80%; margin-top:10px'>Captures visible page text,<br />media references, tab<br />lifecycle events, and<br />browser-side media bytes from<br />Windows Chrome; queues work<br />durably and posts to the WSL<br />daemon.</div>"]
+      style 6 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      60[("<div style='font-weight: bold'>Bounded Local Media Spool</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Opt-in durable outage buffer<br />beneath the local WSL data<br />root; admission counts<br />committed files and distinct<br />in-flight SQLite<br />reservations, and drain<br />verifies bytes before tier<br />transition/source cleanup.</div>")]
+      style 60 fill:#2f95c8,stroke:#20688c,color:#ffffff
     end
 
-    22-. "<div>Validates and fetches public<br />media from</div><div style='font-size: 70%'>[HTTP(S), no Referer or Chrome cookies]</div>" .->3
-    5-. "<div>Extracts DOM refs and fetches<br />queued credentialed media<br />from</div><div style='font-size: 70%'>[DOM; fetch(credentials: include)]</div>" .->3
-    5-. "<div>Persists configuration,<br />lifecycle tab state,<br />aggregate telemetry,<br />capture/lifecycle outbox<br />rows, media tasks, and blobs<br />in</div><div style='font-size: 70%'>[chrome.storage.local + IndexedDB]</div>" .->21
-    5-. "<div>Posts /capture,<br />/visit-events, media<br />metadata, and raw blob<br />uploads to</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</div>" .->22
-    22-. "<div>Reads and writes metadata,<br />FTS, tasks, audit, and<br />receipts in</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
-    22-. "<div>Stores, serves, purges, and<br />rehydrates media blobs in</div><div style='font-size: 70%'>[Filesystem]</div>" .->50
-    22-. "<div>Stores and serves media<br />during guarded-root outages<br />in</div><div style='font-size: 70%'>[Filesystem]</div>" .->51
-
+    23-. "<div>Validates and fetches public<br />media from</div><div style='font-size: 70%'>[HTTP(S), no Referer or Chrome cookies]</div>" .->3
+    6-. "<div>Extracts DOM refs and fetches<br />queued credentialed media<br />from</div><div style='font-size: 70%'>[DOM; fetch(credentials: include)]</div>" .->3
+    6-. "<div>Persists configuration,<br />lifecycle tab state,<br />aggregate telemetry,<br />capture/lifecycle outbox<br />rows, media tasks, and blobs<br />in</div><div style='font-size: 70%'>[chrome.storage.local + IndexedDB]</div>" .->22
+    6-. "<div>Posts /capture,<br />/visit-events, media<br />metadata, and raw blob<br />uploads to</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</div>" .->23
+    23-. "<div>Reads and writes metadata,<br />FTS, tasks, audit, and<br />receipts in</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+    23-. "<div>Stores, serves, purges, and<br />rehydrates media blobs in</div><div style='font-size: 70%'>[Filesystem]</div>" .->59
+    23-. "<div>Stores and serves media<br />during guarded-root outages<br />in</div><div style='font-size: 70%'>[Filesystem]</div>" .->60
   end
 ```
 
@@ -127,33 +187,32 @@ _Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for 
 graph TB
   linkStyle default fill:#ffffff
 
-  subgraph diagram ["Container View: Browser Memory Daemon"]
+  subgraph diagram ["Browser Memory Daemon - Containers"]
     style diagram fill:#ffffff,stroke:#ffffff
 
     2["<div style='font-weight: bold'>Windows Chrome</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>The Windows Chrome runtime<br />that loads web pages, hosts<br />the MV3 extension, runs the<br />local UI in a tab, and<br />exposes Chrome extension<br />APIs.</div>"]
     style 2 fill:#999999,stroke:#6b6b6b,color:#ffffff
 
-    subgraph 4 ["Browser Memory Daemon"]
-      style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
+    subgraph 5 ["Browser Memory Daemon"]
+      style 5 fill:#ffffff,stroke:#0b4884,color:#0b4884
 
-      21[("<div style='font-weight: bold'>Extension Browser Storage</div><div style='font-size: 70%; margin-top: 0px'>[Container: chrome.storage.local + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Browser-side IndexedDB<br />storage for transactional<br />capture/lifecycle outbox rows<br />plus specialized durable<br />media tasks/blobs;<br />chrome.storage.local retains<br />typed configuration,<br />lifecycle tab state, minimal<br />CDP capture context,<br />aggregate telemetry, and<br />one-version queue fallback<br />only.</div>")]
-      style 21 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      22["<div style='font-weight: bold'>WSL Loopback HTTP Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11, ThreadingHTTPServer]</div><div style='font-size: 80%; margin-top:10px'>Authenticated loopback HTTP<br />API that handles capture,<br />visit events, media artifact<br />upload/fetch/purge, exact<br />search,<br />recent/timeline/detail,<br />policy rules, doctor, durable<br />forget, and static UI<br />serving.</div>"]
-      style 22 fill:#438dd5,stroke:#2e6295,color:#ffffff
-      48[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable complete<br />cleaned-text, relational, and<br />full-text authority for<br />migration ledger, sources,<br />documents, visits, capture<br />observations, URL claims,<br />visit events, snapshots,<br />chunks, chunks_fts, media<br />provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
-      style 48 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      49[("<div style='font-weight: bold'>Local Derivative Store</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Reconstructible compatibility<br />evidence such as<br />pre-version-9 clean-text<br />sidecars; new captures create<br />no text sidecars.</div>")]
-      style 49 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      5["<div style='font-weight: bold'>Chrome MV3 Extension</div><div style='font-size: 70%; margin-top: 0px'>[Container: JavaScript, Chrome Manifest V3]</div><div style='font-size: 80%; margin-top:10px'>Captures visible page text,<br />media references, tab<br />lifecycle events, and<br />browser-side media bytes from<br />Windows Chrome; queues work<br />durably and posts to the WSL<br />daemon.</div>"]
-      style 5 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      22[("<div style='font-weight: bold'>Extension Browser Storage</div><div style='font-size: 70%; margin-top: 0px'>[Container: chrome.storage.local + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Browser-side IndexedDB<br />storage for transactional<br />capture/lifecycle outbox rows<br />plus specialized durable<br />media tasks/blobs;<br />chrome.storage.local retains<br />typed configuration,<br />lifecycle tab state, minimal<br />CDP capture context,<br />aggregate telemetry, and<br />one-version queue fallback<br />only.</div>")]
+      style 22 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      23["<div style='font-weight: bold'>WSL Loopback HTTP Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11, ThreadingHTTPServer]</div><div style='font-size: 80%; margin-top:10px'>Authenticated loopback API<br />for capture, read/admin/media<br />operations, and query-only<br />bmd.x-observations v1 export.</div>"]
+      style 23 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      57[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+      style 57 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      58[("<div style='font-weight: bold'>Local Derivative Store</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Reconstructible compatibility<br />evidence such as<br />pre-version-9 clean-text<br />sidecars; new captures create<br />no text sidecars.</div>")]
+      style 58 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      6["<div style='font-weight: bold'>Chrome MV3 Extension</div><div style='font-size: 70%; margin-top: 0px'>[Container: JavaScript, Chrome Manifest V3]</div><div style='font-size: 80%; margin-top:10px'>Captures visible page text,<br />media references, tab<br />lifecycle events, and<br />browser-side media bytes from<br />Windows Chrome; queues work<br />durably and posts to the WSL<br />daemon.</div>"]
+      style 6 fill:#438dd5,stroke:#2e6295,color:#ffffff
     end
 
-    5-. "<div>Uses tab, scripting, storage,<br />alarms, debugger, and runtime<br />APIs from</div><div style='font-size: 70%'>[Chrome extension APIs]</div>" .->2
-    5-. "<div>Persists configuration,<br />lifecycle tab state,<br />aggregate telemetry,<br />capture/lifecycle outbox<br />rows, media tasks, and blobs<br />in</div><div style='font-size: 70%'>[chrome.storage.local + IndexedDB]</div>" .->21
-    5-. "<div>Posts /capture,<br />/visit-events, media<br />metadata, and raw blob<br />uploads to</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</div>" .->22
-    22-. "<div>Reads and writes metadata,<br />FTS, tasks, audit, and<br />receipts in</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
-    22-. "<div>Reads or deletes legacy text<br />sidecars when required</div><div style='font-size: 70%'>[Filesystem]</div>" .->49
-
+    6-. "<div>Uses tab, scripting, storage,<br />alarms, debugger, and runtime<br />APIs from</div><div style='font-size: 70%'>[Chrome extension APIs]</div>" .->2
+    6-. "<div>Persists configuration,<br />lifecycle tab state,<br />aggregate telemetry,<br />capture/lifecycle outbox<br />rows, media tasks, and blobs<br />in</div><div style='font-size: 70%'>[chrome.storage.local + IndexedDB]</div>" .->22
+    6-. "<div>Posts /capture,<br />/visit-events, media<br />metadata, and raw blob<br />uploads to</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</div>" .->23
+    23-. "<div>Reads and writes metadata,<br />FTS, tasks, audit, and<br />receipts in</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+    23-. "<div>Reads or deletes legacy text<br />sidecars when required</div><div style='font-size: 70%'>[Filesystem]</div>" .->58
   end
 ```
 
@@ -190,31 +249,29 @@ _Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for 
 graph LR
   linkStyle default fill:#ffffff
 
-  subgraph diagram ["Component View: Browser Memory Daemon - CLI"]
+  subgraph diagram ["Browser Memory Daemon - CLI - Components"]
     style diagram fill:#ffffff,stroke:#ffffff
 
-    subgraph 4 ["Browser Memory Daemon"]
-      style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
+    57[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+    style 57 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    58[("<div style='font-weight: bold'>Local Derivative Store</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Reconstructible compatibility<br />evidence such as<br />pre-version-9 clean-text<br />sidecars; new captures create<br />no text sidecars.</div>")]
+    style 58 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    61[("<div style='font-weight: bold'>Local Backup Bundles</div><div style='font-size: 70%; margin-top: 0px'>[Container: Local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Operator-selected local<br />directories containing an<br />online SQLite snapshot,<br />redaction-safe hash manifest,<br />and optional referenced<br />derivatives; media, spool,<br />and secrets excluded by<br />default.</div>")]
+    style 61 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    62[("<div style='font-weight: bold'>Restored Runtime Root</div><div style='font-size: 70%; margin-top: 0px'>[Container: Local filesystem]</div><div style='font-size: 80%; margin-top:10px'>An explicit absent<br />destination that is privately<br />staged,<br />manifest/schema/semantic<br />verified, and atomically<br />published with restored<br />SQLite authority and optional<br />referenced derivatives only.</div>")]
+    style 62 fill:#2f95c8,stroke:#20688c,color:#ffffff
 
-      subgraph 46 ["CLI"]
-        style 46 fill:#ffffff,stroke:#2e6295,color:#2e6295
+    subgraph 51 ["CLI"]
+      style 51 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
-        47["<div style='font-weight: bold'>Backup and Restore Operator</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python sqlite3 + filesystem]</div><div style='font-size: 80%; margin-top:10px'>Creates dry-run-first SQLite<br />online backup bundles with<br />redaction-safe SHA-256<br />manifests and verifies them<br />into absent runtime roots;<br />optionally carries referenced<br />derivatives and excludes<br />media/spool/secrets.</div>"]
-        style 47 fill:#85bbf0,stroke:#1168bd,color:#000000
-      end
-
-      48[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable complete<br />cleaned-text, relational, and<br />full-text authority for<br />migration ledger, sources,<br />documents, visits, capture<br />observations, URL claims,<br />visit events, snapshots,<br />chunks, chunks_fts, media<br />provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
-      style 48 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      49[("<div style='font-weight: bold'>Local Derivative Store</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Reconstructible compatibility<br />evidence such as<br />pre-version-9 clean-text<br />sidecars; new captures create<br />no text sidecars.</div>")]
-      style 49 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      52[("<div style='font-weight: bold'>Local Backup Bundles</div><div style='font-size: 70%; margin-top: 0px'>[Container: Local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Operator-selected local<br />directories containing an<br />online SQLite snapshot,<br />redaction-safe hash manifest,<br />and optional referenced<br />derivatives; media, spool,<br />and secrets excluded by<br />default.</div>")]
-      style 52 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      56["<div style='font-weight: bold'>Backup and Restore Operator</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python sqlite3 + filesystem]</div><div style='font-size: 80%; margin-top:10px'>Creates dry-run-first SQLite<br />online backup bundles with<br />redaction-safe SHA-256<br />manifests and verifies them<br />into absent runtime roots;<br />optionally carries referenced<br />derivatives and excludes API<br />token/config, Chrome<br />profile/extension copy, media<br />cache, and spool.</div>"]
+      style 56 fill:#85bbf0,stroke:#1168bd,color:#000000
     end
 
-    47-. "<div>Creates and validates online<br />SQLite snapshots from</div><div style='font-size: 70%'>[sqlite3 backup API]</div>" .->48
-    47-. "<div>Optionally copies referenced<br />contained derivatives from</div><div style='font-size: 70%'>[Filesystem]</div>" .->49
-    47-. "<div>Atomically publishes and<br />verifies manifests/files in</div><div style='font-size: 70%'>[Filesystem + SHA-256]</div>" .->52
-
+    56-. "<div>Creates and validates online<br />SQLite snapshots from</div><div style='font-size: 70%'>[sqlite3 backup API]</div>" .->57
+    56-. "<div>Optionally copies referenced<br />contained derivatives from</div><div style='font-size: 70%'>[Filesystem]</div>" .->58
+    56-. "<div>Atomically publishes and<br />verifies manifests/files in</div><div style='font-size: 70%'>[Filesystem + SHA-256]</div>" .->61
+    56-. "<div>Stages, validates, and<br />atomically publishes verified<br />restore output in</div><div style='font-size: 70%'>[Filesystem + SHA-256]</div>" .->62
   end
 ```
 
@@ -230,6 +287,168 @@ graph LR
 | DOT source | [`structurizr-CliBackupRestoreComponents.dot`](diagrams/dot/structurizr-CliBackupRestoreComponents.dot) |
 | Graphviz SVG | [`structurizr-CliBackupRestoreComponents.svg`](diagrams/dot-rendered/structurizr-CliBackupRestoreComponents.svg) |
 | Graphviz PNG | [`structurizr-CliBackupRestoreComponents.png`](diagrams/dot-rendered/structurizr-CliBackupRestoreComponents.png) |
+
+
+---
+
+## Cli Media Ops Components
+
+> C4 view `CliMediaOpsComponents`.
+
+### Diagram
+
+![Cli Media Ops Components](diagrams/dot-rendered/structurizr-CliMediaOpsComponents.svg)
+
+_Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for text review._
+
+<details>
+<summary>Mermaid source</summary>
+
+```mermaid
+graph LR
+  linkStyle default fill:#ffffff
+
+  subgraph diagram ["Browser Memory Daemon - CLI - Components"]
+    style diagram fill:#ffffff,stroke:#ffffff
+
+    57[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+    style 57 fill:#2f95c8,stroke:#20688c,color:#ffffff
+
+    subgraph 51 ["CLI"]
+      style 51 fill:#ffffff,stroke:#2e6295,color:#2e6295
+
+      54["<div style='font-weight: bold'>Media Cache Requeue Operator</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Previews or executes<br />explicitly scoped<br />dry-run-first budget requeue<br />through in-process media<br />repository functions.</div>"]
+      style 54 fill:#85bbf0,stroke:#1168bd,color:#000000
+    end
+
+    54-. "<div>Reads and updates explicitly<br />scoped media artifact/task<br />state in</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+  end
+```
+
+</details>
+
+### Derived artifacts
+
+| Artifact | Link |
+|---|---|
+| Mermaid source | [`structurizr-CliMediaOpsComponents.mmd`](diagrams/structurizr-CliMediaOpsComponents.mmd) |
+| Mermaid SVG | [`structurizr-CliMediaOpsComponents.svg`](diagrams/structurizr-CliMediaOpsComponents.svg) |
+| Mermaid PNG | [`structurizr-CliMediaOpsComponents.png`](diagrams/structurizr-CliMediaOpsComponents.png) |
+| DOT source | [`structurizr-CliMediaOpsComponents.dot`](diagrams/dot/structurizr-CliMediaOpsComponents.dot) |
+| Graphviz SVG | [`structurizr-CliMediaOpsComponents.svg`](diagrams/dot-rendered/structurizr-CliMediaOpsComponents.svg) |
+| Graphviz PNG | [`structurizr-CliMediaOpsComponents.png`](diagrams/dot-rendered/structurizr-CliMediaOpsComponents.png) |
+
+
+---
+
+## Cli Storage Reconcile Components
+
+> C4 view `CliStorageReconcileComponents`.
+
+### Diagram
+
+![Cli Storage Reconcile Components](diagrams/dot-rendered/structurizr-CliStorageReconcileComponents.svg)
+
+_Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for text review._
+
+<details>
+<summary>Mermaid source</summary>
+
+```mermaid
+graph LR
+  linkStyle default fill:#ffffff
+
+  subgraph diagram ["Browser Memory Daemon - CLI - Components"]
+    style diagram fill:#ffffff,stroke:#ffffff
+
+    57[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+    style 57 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    58[("<div style='font-weight: bold'>Local Derivative Store</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Reconstructible compatibility<br />evidence such as<br />pre-version-9 clean-text<br />sidecars; new captures create<br />no text sidecars.</div>")]
+    style 58 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    59[("<div style='font-weight: bold'>Guarded Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL-visible local or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</div>")]
+    style 59 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    60[("<div style='font-weight: bold'>Bounded Local Media Spool</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Opt-in durable outage buffer<br />beneath the local WSL data<br />root; admission counts<br />committed files and distinct<br />in-flight SQLite<br />reservations, and drain<br />verifies bytes before tier<br />transition/source cleanup.</div>")]
+    style 60 fill:#2f95c8,stroke:#20688c,color:#ffffff
+
+    subgraph 51 ["CLI"]
+      style 51 fill:#ffffff,stroke:#2e6295,color:#2e6295
+
+      55["<div style='font-weight: bold'>Storage Reconcile Operator</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + filesystem]</div><div style='font-size: 80%; margin-top:10px'>Previews or executes bounded<br />contained convergence across<br />durable tombstones, missing<br />references, in-root orphans,<br />and stale stages.</div>"]
+      style 55 fill:#85bbf0,stroke:#1168bd,color:#000000
+    end
+
+    55-. "<div>Reads and advances durable<br />blob lifecycle records in</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+    55-. "<div>Inventories and converges<br />contained legacy derivatives<br />in</div><div style='font-size: 70%'>[Filesystem]</div>" .->58
+    55-. "<div>Inventories and converges<br />contained final media in</div><div style='font-size: 70%'>[Filesystem]</div>" .->59
+    55-. "<div>Inventories and converges<br />contained outage bytes in</div><div style='font-size: 70%'>[Filesystem]</div>" .->60
+  end
+```
+
+</details>
+
+### Derived artifacts
+
+| Artifact | Link |
+|---|---|
+| Mermaid source | [`structurizr-CliStorageReconcileComponents.mmd`](diagrams/structurizr-CliStorageReconcileComponents.mmd) |
+| Mermaid SVG | [`structurizr-CliStorageReconcileComponents.svg`](diagrams/structurizr-CliStorageReconcileComponents.svg) |
+| Mermaid PNG | [`structurizr-CliStorageReconcileComponents.png`](diagrams/structurizr-CliStorageReconcileComponents.png) |
+| DOT source | [`structurizr-CliStorageReconcileComponents.dot`](diagrams/dot/structurizr-CliStorageReconcileComponents.dot) |
+| Graphviz SVG | [`structurizr-CliStorageReconcileComponents.svg`](diagrams/dot-rendered/structurizr-CliStorageReconcileComponents.svg) |
+| Graphviz PNG | [`structurizr-CliStorageReconcileComponents.png`](diagrams/dot-rendered/structurizr-CliStorageReconcileComponents.png) |
+
+
+---
+
+## Cli X Observation Export Components
+
+> C4 view `CliXObservationExportComponents`.
+
+### Diagram
+
+![Cli X Observation Export Components](diagrams/dot-rendered/structurizr-CliXObservationExportComponents.svg)
+
+_Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for text review._
+
+<details>
+<summary>Mermaid source</summary>
+
+```mermaid
+graph LR
+  linkStyle default fill:#ffffff
+
+  subgraph diagram ["Browser Memory Daemon - CLI - Components"]
+    style diagram fill:#ffffff,stroke:#ffffff
+
+    4["<div style='font-weight: bold'>Passive X Observation Consumer</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>A downstream local<br />integration that reads<br />versioned body-safe<br />observation pages without<br />gaining capture, migration,<br />or mutation authority.</div>"]
+    style 4 fill:#999999,stroke:#6b6b6b,color:#ffffff
+    57[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+    style 57 fill:#2f95c8,stroke:#20688c,color:#ffffff
+
+    subgraph 51 ["CLI"]
+      style 51 fill:#ffffff,stroke:#2e6295,color:#2e6295
+
+      52["<div style='font-weight: bold'>CLI X Observation Export Adapter</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Opens the existing database<br />directly through the shared<br />query-only export core<br />without daemon readiness,<br />migrations, token<br />requirements, or audit<br />writes.</div>"]
+      style 52 fill:#85bbf0,stroke:#1168bd,color:#000000
+    end
+
+    52-. "<div>Reads validated<br />observation/evidence pages<br />without writes or audit</div><div style='font-size: 70%'>[SQLite mode=ro + query_only]</div>" .->57
+    52-. "<div>Emits losslessly cursorable<br />body-safe pages for</div><div style='font-size: 70%'>[JSON stdout]</div>" .->4
+  end
+```
+
+</details>
+
+### Derived artifacts
+
+| Artifact | Link |
+|---|---|
+| Mermaid source | [`structurizr-CliXObservationExportComponents.mmd`](diagrams/structurizr-CliXObservationExportComponents.mmd) |
+| Mermaid SVG | [`structurizr-CliXObservationExportComponents.svg`](diagrams/structurizr-CliXObservationExportComponents.svg) |
+| Mermaid PNG | [`structurizr-CliXObservationExportComponents.png`](diagrams/structurizr-CliXObservationExportComponents.png) |
+| DOT source | [`structurizr-CliXObservationExportComponents.dot`](diagrams/dot/structurizr-CliXObservationExportComponents.dot) |
+| Graphviz SVG | [`structurizr-CliXObservationExportComponents.svg`](diagrams/dot-rendered/structurizr-CliXObservationExportComponents.svg) |
+| Graphviz PNG | [`structurizr-CliXObservationExportComponents.png`](diagrams/dot-rendered/structurizr-CliXObservationExportComponents.png) |
 
 
 ---
@@ -251,34 +470,33 @@ _Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for 
 graph LR
   linkStyle default fill:#ffffff
 
-  subgraph diagram ["Dynamic View: Browser Memory Daemon"]
+  subgraph diagram ["Browser Memory Daemon - Dynamic"]
     style diagram fill:#ffffff,stroke:#ffffff
 
-    subgraph 4 ["Browser Memory Daemon"]
-      style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
+    subgraph 5 ["Browser Memory Daemon"]
+      style 5 fill:#ffffff,stroke:#0b4884,color:#0b4884
 
-      21[("<div style='font-weight: bold'>Extension Browser Storage</div><div style='font-size: 70%; margin-top: 0px'>[Container: chrome.storage.local + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Browser-side IndexedDB<br />storage for transactional<br />capture/lifecycle outbox rows<br />plus specialized durable<br />media tasks/blobs;<br />chrome.storage.local retains<br />typed configuration,<br />lifecycle tab state, minimal<br />CDP capture context,<br />aggregate telemetry, and<br />one-version queue fallback<br />only.</div>")]
-      style 21 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      22["<div style='font-weight: bold'>WSL Loopback HTTP Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11, ThreadingHTTPServer]</div><div style='font-size: 80%; margin-top:10px'>Authenticated loopback HTTP<br />API that handles capture,<br />visit events, media artifact<br />upload/fetch/purge, exact<br />search,<br />recent/timeline/detail,<br />policy rules, doctor, durable<br />forget, and static UI<br />serving.</div>"]
-      style 22 fill:#438dd5,stroke:#2e6295,color:#ffffff
-      48[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable complete<br />cleaned-text, relational, and<br />full-text authority for<br />migration ledger, sources,<br />documents, visits, capture<br />observations, URL claims,<br />visit events, snapshots,<br />chunks, chunks_fts, media<br />provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
-      style 48 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      5["<div style='font-weight: bold'>Chrome MV3 Extension</div><div style='font-size: 70%; margin-top: 0px'>[Container: JavaScript, Chrome Manifest V3]</div><div style='font-size: 80%; margin-top:10px'>Captures visible page text,<br />media references, tab<br />lifecycle events, and<br />browser-side media bytes from<br />Windows Chrome; queues work<br />durably and posts to the WSL<br />daemon.</div>"]
-      style 5 fill:#438dd5,stroke:#2e6295,color:#ffffff
-      50[("<div style='font-weight: bold'>Guarded Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL-visible local or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</div>")]
-      style 50 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      22[("<div style='font-weight: bold'>Extension Browser Storage</div><div style='font-size: 70%; margin-top: 0px'>[Container: chrome.storage.local + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Browser-side IndexedDB<br />storage for transactional<br />capture/lifecycle outbox rows<br />plus specialized durable<br />media tasks/blobs;<br />chrome.storage.local retains<br />typed configuration,<br />lifecycle tab state, minimal<br />CDP capture context,<br />aggregate telemetry, and<br />one-version queue fallback<br />only.</div>")]
+      style 22 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      23["<div style='font-weight: bold'>WSL Loopback HTTP Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11, ThreadingHTTPServer]</div><div style='font-size: 80%; margin-top:10px'>Authenticated loopback API<br />for capture, read/admin/media<br />operations, and query-only<br />bmd.x-observations v1 export.</div>"]
+      style 23 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      57[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+      style 57 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      59[("<div style='font-weight: bold'>Guarded Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL-visible local or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</div>")]
+      style 59 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      6["<div style='font-weight: bold'>Chrome MV3 Extension</div><div style='font-size: 70%; margin-top: 0px'>[Container: JavaScript, Chrome Manifest V3]</div><div style='font-size: 80%; margin-top:10px'>Captures visible page text,<br />media references, tab<br />lifecycle events, and<br />browser-side media bytes from<br />Windows Chrome; queues work<br />durably and posts to the WSL<br />daemon.</div>"]
+      style 6 fill:#438dd5,stroke:#2e6295,color:#ffffff
     end
 
     3["<div style='font-weight: bold'>Web Sites and Media Origins</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>External web pages,<br />image/video URLs, and media<br />CDNs that Chrome loads or<br />that sidecars fetch as<br />page-related media.</div>"]
     style 3 fill:#999999,stroke:#6b6b6b,color:#ffffff
 
-    5-. "<div>1. Reads due media task</div><div style='font-size: 70%'>[chrome.storage.local + IndexedDB]</div>" .->21
-    5-. "<div>2. Fetches source URL with<br />Chrome cookie envelope</div><div style='font-size: 70%'>[DOM; fetch(credentials: include)]</div>" .->3
-    5-. "<div>3. Persists fetched blob<br />until upload succeeds</div><div style='font-size: 70%'>[chrome.storage.local + IndexedDB]</div>" .->21
-    5-. "<div>4. PUTs raw blob to<br />/media-artifacts/{id}/blob</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</div>" .->22
-    22-. "<div>5. Writes blob if MIME and<br />cache gates allow</div><div style='font-size: 70%'>[Filesystem]</div>" .->50
-    22-. "<div>6. Updates artifact<br />status=stored, hash, byte<br />size, and task state</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
-
+    6-. "<div>1. Reads due media task</div><div style='font-size: 70%'>[chrome.storage.local + IndexedDB]</div>" .->22
+    6-. "<div>2. Fetches source URL with<br />Chrome cookie envelope</div><div style='font-size: 70%'>[DOM; fetch(credentials: include)]</div>" .->3
+    6-. "<div>3. Persists fetched blob<br />until upload succeeds</div><div style='font-size: 70%'>[chrome.storage.local + IndexedDB]</div>" .->22
+    6-. "<div>4. PUTs raw blob to<br />/media-artifacts/{id}/blob</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</div>" .->23
+    23-. "<div>5. Writes blob if MIME and<br />cache gates allow</div><div style='font-size: 70%'>[Filesystem]</div>" .->59
+    23-. "<div>6. Updates artifact<br />status=stored, hash, byte<br />size, and task state</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
   end
 ```
 
@@ -315,44 +533,39 @@ _Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for 
 graph LR
   linkStyle default fill:#ffffff
 
-  subgraph diagram ["Component View: Browser Memory Daemon - WSL Loopback HTTP Daemon"]
+  subgraph diagram ["Browser Memory Daemon - WSL Loopback HTTP Daemon - Components"]
     style diagram fill:#ffffff,stroke:#ffffff
 
-    subgraph 4 ["Browser Memory Daemon"]
-      style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
+    57[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+    style 57 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    58[("<div style='font-weight: bold'>Local Derivative Store</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Reconstructible compatibility<br />evidence such as<br />pre-version-9 clean-text<br />sidecars; new captures create<br />no text sidecars.</div>")]
+    style 58 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    59[("<div style='font-weight: bold'>Guarded Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL-visible local or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</div>")]
+    style 59 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    60[("<div style='font-weight: bold'>Bounded Local Media Spool</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Opt-in durable outage buffer<br />beneath the local WSL data<br />root; admission counts<br />committed files and distinct<br />in-flight SQLite<br />reservations, and drain<br />verifies bytes before tier<br />transition/source cleanup.</div>")]
+    style 60 fill:#2f95c8,stroke:#20688c,color:#ffffff
 
-      subgraph 22 ["WSL Loopback HTTP Daemon"]
-        style 22 fill:#ffffff,stroke:#2e6295,color:#2e6295
+    subgraph 23 ["WSL Loopback HTTP Daemon"]
+      style 23 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
-        23["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server + route descriptors]</div><div style='font-size: 80%; margin-top:10px'>Adapts BaseHTTPRequestHandler<br />requests through immutable<br />method/path descriptors with<br />static precedence; owns auth,<br />parsing, compatible<br />status/error responses,<br />request IDs, common security<br />headers, redaction-safe<br />telemetry, bounded response<br />streaming, disconnect<br />cleanup, CORS, and finite UI<br />assets.</div>"]
-        style 23 fill:#85bbf0,stroke:#1168bd,color:#000000
-        24["<div style='font-weight: bold'>Application Use Cases</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Provides request-independent<br />capture, lifecycle, read,<br />forget, policy, doctor, and<br />media use cases; owns<br />database-ready checks,<br />transaction/audit boundaries,<br />asynchronous media kickoff,<br />and upload/download resource<br />leases without importing HTTP<br />request or response types.</div>"]
-        style 24 fill:#85bbf0,stroke:#1168bd,color:#000000
-        40["<div style='font-weight: bold'>Blob Lifecycle and Storage Reconciler</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + filesystem]</div><div style='font-size: 80%; margin-top:10px'>Persists<br />committed/tombstoned/missing/deleted/blocked/failed<br />blob state; serializes<br />deletion processors; retries<br />tombstones; and dry-run<br />detects missing refs, in-root<br />orphans, and stale stages.</div>"]
-        style 40 fill:#85bbf0,stroke:#1168bd,color:#000000
-        43["<div style='font-weight: bold'>Ops Doctor and Audit</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Reports health, DB integrity,<br />FTS consistency, blob<br />lifecycle/pending deletion<br />state, runtime paths, storage<br />counts, media queue status,<br />and writes metadata-only<br />audit events to SQLite.</div>"]
-        style 43 fill:#85bbf0,stroke:#1168bd,color:#000000
-      end
-
-      48[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable complete<br />cleaned-text, relational, and<br />full-text authority for<br />migration ledger, sources,<br />documents, visits, capture<br />observations, URL claims,<br />visit events, snapshots,<br />chunks, chunks_fts, media<br />provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
-      style 48 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      49[("<div style='font-weight: bold'>Local Derivative Store</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Reconstructible compatibility<br />evidence such as<br />pre-version-9 clean-text<br />sidecars; new captures create<br />no text sidecars.</div>")]
-      style 49 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      50[("<div style='font-weight: bold'>Guarded Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL-visible local or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</div>")]
-      style 50 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      51[("<div style='font-weight: bold'>Bounded Local Media Spool</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Opt-in durable outage buffer<br />beneath the local WSL data<br />root; admission counts<br />committed files and distinct<br />in-flight SQLite<br />reservations, and drain<br />verifies bytes before tier<br />transition/source cleanup.</div>")]
-      style 51 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      24["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server + route descriptors]</div><div style='font-size: 80%; margin-top:10px'>Adapts BaseHTTPRequestHandler<br />requests through immutable<br />method/path descriptors with<br />static precedence; owns auth,<br />parsing, compatible<br />status/error responses,<br />request IDs, common security<br />headers, redaction-safe<br />telemetry, bounded response<br />streaming, disconnect<br />cleanup, CORS, and finite UI<br />assets.</div>"]
+      style 24 fill:#85bbf0,stroke:#1168bd,color:#000000
+      25["<div style='font-weight: bold'>Application Use Cases</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Provides request-independent<br />capture, lifecycle, read,<br />forget, policy, doctor, and<br />media use cases; owns<br />database-ready checks,<br />transaction/audit boundaries,<br />asynchronous media kickoff,<br />and upload/download resource<br />leases without importing HTTP<br />request or response types.</div>"]
+      style 25 fill:#85bbf0,stroke:#1168bd,color:#000000
+      40["<div style='font-weight: bold'>Blob Lifecycle and Storage Reconciler</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + filesystem]</div><div style='font-size: 80%; margin-top:10px'>Persists<br />committed/tombstoned/missing/deleted/blocked/failed<br />blob state; serializes<br />deletion processors; retries<br />tombstones; and dry-run<br />detects missing refs, in-root<br />orphans, and stale stages.</div>"]
+      style 40 fill:#85bbf0,stroke:#1168bd,color:#000000
+      44["<div style='font-weight: bold'>Ops Doctor and Audit</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Reports health, DB integrity,<br />FTS consistency, blob<br />lifecycle/pending deletion<br />state, runtime paths, storage<br />counts, media queue status,<br />and writes metadata-only<br />audit events to SQLite.</div>"]
+      style 44 fill:#85bbf0,stroke:#1168bd,color:#000000
     end
 
-    23-. "<div>Invokes explicit<br />request-independent use cases<br />through</div><div style='font-size: 70%'></div>" .->24
-    24-. "<div>Executes health and audit<br />work through</div><div style='font-size: 70%'></div>" .->43
-    40-. "<div>Reads and advances durable<br />blob lifecycle records in</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
-    43-. "<div>Checks integrity and counts<br />in</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
-    43-. "<div>Reads pending deletion and<br />lifecycle health from</div><div style='font-size: 70%'></div>" .->40
-    43-. "<div>Counts text blob files in</div><div style='font-size: 70%'>[Filesystem]</div>" .->49
-    43-. "<div>Counts media blob files in</div><div style='font-size: 70%'>[Filesystem]</div>" .->50
-    43-. "<div>Reports filesystem bytes,<br />reservations, and capacity<br />for</div><div style='font-size: 70%'>[Filesystem]</div>" .->51
-
+    24-. "<div>Invokes explicit<br />request-independent use cases<br />through</div><div style='font-size: 70%'></div>" .->25
+    25-. "<div>Executes health and audit<br />work through</div><div style='font-size: 70%'></div>" .->44
+    40-. "<div>Reads and advances durable<br />blob lifecycle records in</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+    44-. "<div>Checks integrity and counts<br />in</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+    44-. "<div>Reads pending deletion and<br />lifecycle health from</div><div style='font-size: 70%'></div>" .->40
+    44-. "<div>Counts text blob files in</div><div style='font-size: 70%'>[Filesystem]</div>" .->58
+    44-. "<div>Counts media blob files in</div><div style='font-size: 70%'>[Filesystem]</div>" .->59
+    44-. "<div>Reports filesystem bytes,<br />reservations, and capacity<br />for</div><div style='font-size: 70%'>[Filesystem]</div>" .->60
   end
 ```
 
@@ -389,47 +602,42 @@ _Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for 
 graph LR
   linkStyle default fill:#ffffff
 
-  subgraph diagram ["Component View: Browser Memory Daemon - WSL Loopback HTTP Daemon"]
+  subgraph diagram ["Browser Memory Daemon - WSL Loopback HTTP Daemon - Components"]
     style diagram fill:#ffffff,stroke:#ffffff
 
-    subgraph 4 ["Browser Memory Daemon"]
-      style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
+    57[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+    style 57 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    58[("<div style='font-weight: bold'>Local Derivative Store</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Reconstructible compatibility<br />evidence such as<br />pre-version-9 clean-text<br />sidecars; new captures create<br />no text sidecars.</div>")]
+    style 58 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    59[("<div style='font-weight: bold'>Guarded Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL-visible local or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</div>")]
+    style 59 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    60[("<div style='font-weight: bold'>Bounded Local Media Spool</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Opt-in durable outage buffer<br />beneath the local WSL data<br />root; admission counts<br />committed files and distinct<br />in-flight SQLite<br />reservations, and drain<br />verifies bytes before tier<br />transition/source cleanup.</div>")]
+    style 60 fill:#2f95c8,stroke:#20688c,color:#ffffff
 
-      subgraph 22 ["WSL Loopback HTTP Daemon"]
-        style 22 fill:#ffffff,stroke:#2e6295,color:#2e6295
+    subgraph 23 ["WSL Loopback HTTP Daemon"]
+      style 23 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
-        23["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server + route descriptors]</div><div style='font-size: 80%; margin-top:10px'>Adapts BaseHTTPRequestHandler<br />requests through immutable<br />method/path descriptors with<br />static precedence; owns auth,<br />parsing, compatible<br />status/error responses,<br />request IDs, common security<br />headers, redaction-safe<br />telemetry, bounded response<br />streaming, disconnect<br />cleanup, CORS, and finite UI<br />assets.</div>"]
-        style 23 fill:#85bbf0,stroke:#1168bd,color:#000000
-        24["<div style='font-weight: bold'>Application Use Cases</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Provides request-independent<br />capture, lifecycle, read,<br />forget, policy, doctor, and<br />media use cases; owns<br />database-ready checks,<br />transaction/audit boundaries,<br />asynchronous media kickoff,<br />and upload/download resource<br />leases without importing HTTP<br />request or response types.</div>"]
-        style 24 fill:#85bbf0,stroke:#1168bd,color:#000000
-        39["<div style='font-weight: bold'>Contained BlobStore</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python filesystem boundary]</div><div style='font-size: 80%; margin-top:10px'>Prefers root-relative<br />locators with contained<br />legacy fallback; streams<br />unique stages with size/hash<br />accounting; atomically<br />commits; and contains blob<br />read, stat, and delete<br />operations.</div>"]
-        style 39 fill:#85bbf0,stroke:#1168bd,color:#000000
-        40["<div style='font-weight: bold'>Blob Lifecycle and Storage Reconciler</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + filesystem]</div><div style='font-size: 80%; margin-top:10px'>Persists<br />committed/tombstoned/missing/deleted/blocked/failed<br />blob state; serializes<br />deletion processors; retries<br />tombstones; and dry-run<br />detects missing refs, in-root<br />orphans, and stale stages.</div>"]
-        style 40 fill:#85bbf0,stroke:#1168bd,color:#000000
-        42["<div style='font-weight: bold'>Forget Pipeline</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Plans literal policy-aware<br />URL/domain scope with<br />non-mutating cross-authority<br />counts and a selected-record<br />guard; bounded execution<br />commits relational deletion,<br />minimized receipt, and blob<br />tombstones, then reports<br />complete only after required<br />bytes converge.</div>"]
-        style 42 fill:#85bbf0,stroke:#1168bd,color:#000000
-      end
-
-      48[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable complete<br />cleaned-text, relational, and<br />full-text authority for<br />migration ledger, sources,<br />documents, visits, capture<br />observations, URL claims,<br />visit events, snapshots,<br />chunks, chunks_fts, media<br />provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
-      style 48 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      49[("<div style='font-weight: bold'>Local Derivative Store</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Reconstructible compatibility<br />evidence such as<br />pre-version-9 clean-text<br />sidecars; new captures create<br />no text sidecars.</div>")]
-      style 49 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      50[("<div style='font-weight: bold'>Guarded Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL-visible local or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</div>")]
-      style 50 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      51[("<div style='font-weight: bold'>Bounded Local Media Spool</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Opt-in durable outage buffer<br />beneath the local WSL data<br />root; admission counts<br />committed files and distinct<br />in-flight SQLite<br />reservations, and drain<br />verifies bytes before tier<br />transition/source cleanup.</div>")]
-      style 51 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      24["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server + route descriptors]</div><div style='font-size: 80%; margin-top:10px'>Adapts BaseHTTPRequestHandler<br />requests through immutable<br />method/path descriptors with<br />static precedence; owns auth,<br />parsing, compatible<br />status/error responses,<br />request IDs, common security<br />headers, redaction-safe<br />telemetry, bounded response<br />streaming, disconnect<br />cleanup, CORS, and finite UI<br />assets.</div>"]
+      style 24 fill:#85bbf0,stroke:#1168bd,color:#000000
+      25["<div style='font-weight: bold'>Application Use Cases</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Provides request-independent<br />capture, lifecycle, read,<br />forget, policy, doctor, and<br />media use cases; owns<br />database-ready checks,<br />transaction/audit boundaries,<br />asynchronous media kickoff,<br />and upload/download resource<br />leases without importing HTTP<br />request or response types.</div>"]
+      style 25 fill:#85bbf0,stroke:#1168bd,color:#000000
+      39["<div style='font-weight: bold'>Contained BlobStore</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python filesystem boundary]</div><div style='font-size: 80%; margin-top:10px'>Prefers root-relative<br />locators with contained<br />legacy fallback; streams<br />unique stages with size/hash<br />accounting; atomically<br />commits; and contains blob<br />read, stat, and delete<br />operations.</div>"]
+      style 39 fill:#85bbf0,stroke:#1168bd,color:#000000
+      40["<div style='font-weight: bold'>Blob Lifecycle and Storage Reconciler</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + filesystem]</div><div style='font-size: 80%; margin-top:10px'>Persists<br />committed/tombstoned/missing/deleted/blocked/failed<br />blob state; serializes<br />deletion processors; retries<br />tombstones; and dry-run<br />detects missing refs, in-root<br />orphans, and stale stages.</div>"]
+      style 40 fill:#85bbf0,stroke:#1168bd,color:#000000
+      43["<div style='font-weight: bold'>Forget Pipeline</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Plans literal policy-aware<br />URL/domain scope with<br />non-mutating cross-authority<br />counts and a selected-record<br />guard; bounded execution<br />commits relational deletion,<br />minimized receipt, and blob<br />tombstones, then reports<br />complete only after required<br />bytes converge.</div>"]
+      style 43 fill:#85bbf0,stroke:#1168bd,color:#000000
     end
 
-    23-. "<div>Invokes explicit<br />request-independent use cases<br />through</div><div style='font-size: 70%'></div>" .->24
-    24-. "<div>Executes forget requests<br />through</div><div style='font-size: 70%'></div>" .->42
-    42-. "<div>Atomically deletes rows and<br />records receipts/tombstones<br />in</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
-    42-. "<div>Processes post-commit<br />contained blob deletion<br />through</div><div style='font-size: 70%'></div>" .->40
-    40-. "<div>Reads and advances durable<br />blob lifecycle records in</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
+    24-. "<div>Invokes explicit<br />request-independent use cases<br />through</div><div style='font-size: 70%'></div>" .->25
+    25-. "<div>Executes forget requests<br />through</div><div style='font-size: 70%'></div>" .->43
+    43-. "<div>Atomically deletes rows and<br />records receipts/tombstones<br />in</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+    43-. "<div>Processes post-commit<br />contained blob deletion<br />through</div><div style='font-size: 70%'></div>" .->40
+    40-. "<div>Reads and advances durable<br />blob lifecycle records in</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
     40-. "<div>Resolves, deletes, and<br />inventories contained bytes<br />through</div><div style='font-size: 70%'></div>" .->39
-    39-. "<div>Reads, stats, reconciles, and<br />deletes legacy text sidecars<br />in</div><div style='font-size: 70%'>[Filesystem]</div>" .->49
-    39-. "<div>Stages, commits, reads,<br />stats, and deletes media<br />blobs in</div><div style='font-size: 70%'>[Filesystem]</div>" .->50
-    39-. "<div>Stages, commits, reads,<br />stats, and deletes spooled<br />media in</div><div style='font-size: 70%'>[Filesystem]</div>" .->51
-
+    39-. "<div>Reads, stats, reconciles, and<br />deletes legacy text sidecars<br />in</div><div style='font-size: 70%'>[Filesystem]</div>" .->58
+    39-. "<div>Stages, commits, reads,<br />stats, and deletes media<br />blobs in</div><div style='font-size: 70%'>[Filesystem]</div>" .->59
+    39-. "<div>Stages, commits, reads,<br />stats, and deletes spooled<br />media in</div><div style='font-size: 70%'>[Filesystem]</div>" .->60
   end
 ```
 
@@ -466,31 +674,26 @@ _Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for 
 graph LR
   linkStyle default fill:#ffffff
 
-  subgraph diagram ["Component View: Browser Memory Daemon - WSL Loopback HTTP Daemon"]
+  subgraph diagram ["Browser Memory Daemon - WSL Loopback HTTP Daemon - Components"]
     style diagram fill:#ffffff,stroke:#ffffff
 
-    subgraph 4 ["Browser Memory Daemon"]
-      style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
+    57[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+    style 57 fill:#2f95c8,stroke:#20688c,color:#ffffff
 
-      subgraph 22 ["WSL Loopback HTTP Daemon"]
-        style 22 fill:#ffffff,stroke:#2e6295,color:#2e6295
+    subgraph 23 ["WSL Loopback HTTP Daemon"]
+      style 23 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
-        23["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server + route descriptors]</div><div style='font-size: 80%; margin-top:10px'>Adapts BaseHTTPRequestHandler<br />requests through immutable<br />method/path descriptors with<br />static precedence; owns auth,<br />parsing, compatible<br />status/error responses,<br />request IDs, common security<br />headers, redaction-safe<br />telemetry, bounded response<br />streaming, disconnect<br />cleanup, CORS, and finite UI<br />assets.</div>"]
-        style 23 fill:#85bbf0,stroke:#1168bd,color:#000000
-        24["<div style='font-weight: bold'>Application Use Cases</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Provides request-independent<br />capture, lifecycle, read,<br />forget, policy, doctor, and<br />media use cases; owns<br />database-ready checks,<br />transaction/audit boundaries,<br />asynchronous media kickoff,<br />and upload/download resource<br />leases without importing HTTP<br />request or response types.</div>"]
-        style 24 fill:#85bbf0,stroke:#1168bd,color:#000000
-        28["<div style='font-weight: bold'>Ingest Pipeline</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Normalizes observed URLs,<br />computes document/snapshot<br />IDs, atomically stores<br />complete cleaned text plus<br />visits/observations/snapshots/chunks/FTS<br />rows, records<br />non-authoritative URL claims,<br />and links media references<br />without touching blob<br />storage.</div>"]
-        style 28 fill:#85bbf0,stroke:#1168bd,color:#000000
-      end
-
-      48[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable complete<br />cleaned-text, relational, and<br />full-text authority for<br />migration ledger, sources,<br />documents, visits, capture<br />observations, URL claims,<br />visit events, snapshots,<br />chunks, chunks_fts, media<br />provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
-      style 48 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      24["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server + route descriptors]</div><div style='font-size: 80%; margin-top:10px'>Adapts BaseHTTPRequestHandler<br />requests through immutable<br />method/path descriptors with<br />static precedence; owns auth,<br />parsing, compatible<br />status/error responses,<br />request IDs, common security<br />headers, redaction-safe<br />telemetry, bounded response<br />streaming, disconnect<br />cleanup, CORS, and finite UI<br />assets.</div>"]
+      style 24 fill:#85bbf0,stroke:#1168bd,color:#000000
+      25["<div style='font-weight: bold'>Application Use Cases</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Provides request-independent<br />capture, lifecycle, read,<br />forget, policy, doctor, and<br />media use cases; owns<br />database-ready checks,<br />transaction/audit boundaries,<br />asynchronous media kickoff,<br />and upload/download resource<br />leases without importing HTTP<br />request or response types.</div>"]
+      style 25 fill:#85bbf0,stroke:#1168bd,color:#000000
+      29["<div style='font-weight: bold'>Ingest Pipeline</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Normalizes observed URLs,<br />computes document/snapshot<br />IDs, atomically stores<br />complete cleaned text plus<br />visits/observations/snapshots/chunks/FTS<br />rows, records<br />non-authoritative URL claims,<br />and links media references<br />without touching blob<br />storage.</div>"]
+      style 29 fill:#85bbf0,stroke:#1168bd,color:#000000
     end
 
-    23-. "<div>Invokes explicit<br />request-independent use cases<br />through</div><div style='font-size: 70%'></div>" .->24
-    24-. "<div>Commits accepted captures<br />through</div><div style='font-size: 70%'></div>" .->28
-    28-. "<div>Atomically writes complete<br />cleaned text, capture rows,<br />and FTS to</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
-
+    24-. "<div>Invokes explicit<br />request-independent use cases<br />through</div><div style='font-size: 70%'></div>" .->25
+    25-. "<div>Commits accepted captures<br />through</div><div style='font-size: 70%'></div>" .->29
+    29-. "<div>Atomically writes complete<br />cleaned text, capture rows,<br />and FTS to</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
   end
 ```
 
@@ -527,31 +730,26 @@ _Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for 
 graph LR
   linkStyle default fill:#ffffff
 
-  subgraph diagram ["Component View: Browser Memory Daemon - WSL Loopback HTTP Daemon"]
+  subgraph diagram ["Browser Memory Daemon - WSL Loopback HTTP Daemon - Components"]
     style diagram fill:#ffffff,stroke:#ffffff
 
-    subgraph 4 ["Browser Memory Daemon"]
-      style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
+    57[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+    style 57 fill:#2f95c8,stroke:#20688c,color:#ffffff
 
-      subgraph 22 ["WSL Loopback HTTP Daemon"]
-        style 22 fill:#ffffff,stroke:#2e6295,color:#2e6295
+    subgraph 23 ["WSL Loopback HTTP Daemon"]
+      style 23 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
-        23["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server + route descriptors]</div><div style='font-size: 80%; margin-top:10px'>Adapts BaseHTTPRequestHandler<br />requests through immutable<br />method/path descriptors with<br />static precedence; owns auth,<br />parsing, compatible<br />status/error responses,<br />request IDs, common security<br />headers, redaction-safe<br />telemetry, bounded response<br />streaming, disconnect<br />cleanup, CORS, and finite UI<br />assets.</div>"]
-        style 23 fill:#85bbf0,stroke:#1168bd,color:#000000
-        24["<div style='font-weight: bold'>Application Use Cases</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Provides request-independent<br />capture, lifecycle, read,<br />forget, policy, doctor, and<br />media use cases; owns<br />database-ready checks,<br />transaction/audit boundaries,<br />asynchronous media kickoff,<br />and upload/download resource<br />leases without importing HTTP<br />request or response types.</div>"]
-        style 24 fill:#85bbf0,stroke:#1168bd,color:#000000
-        29["<div style='font-weight: bold'>Lifecycle Pipeline</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Stores claimed/resolved tab<br />lifecycle identity,<br />reconciles delayed captures,<br />validates active intervals,<br />and derives visit dwell from<br />interval unions.</div>"]
-        style 29 fill:#85bbf0,stroke:#1168bd,color:#000000
-      end
-
-      48[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable complete<br />cleaned-text, relational, and<br />full-text authority for<br />migration ledger, sources,<br />documents, visits, capture<br />observations, URL claims,<br />visit events, snapshots,<br />chunks, chunks_fts, media<br />provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
-      style 48 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      24["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server + route descriptors]</div><div style='font-size: 80%; margin-top:10px'>Adapts BaseHTTPRequestHandler<br />requests through immutable<br />method/path descriptors with<br />static precedence; owns auth,<br />parsing, compatible<br />status/error responses,<br />request IDs, common security<br />headers, redaction-safe<br />telemetry, bounded response<br />streaming, disconnect<br />cleanup, CORS, and finite UI<br />assets.</div>"]
+      style 24 fill:#85bbf0,stroke:#1168bd,color:#000000
+      25["<div style='font-weight: bold'>Application Use Cases</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Provides request-independent<br />capture, lifecycle, read,<br />forget, policy, doctor, and<br />media use cases; owns<br />database-ready checks,<br />transaction/audit boundaries,<br />asynchronous media kickoff,<br />and upload/download resource<br />leases without importing HTTP<br />request or response types.</div>"]
+      style 25 fill:#85bbf0,stroke:#1168bd,color:#000000
+      30["<div style='font-weight: bold'>Lifecycle Pipeline</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Stores claimed/resolved tab<br />lifecycle identity,<br />reconciles delayed captures,<br />validates active intervals,<br />and derives visit dwell from<br />interval unions.</div>"]
+      style 30 fill:#85bbf0,stroke:#1168bd,color:#000000
     end
 
-    23-. "<div>Invokes explicit<br />request-independent use cases<br />through</div><div style='font-size: 70%'></div>" .->24
-    24-. "<div>Records lifecycle events<br />through</div><div style='font-size: 70%'></div>" .->29
-    29-. "<div>Writes lifecycle identity and<br />interval-union dwell to</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
-
+    24-. "<div>Invokes explicit<br />request-independent use cases<br />through</div><div style='font-size: 70%'></div>" .->25
+    25-. "<div>Records lifecycle events<br />through</div><div style='font-size: 70%'></div>" .->30
+    30-. "<div>Writes lifecycle identity and<br />interval-union dwell to</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
   end
 ```
 
@@ -588,80 +786,71 @@ _Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for 
 graph LR
   linkStyle default fill:#ffffff
 
-  subgraph diagram ["Component View: Browser Memory Daemon - WSL Loopback HTTP Daemon"]
+  subgraph diagram ["Browser Memory Daemon - WSL Loopback HTTP Daemon - Components"]
     style diagram fill:#ffffff,stroke:#ffffff
 
-    subgraph 4 ["Browser Memory Daemon"]
-      style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
+    57[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+    style 57 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    59[("<div style='font-weight: bold'>Guarded Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL-visible local or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</div>")]
+    style 59 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    60[("<div style='font-weight: bold'>Bounded Local Media Spool</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Opt-in durable outage buffer<br />beneath the local WSL data<br />root; admission counts<br />committed files and distinct<br />in-flight SQLite<br />reservations, and drain<br />verifies bytes before tier<br />transition/source cleanup.</div>")]
+    style 60 fill:#2f95c8,stroke:#20688c,color:#ffffff
 
-      subgraph 22 ["WSL Loopback HTTP Daemon"]
-        style 22 fill:#ffffff,stroke:#2e6295,color:#2e6295
+    subgraph 23 ["WSL Loopback HTTP Daemon"]
+      style 23 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
-        23["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server + route descriptors]</div><div style='font-size: 80%; margin-top:10px'>Adapts BaseHTTPRequestHandler<br />requests through immutable<br />method/path descriptors with<br />static precedence; owns auth,<br />parsing, compatible<br />status/error responses,<br />request IDs, common security<br />headers, redaction-safe<br />telemetry, bounded response<br />streaming, disconnect<br />cleanup, CORS, and finite UI<br />assets.</div>"]
-        style 23 fill:#85bbf0,stroke:#1168bd,color:#000000
-        24["<div style='font-weight: bold'>Application Use Cases</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Provides request-independent<br />capture, lifecycle, read,<br />forget, policy, doctor, and<br />media use cases; owns<br />database-ready checks,<br />transaction/audit boundaries,<br />asynchronous media kickoff,<br />and upload/download resource<br />leases without importing HTTP<br />request or response types.</div>"]
-        style 24 fill:#85bbf0,stroke:#1168bd,color:#000000
-        30["<div style='font-weight: bold'>Media Artifact Manager</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + filesystem]</div><div style='font-size: 80%; margin-top:10px'>Provides the compatibility<br />API, records media<br />references, streams bounded<br />blob uploads, delegates<br />guarded public transport, and<br />drains verified spool bytes<br />without coupling text ingest<br />to media availability.</div>"]
-        style 30 fill:#85bbf0,stroke:#1168bd,color:#000000
-        31["<div style='font-weight: bold'>Media State Model</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Owns caller-visible and<br />internal artifact/task status<br />taxonomies, fetch-error<br />classification, and explicit<br />ordinary versus force-reset<br />transition matrices.</div>"]
-        style 31 fill:#85bbf0,stroke:#1168bd,color:#000000
-        32["<div style='font-weight: bold'>Media Task Repository</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Creates deterministic tasks,<br />preserves terminal state,<br />atomically leases due work,<br />recovers stale leases, and<br />applies bounded retry/backoff<br />outcomes independently from<br />media transport.</div>"]
-        style 32 fill:#85bbf0,stroke:#1168bd,color:#000000
-        33["<div style='font-weight: bold'>Media Artifact Store</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + BlobStore]</div><div style='font-size: 80%; margin-top:10px'>Owns artifact rows,<br />transactional cross-process<br />cache reservations, unique<br />streamed publication,<br />failed-write compensation,<br />contained reads, cache<br />admission, oldest-first<br />eviction, purge/rehydration,<br />and lifecycle<br />registration/tombstones.</div>"]
-        style 33 fill:#85bbf0,stroke:#1168bd,color:#000000
-        34["<div style='font-weight: bold'>Media Transport Coordinator</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Classifies direct versus HLS<br />responses, applies the<br />aggregate HLS request budget<br />from the first network open,<br />enforces playlist sniffing<br />and byte caps, and<br />coordinates bounded streamed<br />assembly.</div>"]
-        style 34 fill:#85bbf0,stroke:#1168bd,color:#000000
-        35["<div style='font-weight: bold'>Guarded Media Fetch</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python stdlib urllib + socket]</div><div style='font-size: 80%; margin-top:10px'>Owns streamed HTTP/data<br />transport, public-address<br />validation, redirect<br />revalidation, no-referrer<br />requests, response-byte<br />limits, process request/byte<br />leases, and shared deadlines.</div>"]
-        style 35 fill:#85bbf0,stroke:#1168bd,color:#000000
-        36["<div style='font-weight: bold'>Bounded HLS Transport</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Parses bounded playlists,<br />selects variants, expands<br />init maps/segments through<br />the guarded fetch boundary,<br />and streams assembly within<br />aggregate<br />byte/depth/request/deadline<br />limits.</div>"]
-        style 36 fill:#85bbf0,stroke:#1168bd,color:#000000
-        37["<div style='font-weight: bold'>Media Operator and Reconciliation Workflow</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Owns scoped dry-run-first<br />budget requeue plus bounded<br />current-state CDP/blob and<br />stored-task reconciliation.</div>"]
-        style 37 fill:#85bbf0,stroke:#1168bd,color:#000000
-        38["<div style='font-weight: bold'>Media Process Resource Budget</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python threading.Condition]</div><div style='font-size: 80%; margin-top:10px'>Bounds active media requests<br />and in-flight bytes across<br />threads within one daemon or<br />worker process; exposes<br />aggregate counters and<br />releases leases on failure or<br />cancellation.</div>"]
-        style 38 fill:#85bbf0,stroke:#1168bd,color:#000000
-        39["<div style='font-weight: bold'>Contained BlobStore</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python filesystem boundary]</div><div style='font-size: 80%; margin-top:10px'>Prefers root-relative<br />locators with contained<br />legacy fallback; streams<br />unique stages with size/hash<br />accounting; atomically<br />commits; and contains blob<br />read, stat, and delete<br />operations.</div>"]
-        style 39 fill:#85bbf0,stroke:#1168bd,color:#000000
-        40["<div style='font-weight: bold'>Blob Lifecycle and Storage Reconciler</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + filesystem]</div><div style='font-size: 80%; margin-top:10px'>Persists<br />committed/tombstoned/missing/deleted/blocked/failed<br />blob state; serializes<br />deletion processors; retries<br />tombstones; and dry-run<br />detects missing refs, in-root<br />orphans, and stale stages.</div>"]
-        style 40 fill:#85bbf0,stroke:#1168bd,color:#000000
-      end
-
-      48[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable complete<br />cleaned-text, relational, and<br />full-text authority for<br />migration ledger, sources,<br />documents, visits, capture<br />observations, URL claims,<br />visit events, snapshots,<br />chunks, chunks_fts, media<br />provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
-      style 48 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      50[("<div style='font-weight: bold'>Guarded Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL-visible local or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</div>")]
-      style 50 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      51[("<div style='font-weight: bold'>Bounded Local Media Spool</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Opt-in durable outage buffer<br />beneath the local WSL data<br />root; admission counts<br />committed files and distinct<br />in-flight SQLite<br />reservations, and drain<br />verifies bytes before tier<br />transition/source cleanup.</div>")]
-      style 51 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      24["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server + route descriptors]</div><div style='font-size: 80%; margin-top:10px'>Adapts BaseHTTPRequestHandler<br />requests through immutable<br />method/path descriptors with<br />static precedence; owns auth,<br />parsing, compatible<br />status/error responses,<br />request IDs, common security<br />headers, redaction-safe<br />telemetry, bounded response<br />streaming, disconnect<br />cleanup, CORS, and finite UI<br />assets.</div>"]
+      style 24 fill:#85bbf0,stroke:#1168bd,color:#000000
+      25["<div style='font-weight: bold'>Application Use Cases</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Provides request-independent<br />capture, lifecycle, read,<br />forget, policy, doctor, and<br />media use cases; owns<br />database-ready checks,<br />transaction/audit boundaries,<br />asynchronous media kickoff,<br />and upload/download resource<br />leases without importing HTTP<br />request or response types.</div>"]
+      style 25 fill:#85bbf0,stroke:#1168bd,color:#000000
+      31["<div style='font-weight: bold'>Media Artifact Manager</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + filesystem]</div><div style='font-size: 80%; margin-top:10px'>Provides the compatibility<br />API, records media<br />references, streams bounded<br />blob uploads, and delegates<br />guarded public transport<br />without coupling text ingest<br />to media availability.</div>"]
+      style 31 fill:#85bbf0,stroke:#1168bd,color:#000000
+      32["<div style='font-weight: bold'>Media State Model</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Owns caller-visible and<br />internal artifact/task status<br />taxonomies, fetch-error<br />classification, and explicit<br />ordinary versus force-reset<br />transition matrices.</div>"]
+      style 32 fill:#85bbf0,stroke:#1168bd,color:#000000
+      33["<div style='font-weight: bold'>Media Task Repository</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Creates deterministic tasks,<br />preserves terminal state,<br />atomically leases due work,<br />recovers stale leases, and<br />applies bounded retry/backoff<br />outcomes independently from<br />media transport.</div>"]
+      style 33 fill:#85bbf0,stroke:#1168bd,color:#000000
+      34["<div style='font-weight: bold'>Media Artifact Store</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + BlobStore]</div><div style='font-size: 80%; margin-top:10px'>Owns artifact rows,<br />transactional cross-process<br />cache reservations, unique<br />streamed publication,<br />failed-write compensation,<br />contained reads, cache<br />admission, oldest-first<br />eviction, purge/rehydration,<br />and lifecycle<br />registration/tombstones.</div>"]
+      style 34 fill:#85bbf0,stroke:#1168bd,color:#000000
+      35["<div style='font-weight: bold'>Media Transport Coordinator</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Classifies direct versus HLS<br />responses, applies the<br />aggregate HLS request budget<br />from the first network open,<br />enforces playlist sniffing<br />and byte caps, and<br />coordinates bounded streamed<br />assembly.</div>"]
+      style 35 fill:#85bbf0,stroke:#1168bd,color:#000000
+      36["<div style='font-weight: bold'>Guarded Media Fetch</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python stdlib urllib + socket]</div><div style='font-size: 80%; margin-top:10px'>Owns streamed HTTP/data<br />transport, public-address<br />validation, redirect<br />revalidation, no-referrer<br />requests, response-byte<br />limits, process request/byte<br />leases, and shared deadlines.</div>"]
+      style 36 fill:#85bbf0,stroke:#1168bd,color:#000000
+      37["<div style='font-weight: bold'>Bounded HLS Transport</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Parses bounded playlists,<br />selects variants, expands<br />init maps/segments through<br />the guarded fetch boundary,<br />and streams assembly within<br />aggregate<br />byte/depth/request/deadline<br />limits.</div>"]
+      style 37 fill:#85bbf0,stroke:#1168bd,color:#000000
+      38["<div style='font-weight: bold'>Media Process Resource Budget</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python threading.Condition]</div><div style='font-size: 80%; margin-top:10px'>Bounds active media requests<br />and in-flight bytes across<br />threads within one daemon or<br />worker process; exposes<br />aggregate counters and<br />releases leases on failure or<br />cancellation.</div>"]
+      style 38 fill:#85bbf0,stroke:#1168bd,color:#000000
+      39["<div style='font-weight: bold'>Contained BlobStore</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python filesystem boundary]</div><div style='font-size: 80%; margin-top:10px'>Prefers root-relative<br />locators with contained<br />legacy fallback; streams<br />unique stages with size/hash<br />accounting; atomically<br />commits; and contains blob<br />read, stat, and delete<br />operations.</div>"]
+      style 39 fill:#85bbf0,stroke:#1168bd,color:#000000
+      40["<div style='font-weight: bold'>Blob Lifecycle and Storage Reconciler</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + filesystem]</div><div style='font-size: 80%; margin-top:10px'>Persists<br />committed/tombstoned/missing/deleted/blocked/failed<br />blob state; serializes<br />deletion processors; retries<br />tombstones; and dry-run<br />detects missing refs, in-root<br />orphans, and stale stages.</div>"]
+      style 40 fill:#85bbf0,stroke:#1168bd,color:#000000
     end
 
-    23-. "<div>Invokes explicit<br />request-independent use cases<br />through</div><div style='font-size: 70%'></div>" .->24
-    23-. "<div>Leases bounded JSON media<br />request admission through</div><div style='font-size: 70%'></div>" .->38
-    24-. "<div>Coordinates media requests<br />through</div><div style='font-size: 70%'></div>" .->30
-    24-. "<div>Leases bounded media upload<br />and response capacity through</div><div style='font-size: 70%'></div>" .->38
-    30-. "<div>Classifies artifact outcomes<br />and transition intent through</div><div style='font-size: 70%'></div>" .->31
-    30-. "<div>Creates and claims durable<br />media work through</div><div style='font-size: 70%'></div>" .->32
-    30-. "<div>Publishes, resolves, purges,<br />and rehydrates artifacts<br />through</div><div style='font-size: 70%'></div>" .->33
-    30-. "<div>Delegates daemon-public media<br />orchestration to</div><div style='font-size: 70%'></div>" .->34
-    30-. "<div>Updates media artifact rows<br />in</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
-    32-. "<div>Validates task status<br />vocabulary and retry<br />classification through</div><div style='font-size: 70%'></div>" .->31
-    32-. "<div>Creates, leases, and advances<br />media tasks in</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
-    33-. "<div>Uses artifact status<br />vocabulary from</div><div style='font-size: 70%'></div>" .->31
-    33-. "<div>Marks stored/skipped outcomes<br />and ensures retryable fetch<br />work through</div><div style='font-size: 70%'></div>" .->32
-    33-. "<div>Reserves cache capacity and<br />advances media artifact rows<br />transactionally in</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
-    33-. "<div>Stages unique candidates,<br />resolves contained reads, and<br />deletes failed candidates<br />through</div><div style='font-size: 70%'></div>" .->39
-    33-. "<div>Registers committed blobs and<br />tombstones replacement,<br />eviction, and purge bytes<br />through</div><div style='font-size: 70%'></div>" .->40
-    34-. "<div>Streams the initial response<br />and every direct artifact<br />through</div><div style='font-size: 70%'></div>" .->35
-    34-. "<div>Delegates detected playlists<br />for bounded parsing and<br />assembly to</div><div style='font-size: 70%'></div>" .->36
-    34-. "<div>Leases aggregate transfer<br />bytes through</div><div style='font-size: 70%'></div>" .->38
-    35-. "<div>Leases each active HTTP<br />request through</div><div style='font-size: 70%'></div>" .->38
-    36-. "<div>Fetches every variant, init<br />map, and segment through</div><div style='font-size: 70%'></div>" .->35
-    37-. "<div>Resets explicitly selected<br />tasks and closes bounded<br />stale stored work through</div><div style='font-size: 70%'></div>" .->32
-    37-. "<div>Reads and updates scoped<br />media artifact/task state in</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
-    30-. "<div>Checks current artifact<br />presence during fetch<br />orchestration and drains<br />spool bytes through</div><div style='font-size: 70%'></div>" .->39
-    40-. "<div>Reads and advances durable<br />blob lifecycle records in</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
+    24-. "<div>Invokes explicit<br />request-independent use cases<br />through</div><div style='font-size: 70%'></div>" .->25
+    24-. "<div>Leases bounded JSON media<br />request admission through</div><div style='font-size: 70%'></div>" .->38
+    25-. "<div>Coordinates media requests<br />through</div><div style='font-size: 70%'></div>" .->31
+    25-. "<div>Leases bounded media upload<br />and response capacity through</div><div style='font-size: 70%'></div>" .->38
+    31-. "<div>Classifies artifact outcomes<br />and transition intent through</div><div style='font-size: 70%'></div>" .->32
+    31-. "<div>Creates and claims durable<br />media work through</div><div style='font-size: 70%'></div>" .->33
+    31-. "<div>Publishes, resolves, purges,<br />and rehydrates artifacts<br />through</div><div style='font-size: 70%'></div>" .->34
+    31-. "<div>Delegates daemon-public media<br />orchestration to</div><div style='font-size: 70%'></div>" .->35
+    31-. "<div>Updates media artifact rows<br />in</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+    33-. "<div>Validates task status<br />vocabulary and retry<br />classification through</div><div style='font-size: 70%'></div>" .->32
+    33-. "<div>Creates, leases, and advances<br />media tasks in</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+    34-. "<div>Uses artifact status<br />vocabulary from</div><div style='font-size: 70%'></div>" .->32
+    34-. "<div>Marks stored/skipped outcomes<br />and ensures retryable fetch<br />work through</div><div style='font-size: 70%'></div>" .->33
+    34-. "<div>Reserves cache capacity and<br />advances media artifact rows<br />transactionally in</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+    34-. "<div>Stages unique candidates,<br />resolves contained reads, and<br />deletes failed candidates<br />through</div><div style='font-size: 70%'></div>" .->39
+    34-. "<div>Registers committed blobs and<br />tombstones replacement,<br />eviction, and purge bytes<br />through</div><div style='font-size: 70%'></div>" .->40
+    35-. "<div>Streams the initial response<br />and every direct artifact<br />through</div><div style='font-size: 70%'></div>" .->36
+    35-. "<div>Delegates detected playlists<br />for bounded parsing and<br />assembly to</div><div style='font-size: 70%'></div>" .->37
+    35-. "<div>Leases aggregate transfer<br />bytes through</div><div style='font-size: 70%'></div>" .->38
+    36-. "<div>Leases each active HTTP<br />request through</div><div style='font-size: 70%'></div>" .->38
+    37-. "<div>Fetches every variant, init<br />map, and segment through</div><div style='font-size: 70%'></div>" .->36
+    31-. "<div>Checks current artifact<br />presence and resolves<br />contained storage through</div><div style='font-size: 70%'></div>" .->39
+    40-. "<div>Reads and advances durable<br />blob lifecycle records in</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
     40-. "<div>Resolves, deletes, and<br />inventories contained bytes<br />through</div><div style='font-size: 70%'></div>" .->39
-    39-. "<div>Stages, commits, reads,<br />stats, and deletes media<br />blobs in</div><div style='font-size: 70%'>[Filesystem]</div>" .->50
-    39-. "<div>Stages, commits, reads,<br />stats, and deletes spooled<br />media in</div><div style='font-size: 70%'>[Filesystem]</div>" .->51
-
+    39-. "<div>Stages, commits, reads,<br />stats, and deletes media<br />blobs in</div><div style='font-size: 70%'>[Filesystem]</div>" .->59
+    39-. "<div>Stages, commits, reads,<br />stats, and deletes spooled<br />media in</div><div style='font-size: 70%'>[Filesystem]</div>" .->60
   end
 ```
 
@@ -677,74 +866,6 @@ graph LR
 | DOT source | [`structurizr-DaemonMediaComponents.dot`](diagrams/dot/structurizr-DaemonMediaComponents.dot) |
 | Graphviz SVG | [`structurizr-DaemonMediaComponents.svg`](diagrams/dot-rendered/structurizr-DaemonMediaComponents.svg) |
 | Graphviz PNG | [`structurizr-DaemonMediaComponents.png`](diagrams/dot-rendered/structurizr-DaemonMediaComponents.png) |
-
-
----
-
-## Daemon Media Ops Components
-
-> C4 view `DaemonMediaOpsComponents`.
-
-### Diagram
-
-![Daemon Media Ops Components](diagrams/dot-rendered/structurizr-DaemonMediaOpsComponents.svg)
-
-_Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for text review._
-
-<details>
-<summary>Mermaid source</summary>
-
-```mermaid
-graph LR
-  linkStyle default fill:#ffffff
-
-  subgraph diagram ["Component View: Browser Memory Daemon - WSL Loopback HTTP Daemon"]
-    style diagram fill:#ffffff,stroke:#ffffff
-
-    subgraph 4 ["Browser Memory Daemon"]
-      style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
-
-      subgraph 22 ["WSL Loopback HTTP Daemon"]
-        style 22 fill:#ffffff,stroke:#2e6295,color:#2e6295
-
-        32["<div style='font-weight: bold'>Media Task Repository</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Creates deterministic tasks,<br />preserves terminal state,<br />atomically leases due work,<br />recovers stale leases, and<br />applies bounded retry/backoff<br />outcomes independently from<br />media transport.</div>"]
-        style 32 fill:#85bbf0,stroke:#1168bd,color:#000000
-        37["<div style='font-weight: bold'>Media Operator and Reconciliation Workflow</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Owns scoped dry-run-first<br />budget requeue plus bounded<br />current-state CDP/blob and<br />stored-task reconciliation.</div>"]
-        style 37 fill:#85bbf0,stroke:#1168bd,color:#000000
-      end
-
-      44["<div style='font-weight: bold'>WSL Media Worker</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11 CLI loop]</div><div style='font-size: 80%; margin-top:10px'>Long-running systemd user<br />worker that leases<br />daemon-public media fetch<br />tasks, fetches public<br />media/HLS without Chrome<br />cookies, classifies terminal<br />states, and updates artifact<br />rows.</div>"]
-      style 44 fill:#438dd5,stroke:#2e6295,color:#ffffff
-      46["<div style='font-weight: bold'>CLI</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python argparse]</div><div style='font-size: 80%; margin-top:10px'>Command-line interface for<br />serving the daemon,<br />migration, snapshot-text and<br />storage reconciliation,<br />manifest-backed<br />backup/restore, media-spool<br />status/drain,<br />health/doctor/search/recent/timeline/detail,<br />policy/forget, capture<br />fixtures, media worker, and<br />media cache operations.</div>"]
-      style 46 fill:#438dd5,stroke:#2e6295,color:#ffffff
-      48[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable complete<br />cleaned-text, relational, and<br />full-text authority for<br />migration ledger, sources,<br />documents, visits, capture<br />observations, URL claims,<br />visit events, snapshots,<br />chunks, chunks_fts, media<br />provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
-      style 48 fill:#2f95c8,stroke:#20688c,color:#ffffff
-    end
-
-    32-. "<div>Creates, leases, and advances<br />media tasks in</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
-    37-. "<div>Resets explicitly selected<br />tasks and closes bounded<br />stale stored work through</div><div style='font-size: 70%'></div>" .->32
-    37-. "<div>Reads and updates scoped<br />media artifact/task state in</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
-    46-. "<div>Runs migration, media-worker,<br />media-cache, media-spool, and<br />storage-reconcile commands<br />against</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
-    46-. "<div>Previews or executes scoped<br />budget requeue through</div><div style='font-size: 70%'></div>" .->37
-    44-. "<div>Leases and updates media<br />tasks in</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
-    44-. "<div>Runs bounded lease/retry task<br />workflow through</div><div style='font-size: 70%'></div>" .->32
-    44-. "<div>Runs bounded current-state<br />reconciliation through</div><div style='font-size: 70%'></div>" .->37
-
-  end
-```
-
-</details>
-
-### Derived artifacts
-
-| Artifact | Link |
-|---|---|
-| Mermaid source | [`structurizr-DaemonMediaOpsComponents.mmd`](diagrams/structurizr-DaemonMediaOpsComponents.mmd) |
-| Mermaid SVG | [`structurizr-DaemonMediaOpsComponents.svg`](diagrams/structurizr-DaemonMediaOpsComponents.svg) |
-| Mermaid PNG | [`structurizr-DaemonMediaOpsComponents.png`](diagrams/structurizr-DaemonMediaOpsComponents.png) |
-| DOT source | [`structurizr-DaemonMediaOpsComponents.dot`](diagrams/dot/structurizr-DaemonMediaOpsComponents.dot) |
-| Graphviz SVG | [`structurizr-DaemonMediaOpsComponents.svg`](diagrams/dot-rendered/structurizr-DaemonMediaOpsComponents.svg) |
-| Graphviz PNG | [`structurizr-DaemonMediaOpsComponents.png`](diagrams/dot-rendered/structurizr-DaemonMediaOpsComponents.png) |
 
 
 ---
@@ -766,60 +887,55 @@ _Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for 
 graph LR
   linkStyle default fill:#ffffff
 
-  subgraph diagram ["Component View: Browser Memory Daemon - WSL Loopback HTTP Daemon"]
+  subgraph diagram ["Browser Memory Daemon - WSL Loopback HTTP Daemon - Components"]
     style diagram fill:#ffffff,stroke:#ffffff
 
-    subgraph 4 ["Browser Memory Daemon"]
-      style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
+    57[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+    style 57 fill:#2f95c8,stroke:#20688c,color:#ffffff
 
-      subgraph 22 ["WSL Loopback HTTP Daemon"]
-        style 22 fill:#ffffff,stroke:#2e6295,color:#2e6295
+    subgraph 23 ["WSL Loopback HTTP Daemon"]
+      style 23 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
-        23["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server + route descriptors]</div><div style='font-size: 80%; margin-top:10px'>Adapts BaseHTTPRequestHandler<br />requests through immutable<br />method/path descriptors with<br />static precedence; owns auth,<br />parsing, compatible<br />status/error responses,<br />request IDs, common security<br />headers, redaction-safe<br />telemetry, bounded response<br />streaming, disconnect<br />cleanup, CORS, and finite UI<br />assets.</div>"]
-        style 23 fill:#85bbf0,stroke:#1168bd,color:#000000
-        24["<div style='font-weight: bold'>Application Use Cases</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Provides request-independent<br />capture, lifecycle, read,<br />forget, policy, doctor, and<br />media use cases; owns<br />database-ready checks,<br />transaction/audit boundaries,<br />asynchronous media kickoff,<br />and upload/download resource<br />leases without importing HTTP<br />request or response types.</div>"]
-        style 24 fill:#85bbf0,stroke:#1168bd,color:#000000
-        30["<div style='font-weight: bold'>Media Artifact Manager</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + filesystem]</div><div style='font-size: 80%; margin-top:10px'>Provides the compatibility<br />API, records media<br />references, streams bounded<br />blob uploads, delegates<br />guarded public transport, and<br />drains verified spool bytes<br />without coupling text ingest<br />to media availability.</div>"]
-        style 30 fill:#85bbf0,stroke:#1168bd,color:#000000
-        32["<div style='font-weight: bold'>Media Task Repository</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Creates deterministic tasks,<br />preserves terminal state,<br />atomically leases due work,<br />recovers stale leases, and<br />applies bounded retry/backoff<br />outcomes independently from<br />media transport.</div>"]
-        style 32 fill:#85bbf0,stroke:#1168bd,color:#000000
-        33["<div style='font-weight: bold'>Media Artifact Store</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + BlobStore]</div><div style='font-size: 80%; margin-top:10px'>Owns artifact rows,<br />transactional cross-process<br />cache reservations, unique<br />streamed publication,<br />failed-write compensation,<br />contained reads, cache<br />admission, oldest-first<br />eviction, purge/rehydration,<br />and lifecycle<br />registration/tombstones.</div>"]
-        style 33 fill:#85bbf0,stroke:#1168bd,color:#000000
-        34["<div style='font-weight: bold'>Media Transport Coordinator</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Classifies direct versus HLS<br />responses, applies the<br />aggregate HLS request budget<br />from the first network open,<br />enforces playlist sniffing<br />and byte caps, and<br />coordinates bounded streamed<br />assembly.</div>"]
-        style 34 fill:#85bbf0,stroke:#1168bd,color:#000000
-        35["<div style='font-weight: bold'>Guarded Media Fetch</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python stdlib urllib + socket]</div><div style='font-size: 80%; margin-top:10px'>Owns streamed HTTP/data<br />transport, public-address<br />validation, redirect<br />revalidation, no-referrer<br />requests, response-byte<br />limits, process request/byte<br />leases, and shared deadlines.</div>"]
-        style 35 fill:#85bbf0,stroke:#1168bd,color:#000000
-        36["<div style='font-weight: bold'>Bounded HLS Transport</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Parses bounded playlists,<br />selects variants, expands<br />init maps/segments through<br />the guarded fetch boundary,<br />and streams assembly within<br />aggregate<br />byte/depth/request/deadline<br />limits.</div>"]
-        style 36 fill:#85bbf0,stroke:#1168bd,color:#000000
-        38["<div style='font-weight: bold'>Media Process Resource Budget</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python threading.Condition]</div><div style='font-size: 80%; margin-top:10px'>Bounds active media requests<br />and in-flight bytes across<br />threads within one daemon or<br />worker process; exposes<br />aggregate counters and<br />releases leases on failure or<br />cancellation.</div>"]
-        style 38 fill:#85bbf0,stroke:#1168bd,color:#000000
-        39["<div style='font-weight: bold'>Contained BlobStore</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python filesystem boundary]</div><div style='font-size: 80%; margin-top:10px'>Prefers root-relative<br />locators with contained<br />legacy fallback; streams<br />unique stages with size/hash<br />accounting; atomically<br />commits; and contains blob<br />read, stat, and delete<br />operations.</div>"]
-        style 39 fill:#85bbf0,stroke:#1168bd,color:#000000
-      end
-
-      48[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable complete<br />cleaned-text, relational, and<br />full-text authority for<br />migration ledger, sources,<br />documents, visits, capture<br />observations, URL claims,<br />visit events, snapshots,<br />chunks, chunks_fts, media<br />provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
-      style 48 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      24["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server + route descriptors]</div><div style='font-size: 80%; margin-top:10px'>Adapts BaseHTTPRequestHandler<br />requests through immutable<br />method/path descriptors with<br />static precedence; owns auth,<br />parsing, compatible<br />status/error responses,<br />request IDs, common security<br />headers, redaction-safe<br />telemetry, bounded response<br />streaming, disconnect<br />cleanup, CORS, and finite UI<br />assets.</div>"]
+      style 24 fill:#85bbf0,stroke:#1168bd,color:#000000
+      25["<div style='font-weight: bold'>Application Use Cases</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Provides request-independent<br />capture, lifecycle, read,<br />forget, policy, doctor, and<br />media use cases; owns<br />database-ready checks,<br />transaction/audit boundaries,<br />asynchronous media kickoff,<br />and upload/download resource<br />leases without importing HTTP<br />request or response types.</div>"]
+      style 25 fill:#85bbf0,stroke:#1168bd,color:#000000
+      31["<div style='font-weight: bold'>Media Artifact Manager</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + filesystem]</div><div style='font-size: 80%; margin-top:10px'>Provides the compatibility<br />API, records media<br />references, streams bounded<br />blob uploads, and delegates<br />guarded public transport<br />without coupling text ingest<br />to media availability.</div>"]
+      style 31 fill:#85bbf0,stroke:#1168bd,color:#000000
+      33["<div style='font-weight: bold'>Media Task Repository</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Creates deterministic tasks,<br />preserves terminal state,<br />atomically leases due work,<br />recovers stale leases, and<br />applies bounded retry/backoff<br />outcomes independently from<br />media transport.</div>"]
+      style 33 fill:#85bbf0,stroke:#1168bd,color:#000000
+      34["<div style='font-weight: bold'>Media Artifact Store</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + BlobStore]</div><div style='font-size: 80%; margin-top:10px'>Owns artifact rows,<br />transactional cross-process<br />cache reservations, unique<br />streamed publication,<br />failed-write compensation,<br />contained reads, cache<br />admission, oldest-first<br />eviction, purge/rehydration,<br />and lifecycle<br />registration/tombstones.</div>"]
+      style 34 fill:#85bbf0,stroke:#1168bd,color:#000000
+      35["<div style='font-weight: bold'>Media Transport Coordinator</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Classifies direct versus HLS<br />responses, applies the<br />aggregate HLS request budget<br />from the first network open,<br />enforces playlist sniffing<br />and byte caps, and<br />coordinates bounded streamed<br />assembly.</div>"]
+      style 35 fill:#85bbf0,stroke:#1168bd,color:#000000
+      36["<div style='font-weight: bold'>Guarded Media Fetch</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python stdlib urllib + socket]</div><div style='font-size: 80%; margin-top:10px'>Owns streamed HTTP/data<br />transport, public-address<br />validation, redirect<br />revalidation, no-referrer<br />requests, response-byte<br />limits, process request/byte<br />leases, and shared deadlines.</div>"]
+      style 36 fill:#85bbf0,stroke:#1168bd,color:#000000
+      37["<div style='font-weight: bold'>Bounded HLS Transport</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Parses bounded playlists,<br />selects variants, expands<br />init maps/segments through<br />the guarded fetch boundary,<br />and streams assembly within<br />aggregate<br />byte/depth/request/deadline<br />limits.</div>"]
+      style 37 fill:#85bbf0,stroke:#1168bd,color:#000000
+      38["<div style='font-weight: bold'>Media Process Resource Budget</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python threading.Condition]</div><div style='font-size: 80%; margin-top:10px'>Bounds active media requests<br />and in-flight bytes across<br />threads within one daemon or<br />worker process; exposes<br />aggregate counters and<br />releases leases on failure or<br />cancellation.</div>"]
+      style 38 fill:#85bbf0,stroke:#1168bd,color:#000000
+      39["<div style='font-weight: bold'>Contained BlobStore</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python filesystem boundary]</div><div style='font-size: 80%; margin-top:10px'>Prefers root-relative<br />locators with contained<br />legacy fallback; streams<br />unique stages with size/hash<br />accounting; atomically<br />commits; and contains blob<br />read, stat, and delete<br />operations.</div>"]
+      style 39 fill:#85bbf0,stroke:#1168bd,color:#000000
     end
 
-    23-. "<div>Invokes explicit<br />request-independent use cases<br />through</div><div style='font-size: 70%'></div>" .->24
-    23-. "<div>Leases bounded JSON media<br />request admission through</div><div style='font-size: 70%'></div>" .->38
-    24-. "<div>Coordinates media requests<br />through</div><div style='font-size: 70%'></div>" .->30
-    24-. "<div>Leases bounded media upload<br />and response capacity through</div><div style='font-size: 70%'></div>" .->38
-    30-. "<div>Creates and claims durable<br />media work through</div><div style='font-size: 70%'></div>" .->32
-    30-. "<div>Publishes, resolves, purges,<br />and rehydrates artifacts<br />through</div><div style='font-size: 70%'></div>" .->33
-    30-. "<div>Delegates daemon-public media<br />orchestration to</div><div style='font-size: 70%'></div>" .->34
-    30-. "<div>Updates media artifact rows<br />in</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
-    32-. "<div>Creates, leases, and advances<br />media tasks in</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
-    33-. "<div>Marks stored/skipped outcomes<br />and ensures retryable fetch<br />work through</div><div style='font-size: 70%'></div>" .->32
-    33-. "<div>Reserves cache capacity and<br />advances media artifact rows<br />transactionally in</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
-    33-. "<div>Stages unique candidates,<br />resolves contained reads, and<br />deletes failed candidates<br />through</div><div style='font-size: 70%'></div>" .->39
-    34-. "<div>Streams the initial response<br />and every direct artifact<br />through</div><div style='font-size: 70%'></div>" .->35
-    34-. "<div>Delegates detected playlists<br />for bounded parsing and<br />assembly to</div><div style='font-size: 70%'></div>" .->36
-    34-. "<div>Leases aggregate transfer<br />bytes through</div><div style='font-size: 70%'></div>" .->38
-    35-. "<div>Leases each active HTTP<br />request through</div><div style='font-size: 70%'></div>" .->38
-    36-. "<div>Fetches every variant, init<br />map, and segment through</div><div style='font-size: 70%'></div>" .->35
-    30-. "<div>Checks current artifact<br />presence during fetch<br />orchestration and drains<br />spool bytes through</div><div style='font-size: 70%'></div>" .->39
-
+    24-. "<div>Invokes explicit<br />request-independent use cases<br />through</div><div style='font-size: 70%'></div>" .->25
+    24-. "<div>Leases bounded JSON media<br />request admission through</div><div style='font-size: 70%'></div>" .->38
+    25-. "<div>Coordinates media requests<br />through</div><div style='font-size: 70%'></div>" .->31
+    25-. "<div>Leases bounded media upload<br />and response capacity through</div><div style='font-size: 70%'></div>" .->38
+    31-. "<div>Creates and claims durable<br />media work through</div><div style='font-size: 70%'></div>" .->33
+    31-. "<div>Publishes, resolves, purges,<br />and rehydrates artifacts<br />through</div><div style='font-size: 70%'></div>" .->34
+    31-. "<div>Delegates daemon-public media<br />orchestration to</div><div style='font-size: 70%'></div>" .->35
+    31-. "<div>Updates media artifact rows<br />in</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+    33-. "<div>Creates, leases, and advances<br />media tasks in</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+    34-. "<div>Marks stored/skipped outcomes<br />and ensures retryable fetch<br />work through</div><div style='font-size: 70%'></div>" .->33
+    34-. "<div>Reserves cache capacity and<br />advances media artifact rows<br />transactionally in</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+    34-. "<div>Stages unique candidates,<br />resolves contained reads, and<br />deletes failed candidates<br />through</div><div style='font-size: 70%'></div>" .->39
+    35-. "<div>Streams the initial response<br />and every direct artifact<br />through</div><div style='font-size: 70%'></div>" .->36
+    35-. "<div>Delegates detected playlists<br />for bounded parsing and<br />assembly to</div><div style='font-size: 70%'></div>" .->37
+    35-. "<div>Leases aggregate transfer<br />bytes through</div><div style='font-size: 70%'></div>" .->38
+    36-. "<div>Leases each active HTTP<br />request through</div><div style='font-size: 70%'></div>" .->38
+    37-. "<div>Fetches every variant, init<br />map, and segment through</div><div style='font-size: 70%'></div>" .->36
+    31-. "<div>Checks current artifact<br />presence and resolves<br />contained storage through</div><div style='font-size: 70%'></div>" .->39
   end
 ```
 
@@ -856,43 +972,37 @@ _Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for 
 graph LR
   linkStyle default fill:#ffffff
 
-  subgraph diagram ["Component View: Browser Memory Daemon - WSL Loopback HTTP Daemon"]
+  subgraph diagram ["Browser Memory Daemon - WSL Loopback HTTP Daemon - Components"]
     style diagram fill:#ffffff,stroke:#ffffff
 
     3["<div style='font-weight: bold'>Web Sites and Media Origins</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>External web pages,<br />image/video URLs, and media<br />CDNs that Chrome loads or<br />that sidecars fetch as<br />page-related media.</div>"]
     style 3 fill:#999999,stroke:#6b6b6b,color:#ffffff
 
-    subgraph 4 ["Browser Memory Daemon"]
-      style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
+    subgraph 23 ["WSL Loopback HTTP Daemon"]
+      style 23 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
-      subgraph 22 ["WSL Loopback HTTP Daemon"]
-        style 22 fill:#ffffff,stroke:#2e6295,color:#2e6295
-
-        30["<div style='font-weight: bold'>Media Artifact Manager</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + filesystem]</div><div style='font-size: 80%; margin-top:10px'>Provides the compatibility<br />API, records media<br />references, streams bounded<br />blob uploads, delegates<br />guarded public transport, and<br />drains verified spool bytes<br />without coupling text ingest<br />to media availability.</div>"]
-        style 30 fill:#85bbf0,stroke:#1168bd,color:#000000
-        33["<div style='font-weight: bold'>Media Artifact Store</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + BlobStore]</div><div style='font-size: 80%; margin-top:10px'>Owns artifact rows,<br />transactional cross-process<br />cache reservations, unique<br />streamed publication,<br />failed-write compensation,<br />contained reads, cache<br />admission, oldest-first<br />eviction, purge/rehydration,<br />and lifecycle<br />registration/tombstones.</div>"]
-        style 33 fill:#85bbf0,stroke:#1168bd,color:#000000
-        34["<div style='font-weight: bold'>Media Transport Coordinator</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Classifies direct versus HLS<br />responses, applies the<br />aggregate HLS request budget<br />from the first network open,<br />enforces playlist sniffing<br />and byte caps, and<br />coordinates bounded streamed<br />assembly.</div>"]
-        style 34 fill:#85bbf0,stroke:#1168bd,color:#000000
-        35["<div style='font-weight: bold'>Guarded Media Fetch</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python stdlib urllib + socket]</div><div style='font-size: 80%; margin-top:10px'>Owns streamed HTTP/data<br />transport, public-address<br />validation, redirect<br />revalidation, no-referrer<br />requests, response-byte<br />limits, process request/byte<br />leases, and shared deadlines.</div>"]
-        style 35 fill:#85bbf0,stroke:#1168bd,color:#000000
-        36["<div style='font-weight: bold'>Bounded HLS Transport</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Parses bounded playlists,<br />selects variants, expands<br />init maps/segments through<br />the guarded fetch boundary,<br />and streams assembly within<br />aggregate<br />byte/depth/request/deadline<br />limits.</div>"]
-        style 36 fill:#85bbf0,stroke:#1168bd,color:#000000
-        38["<div style='font-weight: bold'>Media Process Resource Budget</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python threading.Condition]</div><div style='font-size: 80%; margin-top:10px'>Bounds active media requests<br />and in-flight bytes across<br />threads within one daemon or<br />worker process; exposes<br />aggregate counters and<br />releases leases on failure or<br />cancellation.</div>"]
-        style 38 fill:#85bbf0,stroke:#1168bd,color:#000000
-      end
-
+      31["<div style='font-weight: bold'>Media Artifact Manager</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + filesystem]</div><div style='font-size: 80%; margin-top:10px'>Provides the compatibility<br />API, records media<br />references, streams bounded<br />blob uploads, and delegates<br />guarded public transport<br />without coupling text ingest<br />to media availability.</div>"]
+      style 31 fill:#85bbf0,stroke:#1168bd,color:#000000
+      34["<div style='font-weight: bold'>Media Artifact Store</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + BlobStore]</div><div style='font-size: 80%; margin-top:10px'>Owns artifact rows,<br />transactional cross-process<br />cache reservations, unique<br />streamed publication,<br />failed-write compensation,<br />contained reads, cache<br />admission, oldest-first<br />eviction, purge/rehydration,<br />and lifecycle<br />registration/tombstones.</div>"]
+      style 34 fill:#85bbf0,stroke:#1168bd,color:#000000
+      35["<div style='font-weight: bold'>Media Transport Coordinator</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Classifies direct versus HLS<br />responses, applies the<br />aggregate HLS request budget<br />from the first network open,<br />enforces playlist sniffing<br />and byte caps, and<br />coordinates bounded streamed<br />assembly.</div>"]
+      style 35 fill:#85bbf0,stroke:#1168bd,color:#000000
+      36["<div style='font-weight: bold'>Guarded Media Fetch</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python stdlib urllib + socket]</div><div style='font-size: 80%; margin-top:10px'>Owns streamed HTTP/data<br />transport, public-address<br />validation, redirect<br />revalidation, no-referrer<br />requests, response-byte<br />limits, process request/byte<br />leases, and shared deadlines.</div>"]
+      style 36 fill:#85bbf0,stroke:#1168bd,color:#000000
+      37["<div style='font-weight: bold'>Bounded HLS Transport</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Parses bounded playlists,<br />selects variants, expands<br />init maps/segments through<br />the guarded fetch boundary,<br />and streams assembly within<br />aggregate<br />byte/depth/request/deadline<br />limits.</div>"]
+      style 37 fill:#85bbf0,stroke:#1168bd,color:#000000
+      38["<div style='font-weight: bold'>Media Process Resource Budget</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python threading.Condition]</div><div style='font-size: 80%; margin-top:10px'>Bounds active media requests<br />and in-flight bytes across<br />threads within one daemon or<br />worker process; exposes<br />aggregate counters and<br />releases leases on failure or<br />cancellation.</div>"]
+      style 38 fill:#85bbf0,stroke:#1168bd,color:#000000
     end
 
-    30-. "<div>Publishes, resolves, purges,<br />and rehydrates artifacts<br />through</div><div style='font-size: 70%'></div>" .->33
-    30-. "<div>Delegates daemon-public media<br />orchestration to</div><div style='font-size: 70%'></div>" .->34
-    34-. "<div>Streams the initial response<br />and every direct artifact<br />through</div><div style='font-size: 70%'></div>" .->35
-    34-. "<div>Delegates detected playlists<br />for bounded parsing and<br />assembly to</div><div style='font-size: 70%'></div>" .->36
-    34-. "<div>Leases aggregate transfer<br />bytes through</div><div style='font-size: 70%'></div>" .->38
-    35-. "<div>Leases each active HTTP<br />request through</div><div style='font-size: 70%'></div>" .->38
-    35-. "<div>Validates and fetches public<br />media from</div><div style='font-size: 70%'>[HTTP(S), no Referer or Chrome cookies]</div>" .->3
-    36-. "<div>Fetches every variant, init<br />map, and segment through</div><div style='font-size: 70%'></div>" .->35
-
+    31-. "<div>Publishes, resolves, purges,<br />and rehydrates artifacts<br />through</div><div style='font-size: 70%'></div>" .->34
+    31-. "<div>Delegates daemon-public media<br />orchestration to</div><div style='font-size: 70%'></div>" .->35
+    35-. "<div>Streams the initial response<br />and every direct artifact<br />through</div><div style='font-size: 70%'></div>" .->36
+    35-. "<div>Delegates detected playlists<br />for bounded parsing and<br />assembly to</div><div style='font-size: 70%'></div>" .->37
+    35-. "<div>Leases aggregate transfer<br />bytes through</div><div style='font-size: 70%'></div>" .->38
+    36-. "<div>Leases each active HTTP<br />request through</div><div style='font-size: 70%'></div>" .->38
+    36-. "<div>Validates and fetches public<br />media from</div><div style='font-size: 70%'>[HTTP(S), no Referer or Chrome cookies]</div>" .->3
+    37-. "<div>Fetches every variant, init<br />map, and segment through</div><div style='font-size: 70%'></div>" .->36
   end
 ```
 
@@ -929,30 +1039,29 @@ _Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for 
 graph LR
   linkStyle default fill:#ffffff
 
-  subgraph diagram ["Container View: Browser Memory Daemon"]
+  subgraph diagram ["Browser Memory Daemon - Containers"]
     style diagram fill:#ffffff,stroke:#ffffff
 
     3["<div style='font-weight: bold'>Web Sites and Media Origins</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>External web pages,<br />image/video URLs, and media<br />CDNs that Chrome loads or<br />that sidecars fetch as<br />page-related media.</div>"]
     style 3 fill:#999999,stroke:#6b6b6b,color:#ffffff
 
-    subgraph 4 ["Browser Memory Daemon"]
-      style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
+    subgraph 5 ["Browser Memory Daemon"]
+      style 5 fill:#ffffff,stroke:#0b4884,color:#0b4884
 
-      44["<div style='font-weight: bold'>WSL Media Worker</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11 CLI loop]</div><div style='font-size: 80%; margin-top:10px'>Long-running systemd user<br />worker that leases<br />daemon-public media fetch<br />tasks, fetches public<br />media/HLS without Chrome<br />cookies, classifies terminal<br />states, and updates artifact<br />rows.</div>"]
-      style 44 fill:#438dd5,stroke:#2e6295,color:#ffffff
-      48[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable complete<br />cleaned-text, relational, and<br />full-text authority for<br />migration ledger, sources,<br />documents, visits, capture<br />observations, URL claims,<br />visit events, snapshots,<br />chunks, chunks_fts, media<br />provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
-      style 48 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      50[("<div style='font-weight: bold'>Guarded Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL-visible local or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</div>")]
-      style 50 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      51[("<div style='font-weight: bold'>Bounded Local Media Spool</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Opt-in durable outage buffer<br />beneath the local WSL data<br />root; admission counts<br />committed files and distinct<br />in-flight SQLite<br />reservations, and drain<br />verifies bytes before tier<br />transition/source cleanup.</div>")]
-      style 51 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      45["<div style='font-weight: bold'>WSL Media Worker</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11 CLI loop]</div><div style='font-size: 80%; margin-top:10px'>Long-running systemd user<br />worker that loads<br />storage/media modules<br />in-process, first drains one<br />bounded spool-recovery batch<br />when the guarded final root<br />is ready, then leases<br />daemon-public media fetch<br />tasks without calling the<br />HTTP daemon.</div>"]
+      style 45 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      57[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+      style 57 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      59[("<div style='font-weight: bold'>Guarded Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL-visible local or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</div>")]
+      style 59 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      60[("<div style='font-weight: bold'>Bounded Local Media Spool</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Opt-in durable outage buffer<br />beneath the local WSL data<br />root; admission counts<br />committed files and distinct<br />in-flight SQLite<br />reservations, and drain<br />verifies bytes before tier<br />transition/source cleanup.</div>")]
+      style 60 fill:#2f95c8,stroke:#20688c,color:#ffffff
     end
 
-    44-. "<div>Leases and updates media<br />tasks in</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
-    44-. "<div>Fetches public media and HLS<br />from</div><div style='font-size: 70%'>[HTTP(S), data URLs]</div>" .->3
-    44-. "<div>Writes fetched media blobs to</div><div style='font-size: 70%'>[Filesystem]</div>" .->50
-    44-. "<div>Writes fetched media during<br />guarded-root outages to</div><div style='font-size: 70%'>[Filesystem]</div>" .->51
-
+    45-. "<div>Leases and updates media<br />tasks in</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+    45-. "<div>Fetches public media and HLS<br />from</div><div style='font-size: 70%'>[HTTP(S), data URLs]</div>" .->3
+    45-. "<div>Writes fetched media blobs to</div><div style='font-size: 70%'>[Filesystem]</div>" .->59
+    45-. "<div>Writes fetched media during<br />guarded-root outages to</div><div style='font-size: 70%'>[Filesystem]</div>" .->60
   end
 ```
 
@@ -989,31 +1098,26 @@ _Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for 
 graph LR
   linkStyle default fill:#ffffff
 
-  subgraph diagram ["Component View: Browser Memory Daemon - WSL Loopback HTTP Daemon"]
+  subgraph diagram ["Browser Memory Daemon - WSL Loopback HTTP Daemon - Components"]
     style diagram fill:#ffffff,stroke:#ffffff
 
-    subgraph 4 ["Browser Memory Daemon"]
-      style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
+    57[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+    style 57 fill:#2f95c8,stroke:#20688c,color:#ffffff
 
-      subgraph 22 ["WSL Loopback HTTP Daemon"]
-        style 22 fill:#ffffff,stroke:#2e6295,color:#2e6295
+    subgraph 23 ["WSL Loopback HTTP Daemon"]
+      style 23 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
-        23["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server + route descriptors]</div><div style='font-size: 80%; margin-top:10px'>Adapts BaseHTTPRequestHandler<br />requests through immutable<br />method/path descriptors with<br />static precedence; owns auth,<br />parsing, compatible<br />status/error responses,<br />request IDs, common security<br />headers, redaction-safe<br />telemetry, bounded response<br />streaming, disconnect<br />cleanup, CORS, and finite UI<br />assets.</div>"]
-        style 23 fill:#85bbf0,stroke:#1168bd,color:#000000
-        24["<div style='font-weight: bold'>Application Use Cases</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Provides request-independent<br />capture, lifecycle, read,<br />forget, policy, doctor, and<br />media use cases; owns<br />database-ready checks,<br />transaction/audit boundaries,<br />asynchronous media kickoff,<br />and upload/download resource<br />leases without importing HTTP<br />request or response types.</div>"]
-        style 24 fill:#85bbf0,stroke:#1168bd,color:#000000
-        25["<div style='font-weight: bold'>Database Migration Kernel</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Serializes migrators;<br />validates exact schema<br />fingerprints, ordered<br />names/checksums, and PRAGMA<br />user_version; applies<br />transactional steps,<br />backup-gates destructive<br />changes, and expands capture<br />provenance, storage state,<br />one-time historical media<br />correction, plus durable<br />cache reservations through<br />version 13.</div>"]
-        style 25 fill:#85bbf0,stroke:#1168bd,color:#000000
-      end
-
-      48[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable complete<br />cleaned-text, relational, and<br />full-text authority for<br />migration ledger, sources,<br />documents, visits, capture<br />observations, URL claims,<br />visit events, snapshots,<br />chunks, chunks_fts, media<br />provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
-      style 48 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      24["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server + route descriptors]</div><div style='font-size: 80%; margin-top:10px'>Adapts BaseHTTPRequestHandler<br />requests through immutable<br />method/path descriptors with<br />static precedence; owns auth,<br />parsing, compatible<br />status/error responses,<br />request IDs, common security<br />headers, redaction-safe<br />telemetry, bounded response<br />streaming, disconnect<br />cleanup, CORS, and finite UI<br />assets.</div>"]
+      style 24 fill:#85bbf0,stroke:#1168bd,color:#000000
+      25["<div style='font-weight: bold'>Application Use Cases</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Provides request-independent<br />capture, lifecycle, read,<br />forget, policy, doctor, and<br />media use cases; owns<br />database-ready checks,<br />transaction/audit boundaries,<br />asynchronous media kickoff,<br />and upload/download resource<br />leases without importing HTTP<br />request or response types.</div>"]
+      style 25 fill:#85bbf0,stroke:#1168bd,color:#000000
+      26["<div style='font-weight: bold'>Database Migration Kernel</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Validates exact<br />ledgers/fingerprints and<br />applies transactional steps<br />through version 14, including<br />immutable observation ingest<br />sequences.</div>"]
+      style 26 fill:#85bbf0,stroke:#1168bd,color:#000000
     end
 
-    23-. "<div>Invokes explicit<br />request-independent use cases<br />through</div><div style='font-size: 70%'></div>" .->24
-    24-. "<div>Requires compatible<br />initialized schema through</div><div style='font-size: 70%'></div>" .->25
-    25-. "<div>Validates and advances schema<br />ledger/fingerprint in</div><div style='font-size: 70%'>[sqlite3 online backup + transactions]</div>" .->48
-
+    24-. "<div>Invokes explicit<br />request-independent use cases<br />through</div><div style='font-size: 70%'></div>" .->25
+    25-. "<div>Requires compatible<br />initialized schema through</div><div style='font-size: 70%'></div>" .->26
+    26-. "<div>Validates and advances schema<br />ledger/fingerprint in</div><div style='font-size: 70%'>[sqlite3 online backup + transactions]</div>" .->57
   end
 ```
 
@@ -1050,32 +1154,26 @@ _Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for 
 graph LR
   linkStyle default fill:#ffffff
 
-  subgraph diagram ["Component View: Browser Memory Daemon - WSL Loopback HTTP Daemon"]
+  subgraph diagram ["Browser Memory Daemon - WSL Loopback HTTP Daemon - Components"]
     style diagram fill:#ffffff,stroke:#ffffff
 
-    subgraph 4 ["Browser Memory Daemon"]
-      style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
+    subgraph 23 ["WSL Loopback HTTP Daemon"]
+      style 23 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
-      subgraph 22 ["WSL Loopback HTTP Daemon"]
-        style 22 fill:#ffffff,stroke:#2e6295,color:#2e6295
-
-        23["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server + route descriptors]</div><div style='font-size: 80%; margin-top:10px'>Adapts BaseHTTPRequestHandler<br />requests through immutable<br />method/path descriptors with<br />static precedence; owns auth,<br />parsing, compatible<br />status/error responses,<br />request IDs, common security<br />headers, redaction-safe<br />telemetry, bounded response<br />streaming, disconnect<br />cleanup, CORS, and finite UI<br />assets.</div>"]
-        style 23 fill:#85bbf0,stroke:#1168bd,color:#000000
-        24["<div style='font-weight: bold'>Application Use Cases</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Provides request-independent<br />capture, lifecycle, read,<br />forget, policy, doctor, and<br />media use cases; owns<br />database-ready checks,<br />transaction/audit boundaries,<br />asynchronous media kickoff,<br />and upload/download resource<br />leases without importing HTTP<br />request or response types.</div>"]
-        style 24 fill:#85bbf0,stroke:#1168bd,color:#000000
-        26["<div style='font-weight: bold'>Policy Engine</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Evaluates<br />all/recall/balanced/strict<br />capture mode decisions and<br />redacts URL/title/body text<br />outside all mode.</div>"]
-        style 26 fill:#85bbf0,stroke:#1168bd,color:#000000
-        27["<div style='font-weight: bold'>Policy Store</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + SQLite]</div><div style='font-size: 80%; margin-top:10px'>Persists and evaluates<br />explicit local block-domain<br />and URL-prefix rules for<br />every policy mode.</div>"]
-        style 27 fill:#85bbf0,stroke:#1168bd,color:#000000
-      end
-
+      24["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server + route descriptors]</div><div style='font-size: 80%; margin-top:10px'>Adapts BaseHTTPRequestHandler<br />requests through immutable<br />method/path descriptors with<br />static precedence; owns auth,<br />parsing, compatible<br />status/error responses,<br />request IDs, common security<br />headers, redaction-safe<br />telemetry, bounded response<br />streaming, disconnect<br />cleanup, CORS, and finite UI<br />assets.</div>"]
+      style 24 fill:#85bbf0,stroke:#1168bd,color:#000000
+      25["<div style='font-weight: bold'>Application Use Cases</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Provides request-independent<br />capture, lifecycle, read,<br />forget, policy, doctor, and<br />media use cases; owns<br />database-ready checks,<br />transaction/audit boundaries,<br />asynchronous media kickoff,<br />and upload/download resource<br />leases without importing HTTP<br />request or response types.</div>"]
+      style 25 fill:#85bbf0,stroke:#1168bd,color:#000000
+      27["<div style='font-weight: bold'>Policy Engine</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Evaluates<br />all/recall/balanced/strict<br />capture mode decisions and<br />redacts URL/title/body text<br />outside all mode.</div>"]
+      style 27 fill:#85bbf0,stroke:#1168bd,color:#000000
+      28["<div style='font-weight: bold'>Policy Store</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + SQLite]</div><div style='font-size: 80%; margin-top:10px'>Persists and evaluates<br />explicit local block-domain<br />and URL-prefix rules for<br />every policy mode.</div>"]
+      style 28 fill:#85bbf0,stroke:#1168bd,color:#000000
     end
 
-    23-. "<div>Invokes explicit<br />request-independent use cases<br />through</div><div style='font-size: 70%'></div>" .->24
-    24-. "<div>Gets capture decisions from</div><div style='font-size: 70%'></div>" .->26
-    24-. "<div>Manages policy rules through</div><div style='font-size: 70%'></div>" .->27
-    26-. "<div>Combines static mode with<br />rules from</div><div style='font-size: 70%'></div>" .->27
-
+    24-. "<div>Invokes explicit<br />request-independent use cases<br />through</div><div style='font-size: 70%'></div>" .->25
+    25-. "<div>Gets capture decisions from</div><div style='font-size: 70%'></div>" .->27
+    25-. "<div>Manages policy rules through</div><div style='font-size: 70%'></div>" .->28
+    27-. "<div>Combines static mode with<br />rules from</div><div style='font-size: 70%'></div>" .->28
   end
 ```
 
@@ -1112,28 +1210,27 @@ _Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for 
 graph LR
   linkStyle default fill:#ffffff
 
-  subgraph diagram ["Dynamic View: Browser Memory Daemon"]
+  subgraph diagram ["Browser Memory Daemon - Dynamic"]
     style diagram fill:#ffffff,stroke:#ffffff
 
-    subgraph 4 ["Browser Memory Daemon"]
-      style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
+    subgraph 5 ["Browser Memory Daemon"]
+      style 5 fill:#ffffff,stroke:#0b4884,color:#0b4884
 
-      44["<div style='font-weight: bold'>WSL Media Worker</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11 CLI loop]</div><div style='font-size: 80%; margin-top:10px'>Long-running systemd user<br />worker that leases<br />daemon-public media fetch<br />tasks, fetches public<br />media/HLS without Chrome<br />cookies, classifies terminal<br />states, and updates artifact<br />rows.</div>"]
-      style 44 fill:#438dd5,stroke:#2e6295,color:#ffffff
-      48[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable complete<br />cleaned-text, relational, and<br />full-text authority for<br />migration ledger, sources,<br />documents, visits, capture<br />observations, URL claims,<br />visit events, snapshots,<br />chunks, chunks_fts, media<br />provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
-      style 48 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      50[("<div style='font-weight: bold'>Guarded Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL-visible local or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</div>")]
-      style 50 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      45["<div style='font-weight: bold'>WSL Media Worker</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11 CLI loop]</div><div style='font-size: 80%; margin-top:10px'>Long-running systemd user<br />worker that loads<br />storage/media modules<br />in-process, first drains one<br />bounded spool-recovery batch<br />when the guarded final root<br />is ready, then leases<br />daemon-public media fetch<br />tasks without calling the<br />HTTP daemon.</div>"]
+      style 45 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      57[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+      style 57 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      59[("<div style='font-weight: bold'>Guarded Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL-visible local or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</div>")]
+      style 59 fill:#2f95c8,stroke:#20688c,color:#ffffff
     end
 
     3["<div style='font-weight: bold'>Web Sites and Media Origins</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>External web pages,<br />image/video URLs, and media<br />CDNs that Chrome loads or<br />that sidecars fetch as<br />page-related media.</div>"]
     style 3 fill:#999999,stroke:#6b6b6b,color:#ffffff
 
-    44-. "<div>1. Claims due daemon-public<br />media_fetch_tasks</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
-    44-. "<div>2. Fetches public media or<br />HLS assets without Chrome<br />cookies</div><div style='font-size: 70%'>[HTTP(S), data URLs]</div>" .->3
-    44-. "<div>3. Writes fetched or<br />assembled blob when gates<br />allow</div><div style='font-size: 70%'>[Filesystem]</div>" .->50
-    44-. "<div>4. Marks task/artifact<br />stored, retrying, skipped,<br />expired, or failed with<br />reason</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
-
+    45-. "<div>1. Claims due daemon-public<br />media_fetch_tasks</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+    45-. "<div>2. Fetches public media or<br />HLS assets without Chrome<br />cookies</div><div style='font-size: 70%'>[HTTP(S), data URLs]</div>" .->3
+    45-. "<div>3. Writes fetched or<br />assembled blob when gates<br />allow</div><div style='font-size: 70%'>[Filesystem]</div>" .->59
+    45-. "<div>4. Marks task/artifact<br />stored, retrying, skipped,<br />expired, or failed with<br />reason</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
   end
 ```
 
@@ -1170,43 +1267,42 @@ _Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for 
 graph LR
   linkStyle default fill:#ffffff
 
-  subgraph diagram ["Component View: Browser Memory Daemon - WSL Loopback HTTP Daemon"]
+  subgraph diagram ["Browser Memory Daemon - WSL Loopback HTTP Daemon - Components"]
     style diagram fill:#ffffff,stroke:#ffffff
 
-    subgraph 4 ["Browser Memory Daemon"]
-      style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
+    57[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+    style 57 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    58[("<div style='font-weight: bold'>Local Derivative Store</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Reconstructible compatibility<br />evidence such as<br />pre-version-9 clean-text<br />sidecars; new captures create<br />no text sidecars.</div>")]
+    style 58 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    59[("<div style='font-weight: bold'>Guarded Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL-visible local or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</div>")]
+    style 59 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    60[("<div style='font-weight: bold'>Bounded Local Media Spool</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Opt-in durable outage buffer<br />beneath the local WSL data<br />root; admission counts<br />committed files and distinct<br />in-flight SQLite<br />reservations, and drain<br />verifies bytes before tier<br />transition/source cleanup.</div>")]
+    style 60 fill:#2f95c8,stroke:#20688c,color:#ffffff
 
-      subgraph 22 ["WSL Loopback HTTP Daemon"]
-        style 22 fill:#ffffff,stroke:#2e6295,color:#2e6295
+    subgraph 23 ["WSL Loopback HTTP Daemon"]
+      style 23 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
-        23["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server + route descriptors]</div><div style='font-size: 80%; margin-top:10px'>Adapts BaseHTTPRequestHandler<br />requests through immutable<br />method/path descriptors with<br />static precedence; owns auth,<br />parsing, compatible<br />status/error responses,<br />request IDs, common security<br />headers, redaction-safe<br />telemetry, bounded response<br />streaming, disconnect<br />cleanup, CORS, and finite UI<br />assets.</div>"]
-        style 23 fill:#85bbf0,stroke:#1168bd,color:#000000
-        24["<div style='font-weight: bold'>Application Use Cases</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Provides request-independent<br />capture, lifecycle, read,<br />forget, policy, doctor, and<br />media use cases; owns<br />database-ready checks,<br />transaction/audit boundaries,<br />asynchronous media kickoff,<br />and upload/download resource<br />leases without importing HTTP<br />request or response types.</div>"]
-        style 24 fill:#85bbf0,stroke:#1168bd,color:#000000
-        39["<div style='font-weight: bold'>Contained BlobStore</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python filesystem boundary]</div><div style='font-size: 80%; margin-top:10px'>Prefers root-relative<br />locators with contained<br />legacy fallback; streams<br />unique stages with size/hash<br />accounting; atomically<br />commits; and contains blob<br />read, stat, and delete<br />operations.</div>"]
-        style 39 fill:#85bbf0,stroke:#1168bd,color:#000000
-        41["<div style='font-weight: bold'>Search and Read Model</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + SQLite FTS5]</div><div style='font-size: 80%; margin-top:10px'>Provides exact FTS search<br />plus SQLite-authoritative<br />text detail and<br />observation-first<br />recent/timeline/document/snapshot/media<br />views with explicit legacy<br />fallbacks.</div>"]
-        style 41 fill:#85bbf0,stroke:#1168bd,color:#000000
-      end
-
-      48[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable complete<br />cleaned-text, relational, and<br />full-text authority for<br />migration ledger, sources,<br />documents, visits, capture<br />observations, URL claims,<br />visit events, snapshots,<br />chunks, chunks_fts, media<br />provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
-      style 48 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      49[("<div style='font-weight: bold'>Local Derivative Store</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Reconstructible compatibility<br />evidence such as<br />pre-version-9 clean-text<br />sidecars; new captures create<br />no text sidecars.</div>")]
-      style 49 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      50[("<div style='font-weight: bold'>Guarded Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL-visible local or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</div>")]
-      style 50 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      51[("<div style='font-weight: bold'>Bounded Local Media Spool</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Opt-in durable outage buffer<br />beneath the local WSL data<br />root; admission counts<br />committed files and distinct<br />in-flight SQLite<br />reservations, and drain<br />verifies bytes before tier<br />transition/source cleanup.</div>")]
-      style 51 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      24["<div style='font-weight: bold'>HTTP Request Router</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python http.server + route descriptors]</div><div style='font-size: 80%; margin-top:10px'>Adapts BaseHTTPRequestHandler<br />requests through immutable<br />method/path descriptors with<br />static precedence; owns auth,<br />parsing, compatible<br />status/error responses,<br />request IDs, common security<br />headers, redaction-safe<br />telemetry, bounded response<br />streaming, disconnect<br />cleanup, CORS, and finite UI<br />assets.</div>"]
+      style 24 fill:#85bbf0,stroke:#1168bd,color:#000000
+      25["<div style='font-weight: bold'>Application Use Cases</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Provides request-independent<br />capture, lifecycle, read,<br />forget, policy, doctor, and<br />media use cases; owns<br />database-ready checks,<br />transaction/audit boundaries,<br />asynchronous media kickoff,<br />and upload/download resource<br />leases without importing HTTP<br />request or response types.</div>"]
+      style 25 fill:#85bbf0,stroke:#1168bd,color:#000000
+      39["<div style='font-weight: bold'>Contained BlobStore</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python filesystem boundary]</div><div style='font-size: 80%; margin-top:10px'>Prefers root-relative<br />locators with contained<br />legacy fallback; streams<br />unique stages with size/hash<br />accounting; atomically<br />commits; and contains blob<br />read, stat, and delete<br />operations.</div>"]
+      style 39 fill:#85bbf0,stroke:#1168bd,color:#000000
+      41["<div style='font-weight: bold'>Search and Read Model</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + SQLite FTS5]</div><div style='font-size: 80%; margin-top:10px'>Provides exact FTS search<br />plus SQLite-authoritative<br />text detail and<br />observation-first<br />recent/timeline/document/snapshot/media<br />views with explicit legacy<br />fallbacks.</div>"]
+      style 41 fill:#85bbf0,stroke:#1168bd,color:#000000
+      42["<div style='font-weight: bold'>HTTP X Observation Export Adapter</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Serves authenticated cursor<br />pages through the shared<br />query-only export core<br />without application<br />readiness, migrations, or<br />audit writes.</div>"]
+      style 42 fill:#85bbf0,stroke:#1168bd,color:#000000
     end
 
-    23-. "<div>Invokes explicit<br />request-independent use cases<br />through</div><div style='font-size: 70%'></div>" .->24
-    24-. "<div>Executes read requests<br />through</div><div style='font-size: 70%'></div>" .->41
-    41-. "<div>Reads metadata and FTS from</div><div style='font-size: 70%'>[SQLite FTS5]</div>" .->48
+    24-. "<div>Invokes explicit<br />request-independent use cases<br />through</div><div style='font-size: 70%'></div>" .->25
+    25-. "<div>Executes read requests<br />through</div><div style='font-size: 70%'></div>" .->41
+    24-. "<div>Serves authenticated GET<br />/exports/x-observations<br />through</div><div style='font-size: 70%'></div>" .->42
+    41-. "<div>Reads metadata and FTS from</div><div style='font-size: 70%'>[SQLite FTS5]</div>" .->57
+    42-. "<div>Reads validated<br />observation/evidence pages<br />without writes or audit</div><div style='font-size: 70%'>[SQLite mode=ro + query_only]</div>" .->57
     41-. "<div>Reads only legacy text<br />sidecars and checks media<br />files through</div><div style='font-size: 70%'></div>" .->39
-    39-. "<div>Reads, stats, reconciles, and<br />deletes legacy text sidecars<br />in</div><div style='font-size: 70%'>[Filesystem]</div>" .->49
-    39-. "<div>Stages, commits, reads,<br />stats, and deletes media<br />blobs in</div><div style='font-size: 70%'>[Filesystem]</div>" .->50
-    39-. "<div>Stages, commits, reads,<br />stats, and deletes spooled<br />media in</div><div style='font-size: 70%'>[Filesystem]</div>" .->51
-
+    39-. "<div>Reads, stats, reconciles, and<br />deletes legacy text sidecars<br />in</div><div style='font-size: 70%'>[Filesystem]</div>" .->58
+    39-. "<div>Stages, commits, reads,<br />stats, and deletes media<br />blobs in</div><div style='font-size: 70%'>[Filesystem]</div>" .->59
+    39-. "<div>Stages, commits, reads,<br />stats, and deletes spooled<br />media in</div><div style='font-size: 70%'>[Filesystem]</div>" .->60
   end
 ```
 
@@ -1222,80 +1318,6 @@ graph LR
 | DOT source | [`structurizr-DaemonReadComponents.dot`](diagrams/dot/structurizr-DaemonReadComponents.dot) |
 | Graphviz SVG | [`structurizr-DaemonReadComponents.svg`](diagrams/dot-rendered/structurizr-DaemonReadComponents.svg) |
 | Graphviz PNG | [`structurizr-DaemonReadComponents.png`](diagrams/dot-rendered/structurizr-DaemonReadComponents.png) |
-
-
----
-
-## Daemon Storage Reconcile Components
-
-> C4 view `DaemonStorageReconcileComponents`.
-
-### Diagram
-
-![Daemon Storage Reconcile Components](diagrams/dot-rendered/structurizr-DaemonStorageReconcileComponents.svg)
-
-_Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for text review._
-
-<details>
-<summary>Mermaid source</summary>
-
-```mermaid
-graph LR
-  linkStyle default fill:#ffffff
-
-  subgraph diagram ["Component View: Browser Memory Daemon - WSL Loopback HTTP Daemon"]
-    style diagram fill:#ffffff,stroke:#ffffff
-
-    subgraph 4 ["Browser Memory Daemon"]
-      style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
-
-      subgraph 22 ["WSL Loopback HTTP Daemon"]
-        style 22 fill:#ffffff,stroke:#2e6295,color:#2e6295
-
-        39["<div style='font-weight: bold'>Contained BlobStore</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python filesystem boundary]</div><div style='font-size: 80%; margin-top:10px'>Prefers root-relative<br />locators with contained<br />legacy fallback; streams<br />unique stages with size/hash<br />accounting; atomically<br />commits; and contains blob<br />read, stat, and delete<br />operations.</div>"]
-        style 39 fill:#85bbf0,stroke:#1168bd,color:#000000
-        40["<div style='font-weight: bold'>Blob Lifecycle and Storage Reconciler</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + filesystem]</div><div style='font-size: 80%; margin-top:10px'>Persists<br />committed/tombstoned/missing/deleted/blocked/failed<br />blob state; serializes<br />deletion processors; retries<br />tombstones; and dry-run<br />detects missing refs, in-root<br />orphans, and stale stages.</div>"]
-        style 40 fill:#85bbf0,stroke:#1168bd,color:#000000
-      end
-
-      46["<div style='font-weight: bold'>CLI</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python argparse]</div><div style='font-size: 80%; margin-top:10px'>Command-line interface for<br />serving the daemon,<br />migration, snapshot-text and<br />storage reconciliation,<br />manifest-backed<br />backup/restore, media-spool<br />status/drain,<br />health/doctor/search/recent/timeline/detail,<br />policy/forget, capture<br />fixtures, media worker, and<br />media cache operations.</div>"]
-      style 46 fill:#438dd5,stroke:#2e6295,color:#ffffff
-      48[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable complete<br />cleaned-text, relational, and<br />full-text authority for<br />migration ledger, sources,<br />documents, visits, capture<br />observations, URL claims,<br />visit events, snapshots,<br />chunks, chunks_fts, media<br />provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
-      style 48 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      49[("<div style='font-weight: bold'>Local Derivative Store</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Reconstructible compatibility<br />evidence such as<br />pre-version-9 clean-text<br />sidecars; new captures create<br />no text sidecars.</div>")]
-      style 49 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      50[("<div style='font-weight: bold'>Guarded Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL-visible local or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</div>")]
-      style 50 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      51[("<div style='font-weight: bold'>Bounded Local Media Spool</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Opt-in durable outage buffer<br />beneath the local WSL data<br />root; admission counts<br />committed files and distinct<br />in-flight SQLite<br />reservations, and drain<br />verifies bytes before tier<br />transition/source cleanup.</div>")]
-      style 51 fill:#2f95c8,stroke:#20688c,color:#ffffff
-    end
-
-    40-. "<div>Reads and advances durable<br />blob lifecycle records in</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
-    40-. "<div>Resolves, deletes, and<br />inventories contained bytes<br />through</div><div style='font-size: 70%'></div>" .->39
-    39-. "<div>Reads, stats, reconciles, and<br />deletes legacy text sidecars<br />in</div><div style='font-size: 70%'>[Filesystem]</div>" .->49
-    39-. "<div>Stages, commits, reads,<br />stats, and deletes media<br />blobs in</div><div style='font-size: 70%'>[Filesystem]</div>" .->50
-    39-. "<div>Stages, commits, reads,<br />stats, and deletes spooled<br />media in</div><div style='font-size: 70%'>[Filesystem]</div>" .->51
-    46-. "<div>Optionally copies referenced<br />contained derivatives from</div><div style='font-size: 70%'>[Filesystem]</div>" .->49
-    46-. "<div>Runs migration, media-worker,<br />media-cache, media-spool, and<br />storage-reconcile commands<br />against</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
-    46-. "<div>Previews or executes<br />contained storage convergence<br />through</div><div style='font-size: 70%'></div>" .->40
-    46-. "<div>Purges and rehydrates media<br />blobs through</div><div style='font-size: 70%'>[Filesystem]</div>" .->50
-    46-. "<div>Reports and drains bounded<br />outage bytes through</div><div style='font-size: 70%'>[Filesystem]</div>" .->51
-
-  end
-```
-
-</details>
-
-### Derived artifacts
-
-| Artifact | Link |
-|---|---|
-| Mermaid source | [`structurizr-DaemonStorageReconcileComponents.mmd`](diagrams/structurizr-DaemonStorageReconcileComponents.mmd) |
-| Mermaid SVG | [`structurizr-DaemonStorageReconcileComponents.svg`](diagrams/structurizr-DaemonStorageReconcileComponents.svg) |
-| Mermaid PNG | [`structurizr-DaemonStorageReconcileComponents.png`](diagrams/structurizr-DaemonStorageReconcileComponents.png) |
-| DOT source | [`structurizr-DaemonStorageReconcileComponents.dot`](diagrams/dot/structurizr-DaemonStorageReconcileComponents.dot) |
-| Graphviz SVG | [`structurizr-DaemonStorageReconcileComponents.svg`](diagrams/dot-rendered/structurizr-DaemonStorageReconcileComponents.svg) |
-| Graphviz PNG | [`structurizr-DaemonStorageReconcileComponents.png`](diagrams/dot-rendered/structurizr-DaemonStorageReconcileComponents.png) |
 
 
 ---
@@ -1317,76 +1339,74 @@ _Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for 
 graph TB
   linkStyle default fill:#ffffff
 
-  subgraph diagram ["Deployment View: Browser Memory Daemon - Daily-driver local"]
+  subgraph diagram ["Browser Memory Daemon - Deployment - Daily-driver local"]
     style diagram fill:#ffffff,stroke:#ffffff
 
-    subgraph 171 ["Local workstation"]
-      style 171 fill:#ffffff,stroke:#444444,color:#444444
+    subgraph 203 ["Local workstation"]
+      style 203 fill:#ffffff,stroke:#888888,color:#000000
 
-      subgraph 172 ["Windows user profile"]
-        style 172 fill:#ffffff,stroke:#444444,color:#444444
+      subgraph 204 ["Windows user profile"]
+        style 204 fill:#ffffff,stroke:#888888,color:#000000
 
-        subgraph 173 ["Windows Chrome daily-driver profile"]
-          style 173 fill:#ffffff,stroke:#444444,color:#444444
+        subgraph 205 ["Windows Chrome daily-driver profile"]
+          style 205 fill:#ffffff,stroke:#888888,color:#000000
 
-          174["<div style='font-weight: bold'>Chrome MV3 Extension</div><div style='font-size: 70%; margin-top: 0px'>[Container: JavaScript, Chrome Manifest V3]</div><div style='font-size: 80%; margin-top:10px'>Captures visible page text,<br />media references, tab<br />lifecycle events, and<br />browser-side media bytes from<br />Windows Chrome; queues work<br />durably and posts to the WSL<br />daemon.</div>"]
-          style 174 fill:#438dd5,stroke:#2e6295,color:#ffffff
-          177["<div style='font-weight: bold'>Local Web UI</div><div style='font-size: 70%; margin-top: 0px'>[Container: HTML/CSS/JavaScript served by daemon]</div><div style='font-size: 80%; margin-top:10px'>Static browser UI for exact<br />search, recent/timeline<br />views, document/snapshot<br />detail, media artifact<br />opening, policy rules,<br />doctor, and forget-domain<br />operations.</div>"]
-          style 177 fill:#438dd5,stroke:#2e6295,color:#ffffff
+          206["<div style='font-weight: bold'>Chrome MV3 Extension</div><div style='font-size: 70%; margin-top: 0px'>[Container: JavaScript, Chrome Manifest V3]</div><div style='font-size: 80%; margin-top:10px'>Captures visible page text,<br />media references, tab<br />lifecycle events, and<br />browser-side media bytes from<br />Windows Chrome; queues work<br />durably and posts to the WSL<br />daemon.</div>"]
+          style 206 fill:#438dd5,stroke:#2e6295,color:#ffffff
+          209["<div style='font-weight: bold'>Local Web UI</div><div style='font-size: 70%; margin-top: 0px'>[Container: HTML/CSS/JavaScript served by daemon]</div><div style='font-size: 80%; margin-top:10px'>Static browser UI for exact<br />search, recent/timeline<br />views, document/snapshot<br />detail, media artifact<br />opening, policy rules,<br />doctor, and forget-domain<br />operations.</div>"]
+          style 209 fill:#438dd5,stroke:#2e6295,color:#ffffff
         end
 
       end
 
-      subgraph 179 ["WSL2 Ubuntu"]
-        style 179 fill:#ffffff,stroke:#444444,color:#444444
+      subgraph 211 ["WSL2 Ubuntu"]
+        style 211 fill:#ffffff,stroke:#888888,color:#000000
 
-        subgraph 180 ["systemd --user services"]
-          style 180 fill:#ffffff,stroke:#444444,color:#444444
+        subgraph 212 ["systemd --user services"]
+          style 212 fill:#ffffff,stroke:#888888,color:#000000
 
-          181["<div style='font-weight: bold'>WSL Loopback HTTP Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11, ThreadingHTTPServer]</div><div style='font-size: 80%; margin-top:10px'>Authenticated loopback HTTP<br />API that handles capture,<br />visit events, media artifact<br />upload/fetch/purge, exact<br />search,<br />recent/timeline/detail,<br />policy rules, doctor, durable<br />forget, and static UI<br />serving.</div>"]
-          style 181 fill:#438dd5,stroke:#2e6295,color:#ffffff
-          184["<div style='font-weight: bold'>WSL Media Worker</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11 CLI loop]</div><div style='font-size: 80%; margin-top:10px'>Long-running systemd user<br />worker that leases<br />daemon-public media fetch<br />tasks, fetches public<br />media/HLS without Chrome<br />cookies, classifies terminal<br />states, and updates artifact<br />rows.</div>"]
-          style 184 fill:#438dd5,stroke:#2e6295,color:#ffffff
+          213["<div style='font-weight: bold'>WSL Loopback HTTP Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11, ThreadingHTTPServer]</div><div style='font-size: 80%; margin-top:10px'>Authenticated loopback API<br />for capture, read/admin/media<br />operations, and query-only<br />bmd.x-observations v1 export.</div>"]
+          style 213 fill:#438dd5,stroke:#2e6295,color:#ffffff
+          216["<div style='font-weight: bold'>WSL Media Worker</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11 CLI loop]</div><div style='font-size: 80%; margin-top:10px'>Long-running systemd user<br />worker that loads<br />storage/media modules<br />in-process, first drains one<br />bounded spool-recovery batch<br />when the guarded final root<br />is ready, then leases<br />daemon-public media fetch<br />tasks without calling the<br />HTTP daemon.</div>"]
+          style 216 fill:#438dd5,stroke:#2e6295,color:#ffffff
         end
 
-        subgraph 186 ["WSL shell"]
-          style 186 fill:#ffffff,stroke:#444444,color:#444444
+        subgraph 217 ["WSL shell"]
+          style 217 fill:#ffffff,stroke:#888888,color:#000000
 
         end
 
-        subgraph 189 ["WSL XDG runtime data paths"]
-          style 189 fill:#ffffff,stroke:#444444,color:#444444
+        subgraph 220 ["WSL XDG runtime data paths"]
+          style 220 fill:#ffffff,stroke:#888888,color:#000000
 
-          190[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable complete<br />cleaned-text, relational, and<br />full-text authority for<br />migration ledger, sources,<br />documents, visits, capture<br />observations, URL claims,<br />visit events, snapshots,<br />chunks, chunks_fts, media<br />provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
-          style 190 fill:#2f95c8,stroke:#20688c,color:#ffffff
-          194[("<div style='font-weight: bold'>Local Derivative Store</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Reconstructible compatibility<br />evidence such as<br />pre-version-9 clean-text<br />sidecars; new captures create<br />no text sidecars.</div>")]
-          style 194 fill:#2f95c8,stroke:#20688c,color:#ffffff
-          197[("<div style='font-weight: bold'>Bounded Local Media Spool</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Opt-in durable outage buffer<br />beneath the local WSL data<br />root; admission counts<br />committed files and distinct<br />in-flight SQLite<br />reservations, and drain<br />verifies bytes before tier<br />transition/source cleanup.</div>")]
-          style 197 fill:#2f95c8,stroke:#20688c,color:#ffffff
+          221[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+          style 221 fill:#2f95c8,stroke:#20688c,color:#ffffff
+          225[("<div style='font-weight: bold'>Local Derivative Store</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Reconstructible compatibility<br />evidence such as<br />pre-version-9 clean-text<br />sidecars; new captures create<br />no text sidecars.</div>")]
+          style 225 fill:#2f95c8,stroke:#20688c,color:#ffffff
+          228[("<div style='font-weight: bold'>Bounded Local Media Spool</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Opt-in durable outage buffer<br />beneath the local WSL data<br />root; admission counts<br />committed files and distinct<br />in-flight SQLite<br />reservations, and drain<br />verifies bytes before tier<br />transition/source cleanup.</div>")]
+          style 228 fill:#2f95c8,stroke:#20688c,color:#ffffff
         end
 
-        subgraph 202 ["WSL-mounted guarded media root"]
-          style 202 fill:#ffffff,stroke:#444444,color:#444444
+        subgraph 233 ["WSL-mounted guarded media root"]
+          style 233 fill:#ffffff,stroke:#888888,color:#000000
 
-          203[("<div style='font-weight: bold'>Guarded Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL-visible local or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</div>")]
-          style 203 fill:#2f95c8,stroke:#20688c,color:#ffffff
+          234[("<div style='font-weight: bold'>Guarded Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL-visible local or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</div>")]
+          style 234 fill:#2f95c8,stroke:#20688c,color:#ffffff
         end
 
       end
 
     end
 
-    174-. "<div>Posts /capture,<br />/visit-events, media<br />metadata, and raw blob<br />uploads to</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</div>" .->181
-    177-. "<div>Calls authenticated read,<br />admin, media, and forget APIs<br />on</div><div style='font-size: 70%'>[HTTP/JSON]</div>" .->181
-    184-. "<div>Runs bounded lease/retry task<br />workflow through</div><div style='font-size: 70%'></div>" .->181
-    181-. "<div>Reads and writes metadata,<br />FTS, tasks, audit, and<br />receipts in</div><div style='font-size: 70%'>[sqlite3]</div>" .->190
-    184-. "<div>Leases and updates media<br />tasks in</div><div style='font-size: 70%'>[sqlite3]</div>" .->190
-    181-. "<div>Reads or deletes legacy text<br />sidecars when required</div><div style='font-size: 70%'>[Filesystem]</div>" .->194
-    181-. "<div>Stores and serves media<br />during guarded-root outages<br />in</div><div style='font-size: 70%'>[Filesystem]</div>" .->197
-    184-. "<div>Writes fetched media during<br />guarded-root outages to</div><div style='font-size: 70%'>[Filesystem]</div>" .->197
-    181-. "<div>Stores, serves, purges, and<br />rehydrates media blobs in</div><div style='font-size: 70%'>[Filesystem]</div>" .->203
-    184-. "<div>Writes fetched media blobs to</div><div style='font-size: 70%'>[Filesystem]</div>" .->203
-
+    206-. "<div>Posts /capture,<br />/visit-events, media<br />metadata, and raw blob<br />uploads to</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</div>" .->213
+    209-. "<div>Calls authenticated read,<br />admin, media, and forget APIs<br />on</div><div style='font-size: 70%'>[HTTP/JSON]</div>" .->213
+    213-. "<div>Reads and writes metadata,<br />FTS, tasks, audit, and<br />receipts in</div><div style='font-size: 70%'>[sqlite3]</div>" .->221
+    216-. "<div>Leases and updates media<br />tasks in</div><div style='font-size: 70%'>[sqlite3]</div>" .->221
+    213-. "<div>Reads or deletes legacy text<br />sidecars when required</div><div style='font-size: 70%'>[Filesystem]</div>" .->225
+    213-. "<div>Stores and serves media<br />during guarded-root outages<br />in</div><div style='font-size: 70%'>[Filesystem]</div>" .->228
+    216-. "<div>Writes fetched media during<br />guarded-root outages to</div><div style='font-size: 70%'>[Filesystem]</div>" .->228
+    213-. "<div>Stores, serves, purges, and<br />rehydrates media blobs in</div><div style='font-size: 70%'>[Filesystem]</div>" .->234
+    216-. "<div>Writes fetched media blobs to</div><div style='font-size: 70%'>[Filesystem]</div>" .->234
   end
 ```
 
@@ -1402,6 +1422,68 @@ graph TB
 | DOT source | [`structurizr-DailyDriverDeployment.dot`](diagrams/dot/structurizr-DailyDriverDeployment.dot) |
 | Graphviz SVG | [`structurizr-DailyDriverDeployment.svg`](diagrams/dot-rendered/structurizr-DailyDriverDeployment.svg) |
 | Graphviz PNG | [`structurizr-DailyDriverDeployment.png`](diagrams/dot-rendered/structurizr-DailyDriverDeployment.png) |
+
+
+---
+
+## Daily Driver Health Flow
+
+> C4 view `DailyDriverHealthFlow`.
+
+### Diagram
+
+![Daily Driver Health Flow](diagrams/dot-rendered/structurizr-DailyDriverHealthFlow.svg)
+
+_Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for text review._
+
+<details>
+<summary>Mermaid source</summary>
+
+```mermaid
+graph LR
+  linkStyle default fill:#ffffff
+
+  subgraph diagram ["Browser Memory Daemon - Dynamic"]
+    style diagram fill:#ffffff,stroke:#ffffff
+
+    subgraph 5 ["Browser Memory Daemon"]
+      style 5 fill:#ffffff,stroke:#0b4884,color:#0b4884
+
+      23["<div style='font-weight: bold'>WSL Loopback HTTP Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11, ThreadingHTTPServer]</div><div style='font-size: 80%; margin-top:10px'>Authenticated loopback API<br />for capture, read/admin/media<br />operations, and query-only<br />bmd.x-observations v1 export.</div>"]
+      style 23 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      51["<div style='font-weight: bold'>CLI</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python argparse]</div><div style='font-size: 80%; margin-top:10px'>Command-line interface for<br />serving/admin operations,<br />direct storage/health<br />workflows, and standalone<br />mutation-free X observation<br />export.</div>"]
+      style 51 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      57[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+      style 57 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      59[("<div style='font-weight: bold'>Guarded Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL-visible local or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</div>")]
+      style 59 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      60[("<div style='font-weight: bold'>Bounded Local Media Spool</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Opt-in durable outage buffer<br />beneath the local WSL data<br />root; admission counts<br />committed files and distinct<br />in-flight SQLite<br />reservations, and drain<br />verifies bytes before tier<br />transition/source cleanup.</div>")]
+      style 60 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    end
+
+    1["<div style='font-weight: bold'>Operator</div><div style='font-size: 70%; margin-top: 0px'>[Person]</div><div style='font-size: 80%; margin-top:10px'>Sole local operator who<br />browses with Windows Chrome<br />and searches, reviews, and<br />deletes local browser-memory<br />records.</div>"]
+    style 1 fill:#08427b,stroke:#052e56,color:#ffffff
+
+    1-. "<div>1. Runs daily-driver health<br />to inspect protected<br />artifacts plus systemd<br />restart and journal budgets</div><div style='font-size: 70%'></div>" .->51
+    51-. "<div>2. Checks authenticated<br />daemon readiness over HTTP</div><div style='font-size: 70%'>[HTTP/JSON]</div>" .->23
+    51-. "<div>3. Checks schema, integrity,<br />counts, and storage headroom</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+    51-. "<div>4. Checks guarded-root<br />identity, readiness, and<br />capacity</div><div style='font-size: 70%'>[Filesystem]</div>" .->59
+    51-. "<div>5. Checks reservations,<br />filesystem accounting,<br />capacity, and latest<br />automatic drain</div><div style='font-size: 70%'>[Filesystem]</div>" .->60
+  end
+```
+
+</details>
+
+### Derived artifacts
+
+| Artifact | Link |
+|---|---|
+| Mermaid source | [`structurizr-DailyDriverHealthFlow.mmd`](diagrams/structurizr-DailyDriverHealthFlow.mmd) |
+| Mermaid SVG | [`structurizr-DailyDriverHealthFlow.svg`](diagrams/structurizr-DailyDriverHealthFlow.svg) |
+| Mermaid PNG | [`structurizr-DailyDriverHealthFlow.png`](diagrams/structurizr-DailyDriverHealthFlow.png) |
+| DOT source | [`structurizr-DailyDriverHealthFlow.dot`](diagrams/dot/structurizr-DailyDriverHealthFlow.dot) |
+| Graphviz SVG | [`structurizr-DailyDriverHealthFlow.svg`](diagrams/dot-rendered/structurizr-DailyDriverHealthFlow.svg) |
+| Graphviz PNG | [`structurizr-DailyDriverHealthFlow.png`](diagrams/dot-rendered/structurizr-DailyDriverHealthFlow.png) |
 
 
 ---
@@ -1423,79 +1505,73 @@ _Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for 
 graph TB
   linkStyle default fill:#ffffff
 
-  subgraph diagram ["Component View: Browser Memory Daemon - Chrome MV3 Extension"]
+  subgraph diagram ["Browser Memory Daemon - Chrome MV3 Extension - Components"]
     style diagram fill:#ffffff,stroke:#ffffff
 
     2["<div style='font-weight: bold'>Windows Chrome</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>The Windows Chrome runtime<br />that loads web pages, hosts<br />the MV3 extension, runs the<br />local UI in a tab, and<br />exposes Chrome extension<br />APIs.</div>"]
     style 2 fill:#999999,stroke:#6b6b6b,color:#ffffff
+    22[("<div style='font-weight: bold'>Extension Browser Storage</div><div style='font-size: 70%; margin-top: 0px'>[Container: chrome.storage.local + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Browser-side IndexedDB<br />storage for transactional<br />capture/lifecycle outbox rows<br />plus specialized durable<br />media tasks/blobs;<br />chrome.storage.local retains<br />typed configuration,<br />lifecycle tab state, minimal<br />CDP capture context,<br />aggregate telemetry, and<br />one-version queue fallback<br />only.</div>")]
+    style 22 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    23["<div style='font-weight: bold'>WSL Loopback HTTP Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11, ThreadingHTTPServer]</div><div style='font-size: 80%; margin-top:10px'>Authenticated loopback API<br />for capture, read/admin/media<br />operations, and query-only<br />bmd.x-observations v1 export.</div>"]
+    style 23 fill:#438dd5,stroke:#2e6295,color:#ffffff
 
-    subgraph 4 ["Browser Memory Daemon"]
-      style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
+    subgraph 6 ["Chrome MV3 Extension"]
+      style 6 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
-      subgraph 5 ["Chrome MV3 Extension"]
-        style 5 fill:#ffffff,stroke:#2e6295,color:#2e6295
-
-        10["<div style='font-weight: bold'>Extension Config Store</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + chrome.storage.local]</div><div style='font-size: 80%; margin-top:10px'>Owns typed configuration<br />defaults/migration plus<br />durable visit and minimal CDP<br />capture-context maps.</div>"]
-        style 10 fill:#85bbf0,stroke:#1168bd,color:#000000
-        11["<div style='font-weight: bold'>Visit Tracker</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript]</div><div style='font-size: 80%; margin-top:10px'>Owns tab/navigation identity,<br />active-segment lifecycle<br />state, deterministic<br />lifecycle event identity, and<br />capture decoration.</div>"]
-        style 11 fill:#85bbf0,stroke:#1168bd,color:#000000
-        12["<div style='font-weight: bold'>Injection Controller</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + chrome.scripting]</div><div style='font-size: 80%; margin-top:10px'>Reconstructs active-tab<br />injection after worker<br />restart and idempotently<br />injects the complete ordered<br />content-script set.</div>"]
-        style 12 fill:#85bbf0,stroke:#1168bd,color:#000000
-        13["<div style='font-weight: bold'>Capture and Lifecycle Bridge</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript]</div><div style='font-size: 80%; margin-top:10px'>Owns daemon delivery,<br />transactional outbox<br />import/admission/drain/checkpoint/retry,<br />legacy fallback, media<br />compensation, and queue<br />status.</div>"]
-        style 13 fill:#85bbf0,stroke:#1168bd,color:#000000
-        14["<div style='font-weight: bold'>Credentialed Media Bridge</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript]</div><div style='font-size: 80%; margin-top:10px'>Owns browser credentialed<br />fetch, inline/CDP blob<br />upload, specialized media<br />queue drain/retry, and<br />terminal cleanup.</div>"]
-        style 14 fill:#85bbf0,stroke:#1168bd,color:#000000
-        15["<div style='font-weight: bold'>Extension Telemetry</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + chrome.storage.local]</div><div style='font-size: 80%; margin-top:10px'>Persists aggregate<br />bridge/queue/CDP status after<br />recursively removing captured<br />fields and redacting<br />URL-shaped errors.</div>"]
-        style 15 fill:#85bbf0,stroke:#1168bd,color:#000000
-        16["<div style='font-weight: bold'>Capture and Lifecycle Outbox</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Persists capture and<br />lifecycle messages as<br />independently sequenced<br />IndexedDB rows with atomic<br />enqueue/claim/checkpoint/ack/retry,<br />stale-claim recovery, legacy<br />queue import, item admission<br />limits, and serialized-byte<br />accounting.</div>"]
-        style 16 fill:#85bbf0,stroke:#1168bd,color:#000000
-        19["<div style='font-weight: bold'>CDP Session Controller</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + chrome.debugger]</div><div style='font-size: 80%; margin-top:10px'>Restores minimal capture<br />provenance, reconciles<br />debugger attachments,<br />correlates Network events,<br />retrieves bounded bodies, and<br />dispatches media across MV3<br />worker restarts.</div>"]
-        style 19 fill:#85bbf0,stroke:#1168bd,color:#000000
-        20["<div style='font-weight: bold'>Popup and Options UI</div><div style='font-size: 70%; margin-top: 0px'>[Component: HTML/JavaScript]</div><div style='font-size: 80%; margin-top:10px'>Lets the operator view<br />status, pause/resume capture,<br />select policy mode, and<br />trigger local controls from<br />the extension.</div>"]
-        style 20 fill:#85bbf0,stroke:#1168bd,color:#000000
-        6["<div style='font-weight: bold'>Manifest and Permission Envelope</div><div style='font-size: 70%; margin-top: 0px'>[Component: manifest.json]</div><div style='font-size: 80%; margin-top:10px'>Declares MV3 permissions,<br />host permissions, service<br />worker, popup, and options<br />entrypoints.</div>"]
-        style 6 fill:#85bbf0,stroke:#1168bd,color:#000000
-        7["<div style='font-weight: bold'>Extractor</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript]</div><div style='font-size: 80%; margin-top:10px'>Traverses rendered light-DOM<br />text with computed-style and<br />ancestor visibility checks,<br />discovers image/video<br />references, and applies the<br />selected policy mode.</div>"]
-        style 7 fill:#85bbf0,stroke:#1168bd,color:#000000
-        8["<div style='font-weight: bold'>Content Script</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript content script]</div><div style='font-size: 80%; margin-top:10px'>Schedules initial, delayed,<br />reinjected, and SPA captures;<br />computes full deterministic<br />SHA-256 capture digests;<br />tracks scroll; and sends<br />capture and inline blob<br />upload messages to the<br />service worker.</div>"]
-        style 8 fill:#85bbf0,stroke:#1168bd,color:#000000
-        9["<div style='font-weight: bold'>Service Worker</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript MV3 service worker]</div><div style='font-size: 80%; margin-top:10px'>Composes extension modules<br />and registers MV3 message,<br />tab, window, debugger, alarm,<br />startup, and installation<br />listeners.</div>"]
-        style 9 fill:#85bbf0,stroke:#1168bd,color:#000000
-      end
-
-      21[("<div style='font-weight: bold'>Extension Browser Storage</div><div style='font-size: 70%; margin-top: 0px'>[Container: chrome.storage.local + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Browser-side IndexedDB<br />storage for transactional<br />capture/lifecycle outbox rows<br />plus specialized durable<br />media tasks/blobs;<br />chrome.storage.local retains<br />typed configuration,<br />lifecycle tab state, minimal<br />CDP capture context,<br />aggregate telemetry, and<br />one-version queue fallback<br />only.</div>")]
-      style 21 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      22["<div style='font-weight: bold'>WSL Loopback HTTP Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11, ThreadingHTTPServer]</div><div style='font-size: 80%; margin-top:10px'>Authenticated loopback HTTP<br />API that handles capture,<br />visit events, media artifact<br />upload/fetch/purge, exact<br />search,<br />recent/timeline/detail,<br />policy rules, doctor, durable<br />forget, and static UI<br />serving.</div>"]
-      style 22 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      10["<div style='font-weight: bold'>Service Worker</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript MV3 service worker]</div><div style='font-size: 80%; margin-top:10px'>Composes extension modules<br />and registers MV3 message,<br />tab, window, debugger, alarm,<br />startup, and installation<br />listeners.</div>"]
+      style 10 fill:#85bbf0,stroke:#1168bd,color:#000000
+      11["<div style='font-weight: bold'>Extension Config Store</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + chrome.storage.local]</div><div style='font-size: 80%; margin-top:10px'>Owns typed configuration<br />defaults/migration plus<br />durable visit and minimal CDP<br />capture-context maps.</div>"]
+      style 11 fill:#85bbf0,stroke:#1168bd,color:#000000
+      12["<div style='font-weight: bold'>Visit Tracker</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript]</div><div style='font-size: 80%; margin-top:10px'>Owns tab/navigation identity,<br />active-segment lifecycle<br />state, deterministic<br />lifecycle event identity, and<br />capture decoration.</div>"]
+      style 12 fill:#85bbf0,stroke:#1168bd,color:#000000
+      13["<div style='font-weight: bold'>Injection Controller</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + chrome.scripting]</div><div style='font-size: 80%; margin-top:10px'>Reconstructs active-tab<br />injection after worker<br />restart and idempotently<br />injects the complete ordered<br />content-script set.</div>"]
+      style 13 fill:#85bbf0,stroke:#1168bd,color:#000000
+      14["<div style='font-weight: bold'>Capture and Lifecycle Bridge</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript]</div><div style='font-size: 80%; margin-top:10px'>Owns daemon delivery,<br />transactional outbox<br />import/admission/drain/checkpoint/retry,<br />legacy fallback, media<br />compensation, and queue<br />status.</div>"]
+      style 14 fill:#85bbf0,stroke:#1168bd,color:#000000
+      15["<div style='font-weight: bold'>Credentialed Media Bridge</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript]</div><div style='font-size: 80%; margin-top:10px'>Owns browser credentialed<br />fetch, inline/CDP blob<br />upload, specialized media<br />queue drain/retry, and<br />terminal cleanup.</div>"]
+      style 15 fill:#85bbf0,stroke:#1168bd,color:#000000
+      16["<div style='font-weight: bold'>Extension Telemetry</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + chrome.storage.local]</div><div style='font-size: 80%; margin-top:10px'>Persists aggregate<br />bridge/queue/CDP status after<br />recursively removing captured<br />fields and redacting<br />URL-shaped errors.</div>"]
+      style 16 fill:#85bbf0,stroke:#1168bd,color:#000000
+      17["<div style='font-weight: bold'>Capture and Lifecycle Outbox</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Persists capture and<br />lifecycle messages as<br />independently sequenced<br />IndexedDB rows with atomic<br />enqueue/claim/checkpoint/ack/retry,<br />stale-claim recovery, legacy<br />queue import, item admission<br />limits, and serialized-byte<br />accounting.</div>"]
+      style 17 fill:#85bbf0,stroke:#1168bd,color:#000000
+      20["<div style='font-weight: bold'>CDP Session Controller</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + chrome.debugger]</div><div style='font-size: 80%; margin-top:10px'>Restores minimal capture<br />provenance, reconciles<br />debugger attachments,<br />correlates Network events,<br />retrieves bounded bodies, and<br />dispatches media across MV3<br />worker restarts.</div>"]
+      style 20 fill:#85bbf0,stroke:#1168bd,color:#000000
+      21["<div style='font-weight: bold'>Popup and Options UI</div><div style='font-size: 70%; margin-top: 0px'>[Component: HTML/JavaScript]</div><div style='font-size: 80%; margin-top:10px'>Lets the operator view<br />status, pause/resume capture,<br />select policy mode, and<br />trigger local controls from<br />the extension.</div>"]
+      style 21 fill:#85bbf0,stroke:#1168bd,color:#000000
+      7["<div style='font-weight: bold'>Manifest and Permission Envelope</div><div style='font-size: 70%; margin-top: 0px'>[Component: manifest.json]</div><div style='font-size: 80%; margin-top:10px'>Declares MV3 permissions,<br />host permissions, service<br />worker, popup, and options<br />entrypoints.</div>"]
+      style 7 fill:#85bbf0,stroke:#1168bd,color:#000000
+      8["<div style='font-weight: bold'>Extractor</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript]</div><div style='font-size: 80%; margin-top:10px'>Traverses rendered light-DOM<br />text with computed-style and<br />ancestor visibility checks,<br />discovers image/video<br />references, and applies the<br />selected policy mode.</div>"]
+      style 8 fill:#85bbf0,stroke:#1168bd,color:#000000
+      9["<div style='font-weight: bold'>Content Script</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript content script]</div><div style='font-size: 80%; margin-top:10px'>Schedules initial, delayed,<br />reinjected, and SPA captures;<br />computes full deterministic<br />SHA-256 capture digests;<br />tracks scroll; and sends<br />capture and inline blob<br />upload messages to the<br />service worker.</div>"]
+      style 9 fill:#85bbf0,stroke:#1168bd,color:#000000
     end
 
-    14-. "<div>Delivers media metadata and<br />raw blobs to</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT]</div>" .->22
-    14-. "<div>Records aggregate media<br />status through</div><div style='font-size: 70%'></div>" .->15
-    15-. "<div>Persists sanitized aggregate<br />status in</div><div style='font-size: 70%'>[chrome.storage.local]</div>" .->21
-    9-. "<div>Delegates debugger<br />attachment, event<br />correlation, and restart<br />reconciliation to</div><div style='font-size: 70%'></div>" .->19
-    19-. "<div>Persists minimal per-tab<br />capture context through</div><div style='font-size: 70%'></div>" .->10
-    19-. "<div>Dispatches bounded CDP media<br />rows and bodies through</div><div style='font-size: 70%'></div>" .->14
-    19-. "<div>Records sanitized debugger<br />status through</div><div style='font-size: 70%'></div>" .->15
-    20-. "<div>Updates pause, policy, token,<br />and controls through</div><div style='font-size: 70%'>[chrome.storage.local, runtime messages]</div>" .->9
-    20-. "<div>Checks health and triggers<br />forget/policy actions on</div><div style='font-size: 70%'>[HTTP/JSON]</div>" .->22
-    8-. "<div>Builds capture payloads with</div><div style='font-size: 70%'></div>" .->7
-    8-. "<div>Sends captures and inline<br />blobs to</div><div style='font-size: 70%'>[chrome.runtime.sendMessage]</div>" .->9
-    9-. "<div>Reads typed settings and<br />durable restart state through</div><div style='font-size: 70%'></div>" .->10
-    9-. "<div>Delegates navigation identity<br />and lifecycle accounting to</div><div style='font-size: 70%'></div>" .->11
-    9-. "<div>Delegates idempotent<br />active-tab reconstruction to</div><div style='font-size: 70%'></div>" .->12
-    10-. "<div>Reads and writes typed<br />settings and restart state in</div><div style='font-size: 70%'>[chrome.storage.local]</div>" .->21
-    11-. "<div>Persists tab/navigation<br />lifecycle state through</div><div style='font-size: 70%'></div>" .->10
-    12-. "<div>Injects the ordered<br />extractor/digest/content-script<br />set into</div><div style='font-size: 70%'>[chrome.scripting]</div>" .->2
-    9-. "<div>Delegates capture/lifecycle<br />delivery and durable drains<br />to</div><div style='font-size: 70%'></div>" .->13
-    9-. "<div>Delegates credentialed media<br />delivery and durable drains<br />to</div><div style='font-size: 70%'></div>" .->14
-    9-. "<div>Creates the redaction-safe<br />telemetry boundary through</div><div style='font-size: 70%'></div>" .->15
-    13-. "<div>Enqueues, drains,<br />checkpoints, retries, and<br />recovers capture/lifecycle<br />work through</div><div style='font-size: 70%'></div>" .->16
-    13-. "<div>Imports and preserves the<br />one-version queue fallback in</div><div style='font-size: 70%'>[chrome.storage.local]</div>" .->21
-    13-. "<div>Dispatches post-capture media<br />compensation through</div><div style='font-size: 70%'></div>" .->14
-    13-. "<div>Delivers /capture and<br />/visit-events to</div><div style='font-size: 70%'>[Bearer HTTP/JSON]</div>" .->22
-    13-. "<div>Records aggregate outbox<br />status through</div><div style='font-size: 70%'></div>" .->15
-    16-. "<div>Reads and writes sequenced<br />capture/lifecycle rows and<br />migration metadata in</div><div style='font-size: 70%'>[IndexedDB]</div>" .->21
-
+    9-. "<div>Builds capture payloads with</div><div style='font-size: 70%'></div>" .->8
+    9-. "<div>Sends captures and inline<br />blobs to</div><div style='font-size: 70%'>[chrome.runtime.sendMessage]</div>" .->10
+    10-. "<div>Reads typed settings and<br />durable restart state through</div><div style='font-size: 70%'></div>" .->11
+    10-. "<div>Delegates navigation identity<br />and lifecycle accounting to</div><div style='font-size: 70%'></div>" .->12
+    10-. "<div>Delegates idempotent<br />active-tab reconstruction to</div><div style='font-size: 70%'></div>" .->13
+    11-. "<div>Reads and writes typed<br />settings and restart state in</div><div style='font-size: 70%'>[chrome.storage.local]</div>" .->22
+    12-. "<div>Persists tab/navigation<br />lifecycle state through</div><div style='font-size: 70%'></div>" .->11
+    13-. "<div>Injects the ordered<br />extractor/digest/content-script<br />set into</div><div style='font-size: 70%'>[chrome.scripting]</div>" .->2
+    10-. "<div>Delegates capture/lifecycle<br />delivery and durable drains<br />to</div><div style='font-size: 70%'></div>" .->14
+    10-. "<div>Delegates credentialed media<br />delivery and durable drains<br />to</div><div style='font-size: 70%'></div>" .->15
+    10-. "<div>Creates the redaction-safe<br />telemetry boundary through</div><div style='font-size: 70%'></div>" .->16
+    14-. "<div>Enqueues, drains,<br />checkpoints, retries, and<br />recovers capture/lifecycle<br />work through</div><div style='font-size: 70%'></div>" .->17
+    14-. "<div>Imports and preserves the<br />one-version queue fallback in</div><div style='font-size: 70%'>[chrome.storage.local]</div>" .->22
+    14-. "<div>Dispatches post-capture media<br />compensation through</div><div style='font-size: 70%'></div>" .->15
+    14-. "<div>Delivers /capture and<br />/visit-events to</div><div style='font-size: 70%'>[Bearer HTTP/JSON]</div>" .->23
+    14-. "<div>Records aggregate outbox<br />status through</div><div style='font-size: 70%'></div>" .->16
+    17-. "<div>Reads and writes sequenced<br />capture/lifecycle rows and<br />migration metadata in</div><div style='font-size: 70%'>[IndexedDB]</div>" .->22
+    15-. "<div>Delivers media metadata and<br />raw blobs to</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT]</div>" .->23
+    15-. "<div>Records aggregate media<br />status through</div><div style='font-size: 70%'></div>" .->16
+    16-. "<div>Persists sanitized aggregate<br />status in</div><div style='font-size: 70%'>[chrome.storage.local]</div>" .->22
+    10-. "<div>Delegates debugger<br />attachment, event<br />correlation, and restart<br />reconciliation to</div><div style='font-size: 70%'></div>" .->20
+    20-. "<div>Persists minimal per-tab<br />capture context through</div><div style='font-size: 70%'></div>" .->11
+    20-. "<div>Dispatches bounded CDP media<br />rows and bodies through</div><div style='font-size: 70%'></div>" .->15
+    20-. "<div>Records sanitized debugger<br />status through</div><div style='font-size: 70%'></div>" .->16
+    21-. "<div>Updates pause, policy, token,<br />and controls through</div><div style='font-size: 70%'>[chrome.storage.local, runtime messages]</div>" .->10
+    21-. "<div>Checks health and triggers<br />forget/policy actions on</div><div style='font-size: 70%'>[HTTP/JSON]</div>" .->23
   end
 ```
 
@@ -1532,63 +1608,57 @@ _Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for 
 graph TB
   linkStyle default fill:#ffffff
 
-  subgraph diagram ["Component View: Browser Memory Daemon - Chrome MV3 Extension"]
+  subgraph diagram ["Browser Memory Daemon - Chrome MV3 Extension - Components"]
     style diagram fill:#ffffff,stroke:#ffffff
 
     2["<div style='font-weight: bold'>Windows Chrome</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>The Windows Chrome runtime<br />that loads web pages, hosts<br />the MV3 extension, runs the<br />local UI in a tab, and<br />exposes Chrome extension<br />APIs.</div>"]
     style 2 fill:#999999,stroke:#6b6b6b,color:#ffffff
+    22[("<div style='font-weight: bold'>Extension Browser Storage</div><div style='font-size: 70%; margin-top: 0px'>[Container: chrome.storage.local + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Browser-side IndexedDB<br />storage for transactional<br />capture/lifecycle outbox rows<br />plus specialized durable<br />media tasks/blobs;<br />chrome.storage.local retains<br />typed configuration,<br />lifecycle tab state, minimal<br />CDP capture context,<br />aggregate telemetry, and<br />one-version queue fallback<br />only.</div>")]
+    style 22 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    23["<div style='font-weight: bold'>WSL Loopback HTTP Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11, ThreadingHTTPServer]</div><div style='font-size: 80%; margin-top:10px'>Authenticated loopback API<br />for capture, read/admin/media<br />operations, and query-only<br />bmd.x-observations v1 export.</div>"]
+    style 23 fill:#438dd5,stroke:#2e6295,color:#ffffff
 
-    subgraph 4 ["Browser Memory Daemon"]
-      style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
+    subgraph 6 ["Chrome MV3 Extension"]
+      style 6 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
-      subgraph 5 ["Chrome MV3 Extension"]
-        style 5 fill:#ffffff,stroke:#2e6295,color:#2e6295
-
-        10["<div style='font-weight: bold'>Extension Config Store</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + chrome.storage.local]</div><div style='font-size: 80%; margin-top:10px'>Owns typed configuration<br />defaults/migration plus<br />durable visit and minimal CDP<br />capture-context maps.</div>"]
-        style 10 fill:#85bbf0,stroke:#1168bd,color:#000000
-        13["<div style='font-weight: bold'>Capture and Lifecycle Bridge</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript]</div><div style='font-size: 80%; margin-top:10px'>Owns daemon delivery,<br />transactional outbox<br />import/admission/drain/checkpoint/retry,<br />legacy fallback, media<br />compensation, and queue<br />status.</div>"]
-        style 13 fill:#85bbf0,stroke:#1168bd,color:#000000
-        14["<div style='font-weight: bold'>Credentialed Media Bridge</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript]</div><div style='font-size: 80%; margin-top:10px'>Owns browser credentialed<br />fetch, inline/CDP blob<br />upload, specialized media<br />queue drain/retry, and<br />terminal cleanup.</div>"]
-        style 14 fill:#85bbf0,stroke:#1168bd,color:#000000
-        15["<div style='font-weight: bold'>Extension Telemetry</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + chrome.storage.local]</div><div style='font-size: 80%; margin-top:10px'>Persists aggregate<br />bridge/queue/CDP status after<br />recursively removing captured<br />fields and redacting<br />URL-shaped errors.</div>"]
-        style 15 fill:#85bbf0,stroke:#1168bd,color:#000000
-        17["<div style='font-weight: bold'>Browser Media Queue Adapter</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Persists media tasks and<br />fetched blobs in versioned<br />IndexedDB with atomic<br />batch/blob transitions,<br />count/byte quotas,<br />stale-processing recovery,<br />and bounded terminal<br />quarantine cleanup.</div>"]
-        style 17 fill:#85bbf0,stroke:#1168bd,color:#000000
-        18["<div style='font-weight: bold'>CDP Recorder</div><div style='font-size: 70%; margin-top: 0px'>[Component: Chrome DevTools Protocol]</div><div style='font-size: 80%; margin-top:10px'>Classifies configured<br />X/Twitter video.twimg.com HLS<br />manifests and media segments<br />before they become opaque<br />blob player URLs.</div>"]
-        style 18 fill:#85bbf0,stroke:#1168bd,color:#000000
-        19["<div style='font-weight: bold'>CDP Session Controller</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + chrome.debugger]</div><div style='font-size: 80%; margin-top:10px'>Restores minimal capture<br />provenance, reconciles<br />debugger attachments,<br />correlates Network events,<br />retrieves bounded bodies, and<br />dispatches media across MV3<br />worker restarts.</div>"]
-        style 19 fill:#85bbf0,stroke:#1168bd,color:#000000
-        9["<div style='font-weight: bold'>Service Worker</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript MV3 service worker]</div><div style='font-size: 80%; margin-top:10px'>Composes extension modules<br />and registers MV3 message,<br />tab, window, debugger, alarm,<br />startup, and installation<br />listeners.</div>"]
-        style 9 fill:#85bbf0,stroke:#1168bd,color:#000000
-      end
-
-      21[("<div style='font-weight: bold'>Extension Browser Storage</div><div style='font-size: 70%; margin-top: 0px'>[Container: chrome.storage.local + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Browser-side IndexedDB<br />storage for transactional<br />capture/lifecycle outbox rows<br />plus specialized durable<br />media tasks/blobs;<br />chrome.storage.local retains<br />typed configuration,<br />lifecycle tab state, minimal<br />CDP capture context,<br />aggregate telemetry, and<br />one-version queue fallback<br />only.</div>")]
-      style 21 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      22["<div style='font-weight: bold'>WSL Loopback HTTP Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11, ThreadingHTTPServer]</div><div style='font-size: 80%; margin-top:10px'>Authenticated loopback HTTP<br />API that handles capture,<br />visit events, media artifact<br />upload/fetch/purge, exact<br />search,<br />recent/timeline/detail,<br />policy rules, doctor, durable<br />forget, and static UI<br />serving.</div>"]
-      style 22 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      10["<div style='font-weight: bold'>Service Worker</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript MV3 service worker]</div><div style='font-size: 80%; margin-top:10px'>Composes extension modules<br />and registers MV3 message,<br />tab, window, debugger, alarm,<br />startup, and installation<br />listeners.</div>"]
+      style 10 fill:#85bbf0,stroke:#1168bd,color:#000000
+      11["<div style='font-weight: bold'>Extension Config Store</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + chrome.storage.local]</div><div style='font-size: 80%; margin-top:10px'>Owns typed configuration<br />defaults/migration plus<br />durable visit and minimal CDP<br />capture-context maps.</div>"]
+      style 11 fill:#85bbf0,stroke:#1168bd,color:#000000
+      14["<div style='font-weight: bold'>Capture and Lifecycle Bridge</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript]</div><div style='font-size: 80%; margin-top:10px'>Owns daemon delivery,<br />transactional outbox<br />import/admission/drain/checkpoint/retry,<br />legacy fallback, media<br />compensation, and queue<br />status.</div>"]
+      style 14 fill:#85bbf0,stroke:#1168bd,color:#000000
+      15["<div style='font-weight: bold'>Credentialed Media Bridge</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript]</div><div style='font-size: 80%; margin-top:10px'>Owns browser credentialed<br />fetch, inline/CDP blob<br />upload, specialized media<br />queue drain/retry, and<br />terminal cleanup.</div>"]
+      style 15 fill:#85bbf0,stroke:#1168bd,color:#000000
+      16["<div style='font-weight: bold'>Extension Telemetry</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + chrome.storage.local]</div><div style='font-size: 80%; margin-top:10px'>Persists aggregate<br />bridge/queue/CDP status after<br />recursively removing captured<br />fields and redacting<br />URL-shaped errors.</div>"]
+      style 16 fill:#85bbf0,stroke:#1168bd,color:#000000
+      18["<div style='font-weight: bold'>Browser Media Queue Adapter</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Persists media tasks and<br />fetched blobs in versioned<br />IndexedDB with atomic<br />batch/blob transitions,<br />count/byte quotas,<br />stale-processing recovery,<br />and bounded terminal<br />quarantine cleanup.</div>"]
+      style 18 fill:#85bbf0,stroke:#1168bd,color:#000000
+      19["<div style='font-weight: bold'>CDP Recorder</div><div style='font-size: 70%; margin-top: 0px'>[Component: Chrome DevTools Protocol]</div><div style='font-size: 80%; margin-top:10px'>Classifies configured<br />X/Twitter video.twimg.com HLS<br />manifests and media segments<br />before they become opaque<br />blob player URLs.</div>"]
+      style 19 fill:#85bbf0,stroke:#1168bd,color:#000000
+      20["<div style='font-weight: bold'>CDP Session Controller</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + chrome.debugger]</div><div style='font-size: 80%; margin-top:10px'>Restores minimal capture<br />provenance, reconciles<br />debugger attachments,<br />correlates Network events,<br />retrieves bounded bodies, and<br />dispatches media across MV3<br />worker restarts.</div>"]
+      style 20 fill:#85bbf0,stroke:#1168bd,color:#000000
     end
 
-    14-. "<div>Persists and drains media<br />work through</div><div style='font-size: 70%'></div>" .->17
-    14-. "<div>Delivers media metadata and<br />raw blobs to</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT]</div>" .->22
-    14-. "<div>Records aggregate media<br />status through</div><div style='font-size: 70%'></div>" .->15
-    17-. "<div>Reads and writes media<br />tasks/blobs in</div><div style='font-size: 70%'>[IndexedDB]</div>" .->21
-    15-. "<div>Persists sanitized aggregate<br />status in</div><div style='font-size: 70%'>[chrome.storage.local]</div>" .->21
-    9-. "<div>Delegates debugger<br />attachment, event<br />correlation, and restart<br />reconciliation to</div><div style='font-size: 70%'></div>" .->19
-    19-. "<div>Persists minimal per-tab<br />capture context through</div><div style='font-size: 70%'></div>" .->10
-    19-. "<div>Uses configured<br />media-response classification<br />from</div><div style='font-size: 70%'></div>" .->18
-    19-. "<div>Dispatches bounded CDP media<br />rows and bodies through</div><div style='font-size: 70%'></div>" .->14
-    19-. "<div>Records sanitized debugger<br />status through</div><div style='font-size: 70%'></div>" .->15
-    18-. "<div>Classifies Network events<br />received through</div><div style='font-size: 70%'>[chrome.debugger/CDP]</div>" .->2
-    9-. "<div>Reads typed settings and<br />durable restart state through</div><div style='font-size: 70%'></div>" .->10
-    10-. "<div>Reads and writes typed<br />settings and restart state in</div><div style='font-size: 70%'>[chrome.storage.local]</div>" .->21
-    9-. "<div>Delegates capture/lifecycle<br />delivery and durable drains<br />to</div><div style='font-size: 70%'></div>" .->13
-    9-. "<div>Delegates credentialed media<br />delivery and durable drains<br />to</div><div style='font-size: 70%'></div>" .->14
-    9-. "<div>Creates the redaction-safe<br />telemetry boundary through</div><div style='font-size: 70%'></div>" .->15
-    13-. "<div>Imports and preserves the<br />one-version queue fallback in</div><div style='font-size: 70%'>[chrome.storage.local]</div>" .->21
-    13-. "<div>Dispatches post-capture media<br />compensation through</div><div style='font-size: 70%'></div>" .->14
-    13-. "<div>Delivers /capture and<br />/visit-events to</div><div style='font-size: 70%'>[Bearer HTTP/JSON]</div>" .->22
-    13-. "<div>Records aggregate outbox<br />status through</div><div style='font-size: 70%'></div>" .->15
-
+    10-. "<div>Reads typed settings and<br />durable restart state through</div><div style='font-size: 70%'></div>" .->11
+    11-. "<div>Reads and writes typed<br />settings and restart state in</div><div style='font-size: 70%'>[chrome.storage.local]</div>" .->22
+    10-. "<div>Delegates capture/lifecycle<br />delivery and durable drains<br />to</div><div style='font-size: 70%'></div>" .->14
+    10-. "<div>Delegates credentialed media<br />delivery and durable drains<br />to</div><div style='font-size: 70%'></div>" .->15
+    10-. "<div>Creates the redaction-safe<br />telemetry boundary through</div><div style='font-size: 70%'></div>" .->16
+    14-. "<div>Imports and preserves the<br />one-version queue fallback in</div><div style='font-size: 70%'>[chrome.storage.local]</div>" .->22
+    14-. "<div>Dispatches post-capture media<br />compensation through</div><div style='font-size: 70%'></div>" .->15
+    14-. "<div>Delivers /capture and<br />/visit-events to</div><div style='font-size: 70%'>[Bearer HTTP/JSON]</div>" .->23
+    14-. "<div>Records aggregate outbox<br />status through</div><div style='font-size: 70%'></div>" .->16
+    15-. "<div>Persists and drains media<br />work through</div><div style='font-size: 70%'></div>" .->18
+    15-. "<div>Delivers media metadata and<br />raw blobs to</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT]</div>" .->23
+    15-. "<div>Records aggregate media<br />status through</div><div style='font-size: 70%'></div>" .->16
+    18-. "<div>Reads and writes media<br />tasks/blobs in</div><div style='font-size: 70%'>[IndexedDB]</div>" .->22
+    16-. "<div>Persists sanitized aggregate<br />status in</div><div style='font-size: 70%'>[chrome.storage.local]</div>" .->22
+    10-. "<div>Delegates debugger<br />attachment, event<br />correlation, and restart<br />reconciliation to</div><div style='font-size: 70%'></div>" .->20
+    20-. "<div>Persists minimal per-tab<br />capture context through</div><div style='font-size: 70%'></div>" .->11
+    20-. "<div>Uses configured<br />media-response classification<br />from</div><div style='font-size: 70%'></div>" .->19
+    20-. "<div>Dispatches bounded CDP media<br />rows and bodies through</div><div style='font-size: 70%'></div>" .->15
+    20-. "<div>Records sanitized debugger<br />status through</div><div style='font-size: 70%'></div>" .->16
+    19-. "<div>Classifies Network events<br />received through</div><div style='font-size: 70%'>[chrome.debugger/CDP]</div>" .->2
   end
 ```
 
@@ -1625,50 +1695,44 @@ _Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for 
 graph LR
   linkStyle default fill:#ffffff
 
-  subgraph diagram ["Component View: Browser Memory Daemon - Chrome MV3 Extension"]
+  subgraph diagram ["Browser Memory Daemon - Chrome MV3 Extension - Components"]
     style diagram fill:#ffffff,stroke:#ffffff
 
     2["<div style='font-weight: bold'>Windows Chrome</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>The Windows Chrome runtime<br />that loads web pages, hosts<br />the MV3 extension, runs the<br />local UI in a tab, and<br />exposes Chrome extension<br />APIs.</div>"]
     style 2 fill:#999999,stroke:#6b6b6b,color:#ffffff
+    22[("<div style='font-weight: bold'>Extension Browser Storage</div><div style='font-size: 70%; margin-top: 0px'>[Container: chrome.storage.local + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Browser-side IndexedDB<br />storage for transactional<br />capture/lifecycle outbox rows<br />plus specialized durable<br />media tasks/blobs;<br />chrome.storage.local retains<br />typed configuration,<br />lifecycle tab state, minimal<br />CDP capture context,<br />aggregate telemetry, and<br />one-version queue fallback<br />only.</div>")]
+    style 22 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    23["<div style='font-weight: bold'>WSL Loopback HTTP Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11, ThreadingHTTPServer]</div><div style='font-size: 80%; margin-top:10px'>Authenticated loopback API<br />for capture, read/admin/media<br />operations, and query-only<br />bmd.x-observations v1 export.</div>"]
+    style 23 fill:#438dd5,stroke:#2e6295,color:#ffffff
 
-    subgraph 4 ["Browser Memory Daemon"]
-      style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
+    subgraph 6 ["Chrome MV3 Extension"]
+      style 6 fill:#ffffff,stroke:#2e6295,color:#2e6295
 
-      subgraph 5 ["Chrome MV3 Extension"]
-        style 5 fill:#ffffff,stroke:#2e6295,color:#2e6295
-
-        10["<div style='font-weight: bold'>Extension Config Store</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + chrome.storage.local]</div><div style='font-size: 80%; margin-top:10px'>Owns typed configuration<br />defaults/migration plus<br />durable visit and minimal CDP<br />capture-context maps.</div>"]
-        style 10 fill:#85bbf0,stroke:#1168bd,color:#000000
-        13["<div style='font-weight: bold'>Capture and Lifecycle Bridge</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript]</div><div style='font-size: 80%; margin-top:10px'>Owns daemon delivery,<br />transactional outbox<br />import/admission/drain/checkpoint/retry,<br />legacy fallback, media<br />compensation, and queue<br />status.</div>"]
-        style 13 fill:#85bbf0,stroke:#1168bd,color:#000000
-        15["<div style='font-weight: bold'>Extension Telemetry</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + chrome.storage.local]</div><div style='font-size: 80%; margin-top:10px'>Persists aggregate<br />bridge/queue/CDP status after<br />recursively removing captured<br />fields and redacting<br />URL-shaped errors.</div>"]
-        style 15 fill:#85bbf0,stroke:#1168bd,color:#000000
-        16["<div style='font-weight: bold'>Capture and Lifecycle Outbox</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Persists capture and<br />lifecycle messages as<br />independently sequenced<br />IndexedDB rows with atomic<br />enqueue/claim/checkpoint/ack/retry,<br />stale-claim recovery, legacy<br />queue import, item admission<br />limits, and serialized-byte<br />accounting.</div>"]
-        style 16 fill:#85bbf0,stroke:#1168bd,color:#000000
-        8["<div style='font-weight: bold'>Content Script</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript content script]</div><div style='font-size: 80%; margin-top:10px'>Schedules initial, delayed,<br />reinjected, and SPA captures;<br />computes full deterministic<br />SHA-256 capture digests;<br />tracks scroll; and sends<br />capture and inline blob<br />upload messages to the<br />service worker.</div>"]
-        style 8 fill:#85bbf0,stroke:#1168bd,color:#000000
-        9["<div style='font-weight: bold'>Service Worker</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript MV3 service worker]</div><div style='font-size: 80%; margin-top:10px'>Composes extension modules<br />and registers MV3 message,<br />tab, window, debugger, alarm,<br />startup, and installation<br />listeners.</div>"]
-        style 9 fill:#85bbf0,stroke:#1168bd,color:#000000
-      end
-
-      21[("<div style='font-weight: bold'>Extension Browser Storage</div><div style='font-size: 70%; margin-top: 0px'>[Container: chrome.storage.local + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Browser-side IndexedDB<br />storage for transactional<br />capture/lifecycle outbox rows<br />plus specialized durable<br />media tasks/blobs;<br />chrome.storage.local retains<br />typed configuration,<br />lifecycle tab state, minimal<br />CDP capture context,<br />aggregate telemetry, and<br />one-version queue fallback<br />only.</div>")]
-      style 21 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      22["<div style='font-weight: bold'>WSL Loopback HTTP Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11, ThreadingHTTPServer]</div><div style='font-size: 80%; margin-top:10px'>Authenticated loopback HTTP<br />API that handles capture,<br />visit events, media artifact<br />upload/fetch/purge, exact<br />search,<br />recent/timeline/detail,<br />policy rules, doctor, durable<br />forget, and static UI<br />serving.</div>"]
-      style 22 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      10["<div style='font-weight: bold'>Service Worker</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript MV3 service worker]</div><div style='font-size: 80%; margin-top:10px'>Composes extension modules<br />and registers MV3 message,<br />tab, window, debugger, alarm,<br />startup, and installation<br />listeners.</div>"]
+      style 10 fill:#85bbf0,stroke:#1168bd,color:#000000
+      11["<div style='font-weight: bold'>Extension Config Store</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + chrome.storage.local]</div><div style='font-size: 80%; margin-top:10px'>Owns typed configuration<br />defaults/migration plus<br />durable visit and minimal CDP<br />capture-context maps.</div>"]
+      style 11 fill:#85bbf0,stroke:#1168bd,color:#000000
+      14["<div style='font-weight: bold'>Capture and Lifecycle Bridge</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript]</div><div style='font-size: 80%; margin-top:10px'>Owns daemon delivery,<br />transactional outbox<br />import/admission/drain/checkpoint/retry,<br />legacy fallback, media<br />compensation, and queue<br />status.</div>"]
+      style 14 fill:#85bbf0,stroke:#1168bd,color:#000000
+      16["<div style='font-weight: bold'>Extension Telemetry</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + chrome.storage.local]</div><div style='font-size: 80%; margin-top:10px'>Persists aggregate<br />bridge/queue/CDP status after<br />recursively removing captured<br />fields and redacting<br />URL-shaped errors.</div>"]
+      style 16 fill:#85bbf0,stroke:#1168bd,color:#000000
+      17["<div style='font-weight: bold'>Capture and Lifecycle Outbox</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Persists capture and<br />lifecycle messages as<br />independently sequenced<br />IndexedDB rows with atomic<br />enqueue/claim/checkpoint/ack/retry,<br />stale-claim recovery, legacy<br />queue import, item admission<br />limits, and serialized-byte<br />accounting.</div>"]
+      style 17 fill:#85bbf0,stroke:#1168bd,color:#000000
+      9["<div style='font-weight: bold'>Content Script</div><div style='font-size: 70%; margin-top: 0px'>[Component: JavaScript content script]</div><div style='font-size: 80%; margin-top:10px'>Schedules initial, delayed,<br />reinjected, and SPA captures;<br />computes full deterministic<br />SHA-256 capture digests;<br />tracks scroll; and sends<br />capture and inline blob<br />upload messages to the<br />service worker.</div>"]
+      style 9 fill:#85bbf0,stroke:#1168bd,color:#000000
     end
 
-    15-. "<div>Persists sanitized aggregate<br />status in</div><div style='font-size: 70%'>[chrome.storage.local]</div>" .->21
-    8-. "<div>Sends captures and inline<br />blobs to</div><div style='font-size: 70%'>[chrome.runtime.sendMessage]</div>" .->9
-    9-. "<div>Reads typed settings and<br />durable restart state through</div><div style='font-size: 70%'></div>" .->10
-    10-. "<div>Reads and writes typed<br />settings and restart state in</div><div style='font-size: 70%'>[chrome.storage.local]</div>" .->21
-    9-. "<div>Delegates capture/lifecycle<br />delivery and durable drains<br />to</div><div style='font-size: 70%'></div>" .->13
-    9-. "<div>Creates the redaction-safe<br />telemetry boundary through</div><div style='font-size: 70%'></div>" .->15
-    13-. "<div>Enqueues, drains,<br />checkpoints, retries, and<br />recovers capture/lifecycle<br />work through</div><div style='font-size: 70%'></div>" .->16
-    13-. "<div>Imports and preserves the<br />one-version queue fallback in</div><div style='font-size: 70%'>[chrome.storage.local]</div>" .->21
-    13-. "<div>Delivers /capture and<br />/visit-events to</div><div style='font-size: 70%'>[Bearer HTTP/JSON]</div>" .->22
-    13-. "<div>Records aggregate outbox<br />status through</div><div style='font-size: 70%'></div>" .->15
-    16-. "<div>Reads and writes sequenced<br />capture/lifecycle rows and<br />migration metadata in</div><div style='font-size: 70%'>[IndexedDB]</div>" .->21
-
+    9-. "<div>Sends captures and inline<br />blobs to</div><div style='font-size: 70%'>[chrome.runtime.sendMessage]</div>" .->10
+    10-. "<div>Reads typed settings and<br />durable restart state through</div><div style='font-size: 70%'></div>" .->11
+    11-. "<div>Reads and writes typed<br />settings and restart state in</div><div style='font-size: 70%'>[chrome.storage.local]</div>" .->22
+    10-. "<div>Delegates capture/lifecycle<br />delivery and durable drains<br />to</div><div style='font-size: 70%'></div>" .->14
+    10-. "<div>Creates the redaction-safe<br />telemetry boundary through</div><div style='font-size: 70%'></div>" .->16
+    14-. "<div>Enqueues, drains,<br />checkpoints, retries, and<br />recovers capture/lifecycle<br />work through</div><div style='font-size: 70%'></div>" .->17
+    14-. "<div>Imports and preserves the<br />one-version queue fallback in</div><div style='font-size: 70%'>[chrome.storage.local]</div>" .->22
+    14-. "<div>Delivers /capture and<br />/visit-events to</div><div style='font-size: 70%'>[Bearer HTTP/JSON]</div>" .->23
+    14-. "<div>Records aggregate outbox<br />status through</div><div style='font-size: 70%'></div>" .->16
+    17-. "<div>Reads and writes sequenced<br />capture/lifecycle rows and<br />migration metadata in</div><div style='font-size: 70%'>[IndexedDB]</div>" .->22
+    16-. "<div>Persists sanitized aggregate<br />status in</div><div style='font-size: 70%'>[chrome.storage.local]</div>" .->22
   end
 ```
 
@@ -1705,20 +1769,20 @@ _Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for 
 graph LR
   linkStyle default fill:#ffffff
 
-  subgraph diagram ["Dynamic View: Browser Memory Daemon"]
+  subgraph diagram ["Browser Memory Daemon - Dynamic"]
     style diagram fill:#ffffff,stroke:#ffffff
 
-    subgraph 4 ["Browser Memory Daemon"]
-      style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
+    subgraph 5 ["Browser Memory Daemon"]
+      style 5 fill:#ffffff,stroke:#0b4884,color:#0b4884
 
-      21[("<div style='font-weight: bold'>Extension Browser Storage</div><div style='font-size: 70%; margin-top: 0px'>[Container: chrome.storage.local + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Browser-side IndexedDB<br />storage for transactional<br />capture/lifecycle outbox rows<br />plus specialized durable<br />media tasks/blobs;<br />chrome.storage.local retains<br />typed configuration,<br />lifecycle tab state, minimal<br />CDP capture context,<br />aggregate telemetry, and<br />one-version queue fallback<br />only.</div>")]
-      style 21 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      22["<div style='font-weight: bold'>WSL Loopback HTTP Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11, ThreadingHTTPServer]</div><div style='font-size: 80%; margin-top:10px'>Authenticated loopback HTTP<br />API that handles capture,<br />visit events, media artifact<br />upload/fetch/purge, exact<br />search,<br />recent/timeline/detail,<br />policy rules, doctor, durable<br />forget, and static UI<br />serving.</div>"]
-      style 22 fill:#438dd5,stroke:#2e6295,color:#ffffff
-      48[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable complete<br />cleaned-text, relational, and<br />full-text authority for<br />migration ledger, sources,<br />documents, visits, capture<br />observations, URL claims,<br />visit events, snapshots,<br />chunks, chunks_fts, media<br />provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
-      style 48 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      5["<div style='font-weight: bold'>Chrome MV3 Extension</div><div style='font-size: 70%; margin-top: 0px'>[Container: JavaScript, Chrome Manifest V3]</div><div style='font-size: 80%; margin-top:10px'>Captures visible page text,<br />media references, tab<br />lifecycle events, and<br />browser-side media bytes from<br />Windows Chrome; queues work<br />durably and posts to the WSL<br />daemon.</div>"]
-      style 5 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      22[("<div style='font-weight: bold'>Extension Browser Storage</div><div style='font-size: 70%; margin-top: 0px'>[Container: chrome.storage.local + IndexedDB]</div><div style='font-size: 80%; margin-top:10px'>Browser-side IndexedDB<br />storage for transactional<br />capture/lifecycle outbox rows<br />plus specialized durable<br />media tasks/blobs;<br />chrome.storage.local retains<br />typed configuration,<br />lifecycle tab state, minimal<br />CDP capture context,<br />aggregate telemetry, and<br />one-version queue fallback<br />only.</div>")]
+      style 22 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      23["<div style='font-weight: bold'>WSL Loopback HTTP Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11, ThreadingHTTPServer]</div><div style='font-size: 80%; margin-top:10px'>Authenticated loopback API<br />for capture, read/admin/media<br />operations, and query-only<br />bmd.x-observations v1 export.</div>"]
+      style 23 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      57[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+      style 57 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      6["<div style='font-weight: bold'>Chrome MV3 Extension</div><div style='font-size: 70%; margin-top: 0px'>[Container: JavaScript, Chrome Manifest V3]</div><div style='font-size: 80%; margin-top:10px'>Captures visible page text,<br />media references, tab<br />lifecycle events, and<br />browser-side media bytes from<br />Windows Chrome; queues work<br />durably and posts to the WSL<br />daemon.</div>"]
+      style 6 fill:#438dd5,stroke:#2e6295,color:#ffffff
     end
 
     1["<div style='font-weight: bold'>Operator</div><div style='font-size: 70%; margin-top: 0px'>[Person]</div><div style='font-size: 80%; margin-top:10px'>Sole local operator who<br />browses with Windows Chrome<br />and searches, reviews, and<br />deletes local browser-memory<br />records.</div>"]
@@ -1727,12 +1791,11 @@ graph LR
     style 2 fill:#999999,stroke:#6b6b6b,color:#ffffff
 
     1-. "<div>1. Browses a web page</div><div style='font-size: 70%'></div>" .->2
-    5-. "<div>2. Runs content script and<br />service worker inside active<br />tab</div><div style='font-size: 70%'>[Chrome extension APIs]</div>" .->2
-    5-. "<div>3. POSTs /capture with<br />visible text, metadata, and<br />media refs</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</div>" .->22
-    22-. "<div>4. Atomically stores complete<br />cleaned text, provenance,<br />chunks, FTS, media refs, and<br />tasks</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
-    22-. "<div>5. Returns<br />document/snapshot/artifact<br />IDs before lazy media bytes</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</div>" .->5
-    5-. "<div>6. Queues browser-side media<br />tasks for later fetch/upload</div><div style='font-size: 70%'>[chrome.storage.local + IndexedDB]</div>" .->21
-
+    6-. "<div>2. Runs content script and<br />service worker inside active<br />tab</div><div style='font-size: 70%'>[Chrome extension APIs]</div>" .->2
+    6-. "<div>3. POSTs /capture with<br />visible text, metadata, and<br />media refs</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</div>" .->23
+    23-. "<div>4. Atomically stores complete<br />cleaned text, provenance,<br />chunks, FTS, media refs, and<br />tasks</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+    23-. "<div>5. Returns<br />document/snapshot/artifact<br />IDs before lazy media bytes</div><div style='font-size: 70%'>[Bearer HTTP/JSON; raw HTTP PUT over 127.0.0.1:8765]</div>" .->6
+    6-. "<div>6. Queues browser-side media<br />tasks for later fetch/upload</div><div style='font-size: 70%'>[chrome.storage.local + IndexedDB]</div>" .->22
   end
 ```
 
@@ -1748,6 +1811,78 @@ graph LR
 | DOT source | [`structurizr-FastCaptureFlow.dot`](diagrams/dot/structurizr-FastCaptureFlow.dot) |
 | Graphviz SVG | [`structurizr-FastCaptureFlow.svg`](diagrams/dot-rendered/structurizr-FastCaptureFlow.svg) |
 | Graphviz PNG | [`structurizr-FastCaptureFlow.png`](diagrams/dot-rendered/structurizr-FastCaptureFlow.png) |
+
+
+---
+
+## Media Worker Components
+
+> C4 view `MediaWorkerComponents`.
+
+### Diagram
+
+![Media Worker Components](diagrams/dot-rendered/structurizr-MediaWorkerComponents.svg)
+
+_Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for text review._
+
+<details>
+<summary>Mermaid source</summary>
+
+```mermaid
+graph LR
+  linkStyle default fill:#ffffff
+
+  subgraph diagram ["Browser Memory Daemon - WSL Media Worker - Components"]
+    style diagram fill:#ffffff,stroke:#ffffff
+
+    3["<div style='font-weight: bold'>Web Sites and Media Origins</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>External web pages,<br />image/video URLs, and media<br />CDNs that Chrome loads or<br />that sidecars fetch as<br />page-related media.</div>"]
+    style 3 fill:#999999,stroke:#6b6b6b,color:#ffffff
+    57[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+    style 57 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    59[("<div style='font-weight: bold'>Guarded Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL-visible local or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</div>")]
+    style 59 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    60[("<div style='font-weight: bold'>Bounded Local Media Spool</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Opt-in durable outage buffer<br />beneath the local WSL data<br />root; admission counts<br />committed files and distinct<br />in-flight SQLite<br />reservations, and drain<br />verifies bytes before tier<br />transition/source cleanup.</div>")]
+    style 60 fill:#2f95c8,stroke:#20688c,color:#ffffff
+
+    subgraph 45 ["WSL Media Worker"]
+      style 45 fill:#ffffff,stroke:#2e6295,color:#2e6295
+
+      46["<div style='font-weight: bold'>Media Worker Loop</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Orders one bounded automatic<br />spool-recovery pass, bounded<br />current-state reconciliation,<br />and one bounded public-media<br />task pass; records<br />redaction-safe outcomes.</div>"]
+      style 46 fill:#85bbf0,stroke:#1168bd,color:#000000
+      47["<div style='font-weight: bold'>Automatic Spool Recovery</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3 + filesystem]</div><div style='font-size: 80%; margin-top:10px'>Checks guarded-root<br />readiness, streams and<br />hash-verifies destination<br />bytes, commits the SQLite<br />tier switch and deletion<br />intent, then removes the<br />local source.</div>"]
+      style 47 fill:#85bbf0,stroke:#1168bd,color:#000000
+      48["<div style='font-weight: bold'>Current-State Media Reconciliation</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Closes bounded stale stored<br />work and reconciles current<br />CDP/blob coverage through<br />in-process repository<br />functions before due-task<br />leasing.</div>"]
+      style 48 fill:#85bbf0,stroke:#1168bd,color:#000000
+      49["<div style='font-weight: bold'>Public Media Task Runner</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python + sqlite3]</div><div style='font-size: 80%; margin-top:10px'>Leases due daemon-public<br />tasks, runs guarded<br />direct/HLS fetch without<br />Chrome cookies, applies<br />process budgets, and records<br />terminal or retry state.</div>"]
+      style 49 fill:#85bbf0,stroke:#1168bd,color:#000000
+    end
+
+    49-. "<div>Publishes admitted outage<br />bytes in</div><div style='font-size: 70%'>[Filesystem]</div>" .->60
+    48-. "<div>Reads and advances current<br />artifact/task state in</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+    46-. "<div>Runs one bounded recovery<br />batch before new fetch work<br />through</div><div style='font-size: 70%'></div>" .->47
+    46-. "<div>Runs bounded current-state<br />cleanup before due-task<br />leasing through</div><div style='font-size: 70%'></div>" .->48
+    46-. "<div>Runs one bounded due-task<br />batch through</div><div style='font-size: 70%'></div>" .->49
+    47-. "<div>Commits tier transitions and<br />durable deletion intent in</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+    47-. "<div>Reads and removes<br />authoritative local outage<br />bytes from</div><div style='font-size: 70%'>[Filesystem]</div>" .->60
+    47-. "<div>Streams and verifies<br />recovered destination bytes<br />in</div><div style='font-size: 70%'>[Filesystem]</div>" .->59
+    49-. "<div>Leases tasks and records<br />artifact outcomes in</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+    49-. "<div>Fetches guarded direct/HLS<br />media from</div><div style='font-size: 70%'>[HTTP(S), data URLs]</div>" .->3
+    49-. "<div>Publishes admitted final<br />bytes in</div><div style='font-size: 70%'>[Filesystem]</div>" .->59
+  end
+```
+
+</details>
+
+### Derived artifacts
+
+| Artifact | Link |
+|---|---|
+| Mermaid source | [`structurizr-MediaWorkerComponents.mmd`](diagrams/structurizr-MediaWorkerComponents.mmd) |
+| Mermaid SVG | [`structurizr-MediaWorkerComponents.svg`](diagrams/structurizr-MediaWorkerComponents.svg) |
+| Mermaid PNG | [`structurizr-MediaWorkerComponents.png`](diagrams/structurizr-MediaWorkerComponents.png) |
+| DOT source | [`structurizr-MediaWorkerComponents.dot`](diagrams/dot/structurizr-MediaWorkerComponents.dot) |
+| Graphviz SVG | [`structurizr-MediaWorkerComponents.svg`](diagrams/dot-rendered/structurizr-MediaWorkerComponents.svg) |
+| Graphviz PNG | [`structurizr-MediaWorkerComponents.png`](diagrams/dot-rendered/structurizr-MediaWorkerComponents.png) |
 
 
 ---
@@ -1769,39 +1904,38 @@ _Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for 
 graph LR
   linkStyle default fill:#ffffff
 
-  subgraph diagram ["Container View: Browser Memory Daemon"]
+  subgraph diagram ["Browser Memory Daemon - Containers"]
     style diagram fill:#ffffff,stroke:#ffffff
 
-    subgraph 4 ["Browser Memory Daemon"]
-      style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
+    subgraph 5 ["Browser Memory Daemon"]
+      style 5 fill:#ffffff,stroke:#0b4884,color:#0b4884
 
-      22["<div style='font-weight: bold'>WSL Loopback HTTP Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11, ThreadingHTTPServer]</div><div style='font-size: 80%; margin-top:10px'>Authenticated loopback HTTP<br />API that handles capture,<br />visit events, media artifact<br />upload/fetch/purge, exact<br />search,<br />recent/timeline/detail,<br />policy rules, doctor, durable<br />forget, and static UI<br />serving.</div>"]
-      style 22 fill:#438dd5,stroke:#2e6295,color:#ffffff
-      45["<div style='font-weight: bold'>Local Web UI</div><div style='font-size: 70%; margin-top: 0px'>[Container: HTML/CSS/JavaScript served by daemon]</div><div style='font-size: 80%; margin-top:10px'>Static browser UI for exact<br />search, recent/timeline<br />views, document/snapshot<br />detail, media artifact<br />opening, policy rules,<br />doctor, and forget-domain<br />operations.</div>"]
-      style 45 fill:#438dd5,stroke:#2e6295,color:#ffffff
-      46["<div style='font-weight: bold'>CLI</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python argparse]</div><div style='font-size: 80%; margin-top:10px'>Command-line interface for<br />serving the daemon,<br />migration, snapshot-text and<br />storage reconciliation,<br />manifest-backed<br />backup/restore, media-spool<br />status/drain,<br />health/doctor/search/recent/timeline/detail,<br />policy/forget, capture<br />fixtures, media worker, and<br />media cache operations.</div>"]
-      style 46 fill:#438dd5,stroke:#2e6295,color:#ffffff
-      48[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable complete<br />cleaned-text, relational, and<br />full-text authority for<br />migration ledger, sources,<br />documents, visits, capture<br />observations, URL claims,<br />visit events, snapshots,<br />chunks, chunks_fts, media<br />provenance/tasks, blob<br />lifecycle records, policy<br />rules, audit events, and<br />deletion receipts.</div>")]
-      style 48 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      49[("<div style='font-weight: bold'>Local Derivative Store</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Reconstructible compatibility<br />evidence such as<br />pre-version-9 clean-text<br />sidecars; new captures create<br />no text sidecars.</div>")]
-      style 49 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      50[("<div style='font-weight: bold'>Guarded Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL-visible local or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</div>")]
-      style 50 fill:#2f95c8,stroke:#20688c,color:#ffffff
-      51[("<div style='font-weight: bold'>Bounded Local Media Spool</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Opt-in durable outage buffer<br />beneath the local WSL data<br />root; admission counts<br />committed files and distinct<br />in-flight SQLite<br />reservations, and drain<br />verifies bytes before tier<br />transition/source cleanup.</div>")]
-      style 51 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      23["<div style='font-weight: bold'>WSL Loopback HTTP Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11, ThreadingHTTPServer]</div><div style='font-size: 80%; margin-top:10px'>Authenticated loopback API<br />for capture, read/admin/media<br />operations, and query-only<br />bmd.x-observations v1 export.</div>"]
+      style 23 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      50["<div style='font-weight: bold'>Local Web UI</div><div style='font-size: 70%; margin-top: 0px'>[Container: HTML/CSS/JavaScript served by daemon]</div><div style='font-size: 80%; margin-top:10px'>Static browser UI for exact<br />search, recent/timeline<br />views, document/snapshot<br />detail, media artifact<br />opening, policy rules,<br />doctor, and forget-domain<br />operations.</div>"]
+      style 50 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      51["<div style='font-weight: bold'>CLI</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python argparse]</div><div style='font-size: 80%; margin-top:10px'>Command-line interface for<br />serving/admin operations,<br />direct storage/health<br />workflows, and standalone<br />mutation-free X observation<br />export.</div>"]
+      style 51 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      57[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+      style 57 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      58[("<div style='font-weight: bold'>Local Derivative Store</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Reconstructible compatibility<br />evidence such as<br />pre-version-9 clean-text<br />sidecars; new captures create<br />no text sidecars.</div>")]
+      style 58 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      59[("<div style='font-weight: bold'>Guarded Media Blob Cache</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL-visible local or NAS-mounted filesystem]</div><div style='font-size: 80%; margin-top:10px'>Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</div>")]
+      style 59 fill:#2f95c8,stroke:#20688c,color:#ffffff
+      60[("<div style='font-weight: bold'>Bounded Local Media Spool</div><div style='font-size: 70%; margin-top: 0px'>[Container: WSL local filesystem]</div><div style='font-size: 80%; margin-top:10px'>Opt-in durable outage buffer<br />beneath the local WSL data<br />root; admission counts<br />committed files and distinct<br />in-flight SQLite<br />reservations, and drain<br />verifies bytes before tier<br />transition/source cleanup.</div>")]
+      style 60 fill:#2f95c8,stroke:#20688c,color:#ffffff
     end
 
-    46-. "<div>Optionally copies referenced<br />contained derivatives from</div><div style='font-size: 70%'>[Filesystem]</div>" .->49
-    45-. "<div>Calls authenticated read,<br />admin, media, and forget APIs<br />on</div><div style='font-size: 70%'>[HTTP/JSON]</div>" .->22
-    46-. "<div>Calls health, read, admin,<br />capture-fixture, and forget<br />APIs on</div><div style='font-size: 70%'>[HTTP/JSON]</div>" .->22
-    46-. "<div>Runs migration, media-worker,<br />media-cache, media-spool, and<br />storage-reconcile commands<br />against</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
-    46-. "<div>Purges and rehydrates media<br />blobs through</div><div style='font-size: 70%'>[Filesystem]</div>" .->50
-    46-. "<div>Reports and drains bounded<br />outage bytes through</div><div style='font-size: 70%'>[Filesystem]</div>" .->51
-    22-. "<div>Reads and writes metadata,<br />FTS, tasks, audit, and<br />receipts in</div><div style='font-size: 70%'>[sqlite3]</div>" .->48
-    22-. "<div>Reads or deletes legacy text<br />sidecars when required</div><div style='font-size: 70%'>[Filesystem]</div>" .->49
-    22-. "<div>Stores, serves, purges, and<br />rehydrates media blobs in</div><div style='font-size: 70%'>[Filesystem]</div>" .->50
-    22-. "<div>Stores and serves media<br />during guarded-root outages<br />in</div><div style='font-size: 70%'>[Filesystem]</div>" .->51
-
+    51-. "<div>Optionally copies referenced<br />contained derivatives from</div><div style='font-size: 70%'>[Filesystem]</div>" .->58
+    50-. "<div>Calls authenticated read,<br />admin, media, and forget APIs<br />on</div><div style='font-size: 70%'>[HTTP/JSON]</div>" .->23
+    51-. "<div>Calls health, read, admin,<br />capture-fixture, and forget<br />APIs on</div><div style='font-size: 70%'>[HTTP/JSON]</div>" .->23
+    51-. "<div>Runs direct migration,<br />export, media, storage,<br />health, backup, and restore<br />workflows against</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+    51-. "<div>Purges and rehydrates media<br />blobs through</div><div style='font-size: 70%'>[Filesystem]</div>" .->59
+    51-. "<div>Reports and drains bounded<br />outage bytes through</div><div style='font-size: 70%'>[Filesystem]</div>" .->60
+    23-. "<div>Reads and writes metadata,<br />FTS, tasks, audit, and<br />receipts in</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+    23-. "<div>Reads or deletes legacy text<br />sidecars when required</div><div style='font-size: 70%'>[Filesystem]</div>" .->58
+    23-. "<div>Stores, serves, purges, and<br />rehydrates media blobs in</div><div style='font-size: 70%'>[Filesystem]</div>" .->59
+    23-. "<div>Stores and serves media<br />during guarded-root outages<br />in</div><div style='font-size: 70%'>[Filesystem]</div>" .->60
   end
 ```
 
@@ -1838,7 +1972,7 @@ _Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for 
 graph LR
   linkStyle default fill:#ffffff
 
-  subgraph diagram ["System Context View: Browser Memory Daemon"]
+  subgraph diagram ["Browser Memory Daemon - System Context"]
     style diagram fill:#ffffff,stroke:#ffffff
 
     1["<div style='font-weight: bold'>Operator</div><div style='font-size: 70%; margin-top: 0px'>[Person]</div><div style='font-size: 80%; margin-top:10px'>Sole local operator who<br />browses with Windows Chrome<br />and searches, reviews, and<br />deletes local browser-memory<br />records.</div>"]
@@ -1847,15 +1981,18 @@ graph LR
     style 2 fill:#999999,stroke:#6b6b6b,color:#ffffff
     3["<div style='font-weight: bold'>Web Sites and Media Origins</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>External web pages,<br />image/video URLs, and media<br />CDNs that Chrome loads or<br />that sidecars fetch as<br />page-related media.</div>"]
     style 3 fill:#999999,stroke:#6b6b6b,color:#ffffff
-    4["<div style='font-weight: bold'>Browser Memory Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>Local-first personal recall<br />system that captures Windows<br />Chrome page text and media<br />references, stores them in<br />WSL, and exposes exact<br />search, timeline, detail,<br />deletion, diagnostics, and<br />media cache operations.</div>"]
-    style 4 fill:#1168bd,stroke:#0b4884,color:#ffffff
+    4["<div style='font-weight: bold'>Passive X Observation Consumer</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>A downstream local<br />integration that reads<br />versioned body-safe<br />observation pages without<br />gaining capture, migration,<br />or mutation authority.</div>"]
+    style 4 fill:#999999,stroke:#6b6b6b,color:#ffffff
+    5["<div style='font-weight: bold'>Browser Memory Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>Local-first personal recall<br />system that captures Windows<br />Chrome page text/media and<br />exports versioned body-safe X<br />observations.</div>"]
+    style 5 fill:#1168bd,stroke:#0b4884,color:#ffffff
 
     1-. "<div>Browses web pages with</div><div style='font-size: 70%'></div>" .->2
-    1-. "<div>Searches, reviews, and<br />deletes local browser memory<br />through</div><div style='font-size: 70%'></div>" .->4
+    1-. "<div>Searches, reviews, and<br />deletes local browser memory<br />through</div><div style='font-size: 70%'></div>" .->5
     2-. "<div>Loads pages and media from</div><div style='font-size: 70%'>[HTTPS]</div>" .->3
-    4-. "<div>Runs its MV3 extension inside<br />and uses APIs from</div><div style='font-size: 70%'></div>" .->2
-    4-. "<div>Captures page refs and<br />fetches browser-side or<br />public media from</div><div style='font-size: 70%'>[Chrome DOM/fetch; WSL HTTP(S), data URLs; no Chrome cookies in WSL]</div>" .->3
-
+    4-. "<div>Reads authenticated versioned<br />body-safe observation pages<br />from</div><div style='font-size: 70%'>[HTTP/JSON]</div>" .->5
+    5-. "<div>Runs its MV3 extension inside<br />and uses APIs from</div><div style='font-size: 70%'></div>" .->2
+    5-. "<div>Captures page refs and<br />fetches browser-side or<br />public media from</div><div style='font-size: 70%'>[Chrome DOM/fetch; WSL HTTP(S), data URLs; no Chrome cookies in WSL]</div>" .->3
+    5-. "<div>Emits versioned body-safe<br />observation pages for</div><div style='font-size: 70%'>[JSON stdout]</div>" .->4
   end
 ```
 
@@ -1871,3 +2008,63 @@ graph LR
 | DOT source | [`structurizr-SystemContext.dot`](diagrams/dot/structurizr-SystemContext.dot) |
 | Graphviz SVG | [`structurizr-SystemContext.svg`](diagrams/dot-rendered/structurizr-SystemContext.svg) |
 | Graphviz PNG | [`structurizr-SystemContext.png`](diagrams/dot-rendered/structurizr-SystemContext.png) |
+
+
+---
+
+## X Observation Export Flow
+
+> C4 view `XObservationExportFlow`.
+
+### Diagram
+
+![X Observation Export Flow](diagrams/dot-rendered/structurizr-XObservationExportFlow.svg)
+
+_Preferred Markdown display: Graphviz SVG. Mermaid source is retained below for text review._
+
+<details>
+<summary>Mermaid source</summary>
+
+```mermaid
+graph LR
+  linkStyle default fill:#ffffff
+
+  subgraph diagram ["Browser Memory Daemon - Dynamic"]
+    style diagram fill:#ffffff,stroke:#ffffff
+
+    subgraph 5 ["Browser Memory Daemon"]
+      style 5 fill:#ffffff,stroke:#0b4884,color:#0b4884
+
+      23["<div style='font-weight: bold'>WSL Loopback HTTP Daemon</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python 3.11, ThreadingHTTPServer]</div><div style='font-size: 80%; margin-top:10px'>Authenticated loopback API<br />for capture, read/admin/media<br />operations, and query-only<br />bmd.x-observations v1 export.</div>"]
+      style 23 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      51["<div style='font-weight: bold'>CLI</div><div style='font-size: 70%; margin-top: 0px'>[Container: Python argparse]</div><div style='font-size: 80%; margin-top:10px'>Command-line interface for<br />serving/admin operations,<br />direct storage/health<br />workflows, and standalone<br />mutation-free X observation<br />export.</div>"]
+      style 51 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      57[("<div style='font-weight: bold'>SQLite + FTS5 Database</div><div style='font-size: 70%; margin-top: 0px'>[Container: SQLite with FTS5]</div><div style='font-size: 80%; margin-top:10px'>Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</div>")]
+      style 57 fill:#2f95c8,stroke:#20688c,color:#ffffff
+    end
+
+    1["<div style='font-weight: bold'>Operator</div><div style='font-size: 70%; margin-top: 0px'>[Person]</div><div style='font-size: 80%; margin-top:10px'>Sole local operator who<br />browses with Windows Chrome<br />and searches, reviews, and<br />deletes local browser-memory<br />records.</div>"]
+    style 1 fill:#08427b,stroke:#052e56,color:#ffffff
+    4["<div style='font-weight: bold'>Passive X Observation Consumer</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>A downstream local<br />integration that reads<br />versioned body-safe<br />observation pages without<br />gaining capture, migration,<br />or mutation authority.</div>"]
+    style 4 fill:#999999,stroke:#6b6b6b,color:#ffffff
+
+    4-. "<div>1. Requests one authenticated<br />cursor page over HTTP</div><div style='font-size: 70%'>[HTTP/JSON]</div>" .->23
+    23-. "<div>2. Reads through the<br />query-only export core<br />without audit writes</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+    1-. "<div>3. Runs standalone export<br />without daemon readiness or<br />token bootstrap</div><div style='font-size: 70%'></div>" .->51
+    51-. "<div>4. Opens the existing<br />database mode=ro/query_only</div><div style='font-size: 70%'>[sqlite3]</div>" .->57
+    51-. "<div>5. Emits the same<br />schema-versioned body-safe<br />page on stdout</div><div style='font-size: 70%'>[JSON stdout]</div>" .->4
+  end
+```
+
+</details>
+
+### Derived artifacts
+
+| Artifact | Link |
+|---|---|
+| Mermaid source | [`structurizr-XObservationExportFlow.mmd`](diagrams/structurizr-XObservationExportFlow.mmd) |
+| Mermaid SVG | [`structurizr-XObservationExportFlow.svg`](diagrams/structurizr-XObservationExportFlow.svg) |
+| Mermaid PNG | [`structurizr-XObservationExportFlow.png`](diagrams/structurizr-XObservationExportFlow.png) |
+| DOT source | [`structurizr-XObservationExportFlow.dot`](diagrams/dot/structurizr-XObservationExportFlow.dot) |
+| Graphviz SVG | [`structurizr-XObservationExportFlow.svg`](diagrams/dot-rendered/structurizr-XObservationExportFlow.svg) |
+| Graphviz PNG | [`structurizr-XObservationExportFlow.png`](diagrams/dot-rendered/structurizr-XObservationExportFlow.png) |

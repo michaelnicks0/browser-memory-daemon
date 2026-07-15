@@ -136,13 +136,13 @@ flowchart TB
   PublicFetch --> Classified["referenced / metadata-only / retrying<br/>stored / skipped / expired / failed"]
 
   MediaBlobs --> Rolling["domain/global rolling cache<br/>oldest blob eviction"]
-  MediaSpool --> Drain["dry-run-first drain<br/>stream + verify size/SHA-256"]
+  MediaSpool --> Drain["worker auto-drain when root is ready<br/>manual dry-run-first override<br/>stream + verify size/SHA-256"]
   Drain --> MediaBlobs
   Drain --> TierSwitch["compare-and-switch SQLite tier<br/>then remove spool source"]
   Rolling --> Purged["status = purged<br/>refs/hash/provenance remain"]
 ```
 
-The final media cache is bounded and disposable. The optional local spool has a separate hard byte cap covering committed/orphaned files plus distinct in-flight reservations. SQLite version 13 also reserves snapshot/domain/global cache capacity transactionally across processes, while process-local request and byte leases bound concurrent streaming HTTP/HLS/upload/download work. Text, FTS rows, media refs, hashes, status reasons, and provenance remain authoritative when bytes are absent, spooled, purged, or delayed by resource pressure.
+The final media cache is bounded and disposable. The optional local spool has a separate hard byte cap covering committed/orphaned files plus distinct in-flight reservations. Each worker pass checks guarded-root readiness and automatically drains at most one bounded batch before claiming new fetch work; the manual command remains a dry-run-first override. SQLite version 13 also reserves snapshot/domain/global cache capacity transactionally across processes, while process-local request and byte leases bound concurrent streaming HTTP/HLS/upload/download work. Text, FTS rows, media refs, hashes, status reasons, and provenance remain authoritative when bytes are absent, spooled, purged, or delayed by resource pressure.
 
 ---
 

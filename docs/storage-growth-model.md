@@ -10,7 +10,7 @@
 
 The implementation is **text-first** with optional bounded media blobs. Text/FTS growth remains manageable; media is intentionally cache-like and now has explicit size gates plus purge/rehydrate controls. Final media bytes can use a guarded WSL-visible NAS `BMD_MEDIA_ROOT` while SQLite/FTS and reconstructible derivatives stay local; an opt-in local spool has an independent hard byte cap for mount outages.
 
-Using a representative daily-driver baseline and the daemon's current storage multiplier, the most realistic planning range is:
+Using a representative daily-driver baseline and a conservative planning multiplier retained from early measurements, the most realistic planning range is:
 
 | Usage posture | Assumption | Expected growth |
 |---|---:|---:|
@@ -35,7 +35,7 @@ The model intentionally avoids publishing local browsing history, URLs, domains,
 | Mean extracted text per snapshot | 7.1 KiB | Primary planning case. |
 | p90 extracted text per snapshot | 20.9 KiB | Dynamic/social/search pages with more visible text. |
 | Mean chunks per snapshot | 4.58 | Drives `chunks` and FTS storage growth. |
-| Runtime multiplier | ~6.5x extracted text | Accounts for clean text blobs, SQLite chunk text, FTS shadow/index tables, metadata, and audit/lifecycle rows. |
+| Conservative runtime multiplier | ~6.5x extracted text | Planning upper bound derived before schema version 9 moved complete cleaned text into SQLite. It now covers `snapshots.cleaned_text`, chunk text, FTS shadow/index tables, metadata, and audit/lifecycle rows; remeasure before capacity procurement. |
 
 ---
 
@@ -50,7 +50,7 @@ The largest durable text/FTS consumers are expected to be:
 | `chunks_fts_data` | Medium | FTS index data. |
 | `audit_events` | Low/medium | Capture/search/visit audit metadata. |
 | `visit_events` | Low | Dwell/lifecycle metadata. |
-| `snapshots` | Low | Snapshot metadata. |
+| `snapshots` | High | Snapshot metadata plus complete authoritative `cleaned_text` for new and promoted rows. |
 | `visits` | Low | Visit metadata. |
 | `documents` | Low | Document identity metadata. |
 
@@ -60,9 +60,9 @@ Planning storage multiplier:
 runtime bytes / clean extracted text bytes ≈ 6.5x
 ```
 
-That multiplier is high because the system stores text multiple ways:
+That multiplier is conservative because the system stores text multiple ways:
 
-1. clean snapshot blob;
+1. complete authoritative `snapshots.cleaned_text` in SQLite;
 2. chunk text in SQLite;
 3. FTS content shadow table;
 4. FTS index data;
@@ -70,7 +70,7 @@ That multiplier is high because the system stores text multiple ways:
 6. audit/lifecycle rows;
 7. early fixed SQLite overhead.
 
-As the DB grows, fixed overhead will amortize, but **5–7x extracted text** is the right planning range unless the schema is optimized.
+Schema version 9 stopped creating new clean-text filesystem sidecars, so the early multiplier is no longer a measured decomposition of the current layout. Fixed overhead should amortize as the DB grows, but **5–7x extracted text** remains a conservative planning range until current SQLite/WAL measurements replace it.
 
 ---
 
@@ -168,8 +168,8 @@ These reduce bytes without silently dropping memories.
 | Add daily storage metrics / watchdog | None | Operational visibility | First thing to do. |
 | Periodic SQLite `VACUUM` / `optimize` | None | Recovers free pages, improves FTS | Manual or scheduled. |
 | Use FTS5 external-content table | None if implemented carefully | Save ~20–35% DB size | Removes `chunks_fts_content` duplication. |
-| Stop storing both full clean blob and chunk text | Low if detail view reconstructs from chunks | Save ~10–25% total | Need verify exact reconstruction. |
-| Compress clean-text blobs with zstd/gzip | None if transparent | Small/moderate | Blob is currently smaller than DB text+FTS. |
+| Stop storing both complete SQLite snapshot text and chunk text | Low only if exact reconstruction is proven | Save ~10–25% total | Requires a new authority contract and migration; do not weaken current exact detail/backup behavior casually. |
+| Compress authoritative snapshot text or chunk payloads | None if transparent | Small/moderate | Requires an explicit SQLite/schema/read-path design; new filesystem clean-text sidecars are no longer written. |
 | Bound audit retention or compact audit to summaries | Low for recall; affects ops history | Small/moderate | Keep capture/search evidence if desired. |
 | Domain/day rollup stats | None | Visibility | Helps spot runaway domains. |
 
@@ -181,12 +181,12 @@ Do **not** start by deleting pages or filtering domains if the product goal is e
 
 ### Short term
 
-- Add a `storage stats` CLI/API endpoint:
+- Extend the existing `doctor` / daily-driver health storage telemetry with a trend-oriented stats surface:
   - DB bytes / WAL bytes / blob bytes;
   - documents / visits / snapshots / chunks / events;
   - daily growth slope;
   - top domains by snapshot count and text bytes.
-- Add local warning thresholds for durable text/DB growth:
+- Keep the implemented filesystem headroom warnings and add durable text/DB growth thresholds:
   - warn at 10 GB, 25 GB, 50 GB;
   - do not auto-delete text/FTS memories. Media blobs are already a rolling cache under the configured domain/global media caps.
 
@@ -194,7 +194,7 @@ Do **not** start by deleting pages or filtering domains if the product goal is e
 
 - Migrate FTS to external-content mode if the DB grows beyond ~10 GB.
 - Add `sqlite optimize` / `VACUUM` maintenance command.
-- Add optional export/backup before any compaction work.
+- Require the current manifest-backed `backup create` / `backup restore` path before any compaction work; automated backup retention/pruning remains future work.
 
 ### Long term
 

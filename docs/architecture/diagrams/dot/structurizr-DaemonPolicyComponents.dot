@@ -3,35 +3,24 @@ digraph {
   graph [fontname="Arial", rankdir=LR, ranksep=1.0, nodesep=1.0]
   node [fontname="Arial", shape=box, margin="0.4,0.3"]
   edge [fontname="Arial"]
-  label=<<br /><font point-size="34">Component View: Browser Memory Daemon - WSL Loopback HTTP Daemon</font>>
+  label=<<br /><font point-size="34">Browser Memory Daemon - WSL Loopback HTTP Daemon - Components</font>>
 
-  subgraph cluster_4 {
+  subgraph cluster_23 {
     margin=25
-    label=<<font point-size="24"><br />Browser Memory Daemon</font><br /><font point-size="19">[Software System]</font>>
+    label=<<font point-size="24"><br />WSL Loopback HTTP Daemon</font><br /><font point-size="19">[Container: Python 3.11, ThreadingHTTPServer]</font>>
     labelloc=b
     color="#444444"
     fontcolor="#444444"
     fillcolor="#444444"
 
-    subgraph cluster_22 {
-      margin=25
-      label=<<font point-size="24"><br />WSL Loopback HTTP Daemon</font><br /><font point-size="19">[Container: Python 3.11, ThreadingHTTPServer]</font>>
-      labelloc=b
-      color="#444444"
-      fontcolor="#444444"
-      fillcolor="#444444"
-
-      23 [id=23,shape=rect, label=<<font point-size="34">HTTP Request Router</font><br /><font point-size="19">[Component: Python http.server + route descriptors]</font><br /><br /><font point-size="24">Adapts BaseHTTPRequestHandler<br />requests through immutable<br />method/path descriptors with<br />static precedence; owns auth,<br />parsing, compatible<br />status/error responses,<br />request IDs, common security<br />headers, redaction-safe<br />telemetry, bounded response<br />streaming, disconnect cleanup,<br />CORS, and finite UI assets.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
-      24 [id=24,shape=rect, label=<<font point-size="34">Application Use Cases</font><br /><font point-size="19">[Component: Python]</font><br /><br /><font point-size="24">Provides request-independent<br />capture, lifecycle, read,<br />forget, policy, doctor, and<br />media use cases; owns<br />database-ready checks,<br />transaction/audit boundaries,<br />asynchronous media kickoff,<br />and upload/download resource<br />leases without importing HTTP<br />request or response types.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
-      26 [id=26,shape=rect, label=<<font point-size="34">Policy Engine</font><br /><font point-size="19">[Component: Python]</font><br /><br /><font point-size="24">Evaluates<br />all/recall/balanced/strict<br />capture mode decisions and<br />redacts URL/title/body text<br />outside all mode.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
-      27 [id=27,shape=rect, label=<<font point-size="34">Policy Store</font><br /><font point-size="19">[Component: Python + SQLite]</font><br /><br /><font point-size="24">Persists and evaluates<br />explicit local block-domain<br />and URL-prefix rules for every<br />policy mode.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
-    }
-
+    24 [id=24,shape=rect, label=<<font point-size="34">HTTP Request Router</font><br /><font point-size="19">[Component: Python http.server + route descriptors]</font><br /><br /><font point-size="24">Adapts BaseHTTPRequestHandler<br />requests through immutable<br />method/path descriptors with<br />static precedence; owns auth,<br />parsing, compatible<br />status/error responses,<br />request IDs, common security<br />headers, redaction-safe<br />telemetry, bounded response<br />streaming, disconnect cleanup,<br />CORS, and finite UI assets.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
+    25 [id=25,shape=rect, label=<<font point-size="34">Application Use Cases</font><br /><font point-size="19">[Component: Python]</font><br /><br /><font point-size="24">Provides request-independent<br />capture, lifecycle, read,<br />forget, policy, doctor, and<br />media use cases; owns<br />database-ready checks,<br />transaction/audit boundaries,<br />asynchronous media kickoff,<br />and upload/download resource<br />leases without importing HTTP<br />request or response types.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
+    27 [id=27,shape=rect, label=<<font point-size="34">Policy Engine</font><br /><font point-size="19">[Component: Python]</font><br /><br /><font point-size="24">Evaluates<br />all/recall/balanced/strict<br />capture mode decisions and<br />redacts URL/title/body text<br />outside all mode.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
+    28 [id=28,shape=rect, label=<<font point-size="34">Policy Store</font><br /><font point-size="19">[Component: Python + SQLite]</font><br /><br /><font point-size="24">Persists and evaluates<br />explicit local block-domain<br />and URL-prefix rules for every<br />policy mode.</font>>, style=filled, color="#1168bd", fillcolor="#85bbf0", fontcolor="#000000"]
   }
 
-  23 -> 24 [id=114, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Invokes explicit<br />request-independent use<br />cases through</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-  24 -> 26 [id=116, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Gets capture decisions<br />from</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-  24 -> 27 [id=118, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Manages policy rules<br />through</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-  26 -> 27 [id=126, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Combines static mode with<br />rules from</font></TD></TR></TABLE>>, style="dashed", color="#444444", fontcolor="#444444"]
-
+  24 -> 25 [id=134, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Invokes explicit<br />request-independent use<br />cases through</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  25 -> 27 [id=136, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Gets capture decisions<br />from</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  25 -> 28 [id=138, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Manages policy rules<br />through</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  27 -> 28 [id=147, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">Combines static mode with<br />rules from</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
 }

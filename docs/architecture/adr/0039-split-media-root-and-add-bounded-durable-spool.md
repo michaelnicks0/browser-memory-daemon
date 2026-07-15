@@ -1,5 +1,6 @@
 ---
 status: superseded
+supersedes: [ADR-0021]
 superseded_by: [ADR-0061]
 date: 2026-07-10
 decision-makers: [Michael]

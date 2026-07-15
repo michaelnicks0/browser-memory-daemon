@@ -1,0 +1,30 @@
+digraph {
+  compound=true
+  graph [fontname="Arial", rankdir=LR, ranksep=1.0, nodesep=1.0]
+  node [fontname="Arial", shape=box, margin="0.4,0.3"]
+  edge [fontname="Arial"]
+  label=<<br /><font point-size="34">Browser Memory Daemon - Dynamic</font>>
+
+  subgraph cluster_5 {
+    margin=25
+    label=<<font point-size="24"><br />Browser Memory Daemon</font><br /><font point-size="19">[Software System]</font>>
+    labelloc=b
+    color="#444444"
+    fontcolor="#444444"
+    fillcolor="#444444"
+
+    23 [id=23,shape=rect, label=<<font point-size="34">WSL Loopback HTTP<br />Daemon</font><br /><font point-size="19">[Container: Python 3.11, ThreadingHTTPServer]</font><br /><br /><font point-size="24">Authenticated loopback API for<br />capture, read/admin/media<br />operations, and query-only<br />bmd.x-observations v1 export.</font>>, style=filled, color="#2e6295", fillcolor="#438dd5", fontcolor="#ffffff"]
+    51 [id=51,shape=rect, label=<<font point-size="34">CLI</font><br /><font point-size="19">[Container: Python argparse]</font><br /><br /><font point-size="24">Command-line interface for<br />serving/admin operations,<br />direct storage/health<br />workflows, and standalone<br />mutation-free X observation<br />export.</font>>, style=filled, color="#2e6295", fillcolor="#438dd5", fontcolor="#ffffff"]
+    57 [id=57,shape=cylinder, label=<<font point-size="34">SQLite + FTS5<br />Database</font><br /><font point-size="19">[Container: SQLite with FTS5]</font><br /><br /><font point-size="24">Durable text/metadata<br />authority including migration<br />ledger, capture observations,<br />and immutable observation<br />ingest sequences.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+    59 [id=59,shape=cylinder, label=<<font point-size="34">Guarded Media Blob<br />Cache</font><br /><font point-size="19">[Container: WSL-visible local or NAS-mounted filesystem]</font><br /><br /><font point-size="24">Bounded disposable<br />image/video/audio bytes under<br />the configured media root;<br />explicit external roots<br />require mount and<br />identity-marker proof before<br />access.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+    60 [id=60,shape=cylinder, label=<<font point-size="34">Bounded Local Media<br />Spool</font><br /><font point-size="19">[Container: WSL local filesystem]</font><br /><br /><font point-size="24">Opt-in durable outage buffer<br />beneath the local WSL data<br />root; admission counts<br />committed files and distinct<br />in-flight SQLite reservations,<br />and drain verifies bytes<br />before tier transition/source<br />cleanup.</font>>, style=filled, color="#20688c", fillcolor="#2f95c8", fontcolor="#ffffff"]
+  }
+
+  1 [id=1,shape=rect, label=<<font point-size="34">Operator</font><br /><font point-size="19">[Person]</font><br /><br /><font point-size="24">Sole local operator who<br />browses with Windows<br />Chrome and searches,<br />reviews, and deletes local<br />browser-memory records.</font>>, style=filled, color="#052e56", fillcolor="#08427b", fontcolor="#ffffff"]
+
+  1 -> 51 [id=65, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">1. Runs daily-driver<br />health to inspect<br />protected artifacts plus<br />systemd restart and<br />journal budgets</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  51 -> 23 [id=76, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">2. Checks authenticated<br />daemon readiness over HTTP</font><br /><font point-size="19">[HTTP/JSON]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  51 -> 57 [id=77, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">3. Checks schema,<br />integrity, counts, and<br />storage headroom</font><br /><font point-size="19">[sqlite3]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  51 -> 59 [id=78, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">4. Checks guarded-root<br />identity, readiness, and<br />capacity</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+  51 -> 60 [id=79, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white"><TR><TD><font point-size="24">5. Checks reservations,<br />filesystem accounting,<br />capacity, and latest<br />automatic drain</font><br /><font point-size="19">[Filesystem]</font></TD></TR></TABLE>>, style="dashed", color="#707070", fontcolor="#707070"]
+}
